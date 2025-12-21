@@ -1,29 +1,36 @@
 <template>
-  <v-container class="fill-height" max-width="900">
+  <VContainer
+    class="fill-height"
+    maxWidth="900"
+  >
     <div>
-      <v-img
+      <VImg
         class="mb-4"
         height="150"
         src="@/assets/logo.png"
       />
 
       <div class="mb-8 text-center">
-        <div class="text-body-2 font-weight-light mb-n1">Welcome to</div>
-        <h1 class="text-h2 font-weight-bold">Vuetify</h1>
+        <div class="text-body-2 font-weight-light mb-n1">
+          Welcome to
+        </div>
+        <h1 class="text-h2 font-weight-bold">
+          Vuetify
+        </h1>
       </div>
 
-      <v-row>
-        <v-col cols="12">
-          <v-card
+      <VRow>
+        <VCol cols="12">
+          <VCard
             class="py-4"
             color="surface-variant"
             image="https://cdn.vuetifyjs.com/docs/images/one/create/feature.png"
-            prepend-icon="mdi-rocket-launch-outline"
+            prependIcon="mdi-rocket-launch-outline"
             rounded="lg"
             variant="tonal"
           >
             <template #image>
-              <v-img position="top right" />
+              <VImg position="top right" />
             </template>
 
             <template #title>
@@ -34,30 +41,34 @@
 
             <template #subtitle>
               <div class="text-subtitle-1">
-                Change this page by updating <v-kbd>{{ `<HelloWorld />` }}</v-kbd> in <v-kbd>components/HelloWorld.vue</v-kbd>.
+                Change this page by updating <VKbd>{{ `<HelloWorld />` }}</VKbd> in <VKbd>components/HelloWorld.vue</VKbd>.
               </div>
             </template>
-          </v-card>
-        </v-col>
+          </VCard>
+        </VCol>
 
-        <v-col v-for="link in links" :key="link.href" cols="6">
-          <v-card
-            append-icon="mdi-open-in-new"
+        <VCol
+          v-for="link in links"
+          :key="link.href"
+          cols="6"
+        >
+          <VCard
+            :href="link.href"
+            :prependIcon="link.icon"
+            :subtitle="link.subtitle"
+            :title="link.title"
+            appendIcon="mdi-open-in-new"
             class="py-4"
             color="surface-variant"
-            :href="link.href"
-            :prepend-icon="link.icon"
             rel="noopener noreferrer"
             rounded="lg"
-            :subtitle="link.subtitle"
             target="_blank"
-            :title="link.title"
             variant="tonal"
           />
-        </v-col>
-      </v-row>
+        </VCol>
+      </VRow>
     </div>
-  </v-container>
+  </VContainer>
 </template>
 
 <script setup lang="ts">

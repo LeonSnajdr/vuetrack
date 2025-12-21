@@ -35,6 +35,7 @@
   "rust-analyzer.semanticHighlighting.strings.enable": false,
   "explorer.fileNesting.enabled": true,
   "explorer.fileNesting.patterns": {
-    "package.json": "yarn.lock, .yarnrc.yml"
+    "package.json": "yarn.lock, .yarnrc.yml",
+    "eslint.config.js": ".eslintrc-auto-import.json"
   }
 }
