@@ -1,14 +1,11 @@
-import { fileURLToPath, URL } from "node:url";
+import { defineConfig } from "vite";
 import Vue from "@vitejs/plugin-vue";
-// Plugins
+import { fileURLToPath, URL } from "node:url";
 import AutoImport from "unplugin-auto-import/vite";
 import Fonts from "unplugin-fonts/vite";
 import Components from "unplugin-vue-components/vite";
 import { VueRouterAutoImports } from "unplugin-vue-router";
 import VueRouter from "unplugin-vue-router/vite";
-// Utilities
-import { defineConfig } from "vite";
-
 import Layouts from "vite-plugin-vue-layouts-next";
 import Vuetify, { transformAssetUrls } from "vite-plugin-vuetify";
 
@@ -22,9 +19,12 @@ export default defineConfig({
         AutoImport({
             imports: [
                 "vue",
+                "pinia",
+                "vue-i18n",
+                "@vueuse/core",
                 VueRouterAutoImports,
                 {
-                    pinia: ["defineStore", "storeToRefs"]
+                    "@mdi/js": Object.keys(await import("@mdi/js")).filter((x) => x.startsWith("mdi"))
                 }
             ],
             dts: "typings/auto-imports.d.ts",
@@ -34,6 +34,8 @@ export default defineConfig({
             vueTemplate: true
         }),
         Components({
+            directoryAsNamespace: true,
+            collapseSamePrefixes: true,
             dts: "typings/components.d.ts"
         }),
         Vue({

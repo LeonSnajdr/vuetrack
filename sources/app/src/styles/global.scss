@@ -1,0 +1,14 @@
+@use "@/styles/settings";
+@use "fonts";
+@use "scroll";
+@use "animations";
+@use "links";
+
+html {
+  // Only show main scrollbar if the page is scrollable
+  overflow-y: auto !important;
+}
+
+.preserve-whitespace {
+  white-space: pre-wrap;
+}

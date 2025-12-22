@@ -1,0 +1,57 @@
+#sidePanelMenu {
+  .fadein-enter-active {
+    transition: 2s ease;
+  }
+
+  .fadein-leave-active {
+    transition: 0s ease;
+  }
+
+  .fadein-enter-from,
+  .fadein-leave-to {
+    opacity: 0;
+  }
+}
+
+.rotation-animation {
+  animation-name: rotate;
+  animation-duration: 4s;
+  animation-fill-mode: forwards;
+  animation-iteration-count: infinite;
+}
+
+@keyframes rotate {
+  0% {
+    rotate: 0deg;
+  }
+  25% {
+    rotate: 180deg;
+  }
+  50% {
+    rotate: 180deg;
+  }
+  75% {
+    rotate: 360deg;
+  }
+  100% {
+    rotate: 360deg;
+  }
+}
+
+.fade-animation {
+  animation: fadeInOut 2s infinite forwards;
+}
+
+@keyframes fadeInOut {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  25%,
+  50% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 0.5;
+  }
+}

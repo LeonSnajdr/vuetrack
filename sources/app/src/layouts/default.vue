@@ -2,6 +2,4 @@
     <VMain>
         <RouterView />
     </VMain>
-
-    <AppFooter />
 </template>
