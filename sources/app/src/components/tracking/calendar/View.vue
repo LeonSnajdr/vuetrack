@@ -23,11 +23,11 @@
         </template>
     </VCalendar>
 
-    <template v-if="interaction.kind === 'name'">
+    <template v-if="interaction.kind === 'create'">
         <VMenu
             @update:modelValue="onNameMenuToggle"
             :closeOnContentClick="false"
-            :modelValue="interaction.kind === 'name'"
+            :modelValue="interaction.kind === 'create'"
             :target="'#' + interaction.event.uiId"
             location="right"
         >
@@ -37,8 +37,8 @@
                 <VTextField
                     @keydown.enter.prevent="confirmName"
                     @keydown.esc.prevent="cancelDraft"
-                    @update:modelValue="setDraftName"
-                    :modelValue="interaction.kind === 'name' ? interaction.name : ''"
+                    @update:modelValue="createEvent"
+                    :modelValue="interaction.name"
                     class="mt-3"
                     density="compact"
                     label="Event name"
@@ -66,12 +66,12 @@ type Interaction =
     | { kind: "idle" }
     | { kind: "move"; event: DraftableEvent; pointerOffsetMs?: number }
     | { kind: "resize"; event: DraftableEvent; originalEndMs: number }
-    | { kind: "create"; event: DraftableEvent; anchorStartMs: number }
-    | { kind: "name"; event: DraftableEvent; name: string };
+    | { kind: "draft"; event: DraftableEvent; anchorStartMs: number }
+    | { kind: "create"; event: DraftableEvent; name: string };
 
 const interaction = ref<Interaction>({ kind: "idle" });
 
-const isNaming = computed(() => interaction.value.kind === "name");
+const isCreating = computed(() => interaction.value.kind === "create");
 
 const removeEvent = (ev?: DraftableEvent) => {
     if (!ev) return;
@@ -79,21 +79,21 @@ const removeEvent = (ev?: DraftableEvent) => {
     if (i !== -1) events.value.splice(i, 1);
 };
 
-const setDraftName = (v: string) => {
-    if (interaction.value.kind !== "name") return;
+const createEvent = (v: string) => {
+    if (interaction.value.kind !== "create") return;
     interaction.value = { ...interaction.value, name: v };
 };
 
-const openNameFor = (ev: DraftableEvent) => {
+const openCreate = (ev: DraftableEvent) => {
     interaction.value = {
-        kind: "name",
+        kind: "create",
         event: ev,
         name: ""
     };
 };
 
 const confirmName = () => {
-    if (interaction.value.kind !== "name") return;
+    if (interaction.value.kind !== "create") return;
 
     const { event, name } = interaction.value;
     const trimmed = name.trim();
@@ -109,7 +109,7 @@ const confirmName = () => {
 };
 
 const cancelDraft = () => {
-    if (interaction.value.kind !== "name") {
+    if (interaction.value.kind !== "create") {
         interaction.value = { kind: "idle" };
         return;
     }
@@ -119,11 +119,11 @@ const cancelDraft = () => {
 };
 
 const onNameMenuToggle = (open: boolean) => {
-    if (!open && interaction.value.kind === "name") cancelDraft();
+    if (!open && interaction.value.kind === "create") cancelDraft();
 };
 
 const beginMoveEvent = (_nativeEvent: Event, { event, timed }: EventSlotScope) => {
-    if (isNaming.value) return;
+    if (isCreating.value) return;
     if (!event || !timed) return;
 
     const ev = event as DraftableEvent;
@@ -133,7 +133,7 @@ const beginMoveEvent = (_nativeEvent: Event, { event, timed }: EventSlotScope) =
 };
 
 const beginResizeEvent = (event: CalendarEvent) => {
-    if (isNaming.value) return;
+    if (isCreating.value) return;
 
     const ev = event as DraftableEvent;
     if (ev.isDraft) return;
@@ -142,7 +142,7 @@ const beginResizeEvent = (event: CalendarEvent) => {
 };
 
 const beginGridInteraction = (_nativeEvent: Event, tms: CalendarDayBodySlotScope) => {
-    if (isNaming.value) return;
+    if (isCreating.value) return;
 
     const mouseMs = toTime(tms);
 
@@ -164,11 +164,11 @@ const beginGridInteraction = (_nativeEvent: Event, tms: CalendarDayBodySlotScope
     };
 
     events.value.push(newEvent);
-    interaction.value = { kind: "create", event: newEvent, anchorStartMs };
+    interaction.value = { kind: "draft", event: newEvent, anchorStartMs };
 };
 
 const updateInteractionFromPointer = (_nativeEvent: Event, tms: CalendarDayBodySlotScope) => {
-    if (isNaming.value) return;
+    if (isCreating.value) return;
 
     const mouseMs = toTime(tms);
 
@@ -190,7 +190,7 @@ const updateInteractionFromPointer = (_nativeEvent: Event, tms: CalendarDayBodyS
             event.end = Math.max(mouseRounded, event.start);
             return;
         }
-        case "create": {
+        case "draft": {
             const { event, anchorStartMs } = interaction.value;
             const mouseRounded = roundTime(mouseMs, false);
             event.start = Math.min(mouseRounded, anchorStartMs);
@@ -203,18 +203,18 @@ const updateInteractionFromPointer = (_nativeEvent: Event, tms: CalendarDayBodyS
 };
 
 const finishInteraction = () => {
-    if (isNaming.value) return;
+    if (isCreating.value) return;
 
     const current = interaction.value;
     interaction.value = { kind: "idle" };
 
-    if (current.kind === "create") {
-        openNameFor(current.event);
+    if (current.kind === "draft") {
+        openCreate(current.event);
     }
 };
 
 const cancelInteractionOnLeave = () => {
-    if (isNaming.value) return;
+    if (isCreating.value) return;
 
     const current = interaction.value;
 
@@ -222,7 +222,7 @@ const cancelInteractionOnLeave = () => {
         current.event.end = current.originalEndMs;
     }
 
-    if (current.kind === "create") {
+    if (current.kind === "draft") {
         removeEvent(current.event);
     }
 
