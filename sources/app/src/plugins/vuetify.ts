@@ -92,5 +92,128 @@ export default createVuetify({
                 }
             }
         }
+    },
+    defaults: {
+        VSnackbar: {
+            timeout: 5000,
+            color: "info",
+            location: "bottom right",
+            class: "text-break"
+        },
+        VBanner: {
+            style: "flex: unset",
+            rounded: true,
+            border: true,
+            elevation: 1
+        },
+        VSwitch: {
+            color: "primary",
+            hideDetails: "auto"
+        },
+        VTextField: {
+            variant: "outlined",
+            hideDetails: "auto",
+            persistentPlaceholder: true,
+            VIcon: { size: "small" }
+        },
+        VSelect: {
+            variant: "outlined",
+            hideDetails: "auto",
+            persistentPlaceholder: true,
+            VIcon: { size: "small" }
+        },
+        VCombobox: {
+            variant: "outlined",
+            hideDetails: "auto",
+            persistentPlaceholder: true,
+            VIcon: { size: "small" }
+        },
+        VAutocomplete: {
+            variant: "outlined",
+            autoSelectFirst: true,
+            hideDetails: "auto",
+            persistentPlaceholder: true,
+            VIcon: { size: "small" }
+        },
+        VTextarea: {
+            variant: "outlined",
+            hideDetails: "auto",
+            persistentPlaceholder: true
+        },
+        VField: {
+            variant: "outlined"
+        },
+        VTable: {
+            VPagination: {
+                density: "comfortable",
+                showFirstLastPage: true
+            }
+        },
+        VDataTable: {
+            density: "comfortable",
+            hover: true
+        },
+        VDataTableServer: {
+            density: "comfortable",
+            hover: true
+        },
+        VChip: {
+            color: "primary",
+            variant: "flat"
+        },
+        VCard: {
+            class: "d-flex flex-column",
+
+            VCardTitle: {
+                class: "text-medium-emphasis font-weight-light d-flex align-center"
+            },
+
+            VCardSubtitle: {
+                class: "text-uppercase"
+            }
+        },
+        VNavigationDrawer: {
+            class: "elevation-1",
+            railWidth: "72",
+            width: "210",
+            rounded: true,
+
+            VListItem: {
+                rounded: true,
+                class: "mx-3 px-3 my-1",
+                VListItemTitle: {
+                    class: "text-caption"
+                }
+            }
+        },
+        VProgressCircular: {
+            size: 20
+        },
+        VProgressLinear: {
+            height: 2,
+            color: "secondary"
+        },
+        VTabs: {
+            density: "compact",
+            color: "primary",
+
+            VTab: {
+                class: "font-weight-bold px-2"
+            }
+        },
+        VExpansionPanel: {
+            VExpansionPanelText: {
+                class: "pt-2"
+            }
+        },
+        VDialog: {
+            transition: false,
+            VCardActions: {
+                class: "mx-4"
+            }
+        },
+        VTooltip: {
+            openDelay: 400
+        }
     }
 });

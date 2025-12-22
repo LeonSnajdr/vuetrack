@@ -15,28 +15,229 @@
         type="custom-daily"
     >
         <template #event="{ event, timed, eventSummary }">
-            <div class="v-event-draggable">
+            <div :id="event.uiId" class="v-event-draggable">
                 <component :is="eventSummary" />
             </div>
 
             <div v-if="timed" @mousedown.stop="beginResizeEvent(event)" class="v-event-drag-bottom" />
         </template>
     </VCalendar>
+
+    <template v-if="interaction.kind === 'name'">
+        <VMenu
+            @update:modelValue="onNameMenuToggle"
+            :closeOnContentClick="false"
+            :modelValue="interaction.kind === 'name'"
+            :target="'#' + interaction.event.uiId"
+            location="right"
+        >
+            <VCard class="pa-3" width="320">
+                <VCardTitle class="text-subtitle-1 pa-0">Name the event</VCardTitle>
+
+                <VTextField
+                    @keydown.enter.prevent="confirmName"
+                    @keydown.esc.prevent="cancelDraft"
+                    @update:modelValue="setDraftName"
+                    :modelValue="interaction.kind === 'name' ? interaction.name : ''"
+                    class="mt-3"
+                    density="compact"
+                    label="Event name"
+                />
+
+                <div class="d-flex justify-end ga-2 mt-2">
+                    <VBtn @click="cancelDraft" variant="text">Cancel</VBtn>
+                    <VBtn @click="confirmName" color="primary">Save</VBtn>
+                </div>
+            </VCard>
+        </VMenu>
+    </template>
 </template>
 
 <script setup lang="ts">
+import { v4 as uuidv4 } from "uuid";
 import type { CalendarDayBodySlotScope, CalendarEvent } from "vuetify/lib/components/VCalendar/types.mjs";
 import type { EventSlotScope } from "vuetify/lib/components/VCalendar/VCalendar.mjs";
 
-const events = ref<CalendarEvent[]>([]);
+type DraftableEvent = CalendarEvent & { uiId: string; isDraft?: boolean };
+
+const events = ref<DraftableEvent[]>([]);
 
 type Interaction =
     | { kind: "idle" }
-    | { kind: "move"; event: CalendarEvent; pointerOffsetMs?: number }
-    | { kind: "resize"; event: CalendarEvent; originalEndMs: number }
-    | { kind: "create"; event: CalendarEvent; anchorStartMs: number };
+    | { kind: "move"; event: DraftableEvent; pointerOffsetMs?: number }
+    | { kind: "resize"; event: DraftableEvent; originalEndMs: number }
+    | { kind: "create"; event: DraftableEvent; anchorStartMs: number }
+    | { kind: "name"; event: DraftableEvent; name: string };
 
 const interaction = ref<Interaction>({ kind: "idle" });
+
+const isNaming = computed(() => interaction.value.kind === "name");
+
+const removeEvent = (ev?: DraftableEvent) => {
+    if (!ev) return;
+    const i = events.value.indexOf(ev);
+    if (i !== -1) events.value.splice(i, 1);
+};
+
+const setDraftName = (v: string) => {
+    if (interaction.value.kind !== "name") return;
+    interaction.value = { ...interaction.value, name: v };
+};
+
+const openNameFor = (ev: DraftableEvent) => {
+    interaction.value = {
+        kind: "name",
+        event: ev,
+        name: ""
+    };
+};
+
+const confirmName = () => {
+    if (interaction.value.kind !== "name") return;
+
+    const { event, name } = interaction.value;
+    const trimmed = name.trim();
+
+    if (!event.isDraft || !trimmed) {
+        cancelDraft();
+        return;
+    }
+
+    event.name = trimmed;
+    event.isDraft = false;
+    interaction.value = { kind: "idle" };
+};
+
+const cancelDraft = () => {
+    if (interaction.value.kind !== "name") {
+        interaction.value = { kind: "idle" };
+        return;
+    }
+
+    removeEvent(interaction.value.event);
+    interaction.value = { kind: "idle" };
+};
+
+const onNameMenuToggle = (open: boolean) => {
+    if (!open && interaction.value.kind === "name") cancelDraft();
+};
+
+const beginMoveEvent = (_nativeEvent: Event, { event, timed }: EventSlotScope) => {
+    if (isNaming.value) return;
+    if (!event || !timed) return;
+
+    const ev = event as DraftableEvent;
+    if (ev.isDraft) return;
+
+    interaction.value = { kind: "move", event: ev, pointerOffsetMs: undefined };
+};
+
+const beginResizeEvent = (event: CalendarEvent) => {
+    if (isNaming.value) return;
+
+    const ev = event as DraftableEvent;
+    if (ev.isDraft) return;
+
+    interaction.value = { kind: "resize", event: ev, originalEndMs: ev.end };
+};
+
+const beginGridInteraction = (_nativeEvent: Event, tms: CalendarDayBodySlotScope) => {
+    if (isNaming.value) return;
+
+    const mouseMs = toTime(tms);
+
+    if (interaction.value.kind === "move" && interaction.value.pointerOffsetMs === undefined) {
+        interaction.value.pointerOffsetMs = mouseMs - interaction.value.event.start;
+        return;
+    }
+
+    const anchorStartMs = roundTime(mouseMs);
+
+    const newEvent: DraftableEvent = {
+        name: "",
+        color: "#673AB7",
+        start: anchorStartMs,
+        end: anchorStartMs,
+        timed: true,
+        uiId: `event-uiId-${uuidv4()}`,
+        isDraft: true
+    };
+
+    events.value.push(newEvent);
+    interaction.value = { kind: "create", event: newEvent, anchorStartMs };
+};
+
+const updateInteractionFromPointer = (_nativeEvent: Event, tms: CalendarDayBodySlotScope) => {
+    if (isNaming.value) return;
+
+    const mouseMs = toTime(tms);
+
+    switch (interaction.value.kind) {
+        case "move": {
+            const { event, pointerOffsetMs } = interaction.value;
+            if (pointerOffsetMs === undefined) return;
+
+            const duration = event.end - event.start;
+            const newStart = roundTime(mouseMs - pointerOffsetMs);
+
+            event.start = newStart;
+            event.end = newStart + duration;
+            return;
+        }
+        case "resize": {
+            const { event } = interaction.value;
+            const mouseRounded = roundTime(mouseMs, false);
+            event.end = Math.max(mouseRounded, event.start);
+            return;
+        }
+        case "create": {
+            const { event, anchorStartMs } = interaction.value;
+            const mouseRounded = roundTime(mouseMs, false);
+            event.start = Math.min(mouseRounded, anchorStartMs);
+            event.end = Math.max(mouseRounded, anchorStartMs);
+            return;
+        }
+        default:
+            return;
+    }
+};
+
+const finishInteraction = () => {
+    if (isNaming.value) return;
+
+    const current = interaction.value;
+    interaction.value = { kind: "idle" };
+
+    if (current.kind === "create") {
+        openNameFor(current.event);
+    }
+};
+
+const cancelInteractionOnLeave = () => {
+    if (isNaming.value) return;
+
+    const current = interaction.value;
+
+    if (current.kind === "resize") {
+        current.event.end = current.originalEndMs;
+    }
+
+    if (current.kind === "create") {
+        removeEvent(current.event);
+    }
+
+    interaction.value = { kind: "idle" };
+};
+
+const roundTime = (time: number, down = true) => {
+    const roundTo = 15;
+    const step = roundTo * 60 * 1000;
+    return down ? time - (time % step) : time + (step - (time % step));
+};
+
+const toTime = (tms: CalendarDayBodySlotScope) => {
+    return new Date(tms.year, tms.month - 1, tms.day, tms.hour, tms.minute).getTime();
+};
 
 const start = computed<Date>(() => {
     const now = new Date();
@@ -58,111 +259,6 @@ const end = computed<Date>(() => {
 
     return friday;
 });
-
-const beginMoveEvent = (_nativeEvent: Event, { event, timed }: EventSlotScope) => {
-    if (!event || !timed) return;
-
-    interaction.value = { kind: "move", event, pointerOffsetMs: undefined };
-};
-
-const beginResizeEvent = (event: CalendarEvent) => {
-    interaction.value = { kind: "resize", event, originalEndMs: event.end };
-};
-
-const beginGridInteraction = (_nativeEvent: Event, tms: CalendarDayBodySlotScope) => {
-    const mouseMs = toTime(tms);
-
-    // If we are moving an existing event, compute cursor offset on first grid press.
-    if (interaction.value.kind === "move" && interaction.value.pointerOffsetMs === undefined) {
-        interaction.value.pointerOffsetMs = mouseMs - interaction.value.event.start;
-        return;
-    }
-
-    // Otherwise, start create interaction on empty grid
-    const anchorStartMs = roundTime(mouseMs);
-
-    const newEvent: CalendarEvent = {
-        name: `Event #${events.value.length}`,
-        color: "#673AB7",
-        start: anchorStartMs,
-        end: anchorStartMs,
-        timed: true
-    };
-
-    events.value.push(newEvent);
-    interaction.value = { kind: "create", event: newEvent, anchorStartMs };
-};
-
-const updateInteractionFromPointer = (_nativeEvent: Event, tms: CalendarDayBodySlotScope) => {
-    const mouseMs = toTime(tms);
-
-    switch (interaction.value.kind) {
-        case "move": {
-            const { event, pointerOffsetMs } = interaction.value;
-            if (pointerOffsetMs === undefined) return;
-
-            const duration = event.end - event.start;
-            const newStart = roundTime(mouseMs - pointerOffsetMs);
-
-            event.start = newStart;
-            event.end = newStart + duration;
-            return;
-        }
-        case "resize": {
-            const { event } = interaction.value;
-
-            // Keep start fixed, resize end with mouse (rounded up)
-            const mouseRounded = roundTime(mouseMs, false);
-            event.end = Math.max(mouseRounded, event.start);
-            return;
-        }
-        case "create": {
-            const { event, anchorStartMs } = interaction.value;
-
-            const mouseRounded = roundTime(mouseMs, false);
-            event.start = Math.min(mouseRounded, anchorStartMs);
-            event.end = Math.max(mouseRounded, anchorStartMs);
-            return;
-        }
-        case "idle":
-        default:
-            return;
-    }
-};
-
-const finishInteraction = () => {
-    interaction.value = { kind: "idle" };
-};
-
-const cancelInteractionOnLeave = () => {
-    const current = interaction.value;
-
-    // revert to original end
-    if (current.kind === "resize") {
-        current.event.end = current.originalEndMs;
-    }
-
-    // remove the new event
-    if (current.kind === "create") {
-        const i = events.value.indexOf(current.event);
-        if (i !== -1) events.value.splice(i, 1);
-    }
-
-    // move: keep the moved position
-
-    interaction.value = { kind: "idle" };
-};
-
-const roundTime = (time: number, down = true) => {
-    const roundTo = 15; // minutes
-    const step = roundTo * 60 * 1000;
-
-    return down ? time - (time % step) : time + (step - (time % step));
-};
-
-const toTime = (tms: CalendarDayBodySlotScope) => {
-    return new Date(tms.year, tms.month - 1, tms.day, tms.hour, tms.minute).getTime();
-};
 </script>
 
 <style scoped>
