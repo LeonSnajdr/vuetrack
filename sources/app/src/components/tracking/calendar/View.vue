@@ -15,9 +15,10 @@
         eventOverlapMode="column"
         type="custom-daily"
     >
-        <template #event="{ event, timed, eventSummary }">
+        <template #event="{ event, timed }">
             <div :id="(event as TimeEntryEvent).uiId" class="v-event-draggable">
-                <component :is="eventSummary" />
+                <p>{{ (event as TimeEntryEvent).taskId }}</p>
+                <p>{{ (event as TimeEntryEvent).start }}</p>
             </div>
 
             <div v-if="timed" @mousedown.stop="beginResizeEvent(event)" class="v-event-drag-bottom" />
@@ -58,8 +59,10 @@ import type { TimeEntrySuggestionContract } from "@/contracts/TimeEntrySuggestio
 import type { CalendarDayBodySlotScope, CalendarEvent } from "vuetify/lib/components/VCalendar/types.mjs";
 import type { EventSlotScope } from "vuetify/lib/components/VCalendar/VCalendar.mjs";
 
-type BaseCalendarEvent = CalendarEvent & {
+type BaseCalendarEvent = {
     uiId: string;
+    timed: boolean;
+    color: string;
 };
 
 type TimeEntryEvent =
@@ -72,7 +75,8 @@ type Interaction =
     | { kind: "move"; event: TimeEntryEvent; pointerOffsetMs?: number }
     | { kind: "resize"; event: TimeEntryEvent; originalEndMs: number }
     | { kind: "draft"; event: TimeEntryEvent; anchorStartMs: number }
-    | { kind: "create"; event: TimeEntryEvent };
+    | { kind: "create"; event: TimeEntryEvent }
+    | { kind: "conflict"; event: TimeEntryEvent };
 
 const events = ref<TimeEntryEvent[]>([]);
 const interaction = ref<Interaction>({ kind: "idle" });
