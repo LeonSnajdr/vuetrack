@@ -174,8 +174,6 @@ const beginGridInteraction = (_nativeEvent: Event, tms: CalendarDayBodySlotScope
 };
 
 const updateInteractionFromPointer = (_nativeEvent: Event, tms: CalendarDayBodySlotScope) => {
-    if (interaction.value.kind === "create") return;
-
     const mouseMs = toTime(tms);
 
     switch (interaction.value.kind) {
@@ -203,58 +201,57 @@ const updateInteractionFromPointer = (_nativeEvent: Event, tms: CalendarDayBodyS
             event.end = Math.max(mouseRounded, anchorStartMs);
             return;
         }
+        case "create":
         default:
             return;
     }
 };
 
-const persistEventChange = async (ev: TimeEntryEvent) => {
-    if (ev.kind !== "existing") return;
-
-    const updatedTimeEntry = await onTimeEntryChange(ev);
-
-    Object.assign(ev, updatedTimeEntry, {
-        kind: "existing"
-    });
-};
-
 const finishInteraction = async () => {
-    if (interaction.value.kind === "create") return;
+    const cur = interaction.value;
 
-    if (interaction.value.kind === "draft") {
-        interaction.value = { kind: "create", event: interaction.value.event };
-        return;
+    switch (cur.kind) {
+        case "create":
+            return;
+        case "draft":
+            interaction.value = { kind: "create", event: cur.event };
+            return;
+        case "move":
+        case "resize": {
+            interaction.value = { kind: "idle" };
+
+            if (cur.event.kind === "existing") {
+                const updated = await onTimeEntryChange(cur.event);
+                Object.assign(cur.event, updated, { kind: "existing" });
+            }
+            return;
+        }
+        default:
+            interaction.value = { kind: "idle" };
+            return;
     }
-
-    if (interaction.value.kind === "move") {
-        const { event } = interaction.value;
-        interaction.value = { kind: "idle" };
-        await persistEventChange(event);
-        return;
-    }
-
-    if (interaction.value.kind === "resize") {
-        const { event } = interaction.value;
-        interaction.value = { kind: "idle" };
-        await persistEventChange(event);
-        return;
-    }
-
-    interaction.value = { kind: "idle" };
 };
 
 const cancelInteractionOnLeave = () => {
-    if (interaction.value.kind === "create") return;
+    const cur = interaction.value;
 
-    if (interaction.value.kind === "resize") {
-        interaction.value.event.end = interaction.value.originalEndMs;
+    console.log("Cancle");
+
+    switch (cur.kind) {
+        case "create":
+            return;
+        case "resize":
+            cur.event.end = cur.originalEndMs;
+            interaction.value = { kind: "idle" };
+            return;
+        case "draft":
+            removeEvent(cur.event);
+            interaction.value = { kind: "idle" };
+            return;
+        default:
+            interaction.value = { kind: "idle" };
+            return;
     }
-
-    if (interaction.value.kind === "draft") {
-        removeEvent(interaction.value.event);
-    }
-
-    interaction.value = { kind: "idle" };
 };
 
 const roundTime = (time: number, down = true) => {
