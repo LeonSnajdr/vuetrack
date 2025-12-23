@@ -5,6 +5,6 @@ export type TimeEntrySuggestionId = Branded<string, "timeEntryId">;
 export type TimeEntrySuggestionContract = {
     id: TimeEntrySuggestionId;
     taskId: string;
-    start: number;
-    end: number;
+    startTime: Date;
+    endTime: Date;
 };

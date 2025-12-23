@@ -17,8 +17,9 @@
     >
         <template #event="{ event, timed }">
             <div :id="(event as TimeEntryEvent).uiId" class="v-event-draggable">
-                <p>{{ (event as TimeEntryEvent).taskId }}</p>
+                <p>{{ (event as TimeEntryEvent).timeEntry.taskId }}</p>
                 <p>{{ (event as TimeEntryEvent).start }}</p>
+                <p>{{ (event as TimeEntryEvent).timeEntry.startTime }}</p>
             </div>
 
             <div v-if="timed" @mousedown.stop="beginResizeEvent(event)" class="v-event-drag-bottom" />
@@ -37,7 +38,7 @@
                 <VCardTitle class="text-subtitle-1 pa-0">Name the event</VCardTitle>
 
                 <VTextField
-                    v-model.trim="interaction.event.taskId"
+                    v-model.trim="interaction.event.timeEntry.taskId"
                     @keydown.enter.prevent="confirmEvent"
                     @keydown.esc.prevent="cancelDraft"
                     class="mt-3"
@@ -55,7 +56,6 @@
 </template>
 
 <script setup lang="ts">
-import type { TimeEntrySuggestionContract } from "@/contracts/TimeEntrySuggestion";
 import type { CalendarDayBodySlotScope, CalendarEvent } from "vuetify/lib/components/VCalendar/types.mjs";
 import type { EventSlotScope } from "vuetify/lib/components/VCalendar/VCalendar.mjs";
 
@@ -63,12 +63,14 @@ type BaseCalendarEvent = {
     uiId: string;
     timed: boolean;
     color: string;
+    start: number;
+    end: number;
 };
 
 type TimeEntryEvent =
-    | ({ kind: "draft" } & BaseCalendarEvent & TimeEntryCreateContract)
-    | ({ kind: "existing" } & BaseCalendarEvent & TimeEntryContract)
-    | ({ kind: "suggestion" } & BaseCalendarEvent & TimeEntrySuggestionContract);
+    | ({ kind: "draft"; timeEntry: TimeEntryCreateContract } & BaseCalendarEvent)
+    | ({ kind: "existing"; timeEntry: TimeEntryContract } & BaseCalendarEvent)
+    | ({ kind: "suggestion"; timeEntry: TimeEntrySuggestionContract } & BaseCalendarEvent);
 
 type Interaction =
     | { kind: "idle" }
@@ -78,7 +80,35 @@ type Interaction =
     | { kind: "create"; event: TimeEntryEvent }
     | { kind: "conflict"; event: TimeEntryEvent };
 
+const timeEntries = defineModel<TimeEntryContract[]>("timeEntries", { required: true });
+// const timeEntrySuggestions = defineModel<TimeEntrySuggestionContract[]>("timeEntrySuggestions", { required: true });
+
 const events = ref<TimeEntryEvent[]>([]);
+watch(
+    () => timeEntries.value.slice(),
+    (newEntries, oldEntries) => {
+        oldEntries ??= [];
+
+        const added = newEntries.filter((x) => !oldEntries.includes(x));
+        const removed = oldEntries.filter((x) => !newEntries.includes(x));
+
+        added.forEach((x) => {
+            events.value.push({
+                kind: "existing",
+                color: "#7da6c9",
+                start: x.startTime.getTime(),
+                end: x.endTime.getTime(),
+                timed: true,
+                uiId: `event-uiId-${uuidv4()}`,
+                timeEntry: x
+            });
+        });
+
+        events.value = events.value.filter((e) => e.kind === "existing" && !removed.includes(e.timeEntry));
+    },
+    { immediate: true, deep: true }
+);
+
 const interaction = ref<Interaction>({ kind: "idle" });
 
 const onTimeEntryCreate = async (createContract: TimeEntryCreateContract): Promise<TimeEntryContract> => {
@@ -104,12 +134,12 @@ const removeEvent = (ev?: TimeEntryEvent) => {
 const confirmEvent = async () => {
     if (interaction.value.kind !== "create") return;
 
-    if (interaction.value.event.kind !== "draft" || !interaction.value.event.taskId) {
+    if (interaction.value.event.kind !== "draft" || !interaction.value.event.timeEntry.taskId) {
         cancelDraft();
         return;
     }
 
-    const createdTimeEntry = await onTimeEntryCreate(interaction.value.event);
+    const createdTimeEntry = await onTimeEntryCreate(interaction.value.event.timeEntry);
 
     Object.assign(interaction.value.event, createdTimeEntry, {
         kind: "existing"
@@ -165,12 +195,16 @@ const beginGridInteraction = (_nativeEvent: Event, tms: CalendarDayBodySlotScope
 
     const newEvent: TimeEntryEvent = {
         kind: "draft",
-        taskId: "",
         color: "#673AB7",
         start: anchorStartMs,
         end: anchorStartMs,
         timed: true,
-        uiId: `event-uiId-${uuidv4()}`
+        uiId: `event-uiId-${uuidv4()}`,
+        timeEntry: {
+            endTime: new Date(anchorStartMs),
+            startTime: new Date(anchorStartMs),
+            taskId: ""
+        }
     };
 
     events.value.push(newEvent);
@@ -189,20 +223,25 @@ const updateInteractionFromPointer = (_nativeEvent: Event, tms: CalendarDayBodyS
             const newStart = roundTime(mouseMs - pointerOffsetMs);
 
             event.start = newStart;
+            event.timeEntry.startTime = new Date(event.start);
             event.end = newStart + duration;
+            event.timeEntry.endTime = new Date(event.end);
             return;
         }
         case "resize": {
             const { event } = interaction.value;
             const mouseRounded = roundTime(mouseMs, false);
             event.end = Math.max(mouseRounded, event.start);
+            event.timeEntry.endTime = new Date(event.end);
             return;
         }
         case "draft": {
             const { event, anchorStartMs } = interaction.value;
             const mouseRounded = roundTime(mouseMs, false);
             event.start = Math.min(mouseRounded, anchorStartMs);
+            event.timeEntry.startTime = new Date(event.start);
             event.end = Math.max(mouseRounded, anchorStartMs);
+            event.timeEntry.endTime = new Date(event.end);
             return;
         }
         case "create":
@@ -225,7 +264,7 @@ const finishInteraction = async () => {
             interaction.value = { kind: "idle" };
 
             if (cur.event.kind === "existing") {
-                const updated = await onTimeEntryChange(cur.event);
+                const updated = await onTimeEntryChange(cur.event.timeEntry);
                 Object.assign(cur.event, updated, { kind: "existing" });
             }
             return;
@@ -238,8 +277,6 @@ const finishInteraction = async () => {
 
 const cancelInteractionOnLeave = () => {
     const cur = interaction.value;
-
-    console.log("Cancle");
 
     switch (cur.kind) {
         case "create":
