@@ -19,6 +19,8 @@
     "TimeEntryContract": true,
     "TimeEntryCreateContract": true,
     "TimeEntryId": true,
+    "TimeEntrySuggestionContract": true,
+    "TimeEntrySuggestionId": true,
     "VNode": true,
     "WritableComputedRef": true,
     "acceptHMRUpdate": true,

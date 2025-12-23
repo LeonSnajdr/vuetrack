@@ -12,6 +12,7 @@
         :weekdays="[1, 2, 3, 4, 5]"
         class="h-100"
         color="primary"
+        eventOverlapMode="column"
         type="custom-daily"
     >
         <template #event="{ event, timed, eventSummary }">
@@ -53,6 +54,7 @@
 </template>
 
 <script setup lang="ts">
+import type { TimeEntrySuggestionContract } from "@/contracts/TimeEntrySuggestion";
 import type { CalendarDayBodySlotScope, CalendarEvent } from "vuetify/lib/components/VCalendar/types.mjs";
 import type { EventSlotScope } from "vuetify/lib/components/VCalendar/VCalendar.mjs";
 
@@ -60,7 +62,10 @@ type BaseCalendarEvent = CalendarEvent & {
     uiId: string;
 };
 
-type TimeEntryEvent = ({ kind: "draft" } & BaseCalendarEvent & TimeEntryCreateContract) | ({ kind: "existing" } & BaseCalendarEvent & TimeEntryContract);
+type TimeEntryEvent =
+    | ({ kind: "draft" } & BaseCalendarEvent & TimeEntryCreateContract)
+    | ({ kind: "existing" } & BaseCalendarEvent & TimeEntryContract)
+    | ({ kind: "suggestion" } & BaseCalendarEvent & TimeEntrySuggestionContract);
 
 type Interaction =
     | { kind: "idle" }
