@@ -24,9 +24,11 @@ export default defineConfig({
                 "@vueuse/core",
                 VueRouterAutoImports,
                 {
-                    "@mdi/js": Object.keys(await import("@mdi/js")).filter((x) => x.startsWith("mdi"))
+                    "@mdi/js": Object.keys(await import("@mdi/js")).filter((x) => x.startsWith("mdi")),
+                    uuid: [["v4", "uuidv4"]]
                 }
             ],
+            dirs: ["src/contracts/**", "src/stores/**"],
             dts: "typings/auto-imports.d.ts",
             eslintrc: {
                 enabled: true

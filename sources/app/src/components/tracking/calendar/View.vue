@@ -15,7 +15,7 @@
         type="custom-daily"
     >
         <template #event="{ event, timed, eventSummary }">
-            <div :id="event.uiId" class="v-event-draggable">
+            <div :id="(event as DraftTimeEntryEvent).uiId" class="v-event-draggable">
                 <component :is="eventSummary" />
             </div>
 
@@ -35,18 +35,17 @@
                 <VCardTitle class="text-subtitle-1 pa-0">Name the event</VCardTitle>
 
                 <VTextField
-                    @keydown.enter.prevent="confirmName"
+                    v-model.trim="interaction.event.taskId"
+                    @keydown.enter.prevent="confirmEvent"
                     @keydown.esc.prevent="cancelDraft"
-                    @update:modelValue="createEvent"
-                    :modelValue="interaction.name"
                     class="mt-3"
                     density="compact"
-                    label="Event name"
+                    label="Taskid"
                 />
 
                 <div class="d-flex justify-end ga-2 mt-2">
                     <VBtn @click="cancelDraft" variant="text">Cancel</VBtn>
-                    <VBtn @click="confirmName" color="primary">Save</VBtn>
+                    <VBtn @click="confirmEvent" color="primary">Save</VBtn>
                 </div>
             </VCard>
         </VMenu>
@@ -54,57 +53,44 @@
 </template>
 
 <script setup lang="ts">
-import { v4 as uuidv4 } from "uuid";
+import type { TimeEntryCreateContract } from "@/contracts/TimeEntryContract";
 import type { CalendarDayBodySlotScope, CalendarEvent } from "vuetify/lib/components/VCalendar/types.mjs";
 import type { EventSlotScope } from "vuetify/lib/components/VCalendar/VCalendar.mjs";
 
-type DraftableEvent = CalendarEvent & { uiId: string; isDraft?: boolean };
+type DraftTimeEntryEvent = CalendarEvent & TimeEntryCreateContract & { uiId: string; isDraft?: boolean };
+type TimeEntryEvent = DraftTimeEntryEvent & TimeEntryContract;
 
-const events = ref<DraftableEvent[]>([]);
+const events = ref<DraftTimeEntryEvent[]>([]);
 
 type Interaction =
     | { kind: "idle" }
-    | { kind: "move"; event: DraftableEvent; pointerOffsetMs?: number }
-    | { kind: "resize"; event: DraftableEvent; originalEndMs: number }
-    | { kind: "draft"; event: DraftableEvent; anchorStartMs: number }
-    | { kind: "create"; event: DraftableEvent; name: string };
+    | { kind: "move"; event: TimeEntryEvent; pointerOffsetMs?: number }
+    | { kind: "resize"; event: TimeEntryEvent; originalEndMs: number }
+    | { kind: "draft"; event: DraftTimeEntryEvent; anchorStartMs: number }
+    | { kind: "create"; event: DraftTimeEntryEvent };
 
 const interaction = ref<Interaction>({ kind: "idle" });
 
 const isCreating = computed(() => interaction.value.kind === "create");
 
-const removeEvent = (ev?: DraftableEvent) => {
+const removeEvent = (ev?: DraftTimeEntryEvent) => {
     if (!ev) return;
     const i = events.value.indexOf(ev);
     if (i !== -1) events.value.splice(i, 1);
 };
 
-const createEvent = (v: string) => {
-    if (interaction.value.kind !== "create") return;
-    interaction.value = { ...interaction.value, name: v };
-};
-
-const openCreate = (ev: DraftableEvent) => {
-    interaction.value = {
-        kind: "create",
-        event: ev,
-        name: ""
-    };
-};
-
-const confirmName = () => {
+const confirmEvent = () => {
     if (interaction.value.kind !== "create") return;
 
-    const { event, name } = interaction.value;
-    const trimmed = name.trim();
+    const event = interaction.value.event;
 
-    if (!event.isDraft || !trimmed) {
+    if (!event.isDraft || !event.taskId) {
         cancelDraft();
         return;
     }
 
-    event.name = trimmed;
     event.isDraft = false;
+
     interaction.value = { kind: "idle" };
 };
 
@@ -126,7 +112,7 @@ const beginMoveEvent = (_nativeEvent: Event, { event, timed }: EventSlotScope) =
     if (isCreating.value) return;
     if (!event || !timed) return;
 
-    const ev = event as DraftableEvent;
+    const ev = event as TimeEntryEvent;
     if (ev.isDraft) return;
 
     interaction.value = { kind: "move", event: ev, pointerOffsetMs: undefined };
@@ -135,7 +121,7 @@ const beginMoveEvent = (_nativeEvent: Event, { event, timed }: EventSlotScope) =
 const beginResizeEvent = (event: CalendarEvent) => {
     if (isCreating.value) return;
 
-    const ev = event as DraftableEvent;
+    const ev = event as TimeEntryEvent;
     if (ev.isDraft) return;
 
     interaction.value = { kind: "resize", event: ev, originalEndMs: ev.end };
@@ -153,8 +139,8 @@ const beginGridInteraction = (_nativeEvent: Event, tms: CalendarDayBodySlotScope
 
     const anchorStartMs = roundTime(mouseMs);
 
-    const newEvent: DraftableEvent = {
-        name: "",
+    const newEvent: DraftTimeEntryEvent = {
+        taskId: "",
         color: "#673AB7",
         start: anchorStartMs,
         end: anchorStartMs,
@@ -205,25 +191,25 @@ const updateInteractionFromPointer = (_nativeEvent: Event, tms: CalendarDayBodyS
 const finishInteraction = () => {
     if (isCreating.value) return;
 
-    const current = interaction.value;
-    interaction.value = { kind: "idle" };
-
-    if (current.kind === "draft") {
-        openCreate(current.event);
+    if (interaction.value.kind === "draft") {
+        interaction.value = {
+            kind: "create",
+            event: interaction.value.event
+        };
+    } else {
+        interaction.value = { kind: "idle" };
     }
 };
 
 const cancelInteractionOnLeave = () => {
     if (isCreating.value) return;
 
-    const current = interaction.value;
-
-    if (current.kind === "resize") {
-        current.event.end = current.originalEndMs;
+    if (interaction.value.kind === "resize") {
+        interaction.value.event.end = interaction.value.originalEndMs;
     }
 
-    if (current.kind === "draft") {
-        removeEvent(current.event);
+    if (interaction.value.kind === "draft") {
+        removeEvent(interaction.value.event);
     }
 
     interaction.value = { kind: "idle" };
