@@ -82,6 +82,10 @@ const onTimeEntryCreate = async (createContract: TimeEntryCreateContract): Promi
     return newTimeEntry;
 };
 
+const onTimeEntryChange = async (timeEntry: TimeEntryContract): Promise<TimeEntryContract> => {
+    return timeEntry;
+};
+
 const removeEvent = (ev?: TimeEntryEvent) => {
     if (!ev) return;
     const i = events.value.indexOf(ev);
@@ -199,14 +203,39 @@ const updateInteractionFromPointer = (_nativeEvent: Event, tms: CalendarDayBodyS
     }
 };
 
-const finishInteraction = () => {
+const persistEventChange = async (ev: TimeEntryEvent) => {
+    if (ev.kind !== "existing") return;
+
+    const updatedTimeEntry = await onTimeEntryChange(ev);
+
+    Object.assign(ev, updatedTimeEntry, {
+        kind: "existing"
+    });
+};
+
+const finishInteraction = async () => {
     if (interaction.value.kind === "create") return;
 
     if (interaction.value.kind === "draft") {
         interaction.value = { kind: "create", event: interaction.value.event };
-    } else {
-        interaction.value = { kind: "idle" };
+        return;
     }
+
+    if (interaction.value.kind === "move") {
+        const { event } = interaction.value;
+        interaction.value = { kind: "idle" };
+        await persistEventChange(event);
+        return;
+    }
+
+    if (interaction.value.kind === "resize") {
+        const { event } = interaction.value;
+        interaction.value = { kind: "idle" };
+        await persistEventChange(event);
+        return;
+    }
+
+    interaction.value = { kind: "idle" };
 };
 
 const cancelInteractionOnLeave = () => {
