@@ -15,7 +15,7 @@
         type="custom-daily"
     >
         <template #event="{ event, timed, eventSummary }">
-            <div :id="(event as DraftTimeEntryEvent).uiId" class="v-event-draggable">
+            <div :id="(event as TimeEntryEvent).uiId" class="v-event-draggable">
                 <component :is="eventSummary" />
             </div>
 
@@ -53,43 +53,54 @@
 </template>
 
 <script setup lang="ts">
-import type { TimeEntryCreateContract } from "@/contracts/TimeEntryContract";
 import type { CalendarDayBodySlotScope, CalendarEvent } from "vuetify/lib/components/VCalendar/types.mjs";
 import type { EventSlotScope } from "vuetify/lib/components/VCalendar/VCalendar.mjs";
 
-type DraftTimeEntryEvent = CalendarEvent & TimeEntryCreateContract & { uiId: string; isDraft?: boolean };
-type TimeEntryEvent = DraftTimeEntryEvent & TimeEntryContract;
+type BaseCalendarEvent = CalendarEvent & {
+    uiId: string;
+};
 
-const events = ref<DraftTimeEntryEvent[]>([]);
+type TimeEntryEvent = ({ kind: "draft" } & BaseCalendarEvent & TimeEntryCreateContract) | ({ kind: "existing" } & BaseCalendarEvent & TimeEntryContract);
 
 type Interaction =
     | { kind: "idle" }
     | { kind: "move"; event: TimeEntryEvent; pointerOffsetMs?: number }
     | { kind: "resize"; event: TimeEntryEvent; originalEndMs: number }
-    | { kind: "draft"; event: DraftTimeEntryEvent; anchorStartMs: number }
-    | { kind: "create"; event: DraftTimeEntryEvent };
+    | { kind: "draft"; event: TimeEntryEvent; anchorStartMs: number }
+    | { kind: "create"; event: TimeEntryEvent };
 
+const events = ref<TimeEntryEvent[]>([]);
 const interaction = ref<Interaction>({ kind: "idle" });
 
-const isCreating = computed(() => interaction.value.kind === "create");
+const onTimeEntryCreate = async (createContract: TimeEntryCreateContract): Promise<TimeEntryContract> => {
+    const newTimeEntry: TimeEntryContract = {
+        id: "testId" as TimeEntryId,
+        user: "testUser",
+        ...createContract
+    };
 
-const removeEvent = (ev?: DraftTimeEntryEvent) => {
+    return newTimeEntry;
+};
+
+const removeEvent = (ev?: TimeEntryEvent) => {
     if (!ev) return;
     const i = events.value.indexOf(ev);
     if (i !== -1) events.value.splice(i, 1);
 };
 
-const confirmEvent = () => {
+const confirmEvent = async () => {
     if (interaction.value.kind !== "create") return;
 
-    const event = interaction.value.event;
-
-    if (!event.isDraft || !event.taskId) {
+    if (interaction.value.event.kind !== "draft" || !interaction.value.event.taskId) {
         cancelDraft();
         return;
     }
 
-    event.isDraft = false;
+    const createdTimeEntry = await onTimeEntryCreate(interaction.value.event);
+
+    Object.assign(interaction.value.event, createdTimeEntry, {
+        kind: "existing"
+    });
 
     interaction.value = { kind: "idle" };
 };
@@ -109,26 +120,26 @@ const onNameMenuToggle = (open: boolean) => {
 };
 
 const beginMoveEvent = (_nativeEvent: Event, { event, timed }: EventSlotScope) => {
-    if (isCreating.value) return;
+    if (interaction.value.kind === "create") return;
     if (!event || !timed) return;
 
     const ev = event as TimeEntryEvent;
-    if (ev.isDraft) return;
+    if (ev.kind === "draft") return;
 
     interaction.value = { kind: "move", event: ev, pointerOffsetMs: undefined };
 };
 
 const beginResizeEvent = (event: CalendarEvent) => {
-    if (isCreating.value) return;
+    if (interaction.value.kind === "create") return;
 
     const ev = event as TimeEntryEvent;
-    if (ev.isDraft) return;
+    if (ev.kind === "draft") return;
 
     interaction.value = { kind: "resize", event: ev, originalEndMs: ev.end };
 };
 
 const beginGridInteraction = (_nativeEvent: Event, tms: CalendarDayBodySlotScope) => {
-    if (isCreating.value) return;
+    if (interaction.value.kind === "create") return;
 
     const mouseMs = toTime(tms);
 
@@ -139,14 +150,14 @@ const beginGridInteraction = (_nativeEvent: Event, tms: CalendarDayBodySlotScope
 
     const anchorStartMs = roundTime(mouseMs);
 
-    const newEvent: DraftTimeEntryEvent = {
+    const newEvent: TimeEntryEvent = {
+        kind: "draft",
         taskId: "",
         color: "#673AB7",
         start: anchorStartMs,
         end: anchorStartMs,
         timed: true,
-        uiId: `event-uiId-${uuidv4()}`,
-        isDraft: true
+        uiId: `event-uiId-${uuidv4()}`
     };
 
     events.value.push(newEvent);
@@ -154,7 +165,7 @@ const beginGridInteraction = (_nativeEvent: Event, tms: CalendarDayBodySlotScope
 };
 
 const updateInteractionFromPointer = (_nativeEvent: Event, tms: CalendarDayBodySlotScope) => {
-    if (isCreating.value) return;
+    if (interaction.value.kind === "create") return;
 
     const mouseMs = toTime(tms);
 
@@ -189,20 +200,17 @@ const updateInteractionFromPointer = (_nativeEvent: Event, tms: CalendarDayBodyS
 };
 
 const finishInteraction = () => {
-    if (isCreating.value) return;
+    if (interaction.value.kind === "create") return;
 
     if (interaction.value.kind === "draft") {
-        interaction.value = {
-            kind: "create",
-            event: interaction.value.event
-        };
+        interaction.value = { kind: "create", event: interaction.value.event };
     } else {
         interaction.value = { kind: "idle" };
     }
 };
 
 const cancelInteractionOnLeave = () => {
-    if (isCreating.value) return;
+    if (interaction.value.kind === "create") return;
 
     if (interaction.value.kind === "resize") {
         interaction.value.event.end = interaction.value.originalEndMs;
