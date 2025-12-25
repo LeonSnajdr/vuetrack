@@ -128,6 +128,7 @@ const timeEntries = defineModel<TimeEntryContract[]>("timeEntries", { required: 
 const draftEvents = ref<TimeEntryEvent[]>([]);
 const existingEvents = ref<TimeEntryEvent[]>([]);
 
+// Sync local events from prop
 watch(
     () => timeEntries.value.slice(),
     (newEntries, oldEntries) => {
@@ -157,49 +158,45 @@ const events = computed<TimeEntryEvent[]>(() => [...existingEvents.value, ...dra
 
 const interaction = ref<Interaction>({ kind: "idle" });
 
-const onEventCreate = async (event: DraftTimeEntryEvent) => {
-    const newTimeEntry: TimeEntryContract = {
-        id: "testId" as TimeEntryId,
-        user: "testUser",
-        endTime: new Date(event.end),
-        startTime: new Date(event.start),
-        taskId: event.createEntry.taskId
-    };
-    timeEntries.value.push(newTimeEntry);
-};
+const upsertEvent = async (event: TimeEntryEvent) => {
+    const startTime = new Date(event.start);
+    const endTime = new Date(event.end);
 
-const onEventChanged = async (event: ExistingOrSuggestionTimeEntryEvent) => {
-    console.log("Event changed", event);
+    if (event.kind === "draft") {
+        if (!event.createEntry.taskId) return; // Basic validation
 
-    event.timeEntry.startTime = new Date(event.start);
-    event.timeEntry.endTime = new Date(event.end);
-};
+        const newTimeEntry: TimeEntryContract = {
+            id: "testId" as TimeEntryId,
+            user: "testUser",
+            startTime: startTime,
+            endTime: endTime,
+            taskId: event.createEntry.taskId
+        };
 
-const updateOtherEvent = (ev: TimeEntryEvent, newStart: number, newEnd: number) => {
-    console.log("Event updated", ev);
+        timeEntries.value.push(newTimeEntry);
 
-    if (ev.kind === "existing") {
-        ev.timeEntry.startTime = new Date(newStart);
-        ev.timeEntry.endTime = new Date(newEnd);
-        // Sync local visual state immediately
-        ev.start = newStart;
-        ev.end = newEnd;
+        removeEvent(event);
+    } else if (event.kind === "existing") {
+        event.timeEntry.startTime = startTime;
+        event.timeEntry.endTime = endTime;
+        console.log("Event updated", event.uiId);
     }
 };
 
-const deleteOtherEvent = (ev: TimeEntryEvent) => {
-    console.log("Event deleted", ev);
-
-    if (ev.kind === "existing") {
-        const idx = timeEntries.value.findIndex((t) => t === ev.timeEntry);
+const removeEvent = (event: TimeEntryEvent) => {
+    if (event.kind === "draft") {
+        const idx = draftEvents.value.indexOf(event);
+        if (idx !== -1) draftEvents.value.splice(idx, 1);
+    } else if (event.kind === "existing") {
+        const idx = timeEntries.value.indexOf(event.timeEntry);
         if (idx !== -1) timeEntries.value.splice(idx, 1);
     }
+    console.log("Event removed", event.uiId);
 };
 
 const getOverlappingEvents = (subject: TimeEntryEvent, candidates: TimeEntryEvent[]): TimeEntryEvent[] => {
     return candidates.filter((other) => {
         if (other.uiId === subject.uiId) return false;
-        // Check overlap: StartA < EndB && EndA > StartB
         return subject.start < other.end && subject.end > other.start;
     });
 };
@@ -294,7 +291,6 @@ const finishInteraction = async () => {
 
             if (overlaps.length > 0) {
                 // Determine original start for fallback.
-                // For resize, start didn't change, but we need structure consistency.
                 const origStart = cur.kind === "move" ? cur.originalStartMs : cur.event.start;
                 const origEnd = cur.originalEndMs;
 
@@ -309,7 +305,7 @@ const finishInteraction = async () => {
             }
 
             interaction.value = { kind: "idle" };
-            await onEventChanged(cur.event);
+            await upsertEvent(cur.event);
             return;
         }
         default:
@@ -332,30 +328,19 @@ const resolveTruncate = async () => {
     if (interaction.value.kind !== "conflict") return;
     const { event, overlaps } = interaction.value;
 
-    // We only care about boundaries.
-    // Logic: If I moved Down, my top hit someone's bottom, or my bottom hit someone's top.
-    // Simplest approach: Find strict boundaries available around the current center.
-
     let allowedStart = event.start;
     let allowedEnd = event.end;
 
     overlaps.forEach((ov) => {
-        // If overlap is completely "inside" the event, we can't just truncate.
-        // But assuming user dragged *into* an overlap.
-
-        // If overlap starts after our start, it cuts our tail
         if (ov.start > event.start && ov.start < event.end) {
             allowedEnd = Math.min(allowedEnd, ov.start);
         }
-        // If overlap ends before our end, it cuts our head
         if (ov.end > event.start && ov.end < event.end) {
             allowedStart = Math.max(allowedStart, ov.end);
         }
-        // If overlap covers us completely... well, duration becomes 0
     });
 
     if (allowedEnd <= allowedStart) {
-        // Edge case: no space at all. Revert.
         cancelConflict();
         return;
     }
@@ -363,7 +348,7 @@ const resolveTruncate = async () => {
     event.start = allowedStart;
     event.end = allowedEnd;
     interaction.value = { kind: "idle" };
-    await onEventChanged(event);
+    await upsertEvent(event);
 };
 
 // 3. Move to next free slot (Up or Down)
@@ -372,12 +357,8 @@ const resolveShift = async (down: boolean) => {
     const { event } = interaction.value;
     const duration = event.end - event.start;
 
-    // Sort all events by time to find gaps
-    const sorted = [...existingEvents.value]
-        .filter((e) => e.uiId !== event.uiId) // Ignore self
-        .sort((a, b) => a.start - b.start);
+    const sorted = [...existingEvents.value].filter((e) => e.uiId !== event.uiId).sort((a, b) => a.start - b.start);
 
-    // Filter to events on the same day (naive check: +/- 24 hours of current spot)
     const dayStart = new Date(event.start).setHours(0, 0, 0, 0);
     const dayEnd = new Date(event.start).setHours(23, 59, 59, 999);
     const dayEvents = sorted.filter((e) => e.end > dayStart && e.start < dayEnd);
@@ -385,14 +366,7 @@ const resolveShift = async (down: boolean) => {
     let foundStart = -1;
 
     if (down) {
-        // Look forwards.
-        // Start checking from the current colliding position's end, or current start?
-        // Usually "Next Free" means after the stuff I collided with.
-        // Let's sweep from current Start time forward.
         let searchTime = event.start;
-
-        // Naive Sweep: check if (searchTime, searchTime+duration) overlaps anything.
-        // If yes, jump to end of that overlap. Repeat.
         let safe = false;
         while (!safe && searchTime < dayEnd) {
             const overlap = dayEvents.find((e) => searchTime < e.end && searchTime + duration > e.start);
@@ -404,18 +378,13 @@ const resolveShift = async (down: boolean) => {
             }
         }
     } else {
-        // Look backwards (Up)
-        // Sweep backwards from current start.
         let searchTime = event.start;
         let safe = false;
         while (!safe && searchTime > dayStart) {
             const potentialStart = searchTime;
             const potentialEnd = searchTime + duration;
-
             const overlap = dayEvents.find((e) => potentialStart < e.end && potentialEnd > e.start);
-
             if (overlap) {
-                // Jump before this overlap
                 searchTime = overlap.start - duration;
             } else {
                 safe = true;
@@ -428,10 +397,8 @@ const resolveShift = async (down: boolean) => {
         event.start = foundStart;
         event.end = foundStart + duration;
         interaction.value = { kind: "idle" };
-        await onEventChanged(event);
+        await upsertEvent(event);
     } else {
-        // Could not find a slot
-        // Might want to show a snackbar here, but for now just revert
         cancelConflict();
     }
 };
@@ -441,47 +408,41 @@ const resolveForce = async () => {
     if (interaction.value.kind !== "conflict") return;
     const { event, overlaps } = interaction.value;
 
-    // Logic: The dragged event wins.
-    // All overlaps must be shrunk or deleted.
-
     for (const ov of overlaps) {
         // Case 1: Dragged event covers Ov completely -> Delete Ov
         if (event.start <= ov.start && event.end >= ov.end) {
-            deleteOtherEvent(ov);
+            removeEvent(ov);
             continue;
         }
 
         // Case 2: Dragged overlaps Ov's tail (Ov Start ... Drag Start ... Ov End)
-        // -> Shrink Ov to end at Drag Start
         if (event.start > ov.start && event.start < ov.end) {
-            updateOtherEvent(ov, ov.start, event.start);
+            ov.end = event.start;
+            upsertEvent(ov);
         }
 
         // Case 3: Dragged overlaps Ov's head (Ov Start ... Drag End ... Ov End)
-        // -> Shrink Ov to start at Drag End
         if (event.end > ov.start && event.end < ov.end) {
-            updateOtherEvent(ov, event.end, ov.end);
+            ov.start = event.end;
+            upsertEvent(ov);
         }
 
-        // Case 4: Dragged is inside Ov -> Split?
-        // The user requirements said "make them smaller or remove". Splitting is complex.
-        // Simple heuristic: Trim the smallest side of Ov to make space.
+        // Case 4: Dragged is inside Ov
         if (event.start > ov.start && event.end < ov.end) {
             const headSize = event.start - ov.start;
             const tailSize = ov.end - event.end;
             if (headSize > tailSize) {
-                updateOtherEvent(ov, ov.start, event.start); // Keep head
+                ov.end = event.start; // Keep head
             } else {
-                updateOtherEvent(ov, event.end, ov.end); // Keep tail
+                ov.start = event.end; // Keep tail
             }
+            upsertEvent(ov);
         }
     }
 
     interaction.value = { kind: "idle" };
-    await onEventChanged(event);
+    await upsertEvent(event);
 };
-
-// --- EXISTING DRAFT HELPERS ---
 
 const addDraftEvent = (anchorStartMs: number) => {
     const newEvent: TimeEntryEvent = {
@@ -497,25 +458,13 @@ const addDraftEvent = (anchorStartMs: number) => {
             taskId: ""
         }
     };
-
     draftEvents.value.push(newEvent);
     return newEvent;
 };
 
-const removeDraftEvent = (ev: TimeEntryEvent) => {
-    if (ev.kind !== "draft") return;
-    const i = draftEvents.value.indexOf(ev);
-    if (i !== -1) draftEvents.value.splice(i, 1);
-};
-
 const confirmEvent = async () => {
     if (interaction.value.kind !== "create") return;
-    if (interaction.value.event.kind !== "draft" || !interaction.value.event.createEntry.taskId) {
-        cancelDraft();
-        return;
-    }
-    await onEventCreate(interaction.value.event);
-    removeDraftEvent(interaction.value.event);
+    await upsertEvent(interaction.value.event);
     interaction.value = { kind: "idle" };
 };
 
@@ -524,7 +473,7 @@ const cancelDraft = () => {
         interaction.value = { kind: "idle" };
         return;
     }
-    removeDraftEvent(interaction.value.event);
+    removeEvent(interaction.value.event);
     interaction.value = { kind: "idle" };
 };
 
@@ -537,7 +486,7 @@ const cancelInteractionOnLeave = () => {
 
     switch (cur.kind) {
         case "create":
-        case "conflict": // Don't cancel menu on leave
+        case "conflict":
             return;
         case "resize":
             cur.event.end = cur.originalEndMs;
@@ -549,7 +498,7 @@ const cancelInteractionOnLeave = () => {
             interaction.value = { kind: "idle" };
             return;
         case "draft":
-            removeDraftEvent(cur.event);
+            removeEvent(cur.event);
             interaction.value = { kind: "idle" };
             return;
         default:
