@@ -129,6 +129,7 @@ const draftEvents = ref<TimeEntryEvent[]>([]);
 const existingEvents = ref<TimeEntryEvent[]>([]);
 
 // Sync local events from prop
+// TODO: Improve performance
 watch(
     () => timeEntries.value.slice(),
     (newEntries, oldEntries) => {
@@ -136,6 +137,7 @@ watch(
 
         const added = newEntries.filter((x) => !oldEntries.includes(x));
         const removed = oldEntries.filter((x) => !newEntries.includes(x));
+        const existing = newEntries.filter((x) => oldEntries.includes(x));
 
         added.forEach((x) => {
             existingEvents.value.push({
@@ -150,6 +152,14 @@ watch(
         });
 
         existingEvents.value = existingEvents.value.filter((e) => e.kind === "existing" && !removed.includes(e.timeEntry));
+
+        existing.forEach((x) => {
+            const existingEvent = existingEvents.value.find((e) => e.kind === "existing" && e.timeEntry == x);
+            if (existingEvent) {
+                existingEvent.start = x.startTime.getTime();
+                existingEvent.end = x.endTime.getTime();
+            }
+        });
     },
     { immediate: true, deep: true }
 );
