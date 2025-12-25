@@ -16,15 +16,15 @@
         type="custom-daily"
     >
         <template #event="{ event, timed }">
-            <div :id="(event as TimeEntryEvent).uiId" :class="{ 'opacity-50': isInConflict(event as TimeEntryEvent) }" class="v-event-draggable">
+            <div :id="(event as TimeEntryEvent).uiId" class="v-event-draggable">
                 <p>{{ (event as TimeEntryEvent).start }}</p>
+                <p>{{ event?.timeEntry?.taskId }}</p>
             </div>
 
             <div v-if="timed" @mousedown.stop="beginResizeEvent(event)" class="v-event-drag-bottom" />
         </template>
     </VCalendar>
 
-    <!-- Create/Name Menu -->
     <template v-if="interaction.kind === 'create'">
         <VMenu
             @update:modelValue="onNameMenuToggle"
@@ -52,7 +52,6 @@
         </VMenu>
     </template>
 
-    <!-- Conflict Resolver Menu -->
     <template v-if="interaction.kind === 'conflict'">
         <VMenu :closeOnContentClick="false" :modelValue="true" :target="'#' + interaction.event.uiId" location="right" persistent>
             <VCard class="pa-3" width="350">
@@ -60,18 +59,13 @@
                 <VCardSubtitle class="pa-0 mb-3"> This event overlaps with {{ interaction.overlaps.length }} other(s). </VCardSubtitle>
 
                 <VList density="compact" nav>
-                    <VListItem
-                        @click="resolveShift(false)"
-                        prependIcon="mdi-arrow-up-thin"
-                        subtitle="Shift up to next free gap"
-                        title="Move to Previous Slot"
-                    />
-                    <VListItem @click="resolveShift(true)" prependIcon="mdi-arrow-down-thin" subtitle="Shift down to next free gap" title="Move to Next Slot" />
-                    <VListItem @click="resolveTruncate" prependIcon="mdi-arrow-collapse-vertical" subtitle="Truncate this event to fit" title="Fit to Gap" />
+                    <VListItem @click="resolveShift(false)" :prependIcon="mdiArrowUpThin" subtitle="Shift up to next free gap" title="Move to Previous Slot" />
+                    <VListItem @click="resolveShift(true)" :prependIcon="mdiArrowDownThin" subtitle="Shift down to next free gap" title="Move to Next Slot" />
+                    <VListItem @click="resolveTruncate" :prependIcon="mdiArrowCollapseVertical" subtitle="Truncate this event to fit" title="Fit to Gap" />
                     <VListItem
                         @click="resolveForce"
+                        :prependIcon="mdiAlertBoxOutline"
                         class="text-error"
-                        prependIcon="mdi-alert-box-outline"
                         subtitle="Shrink or remove conflicting events"
                         title="Force Position"
                     />
@@ -163,12 +157,6 @@ const events = computed<TimeEntryEvent[]>(() => [...existingEvents.value, ...dra
 
 const interaction = ref<Interaction>({ kind: "idle" });
 
-const isInConflict = (event: TimeEntryEvent) => {
-    return interaction.value.kind === "conflict" && interaction.value.event.uiId === event.uiId;
-};
-
-// --- DATA MANIPULATION HELPERS ---
-
 const onEventCreate = async (event: DraftTimeEntryEvent) => {
     const newTimeEntry: TimeEntryContract = {
         id: "testId" as TimeEntryId,
@@ -180,14 +168,16 @@ const onEventCreate = async (event: DraftTimeEntryEvent) => {
     timeEntries.value.push(newTimeEntry);
 };
 
-// Called when we are 100% sure the event is valid
 const onEventChanged = async (event: ExistingOrSuggestionTimeEntryEvent) => {
+    console.log("Event changed", event);
+
     event.timeEntry.startTime = new Date(event.start);
     event.timeEntry.endTime = new Date(event.end);
 };
 
-// Called when resolving conflicts by modifying OTHER events
 const updateOtherEvent = (ev: TimeEntryEvent, newStart: number, newEnd: number) => {
+    console.log("Event updated", ev);
+
     if (ev.kind === "existing") {
         ev.timeEntry.startTime = new Date(newStart);
         ev.timeEntry.endTime = new Date(newEnd);
@@ -198,14 +188,13 @@ const updateOtherEvent = (ev: TimeEntryEvent, newStart: number, newEnd: number) 
 };
 
 const deleteOtherEvent = (ev: TimeEntryEvent) => {
+    console.log("Event deleted", ev);
+
     if (ev.kind === "existing") {
         const idx = timeEntries.value.findIndex((t) => t === ev.timeEntry);
         if (idx !== -1) timeEntries.value.splice(idx, 1);
-        // Visual removal happens via watcher
     }
 };
-
-// --- CONFLICT DETECTION ---
 
 const getOverlappingEvents = (subject: TimeEntryEvent, candidates: TimeEntryEvent[]): TimeEntryEvent[] => {
     return candidates.filter((other) => {
@@ -214,8 +203,6 @@ const getOverlappingEvents = (subject: TimeEntryEvent, candidates: TimeEntryEven
         return subject.start < other.end && subject.end > other.start;
     });
 };
-
-// --- INTERACTION HANDLERS ---
 
 const beginMoveEvent = (_nativeEvent: Event, { event, timed }: EventSlotScope) => {
     if (interaction.value.kind === "create" || interaction.value.kind === "conflict") return;
@@ -303,7 +290,6 @@ const finishInteraction = async () => {
             return;
         case "move":
         case "resize": {
-            // CHECK OVERLAPS HERE
             const overlaps = getOverlappingEvents(cur.event, existingEvents.value);
 
             if (overlaps.length > 0) {
@@ -322,7 +308,6 @@ const finishInteraction = async () => {
                 return;
             }
 
-            // No conflict
             interaction.value = { kind: "idle" };
             await onEventChanged(cur.event);
             return;
@@ -333,9 +318,6 @@ const finishInteraction = async () => {
     }
 };
 
-// --- CONFLICT RESOLUTION LOGIC ---
-
-// 1. Revert changes
 const cancelConflict = () => {
     if (interaction.value.kind !== "conflict") return;
     const { event, originalStartMs, originalEndMs } = interaction.value;
