@@ -70,37 +70,52 @@ type TimeEntryEvent =
     | ({ kind: "existing"; timeEntry: TimeEntryContract } & BaseCalendarEvent)
     | ({ kind: "suggestion"; timeEntry: TimeEntrySuggestionContract } & BaseCalendarEvent);
 
+type DraftTimeEntryEvent = Extract<TimeEntryEvent, { kind: "draft" }>;
+type ExistingOrSuggestionTimeEntryEvent = Extract<TimeEntryEvent, { kind: "existing" | "suggestion" }>;
+
 type Interaction =
     | { kind: "idle" }
-    | { kind: "move"; event: Extract<TimeEntryEvent, { kind: "existing" | "suggestion" }>; pointerOffsetMs?: number }
-    | { kind: "resize"; event: Extract<TimeEntryEvent, { kind: "existing" | "suggestion" }>; originalEndMs: number }
-    | { kind: "draft"; event: Extract<TimeEntryEvent, { kind: "draft" }>; anchorStartMs: number }
-    | { kind: "create"; event: Extract<TimeEntryEvent, { kind: "draft" }> }
-    | { kind: "conflict"; event: Extract<TimeEntryEvent, { kind: "existing" | "suggestion" }> };
+    | { kind: "move"; event: ExistingOrSuggestionTimeEntryEvent; pointerOffsetMs?: number }
+    | { kind: "resize"; event: ExistingOrSuggestionTimeEntryEvent; originalEndMs: number }
+    | { kind: "draft"; event: DraftTimeEntryEvent; anchorStartMs: number }
+    | { kind: "create"; event: DraftTimeEntryEvent }
+    | { kind: "conflict"; event: ExistingOrSuggestionTimeEntryEvent };
 
 const timeEntries = defineModel<TimeEntryContract[]>("timeEntries", { required: true });
 // const timeEntrySuggestions = defineModel<TimeEntrySuggestionContract[]>("timeEntrySuggestions", { required: true });
 
 const draftEvents = ref<TimeEntryEvent[]>([]);
-const existingEvents = computed<TimeEntryEvent[]>(() =>
-    timeEntries.value.map((x) => ({
-        kind: "existing",
-        color: "#7da6c9",
-        start: x.startTime.getTime(),
-        end: x.endTime.getTime(),
-        timed: true,
-        uiId: `event-uiId-${x.id}`,
-        timeEntry: x
-    }))
+const existingEvents = ref<TimeEntryEvent[]>([]);
+watch(
+    () => timeEntries.value.slice(),
+    (newEntries, oldEntries) => {
+        oldEntries ??= [];
+
+        const added = newEntries.filter((x) => !oldEntries.includes(x));
+        const removed = oldEntries.filter((x) => !newEntries.includes(x));
+
+        added.forEach((x) => {
+            existingEvents.value.push({
+                kind: "existing",
+                color: "#7da6c9",
+                start: x.startTime.getTime(),
+                end: x.endTime.getTime(),
+                timed: true,
+                uiId: `event-uiId-${uuidv4()}`,
+                timeEntry: x
+            });
+        });
+
+        existingEvents.value = existingEvents.value.filter((e) => e.kind === "existing" && !removed.includes(e.timeEntry));
+    },
+    { immediate: true, deep: true }
 );
 
 const events = computed<TimeEntryEvent[]>(() => [...existingEvents.value, ...draftEvents.value]);
 
 const interaction = ref<Interaction>({ kind: "idle" });
 
-const onEventCreate = async (event: TimeEntryEvent): Promise<TimeEntryContract> => {
-    if (event.kind !== "draft") throw "Only draft can't be created";
-
+const onEventCreate = async (event: DraftTimeEntryEvent) => {
     const newTimeEntry: TimeEntryContract = {
         id: "testId" as TimeEntryId,
         user: "testUser",
@@ -110,12 +125,11 @@ const onEventCreate = async (event: TimeEntryEvent): Promise<TimeEntryContract> 
     };
 
     timeEntries.value.push(newTimeEntry);
-
-    return newTimeEntry;
 };
 
-const onEventChanged = async (timeEntry: TimeEntryContract): Promise<TimeEntryContract> => {
-    return timeEntry;
+const onEventChanged = async (event: ExistingOrSuggestionTimeEntryEvent) => {
+    event.timeEntry.startTime = new Date(event.start);
+    event.timeEntry.endTime = new Date(event.end);
 };
 
 const addDraftEvent = (anchorStartMs: number) => {
@@ -218,25 +232,20 @@ const updateInteractionFromPointer = (_nativeEvent: Event, tms: CalendarDayBodyS
             const newStart = roundTime(mouseMs - pointerOffsetMs);
 
             event.start = newStart;
-            event.timeEntry.startTime = new Date(newStart);
             event.end = newStart + duration;
-            event.timeEntry.endTime = new Date(newStart + duration);
             return;
         }
         case "resize": {
             const { event } = interaction.value;
             const mouseRounded = roundTime(mouseMs, false);
             event.end = Math.max(mouseRounded, event.start);
-            event.timeEntry.endTime = new Date(event.end);
             return;
         }
         case "draft": {
             const { event, anchorStartMs } = interaction.value;
             const mouseRounded = roundTime(mouseMs, false);
             event.start = Math.min(mouseRounded, anchorStartMs);
-            event.createEntry.startTime = new Date(event.start);
             event.end = Math.max(mouseRounded, anchorStartMs);
-            event.createEntry.endTime = new Date(event.end);
             return;
         }
         case "create":
@@ -257,11 +266,7 @@ const finishInteraction = async () => {
         case "move":
         case "resize": {
             interaction.value = { kind: "idle" };
-
-            if (cur.event.kind === "existing") {
-                const updated = await onEventChanged(cur.event.timeEntry);
-                Object.assign(cur.event.timeEntry, updated);
-            }
+            await onEventChanged(cur.event);
             return;
         }
         default:
