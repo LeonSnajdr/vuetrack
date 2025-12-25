@@ -113,7 +113,13 @@ type Interaction =
           event: ExistingOrSuggestionTimeEntryEvent;
           originalEndMs: number;
       }
-    | { kind: "draft"; event: DraftTimeEntryEvent; anchorStartMs: number }
+    | {
+          kind: "draft";
+          event: DraftTimeEntryEvent;
+          anchorStartMs: number;
+          minStartMs: number;
+          maxEndMs: number;
+      }
     | { kind: "create"; event: DraftTimeEntryEvent }
     | {
           kind: "conflict";
@@ -248,8 +254,28 @@ const beginGridInteraction = (_nativeEvent: Event, tms: CalendarDayBodySlotScope
 
     const anchorStartMs = roundTime(mouseMs);
 
+    // 1. Prevent starting on top of an existing event
+    const overlapping = existingEvents.value.some((e) => anchorStartMs >= e.start && anchorStartMs < e.end);
+    if (overlapping) return;
+
+    // 2. Determine boundaries to prevent dragging over existing events
+    // Find neighbors to set limits
+    const neighbors = [...existingEvents.value].sort((a, b) => a.start - b.start);
+    const nextEvent = neighbors.find((e) => e.start >= anchorStartMs);
+    const prevEvent = [...neighbors].reverse().find((e) => e.end <= anchorStartMs);
+
+    // If no event is after, we can go to infinity (or day end), if no event is before, we go to 0
+    const maxEndMs = nextEvent ? nextEvent.start : Number.MAX_SAFE_INTEGER;
+    const minStartMs = prevEvent ? prevEvent.end : 0;
+
     const newEvent = addDraftEvent(anchorStartMs);
-    interaction.value = { kind: "draft", event: newEvent, anchorStartMs };
+    interaction.value = {
+        kind: "draft",
+        event: newEvent,
+        anchorStartMs,
+        minStartMs,
+        maxEndMs
+    };
 };
 
 const updateInteractionFromPointer = (_nativeEvent: Event, tms: CalendarDayBodySlotScope) => {
@@ -274,8 +300,17 @@ const updateInteractionFromPointer = (_nativeEvent: Event, tms: CalendarDayBodyS
             return;
         }
         case "draft": {
-            const { event, anchorStartMs } = interaction.value;
-            const mouseRounded = roundTime(mouseMs, false);
+            const { event, anchorStartMs, minStartMs, maxEndMs } = interaction.value;
+            let mouseRounded = roundTime(mouseMs, false);
+
+            // 3. Clamp dragging within constraints
+            if (mouseRounded > maxEndMs) {
+                mouseRounded = maxEndMs;
+            }
+            if (mouseRounded < minStartMs) {
+                mouseRounded = minStartMs;
+            }
+
             event.start = Math.min(mouseRounded, anchorStartMs);
             event.end = Math.max(mouseRounded, anchorStartMs);
             return;
@@ -291,8 +326,7 @@ const finishInteraction = async () => {
         case "conflict":
             return;
         case "draft":
-            // Drafts (new creations) can overlap? Usually allowed, but we can prevent if needed.
-            // For now, flow to create menu.
+            // Drafts should now be valid without overlaps due to constraints in creation
             interaction.value = { kind: "create", event: cur.event };
             return;
         case "move":
