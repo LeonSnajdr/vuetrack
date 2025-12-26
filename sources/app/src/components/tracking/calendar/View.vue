@@ -375,6 +375,14 @@ const resolveTruncate = async () => {
     let allowedStart = event.start;
     let allowedEnd = event.end;
 
+    // Check if the event is completely inside any of the overlapping events
+    const isFullyContained = overlaps.some((ov) => ov.start <= event.start && ov.end >= event.end);
+
+    if (isFullyContained) {
+        cancelConflict();
+        return;
+    }
+
     overlaps.forEach((ov) => {
         if (ov.start > event.start && ov.start < event.end) {
             allowedEnd = Math.min(allowedEnd, ov.start);
