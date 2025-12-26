@@ -86,11 +86,13 @@ import type { Interaction, TimeEntryEvent } from "./types";
 import useMappingToEvents from "./timeEntryEventSync";
 
 const timeEntries = defineModel<TimeEntryContract[]>("timeEntries", { required: true });
+const timeEntrySuggestions = defineModel<TimeEntrySuggestionContract[]>("timeEntrySuggestions", { required: true });
 
 const draftEvents = ref<TimeEntryEvent[]>([]);
 const existingEvents = useMappingToEvents("existing", timeEntries);
+const suggestionEvents = useMappingToEvents("suggestion", timeEntrySuggestions, "#22C55E");
 
-const events = computed<TimeEntryEvent[]>(() => [...existingEvents.value, ...draftEvents.value]);
+const events = computed<TimeEntryEvent[]>(() => [...existingEvents.value, ...suggestionEvents.value, ...draftEvents.value]);
 
 const interaction = ref<Interaction>({ kind: "idle" });
 
@@ -116,6 +118,10 @@ const upsertEvent = async (event: TimeEntryEvent) => {
         event.timeEntry.startTime = startTime;
         event.timeEntry.endTime = endTime;
         console.log("Event updated", event.uiId);
+    } else if (event.kind === "suggestion") {
+        event.timeEntry.startTime = startTime;
+        event.timeEntry.endTime = endTime;
+        console.log("Suggestion updated");
     }
 };
 
@@ -126,7 +132,11 @@ const removeEvent = (event: TimeEntryEvent) => {
     } else if (event.kind === "existing") {
         const idx = timeEntries.value.indexOf(event.timeEntry);
         if (idx !== -1) timeEntries.value.splice(idx, 1);
+    } else if (event.kind === "suggestion") {
+        const idx = timeEntrySuggestions.value.indexOf(event.timeEntry);
+        if (idx !== -1) timeEntrySuggestions.value.splice(idx, 1);
     }
+
     console.log("Event removed", event.uiId);
 };
 
@@ -251,21 +261,23 @@ const finishInteraction = async () => {
             return;
         case "move":
         case "resize": {
-            const overlaps = getOverlappingEvents(cur.event, existingEvents.value);
+            if (cur.event.kind === "existing") {
+                const overlaps = getOverlappingEvents(cur.event, existingEvents.value);
 
-            if (overlaps.length > 0) {
-                // Determine original start for fallback.
-                const origStart = cur.kind === "move" ? cur.originalStartMs : cur.event.start;
-                const origEnd = cur.originalEndMs;
+                if (overlaps.length > 0) {
+                    // Determine original start for fallback.
+                    const origStart = cur.kind === "move" ? cur.originalStartMs : cur.event.start;
+                    const origEnd = cur.originalEndMs;
 
-                interaction.value = {
-                    kind: "conflict",
-                    event: cur.event,
-                    originalStartMs: origStart,
-                    originalEndMs: origEnd,
-                    overlaps: overlaps
-                };
-                return;
+                    interaction.value = {
+                        kind: "conflict",
+                        event: cur.event,
+                        originalStartMs: origStart,
+                        originalEndMs: origEnd,
+                        overlaps: overlaps
+                    };
+                    return;
+                }
             }
 
             interaction.value = { kind: "idle" };

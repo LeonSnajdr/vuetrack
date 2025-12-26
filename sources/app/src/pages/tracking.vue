@@ -8,12 +8,12 @@
         <VTextField v-model="timeEntries[0].taskId" />
     </template>
     <VContainer class="h-100">
-        <TrackingCalendarView :timeEntries="timeEntries" />
+        <TrackingCalendarView v-model:timeEntries="timeEntries" v-model:timeEntrySuggestions="timeEntrySuggestions" />
     </VContainer>
 </template>
 
 <script setup lang="ts">
-import type { TimeEntryContract, TimeEntryId } from "@/contracts/TimeEntryContract";
+import type { TimeEntrySuggestionContract, TimeEntrySuggestionId } from "@/contracts/TimeEntrySuggestion";
 
 const timeEntries = ref<TimeEntryContract[]>([
     {
@@ -22,6 +22,15 @@ const timeEntries = ref<TimeEntryContract[]>([
         startTime: new Date(),
         endTime: new Date(Date.now() + 60 * 60 * 1000),
         taskId: "myTask"
+    }
+]);
+
+const timeEntrySuggestions = ref<TimeEntrySuggestionContract[]>([
+    {
+        id: "mySuggestion" as TimeEntrySuggestionId,
+        startTime: new Date(),
+        endTime: new Date(Date.now() + 60 * 60 * 1000),
+        taskId: "my suggested id"
     }
 ]);
 
