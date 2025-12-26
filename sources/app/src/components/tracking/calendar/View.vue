@@ -80,101 +80,15 @@
 </template>
 
 <script setup lang="ts">
-import type { CalendarDayBodySlotScope, CalendarEvent } from "vuetify/lib/components/VCalendar/types.mjs";
 import type { EventSlotScope } from "vuetify/lib/components/VCalendar/VCalendar.mjs";
-
-type BaseCalendarEvent = {
-    uiId: string;
-    timed: boolean;
-    color: string;
-    start: number;
-    end: number;
-};
-
-type TimeEntryEvent =
-    | ({ kind: "draft"; createEntry: TimeEntryCreateContract } & BaseCalendarEvent)
-    | ({ kind: "existing"; timeEntry: TimeEntryContract } & BaseCalendarEvent)
-    | ({ kind: "suggestion"; timeEntry: TimeEntrySuggestionContract } & BaseCalendarEvent);
-
-type DraftTimeEntryEvent = Extract<TimeEntryEvent, { kind: "draft" }>;
-type ExistingOrSuggestionTimeEntryEvent = Extract<TimeEntryEvent, { kind: "existing" | "suggestion" }>;
-
-type Interaction =
-    | { kind: "idle" }
-    | {
-          kind: "move";
-          event: ExistingOrSuggestionTimeEntryEvent;
-          pointerOffsetMs?: number;
-          originalStartMs: number;
-          originalEndMs: number;
-      }
-    | {
-          kind: "resize";
-          event: ExistingOrSuggestionTimeEntryEvent;
-          originalEndMs: number;
-      }
-    | {
-          kind: "draft";
-          event: DraftTimeEntryEvent;
-          anchorStartMs: number;
-          minStartMs: number;
-          maxEndMs: number;
-      }
-    | { kind: "create"; event: DraftTimeEntryEvent }
-    | {
-          kind: "conflict";
-          event: ExistingOrSuggestionTimeEntryEvent;
-          originalStartMs: number;
-          originalEndMs: number;
-          overlaps: TimeEntryEvent[];
-      };
+import type { CalendarDayBodySlotScope, CalendarEvent } from "vuetify/lib/components/VCalendar/types.mjs";
+import type { Interaction, TimeEntryEvent } from "./types";
+import useMappingToEvents from "./timeEntryEventSync";
 
 const timeEntries = defineModel<TimeEntryContract[]>("timeEntries", { required: true });
 
 const draftEvents = ref<TimeEntryEvent[]>([]);
-const existingEvents = ref<TimeEntryEvent[]>([]);
-
-watch(
-    () => timeEntries.value.slice(),
-    (newEntries, oldEntries) => {
-        const entries = newEntries || [];
-        const previous = oldEntries || [];
-
-        const newEntrySet = new Set(entries);
-        const removedEntrySet = new Set(previous.filter((x) => !newEntrySet.has(x)));
-
-        if (removedEntrySet.size > 0) {
-            existingEvents.value = existingEvents.value.filter((e) => e.kind !== "existing" || !removedEntrySet.has(e.timeEntry));
-        }
-
-        const eventMap = new Map(existingEvents.value.filter((e) => e.kind === "existing").map((e) => [e.timeEntry, e]));
-
-        const newUIEvents: TimeEntryEvent[] = [];
-        for (const x of entries) {
-            const existingEvent = eventMap.get(x);
-
-            if (existingEvent) {
-                existingEvent.start = x.startTime.getTime();
-                existingEvent.end = x.endTime.getTime();
-            } else {
-                newUIEvents.push({
-                    kind: "existing",
-                    color: "#7da6c9",
-                    start: x.startTime.getTime(),
-                    end: x.endTime.getTime(),
-                    timed: true,
-                    uiId: `event-uiId-${uuidv4()}`,
-                    timeEntry: x
-                });
-            }
-        }
-
-        if (newUIEvents.length > 0) {
-            existingEvents.value.push(...newUIEvents);
-        }
-    },
-    { immediate: true, deep: true }
-);
+const existingEvents = useMappingToEvents("existing", timeEntries);
 
 const events = computed<TimeEntryEvent[]>(() => [...existingEvents.value, ...draftEvents.value]);
 
