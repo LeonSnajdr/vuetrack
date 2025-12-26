@@ -7624,6 +7624,7 @@
     "useCurrentElement": true,
     "useCycleList": true,
     "useDark": true,
+    "useDate": true,
     "useDateFormat": true,
     "useDebounce": true,
     "useDebounceFn": true,

@@ -1,5 +1,6 @@
 import type { TimeEntryCreateContract, TimeEntryContract } from "@/contracts/TimeEntryContract";
 import type { TimeEntrySuggestionContract } from "@/contracts/TimeEntrySuggestion";
+import type { CalendarEvent } from "vuetify/lib/components/VCalendar/types.mjs";
 
 export type BaseCalendarEvent = {
     uiId: string;
@@ -46,3 +47,9 @@ export type Interaction =
           originalEndMs: number;
           overlaps: TimeEntryEvent[];
       };
+
+export function isTimeEntryEvent(e: CalendarEvent): e is TimeEntryEvent {
+    return !!e && typeof e === "object" && "kind" in e;
+    // or stricter:
+    // return e.kind === 'suggestion' || e.kind === 'entry'
+}

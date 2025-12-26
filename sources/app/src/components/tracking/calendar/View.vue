@@ -15,13 +15,15 @@
         eventOverlapMode="column"
         type="custom-daily"
     >
-        <template #event="{ event, timed }">
-            <div :id="(event as TimeEntryEvent).uiId" class="v-event-draggable">
-                <p>{{ (event as TimeEntryEvent).start }}</p>
-                <p>{{ event?.timeEntry?.taskId }}</p>
+        <template #event="{ event }">
+            <div v-if="isTimeEntryEvent(event)" :id="event.uiId">
+                <div class="v-event-draggable">
+                    <p v-if="event.kind === 'existing' || event.kind === 'suggestion'">{{ event.timeEntry.taskId }}</p>
+                    <p v-else>Draft</p>
+                    <p>{{ dateFormatter.format(event.start, "fullTime24h") }} - {{ dateFormatter.format(event.end, "fullTime24h") }}</p>
+                </div>
+                <div v-if="event.kind !== 'draft'" @mousedown.stop="beginResizeEvent(event)" class="v-event-drag-bottom" />
             </div>
-
-            <div v-if="timed" @mousedown.stop="beginResizeEvent(event)" class="v-event-drag-bottom" />
         </template>
     </VCalendar>
 
@@ -82,19 +84,21 @@
 <script setup lang="ts">
 import type { EventSlotScope } from "vuetify/lib/components/VCalendar/VCalendar.mjs";
 import type { CalendarDayBodySlotScope, CalendarEvent } from "vuetify/lib/components/VCalendar/types.mjs";
-import type { Interaction, TimeEntryEvent } from "./types";
+import { isTimeEntryEvent, type Interaction, type TimeEntryEvent } from "./types";
 import useMappingToEvents from "./timeEntryEventSync";
 
 const timeEntries = defineModel<TimeEntryContract[]>("timeEntries", { required: true });
 const timeEntrySuggestions = defineModel<TimeEntrySuggestionContract[]>("timeEntrySuggestions", { required: true });
 
-const draftEvents = ref<TimeEntryEvent[]>([]);
 const existingEvents = useMappingToEvents("existing", timeEntries);
 const suggestionEvents = useMappingToEvents("suggestion", timeEntrySuggestions, "#22C55E");
+const draftEvents = ref<TimeEntryEvent[]>([]);
 
 const events = computed<TimeEntryEvent[]>(() => [...existingEvents.value, ...suggestionEvents.value, ...draftEvents.value]);
 
 const interaction = ref<Interaction>({ kind: "idle" });
+
+const dateFormatter = useDate();
 
 const upsertEvent = async (event: TimeEntryEvent) => {
     const startTime = new Date(event.start);

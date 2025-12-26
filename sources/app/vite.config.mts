@@ -25,7 +25,8 @@ export default defineConfig({
                 VueRouterAutoImports,
                 {
                     "@mdi/js": Object.keys(await import("@mdi/js")).filter((x) => x.startsWith("mdi")),
-                    uuid: [["v4", "uuidv4"]]
+                    uuid: [["v4", "uuidv4"]],
+                    vuetify: ["useDate"]
                 }
             ],
             dirs: ["src/contracts/**", "src/stores/**"],
