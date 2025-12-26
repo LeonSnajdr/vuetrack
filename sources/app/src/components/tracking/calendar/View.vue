@@ -134,38 +134,44 @@ const timeEntries = defineModel<TimeEntryContract[]>("timeEntries", { required: 
 const draftEvents = ref<TimeEntryEvent[]>([]);
 const existingEvents = ref<TimeEntryEvent[]>([]);
 
-// Sync local events from prop
-// TODO: Improve performance
 watch(
     () => timeEntries.value.slice(),
     (newEntries, oldEntries) => {
-        oldEntries ??= [];
+        const entries = newEntries || [];
+        const previous = oldEntries || [];
 
-        const added = newEntries.filter((x) => !oldEntries.includes(x));
-        const removed = oldEntries.filter((x) => !newEntries.includes(x));
-        const existing = newEntries.filter((x) => oldEntries.includes(x));
+        const newEntrySet = new Set(entries);
+        const removedEntrySet = new Set(previous.filter((x) => !newEntrySet.has(x)));
 
-        added.forEach((x) => {
-            existingEvents.value.push({
-                kind: "existing",
-                color: "#7da6c9",
-                start: x.startTime.getTime(),
-                end: x.endTime.getTime(),
-                timed: true,
-                uiId: `event-uiId-${uuidv4()}`,
-                timeEntry: x
-            });
-        });
+        if (removedEntrySet.size > 0) {
+            existingEvents.value = existingEvents.value.filter((e) => e.kind !== "existing" || !removedEntrySet.has(e.timeEntry));
+        }
 
-        existingEvents.value = existingEvents.value.filter((e) => e.kind === "existing" && !removed.includes(e.timeEntry));
+        const eventMap = new Map(existingEvents.value.filter((e) => e.kind === "existing").map((e) => [e.timeEntry, e]));
 
-        existing.forEach((x) => {
-            const existingEvent = existingEvents.value.find((e) => e.kind === "existing" && e.timeEntry == x);
+        const newUIEvents: TimeEntryEvent[] = [];
+        for (const x of entries) {
+            const existingEvent = eventMap.get(x);
+
             if (existingEvent) {
                 existingEvent.start = x.startTime.getTime();
                 existingEvent.end = x.endTime.getTime();
+            } else {
+                newUIEvents.push({
+                    kind: "existing",
+                    color: "#7da6c9",
+                    start: x.startTime.getTime(),
+                    end: x.endTime.getTime(),
+                    timed: true,
+                    uiId: `event-uiId-${uuidv4()}`,
+                    timeEntry: x
+                });
             }
-        });
+        }
+
+        if (newUIEvents.length > 0) {
+            existingEvents.value.push(...newUIEvents);
+        }
     },
     { immediate: true, deep: true }
 );
