@@ -49,7 +49,5 @@ export type Interaction =
       };
 
 export function isTimeEntryEvent(e: CalendarEvent): e is TimeEntryEvent {
-    return !!e && typeof e === "object" && "kind" in e;
-    // or stricter:
-    // return e.kind === 'suggestion' || e.kind === 'entry'
+    return e.kind === "suggestion" || e.kind === "existing" || e.kind === "draft";
 }
