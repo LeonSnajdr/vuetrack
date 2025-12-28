@@ -18,14 +18,14 @@
         <template #event="{ event }">
             <div v-if="isTimeEntryEvent(event)" :id="event.uiId">
                 <div class="v-event-draggable">
-                    <div v-if="event.kind === 'suggestion'">
-                        <VIconBtn @click="acceptSuggestion" :icon="mdiCheck" />
+                    <div v-if="(event.kind === 'draft' || event.kind === 'suggestion')">
+                        <VBtn @click="acceptSuggestion(event)" :icon="mdiCheck" />
                     </div>
                     <p v-if="event.kind === 'existing' || event.kind === 'suggestion'">{{ event.timeEntry.taskId }}</p>
                     <p v-else>Draft</p>
                     <p>{{ dateFormatter.format(event.start, "fullTime24h") }} - {{ dateFormatter.format(event.end, "fullTime24h") }}</p>
                 </div>
-                <div v-if="event.kind !== 'draft'" @mousedown.stop="beginResizeEvent(event)" class="v-event-drag-bottom" />
+                <div @mousedown.stop="beginResizeEvent(event)" class="v-event-drag-bottom" />
             </div>
         </template>
     </VCalendar>
@@ -43,18 +43,29 @@
                 <template v-if="interaction.event.kind === 'draft'">
                     <VTextField
                     v-model.trim="interaction.event.createEntry.taskId"
-                    @keydown.enter.prevent="confirmEvent"
+                    @keydown.enter.prevent="confirmEvent(interaction.event)"
                     @keydown.esc.prevent="cancelDraft"
                     class="mt-3"
                     density="compact"
                     label="Taskid"
                     autofocus
                     />
-                    <div class="d-flex justify-end ga-2 mt-2">
-                        <VBtn @click="cancelDraft" variant="text">Cancel</VBtn>
-                        <VBtn @click="confirmEvent" color="primary">Save</VBtn>
-                    </div>
                 </template>
+                <template v-if="interaction.event.kind === 'suggestion'">
+                    <VTextField
+                    v-model.trim="interaction.event.timeEntry.taskId"
+                    @keydown.enter.prevent="confirmEvent(interaction.event)"
+                    @keydown.esc.prevent="cancelDraft"
+                    class="mt-3"
+                    density="compact"
+                    label="Taskid"
+                    autofocus
+                    />
+                </template>
+                <div class="d-flex justify-end ga-2 mt-2">
+                    <VBtn @click="cancelDraft" variant="text">Cancel</VBtn>
+                    <VBtn @click="confirmEvent(interaction.event)" color="primary">Save</VBtn>
+                </div>
             </VCard>
         </VMenu>
     </template>
@@ -165,7 +176,6 @@ const beginMoveEvent = (_nativeEvent: Event, { event, timed }: EventSlotScope) =
     if (!event || !timed) return;
 
     const ev = event as TimeEntryEvent;
-    if (ev.kind === "draft") return;
 
     interaction.value = {
         kind: "move",
@@ -180,7 +190,6 @@ const beginResizeEvent = (event: CalendarEvent) => {
     if (interaction.value.kind === "create" || interaction.value.kind === "conflict") return;
 
     const ev = event as TimeEntryEvent;
-    if (ev.kind === "draft") return;
 
     interaction.value = { kind: "resize", event: ev, originalEndMs: ev.end };
 };
@@ -196,28 +205,12 @@ const beginGridInteraction = (_nativeEvent: Event, tms: CalendarDayBodySlotScope
     }
 
     const anchorStartMs = roundTime(mouseMs);
-
-    // 1. Prevent starting on top of an existing event
-    const overlapping = existingEvents.value.some((e) => anchorStartMs >= e.start && anchorStartMs < e.end);
-    if (overlapping) return;
-
-    // 2. Determine boundaries to prevent dragging over existing events
-    // Find neighbors to set limits
-    const neighbors = [...existingEvents.value].sort((a, b) => a.start - b.start);
-    const nextEvent = neighbors.find((e) => e.start >= anchorStartMs);
-    const prevEvent = [...neighbors].reverse().find((e) => e.end <= anchorStartMs);
-
-    // If no event is after, we can go to infinity (or day end), if no event is before, we go to 0
-    const maxEndMs = nextEvent ? nextEvent.start : Number.MAX_SAFE_INTEGER;
-    const minStartMs = prevEvent ? prevEvent.end : 0;
-
     const newEvent = addDraftEvent(anchorStartMs);
+
     interaction.value = {
         kind: "draft",
         event: newEvent,
-        anchorStartMs,
-        minStartMs,
-        maxEndMs
+        anchorStartMs
     };
 };
 
@@ -243,16 +236,8 @@ const updateInteractionFromPointer = (_nativeEvent: Event, tms: CalendarDayBodyS
             return;
         }
         case "draft": {
-            const { event, anchorStartMs, minStartMs, maxEndMs } = interaction.value;
-            let mouseRounded = roundTime(mouseMs, false);
-
-            // 3. Clamp dragging within constraints
-            if (mouseRounded > maxEndMs) {
-                mouseRounded = maxEndMs;
-            }
-            if (mouseRounded < minStartMs) {
-                mouseRounded = minStartMs;
-            }
+            const { event, anchorStartMs } = interaction.value;
+            const mouseRounded = roundTime(mouseMs, false);
 
             event.start = Math.min(mouseRounded, anchorStartMs);
             event.end = Math.max(mouseRounded, anchorStartMs);
@@ -269,7 +254,6 @@ const finishInteraction = async () => {
         case "conflict":
             return;
         case "draft":
-            // Drafts should now be valid without overlaps due to constraints in creation
             interaction.value = { kind: "create", event: cur.event };
             return;
         case "move":
@@ -452,18 +436,35 @@ const addDraftEvent = (anchorStartMs: number) => {
     return newEvent;
 };
 
-const confirmEvent = async () => {
+const confirmEvent = async (event: DraftTimeEntryEvent | SuggestionTimeEntryEvent) => {
     if (interaction.value.kind !== "create") return;
+
+    const overlaps = getOverlappingEvents(event, existingEvents.value);
+
+    if (overlaps.length > 0) {
+        interaction.value = {
+            kind: "conflict",
+            event: event,
+            overlaps: overlaps,
+            onResolved: async (position) => {
+                event.start = position.start;
+                event.end = position.end;
+                await upsertEvent(event);
+                interaction.value = { kind: "idle" };
+            },
+            onCanceled: async () => {
+                // TODO: Logic needed or is it ok to keep the possition
+                interaction.value = { kind: "idle" };
+            }
+        };
+        return;
+    }
+
     await upsertEvent(interaction.value.event);
     interaction.value = { kind: "idle" };
 };
 
 const cancelDraft = () => {
-    if (interaction.value.kind !== "create") {
-        interaction.value = { kind: "idle" };
-        return;
-    }
-    removeEvent(interaction.value.event);
     interaction.value = { kind: "idle" };
 };
 

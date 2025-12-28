@@ -18,35 +18,32 @@ export type TimeEntryEvent =
 export type DraftTimeEntryEvent = Extract<TimeEntryEvent, { kind: "draft" }>;
 export type ExistingTimeEntryEvent = Extract<TimeEntryEvent, { kind: "existing" }>;
 export type SuggestionTimeEntryEvent = Extract<TimeEntryEvent, { kind: "suggestion" }>;
-export type ExistingOrSuggestionTimeEntryEvent = Extract<TimeEntryEvent, { kind: "existing" | "suggestion" }>;
 
 export type Interaction =
     | { kind: "idle" }
     | {
           kind: "move";
-          event: ExistingOrSuggestionTimeEntryEvent;
+          event: TimeEntryEvent;
           pointerOffsetMs?: number;
           originalStartMs: number;
           originalEndMs: number;
       }
     | {
           kind: "resize";
-          event: ExistingOrSuggestionTimeEntryEvent;
+          event: TimeEntryEvent;
           originalEndMs: number;
       }
     | {
           kind: "draft";
           event: DraftTimeEntryEvent;
           anchorStartMs: number;
-          minStartMs: number;
-          maxEndMs: number;
       }
     | { kind: "create"; event: DraftTimeEntryEvent | SuggestionTimeEntryEvent }
     | {
           kind: "conflict";
-          event: ExistingOrSuggestionTimeEntryEvent;
+          event: TimeEntryEvent;
           overlaps: TimeEntryEvent[];
-          onResolved: (position: { start: number, end: number }) => Promise<void>;
+          onResolved: (position: { start: number; end: number }) => Promise<void>;
           onCanceled: () => Promise<void>;
       };
 

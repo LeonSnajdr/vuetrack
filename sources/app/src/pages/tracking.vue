@@ -28,8 +28,8 @@ const timeEntries = ref<TimeEntryContract[]>([
 const timeEntrySuggestions = ref<TimeEntrySuggestionContract[]>([
     {
         id: "mySuggestion" as TimeEntrySuggestionId,
-        startTime: new Date(),
-        endTime: new Date(Date.now() + 60 * 60 * 1000),
+        startTime: new Date((Date.now() - 3 * 24 * 60 * 60 * 1000) + 60 * 60 * 1000),
+        endTime: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
         taskId: "my suggested id"
     }
 ]);
