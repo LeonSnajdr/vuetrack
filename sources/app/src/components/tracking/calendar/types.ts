@@ -16,6 +16,8 @@ export type TimeEntryEvent =
     | ({ kind: "suggestion"; timeEntry: TimeEntrySuggestionContract } & BaseCalendarEvent);
 
 export type DraftTimeEntryEvent = Extract<TimeEntryEvent, { kind: "draft" }>;
+export type ExistingTimeEntryEvent = Extract<TimeEntryEvent, { kind: "existing" }>;
+export type SuggestionTimeEntryEvent = Extract<TimeEntryEvent, { kind: "suggestion" }>;
 export type ExistingOrSuggestionTimeEntryEvent = Extract<TimeEntryEvent, { kind: "existing" | "suggestion" }>;
 
 export type Interaction =
@@ -39,13 +41,13 @@ export type Interaction =
           minStartMs: number;
           maxEndMs: number;
       }
-    | { kind: "create"; event: DraftTimeEntryEvent }
+    | { kind: "create"; event: DraftTimeEntryEvent | SuggestionTimeEntryEvent }
     | {
           kind: "conflict";
           event: ExistingOrSuggestionTimeEntryEvent;
-          originalStartMs: number;
-          originalEndMs: number;
           overlaps: TimeEntryEvent[];
+          onResolved: (position: { start: number, end: number }) => Promise<void>;
+          onCanceled: () => Promise<void>;
       };
 
 export function isTimeEntryEvent(e: CalendarEvent): e is TimeEntryEvent {

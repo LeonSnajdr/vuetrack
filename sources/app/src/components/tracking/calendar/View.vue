@@ -18,6 +18,9 @@
         <template #event="{ event }">
             <div v-if="isTimeEntryEvent(event)" :id="event.uiId">
                 <div class="v-event-draggable">
+                    <div v-if="event.kind === 'suggestion'">
+                        <VIconBtn @click="acceptSuggestion" :icon="mdiCheck" />
+                    </div>
                     <p v-if="event.kind === 'existing' || event.kind === 'suggestion'">{{ event.timeEntry.taskId }}</p>
                     <p v-else>Draft</p>
                     <p>{{ dateFormatter.format(event.start, "fullTime24h") }} - {{ dateFormatter.format(event.end, "fullTime24h") }}</p>
@@ -37,7 +40,8 @@
         >
             <VCard class="pa-3" width="320">
                 <VCardTitle class="text-subtitle-1 pa-0">Name the event</VCardTitle>
-                <VTextField
+                <template v-if="interaction.event.kind === 'draft'">
+                    <VTextField
                     v-model.trim="interaction.event.createEntry.taskId"
                     @keydown.enter.prevent="confirmEvent"
                     @keydown.esc.prevent="cancelDraft"
@@ -45,11 +49,12 @@
                     density="compact"
                     label="Taskid"
                     autofocus
-                />
-                <div class="d-flex justify-end ga-2 mt-2">
-                    <VBtn @click="cancelDraft" variant="text">Cancel</VBtn>
-                    <VBtn @click="confirmEvent" color="primary">Save</VBtn>
-                </div>
+                    />
+                    <div class="d-flex justify-end ga-2 mt-2">
+                        <VBtn @click="cancelDraft" variant="text">Cancel</VBtn>
+                        <VBtn @click="confirmEvent" color="primary">Save</VBtn>
+                    </div>
+                </template>
             </VCard>
         </VMenu>
     </template>
@@ -84,7 +89,7 @@
 <script setup lang="ts">
 import type { EventSlotScope } from "vuetify/lib/components/VCalendar/VCalendar.mjs";
 import type { CalendarDayBodySlotScope, CalendarEvent } from "vuetify/lib/components/VCalendar/types.mjs";
-import { isTimeEntryEvent, type Interaction, type TimeEntryEvent } from "./types";
+import { isTimeEntryEvent, type Interaction, type SuggestionTimeEntryEvent, type TimeEntryEvent } from "./types";
 import useMappingToEvents from "./timeEntryEventSync";
 
 const timeEntries = defineModel<TimeEntryContract[]>("timeEntries", { required: true });
@@ -99,6 +104,10 @@ const events = computed<TimeEntryEvent[]>(() => [...existingEvents.value, ...sug
 const interaction = ref<Interaction>({ kind: "idle" });
 
 const dateFormatter = useDate();
+
+const acceptSuggestion = (event: SuggestionTimeEntryEvent) => {
+    interaction.value =  { kind: "create", event: event }
+}
 
 const upsertEvent = async (event: TimeEntryEvent) => {
     const startTime = new Date(event.start);
@@ -276,9 +285,18 @@ const finishInteraction = async () => {
                     interaction.value = {
                         kind: "conflict",
                         event: cur.event,
-                        originalStartMs: origStart,
-                        originalEndMs: origEnd,
-                        overlaps: overlaps
+                        overlaps: overlaps,
+                        onResolved: async (position) => {
+                            cur.event.start = position.start;
+                            cur.event.end = position.end;
+                            await upsertEvent(cur.event);
+                            interaction.value = { kind: "idle" };
+                        },
+                        onCanceled: async () => {
+                            cur.event.start = origStart;
+                            cur.event.end = origEnd;
+                            interaction.value = { kind: "idle" };
+                        }
                     };
                     return;
                 }
@@ -294,19 +312,10 @@ const finishInteraction = async () => {
     }
 };
 
-const cancelConflict = () => {
-    if (interaction.value.kind !== "conflict") return;
-    const { event, originalStartMs, originalEndMs } = interaction.value;
-
-    event.start = originalStartMs;
-    event.end = originalEndMs;
-    interaction.value = { kind: "idle" };
-};
-
 // 2. Truncate / Fit to Gap
 const resolveTruncate = async () => {
     if (interaction.value.kind !== "conflict") return;
-    const { event, overlaps } = interaction.value;
+    const { event, overlaps, onResolved, onCanceled } = interaction.value;
 
     let allowedStart = event.start;
     let allowedEnd = event.end;
@@ -315,7 +324,7 @@ const resolveTruncate = async () => {
     const isFullyContained = overlaps.some((ov) => ov.start <= event.start && ov.end >= event.end);
 
     if (isFullyContained) {
-        cancelConflict();
+        await onCanceled();
         return;
     }
 
@@ -329,20 +338,17 @@ const resolveTruncate = async () => {
     });
 
     if (allowedEnd <= allowedStart) {
-        cancelConflict();
+        await onCanceled();
         return;
     }
 
-    event.start = allowedStart;
-    event.end = allowedEnd;
-    interaction.value = { kind: "idle" };
-    await upsertEvent(event);
+    await onResolved({ start: allowedStart, end: allowedEnd })
 };
 
 // 3. Move to next free slot (Up or Down)
 const resolveShift = async (down: boolean) => {
     if (interaction.value.kind !== "conflict") return;
-    const { event } = interaction.value;
+    const { event, onResolved, onCanceled } = interaction.value;
     const duration = event.end - event.start;
 
     const sorted = [...existingEvents.value].filter((e) => e.uiId !== event.uiId).sort((a, b) => a.start - b.start);
@@ -382,19 +388,16 @@ const resolveShift = async (down: boolean) => {
     }
 
     if (foundStart !== -1) {
-        event.start = foundStart;
-        event.end = foundStart + duration;
-        interaction.value = { kind: "idle" };
-        await upsertEvent(event);
+        await onResolved({ start: foundStart, end: foundStart + duration })
     } else {
-        cancelConflict();
+        await onCanceled();
     }
 };
 
 // 4. Force / Smash
 const resolveForce = async () => {
     if (interaction.value.kind !== "conflict") return;
-    const { event, overlaps } = interaction.value;
+    const { event, overlaps, onResolved } = interaction.value;
 
     for (const ov of overlaps) {
         // Case 1: Dragged event covers Ov completely -> Delete Ov
@@ -428,8 +431,7 @@ const resolveForce = async () => {
         }
     }
 
-    interaction.value = { kind: "idle" };
-    await upsertEvent(event);
+    await onResolved({ start: event.start, end: event.end });
 };
 
 const addDraftEvent = (anchorStartMs: number) => {
