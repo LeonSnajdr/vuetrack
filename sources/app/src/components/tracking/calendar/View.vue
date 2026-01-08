@@ -32,7 +32,7 @@
 
     <template v-if="interaction.kind === 'create'">
         <VMenu
-            @update:modelValue="onNameMenuToggle"
+            @update:modelValue="(open) => !open && cancelCreate()"
             :closeOnContentClick="false"
             :modelValue="interaction.kind === 'create'"
             :target="'#' + interaction.event.uiId"
@@ -44,7 +44,7 @@
                     <VTextField
                     v-model.trim="interaction.event.createEntry.taskId"
                     @keydown.enter.prevent="confirmEvent(interaction.event)"
-                    @keydown.esc.prevent="cancelDraft"
+                    @keydown.esc.prevent="cancelCreate"
                     class="mt-3"
                     density="compact"
                     label="Taskid"
@@ -55,7 +55,7 @@
                     <VTextField
                     v-model.trim="interaction.event.timeEntry.taskId"
                     @keydown.enter.prevent="confirmEvent(interaction.event)"
-                    @keydown.esc.prevent="cancelDraft"
+                    @keydown.esc.prevent="cancelCreate"
                     class="mt-3"
                     density="compact"
                     label="Taskid"
@@ -63,7 +63,7 @@
                     />
                 </template>
                 <div class="d-flex justify-end ga-2 mt-2">
-                    <VBtn @click="cancelDraft" variant="text">Cancel</VBtn>
+                    <VBtn @click="cancelCreate" variant="text">Cancel</VBtn>
                     <VBtn @click="confirmEvent(interaction.event)" color="primary">Save</VBtn>
                 </div>
             </VCard>
@@ -479,12 +479,15 @@ const confirmEvent = async (event: DraftTimeEntryEvent | SuggestionTimeEntryEven
     interaction.value = { kind: "idle" };
 };
 
-const cancelDraft = () => {
-    interaction.value = { kind: "idle" };
-};
+const cancelCreate = () => {
+    if(interaction.value.kind !== "create") return;
 
-const onNameMenuToggle = (open: boolean) => {
-    if (!open && interaction.value.kind === "create") cancelDraft();
+    const ev = interaction.value.event;
+    if(ev.kind === "draft") { 
+        removeEvent(ev)
+    }
+
+    interaction.value = { kind: "idle" };
 };
 
 const cancelInteractionOnLeave = () => {
