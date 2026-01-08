@@ -120,25 +120,40 @@ const acceptSuggestion = (event: SuggestionTimeEntryEvent) => {
     interaction.value =  { kind: "create", event: event }
 }
 
-const upsertEvent = async (event: TimeEntryEvent) => {
+const createEvent = async (event: TimeEntryEvent) => {
     const startTime = new Date(event.start);
     const endTime = new Date(event.end);
 
+    let newTimeEntry: TimeEntryContract;
+
     if (event.kind === "draft") {
         if (!event.createEntry.taskId) return; // Basic validation
-
-        const newTimeEntry: TimeEntryContract = {
+        newTimeEntry = {
             id: "testId" as TimeEntryId,
             user: "testUser",
             startTime: startTime,
             endTime: endTime,
             taskId: event.createEntry.taskId
         };
+    } else if (event.kind === "suggestion") {
+        newTimeEntry = {
+            id: "testId" as TimeEntryId,
+            user: "testUser",
+            startTime: startTime,
+            endTime: endTime,
+            taskId: event.timeEntry.taskId
+        };
+    }
 
-        timeEntries.value.push(newTimeEntry);
+    timeEntries.value.push(newTimeEntry);
+    removeEvent(event);
+};
 
-        removeEvent(event);
-    } else if (event.kind === "existing") {
+const updateEvent = async (event: TimeEntryEvent) => {
+    const startTime = new Date(event.start);
+    const endTime = new Date(event.end);
+
+    if (event.kind === "existing") {
         event.timeEntry.startTime = startTime;
         event.timeEntry.endTime = endTime;
         console.log("Event updated", event.uiId);
@@ -273,7 +288,7 @@ const finishInteraction = async () => {
                         onResolved: async (position) => {
                             cur.event.start = position.start;
                             cur.event.end = position.end;
-                            await upsertEvent(cur.event);
+                            await updateEvent(cur.event);
                             interaction.value = { kind: "idle" };
                         },
                         onCanceled: async () => {
@@ -287,7 +302,7 @@ const finishInteraction = async () => {
             }
 
             interaction.value = { kind: "idle" };
-            await upsertEvent(cur.event);
+            await updateEvent(cur.event);
             return;
         }
         default:
@@ -393,13 +408,13 @@ const resolveForce = async () => {
         // Case 2: Dragged overlaps Ov's tail (Ov Start ... Drag Start ... Ov End)
         if (event.start > ov.start && event.start < ov.end) {
             ov.end = event.start;
-            upsertEvent(ov);
+            await updateEvent(ov);
         }
 
         // Case 3: Dragged overlaps Ov's head (Ov Start ... Drag End ... Ov End)
         if (event.end > ov.start && event.end < ov.end) {
             ov.start = event.end;
-            upsertEvent(ov);
+            await updateEvent(ov);
         }
 
         // Case 4: Dragged is inside Ov
@@ -411,7 +426,7 @@ const resolveForce = async () => {
             } else {
                 ov.start = event.end; // Keep tail
             }
-            upsertEvent(ov);
+            await updateEvent(ov);
         }
     }
 
@@ -449,7 +464,7 @@ const confirmEvent = async (event: DraftTimeEntryEvent | SuggestionTimeEntryEven
             onResolved: async (position) => {
                 event.start = position.start;
                 event.end = position.end;
-                await upsertEvent(event);
+                await createEvent(event);
                 interaction.value = { kind: "idle" };
             },
             onCanceled: async () => {
@@ -460,7 +475,7 @@ const confirmEvent = async (event: DraftTimeEntryEvent | SuggestionTimeEntryEven
         return;
     }
 
-    await upsertEvent(interaction.value.event);
+    await createEvent(event);
     interaction.value = { kind: "idle" };
 };
 

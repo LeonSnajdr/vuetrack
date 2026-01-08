@@ -19,6 +19,7 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     TrackingCalendarSidebar: typeof import('./../src/components/tracking/calendar/Sidebar.vue')['default']
+    TrackingCalendarTest: typeof import('./../src/components/tracking/calendar/test.vue')['default']
     TrackingCalendarView: typeof import('./../src/components/tracking/calendar/View.vue')['default']
   }
 }
