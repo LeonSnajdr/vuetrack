@@ -18,7 +18,7 @@
         <template #event="{ event }">
             <div v-if="isTimeEntryEvent(event)" :id="event.uiId">
                 <div class="v-event-draggable">
-                    <div v-if="(event.kind === 'draft' || event.kind === 'suggestion')">
+                    <div v-if="event.kind === 'suggestion'">
                         <VBtn @click="acceptSuggestion(event)" :icon="mdiCheck" />
                     </div>
                     <p v-if="event.kind === 'existing' || event.kind === 'suggestion'">{{ event.timeEntry.taskId }}</p>
@@ -42,24 +42,24 @@
                 <VCardTitle class="text-subtitle-1 pa-0">Name the event</VCardTitle>
                 <template v-if="interaction.event.kind === 'draft'">
                     <VTextField
-                    v-model.trim="interaction.event.createEntry.taskId"
-                    @keydown.enter.prevent="confirmEvent(interaction.event)"
-                    @keydown.esc.prevent="cancelCreate"
-                    class="mt-3"
-                    density="compact"
-                    label="Taskid"
-                    autofocus
+                        v-model.trim="interaction.event.createEntry.taskId"
+                        @keydown.enter.prevent="confirmEvent(interaction.event)"
+                        @keydown.esc.prevent="cancelCreate"
+                        class="mt-3"
+                        density="compact"
+                        label="Taskid"
+                        autofocus
                     />
                 </template>
                 <template v-if="interaction.event.kind === 'suggestion'">
                     <VTextField
-                    v-model.trim="interaction.event.timeEntry.taskId"
-                    @keydown.enter.prevent="confirmEvent(interaction.event)"
-                    @keydown.esc.prevent="cancelCreate"
-                    class="mt-3"
-                    density="compact"
-                    label="Taskid"
-                    autofocus
+                        v-model.trim="interaction.event.timeEntry.taskId"
+                        @keydown.enter.prevent="confirmEvent(interaction.event)"
+                        @keydown.esc.prevent="cancelCreate"
+                        class="mt-3"
+                        density="compact"
+                        label="Taskid"
+                        autofocus
                     />
                 </template>
                 <div class="d-flex justify-end ga-2 mt-2">
@@ -90,7 +90,7 @@
                 </VList>
 
                 <div class="d-flex justify-end mt-2 border-t pt-2">
-                    <VBtn @click="cancelConflict" size="small" variant="plain">Cancel</VBtn>
+                    <VBtn @click="interaction.onCanceled()" size="small" variant="plain">Cancel</VBtn>
                 </div>
             </VCard>
         </VMenu>
@@ -100,7 +100,7 @@
 <script setup lang="ts">
 import type { EventSlotScope } from "vuetify/lib/components/VCalendar/VCalendar.mjs";
 import type { CalendarDayBodySlotScope, CalendarEvent } from "vuetify/lib/components/VCalendar/types.mjs";
-import { isTimeEntryEvent, type Interaction, type SuggestionTimeEntryEvent, type TimeEntryEvent } from "./types";
+import { isTimeEntryEvent, type DraftTimeEntryEvent, type Interaction, type SuggestionTimeEntryEvent, type TimeEntryEvent } from "./types";
 import useMappingToEvents from "./timeEntryEventSync";
 
 const timeEntries = defineModel<TimeEntryContract[]>("timeEntries", { required: true });
@@ -117,8 +117,8 @@ const interaction = ref<Interaction>({ kind: "idle" });
 const dateFormatter = useDate();
 
 const acceptSuggestion = (event: SuggestionTimeEntryEvent) => {
-    interaction.value =  { kind: "create", event: event }
-}
+    interaction.value = { kind: "create", event: event };
+};
 
 const createEvent = async (event: TimeEntryEvent) => {
     const startTime = new Date(event.start);
@@ -127,7 +127,11 @@ const createEvent = async (event: TimeEntryEvent) => {
     let newTimeEntry: TimeEntryContract;
 
     if (event.kind === "draft") {
-        if (!event.createEntry.taskId) return; // Basic validation
+        if (!event.createEntry.taskId) {
+            removeEvent(event);
+            return;
+        }
+
         newTimeEntry = {
             id: "testId" as TimeEntryId,
             user: "testUser",
@@ -143,13 +147,15 @@ const createEvent = async (event: TimeEntryEvent) => {
             endTime: endTime,
             taskId: event.timeEntry.taskId
         };
+    } else {
+        return;
     }
 
     timeEntries.value.push(newTimeEntry);
     removeEvent(event);
 };
 
-const updateEvent = async (event: TimeEntryEvent) => {
+const updateEvent = (event: TimeEntryEvent) => {
     const startTime = new Date(event.start);
     const endTime = new Date(event.end);
 
@@ -277,7 +283,6 @@ const finishInteraction = async () => {
                 const overlaps = getOverlappingEvents(cur.event, existingEvents.value);
 
                 if (overlaps.length > 0) {
-                    // Determine original start for fallback.
                     const origStart = cur.kind === "move" ? cur.originalStartMs : cur.event.start;
                     const origEnd = cur.originalEndMs;
 
@@ -288,7 +293,7 @@ const finishInteraction = async () => {
                         onResolved: async (position) => {
                             cur.event.start = position.start;
                             cur.event.end = position.end;
-                            await updateEvent(cur.event);
+                            updateEvent(cur.event);
                             interaction.value = { kind: "idle" };
                         },
                         onCanceled: async () => {
@@ -302,7 +307,7 @@ const finishInteraction = async () => {
             }
 
             interaction.value = { kind: "idle" };
-            await updateEvent(cur.event);
+            updateEvent(cur.event);
             return;
         }
         default:
@@ -311,7 +316,6 @@ const finishInteraction = async () => {
     }
 };
 
-// 2. Truncate / Fit to Gap
 const resolveTruncate = async () => {
     if (interaction.value.kind !== "conflict") return;
     const { event, overlaps, onResolved, onCanceled } = interaction.value;
@@ -319,7 +323,6 @@ const resolveTruncate = async () => {
     let allowedStart = event.start;
     let allowedEnd = event.end;
 
-    // Check if the event is completely inside any of the overlapping events
     const isFullyContained = overlaps.some((ov) => ov.start <= event.start && ov.end >= event.end);
 
     if (isFullyContained) {
@@ -341,10 +344,9 @@ const resolveTruncate = async () => {
         return;
     }
 
-    await onResolved({ start: allowedStart, end: allowedEnd })
+    await onResolved({ start: allowedStart, end: allowedEnd });
 };
 
-// 3. Move to next free slot (Up or Down)
 const resolveShift = async (down: boolean) => {
     if (interaction.value.kind !== "conflict") return;
     const { event, onResolved, onCanceled } = interaction.value;
@@ -387,46 +389,41 @@ const resolveShift = async (down: boolean) => {
     }
 
     if (foundStart !== -1) {
-        await onResolved({ start: foundStart, end: foundStart + duration })
+        await onResolved({ start: foundStart, end: foundStart + duration });
     } else {
         await onCanceled();
     }
 };
 
-// 4. Force / Smash
 const resolveForce = async () => {
     if (interaction.value.kind !== "conflict") return;
     const { event, overlaps, onResolved } = interaction.value;
 
     for (const ov of overlaps) {
-        // Case 1: Dragged event covers Ov completely -> Delete Ov
         if (event.start <= ov.start && event.end >= ov.end) {
             removeEvent(ov);
             continue;
         }
 
-        // Case 2: Dragged overlaps Ov's tail (Ov Start ... Drag Start ... Ov End)
         if (event.start > ov.start && event.start < ov.end) {
             ov.end = event.start;
-            await updateEvent(ov);
+            updateEvent(ov);
         }
 
-        // Case 3: Dragged overlaps Ov's head (Ov Start ... Drag End ... Ov End)
         if (event.end > ov.start && event.end < ov.end) {
             ov.start = event.end;
-            await updateEvent(ov);
+            updateEvent(ov);
         }
 
-        // Case 4: Dragged is inside Ov
         if (event.start > ov.start && event.end < ov.end) {
             const headSize = event.start - ov.start;
             const tailSize = ov.end - event.end;
             if (headSize > tailSize) {
-                ov.end = event.start; // Keep head
+                ov.end = event.start;
             } else {
-                ov.start = event.end; // Keep tail
+                ov.start = event.end;
             }
-            await updateEvent(ov);
+            updateEvent(ov);
         }
     }
 
@@ -468,7 +465,6 @@ const confirmEvent = async (event: DraftTimeEntryEvent | SuggestionTimeEntryEven
                 interaction.value = { kind: "idle" };
             },
             onCanceled: async () => {
-                // TODO: Logic needed or is it ok to keep the possition
                 interaction.value = { kind: "idle" };
             }
         };
@@ -480,11 +476,11 @@ const confirmEvent = async (event: DraftTimeEntryEvent | SuggestionTimeEntryEven
 };
 
 const cancelCreate = () => {
-    if(interaction.value.kind !== "create") return;
+    if (interaction.value.kind !== "create") return;
 
     const ev = interaction.value.event;
-    if(ev.kind === "draft") { 
-        removeEvent(ev)
+    if (ev.kind === "draft") {
+        removeEvent(ev);
     }
 
     interaction.value = { kind: "idle" };
