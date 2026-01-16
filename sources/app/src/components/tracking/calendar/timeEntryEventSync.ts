@@ -1,14 +1,14 @@
 import type { Ref } from "vue";
 import type { TimeEntryContract } from "@/contracts/TimeEntryContract";
 import type { TimeEntrySuggestionContract } from "@/contracts/TimeEntrySuggestion";
-import type { ExistingOrSuggestionTimeEntryEvent } from "./types";
+import type { ExistingTimeEntryEvent, SuggestionTimeEntryEvent } from "./types";
 
 export default function useMappingToEvents<T extends TimeEntryContract | TimeEntrySuggestionContract>(
-    kind: ExistingOrSuggestionTimeEntryEvent["kind"],
+    kind: (ExistingTimeEntryEvent | SuggestionTimeEntryEvent)["kind"],
     entriesRef: Ref<T[]>,
     color = "#7da6c9"
 ) {
-    const events = ref<ExistingOrSuggestionTimeEntryEvent[]>([]);
+    const events = ref<(ExistingTimeEntryEvent | SuggestionTimeEntryEvent)[]>([]);
 
     watch(
         () => entriesRef.value.slice(),
@@ -25,7 +25,7 @@ export default function useMappingToEvents<T extends TimeEntryContract | TimeEnt
 
             const eventMap = new Map(events.value.filter((e) => e.kind === kind).map((e) => [e.timeEntry as T, e]));
 
-            const newUIEvents: ExistingOrSuggestionTimeEntryEvent[] = [];
+            const newUIEvents: (ExistingTimeEntryEvent | SuggestionTimeEntryEvent)[] = [];
 
             for (const x of entries) {
                 const existingEvent = eventMap.get(x);
@@ -42,7 +42,7 @@ export default function useMappingToEvents<T extends TimeEntryContract | TimeEnt
                         timed: true,
                         uiId: `event-uiId-${uuidv4()}`,
                         timeEntry: x
-                    } as ExistingOrSuggestionTimeEntryEvent);
+                    } as ExistingTimeEntryEvent | SuggestionTimeEntryEvent);
                 }
             }
 

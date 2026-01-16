@@ -103,8 +103,11 @@ import type { CalendarDayBodySlotScope, CalendarEvent } from "vuetify/lib/compon
 import { isTimeEntryEvent, type DraftTimeEntryEvent, type Interaction, type SuggestionTimeEntryEvent, type TimeEntryEvent } from "./types";
 import useMappingToEvents from "./timeEntryEventSync";
 
-const timeEntries = defineModel<TimeEntryContract[]>("timeEntries", { required: true });
-const timeEntrySuggestions = defineModel<TimeEntrySuggestionContract[]>("timeEntrySuggestions", { required: true });
+const timeEntryStore = useTimeEntryStore();
+const timeEntrySuggestionStore = useTimeEntrySuggestionStore();
+
+const { timeEntries } = storeToRefs(timeEntryStore);
+const { timeEntrySuggestions } = storeToRefs(timeEntrySuggestionStore);
 
 const existingEvents = useMappingToEvents("existing", timeEntries);
 const suggestionEvents = useMappingToEvents("suggestion", timeEntrySuggestions, "#22C55E");
