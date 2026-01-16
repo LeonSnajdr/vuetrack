@@ -1,17 +1,3 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
-## Development Commands
-
-- `yarn dev` - Start development server (runs on port 3000)
-- `yarn build` - Build for production (runs type-check + build-only)
-- `yarn type-check` - Run TypeScript type checking
-- `yarn lint` - Run ESLint on all supported file types
-- `yarn lint:style` - Run Stylelint on CSS/SCSS/Vue files
-- `yarn format` - Format code with Prettier
-- `yarn cspell` - Check spelling
-
 ## Architecture Overview
 
 This is a Vue 3 time tracking application built with:
@@ -24,6 +10,7 @@ This is a Vue 3 time tracking application built with:
 - **TypeScript** with strict typing
 - **Vite** as build tool
 - **Vue i18n** for internationalization (English/German)
+- **Yarn 4** for managing the packages
 
 ### Core Architecture
 
