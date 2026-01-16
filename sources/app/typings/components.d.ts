@@ -14,6 +14,8 @@ declare module 'vue' {
     AppHeader: typeof import('./../src/components/app/Header.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    TrackingCalendarFeaturesConflictDialog: typeof import('./../src/components/tracking/calendar/features/ConflictDialog.vue')['default']
+    TrackingCalendarFeaturesCreateDialog: typeof import('./../src/components/tracking/calendar/features/CreateDialog.vue')['default']
     TrackingCalendarSidebar: typeof import('./../src/components/tracking/calendar/Sidebar.vue')['default']
     TrackingCalendarView: typeof import('./../src/components/tracking/calendar/View.vue')['default']
   }

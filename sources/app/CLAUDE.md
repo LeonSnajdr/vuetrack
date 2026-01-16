@@ -10,7 +10,7 @@ This is a Vue 3 time tracking application built with:
 - **TypeScript** with strict typing
 - **Vite** as build tool
 - **Vue i18n** for internationalization (English/German)
-- **Yarn 4** for managing the packages
+- **Yarn 4** for managing the packages. Use `volta run yarn` to run yarn
 
 ### Core Architecture
 

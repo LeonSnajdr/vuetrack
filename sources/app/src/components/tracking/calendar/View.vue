@@ -30,71 +30,22 @@
         </template>
     </VCalendar>
 
-    <template v-if="interaction.kind === 'create'">
-        <VMenu
-            @update:modelValue="(open) => !open && cancelCreate()"
-            :closeOnContentClick="false"
-            :modelValue="interaction.kind === 'create'"
-            :target="'#' + interaction.event.uiId"
-            location="right"
-        >
-            <VCard class="pa-3" width="320">
-                <VCardTitle class="text-subtitle-1 pa-0">Name the event</VCardTitle>
-                <template v-if="interaction.event.kind === 'draft'">
-                    <VTextField
-                        v-model.trim="interaction.event.createEntry.taskId"
-                        @keydown.enter.prevent="confirmEvent(interaction.event)"
-                        @keydown.esc.prevent="cancelCreate"
-                        class="mt-3"
-                        density="compact"
-                        label="Taskid"
-                        autofocus
-                    />
-                </template>
-                <template v-if="interaction.event.kind === 'suggestion'">
-                    <VTextField
-                        v-model.trim="interaction.event.timeEntry.taskId"
-                        @keydown.enter.prevent="confirmEvent(interaction.event)"
-                        @keydown.esc.prevent="cancelCreate"
-                        class="mt-3"
-                        density="compact"
-                        label="Taskid"
-                        autofocus
-                    />
-                </template>
-                <div class="d-flex justify-end ga-2 mt-2">
-                    <VBtn @click="cancelCreate" variant="text">Cancel</VBtn>
-                    <VBtn @click="confirmEvent(interaction.event)" color="primary">Save</VBtn>
-                </div>
-            </VCard>
-        </VMenu>
-    </template>
+    <TrackingCalendarFeaturesCreateDialog
+        v-model="isCreateOpen"
+        v-model:event="createDialogEvent"
+        @cancel="cancelCreate"
+        @confirm="confirmEvent"
+        :targetSelector="interaction.kind === 'create' ? '#' + interaction.event.uiId : ''"
+    />
 
-    <template v-if="interaction.kind === 'conflict'">
-        <VMenu :closeOnContentClick="false" :modelValue="true" :target="'#' + interaction.event.uiId" location="right" persistent>
-            <VCard class="pa-3" width="350">
-                <VCardTitle class="text-subtitle-1 text-error pa-0 mb-2"> Overlap Detected </VCardTitle>
-                <VCardSubtitle class="pa-0 mb-3"> This event overlaps with {{ interaction.overlaps.length }} other(s). </VCardSubtitle>
-
-                <VList density="compact" nav>
-                    <VListItem @click="resolveShift(false)" :prependIcon="mdiArrowUpThin" subtitle="Shift up to next free gap" title="Move to Previous Slot" />
-                    <VListItem @click="resolveShift(true)" :prependIcon="mdiArrowDownThin" subtitle="Shift down to next free gap" title="Move to Next Slot" />
-                    <VListItem @click="resolveTruncate" :prependIcon="mdiArrowCollapseVertical" subtitle="Truncate this event to fit" title="Fit to Gap" />
-                    <VListItem
-                        @click="resolveForce"
-                        :prependIcon="mdiAlertBoxOutline"
-                        class="text-error"
-                        subtitle="Shrink or remove conflicting events"
-                        title="Force Position"
-                    />
-                </VList>
-
-                <div class="d-flex justify-end mt-2 border-t pt-2">
-                    <VBtn @click="interaction.onCanceled()" size="small" variant="plain">Cancel</VBtn>
-                </div>
-            </VCard>
-        </VMenu>
-    </template>
+    <TrackingCalendarFeaturesConflictDialog
+        v-model="isConflictOpen"
+        @canceled="handleConflictCanceled"
+        @resolved="handleConflictResolved"
+        :allEvents="existingEvents"
+        :event="interaction.kind === 'conflict' ? interaction.event : null"
+        :overlaps="interaction.kind === 'conflict' ? interaction.overlaps : []"
+    />
 </template>
 
 <script setup lang="ts">
@@ -102,6 +53,7 @@ import type { EventSlotScope } from "vuetify/lib/components/VCalendar/VCalendar.
 import type { CalendarDayBodySlotScope, CalendarEvent } from "vuetify/lib/components/VCalendar/types.mjs";
 import { isTimeEntryEvent, type DraftTimeEntryEvent, type Interaction, type SuggestionTimeEntryEvent, type TimeEntryEvent } from "./types";
 import useMappingToEvents from "./timeEntryEventSync";
+import type { ConflictResolutionResult, EventMutation } from "./features/types";
 
 const timeEntryStore = useTimeEntryStore();
 const timeEntrySuggestionStore = useTimeEntrySuggestionStore();
@@ -116,6 +68,52 @@ const draftEvents = ref<TimeEntryEvent[]>([]);
 const events = computed<TimeEntryEvent[]>(() => [...existingEvents.value, ...suggestionEvents.value, ...draftEvents.value]);
 
 const interaction = ref<Interaction>({ kind: "idle" });
+
+const isCreateOpen = computed({
+    get: () => interaction.value.kind === "create",
+    set: (v) => {
+        if (!v) cancelCreate();
+    }
+});
+
+const createDialogEvent = computed({
+    get: () => (interaction.value.kind === "create" ? interaction.value.event : null),
+    set: (v) => {
+        if (interaction.value.kind === "create" && v) {
+            interaction.value.event = v;
+        }
+    }
+});
+
+const isConflictOpen = computed({
+    get: () => interaction.value.kind === "conflict",
+    set: (v) => {
+        if (!v && interaction.value.kind === "conflict") interaction.value.onCanceled();
+    }
+});
+
+const handleConflictResolved = (result: ConflictResolutionResult) => {
+    if (interaction.value.kind !== "conflict") return;
+    applyMutations(result.mutations);
+    interaction.value.onResolved(result.position);
+};
+
+const handleConflictCanceled = () => {
+    if (interaction.value.kind !== "conflict") return;
+    interaction.value.onCanceled();
+};
+
+const applyMutations = (mutations?: EventMutation[]) => {
+    for (const m of mutations ?? []) {
+        if (m.action === "remove") {
+            removeEvent(m.event);
+        } else if (m.action === "update") {
+            m.event.start = m.start;
+            m.event.end = m.end;
+            updateEvent(m.event);
+        }
+    }
+};
 
 const dateFormatter = useDate();
 
@@ -317,120 +315,6 @@ const finishInteraction = async () => {
             interaction.value = { kind: "idle" };
             return;
     }
-};
-
-const resolveTruncate = async () => {
-    if (interaction.value.kind !== "conflict") return;
-    const { event, overlaps, onResolved, onCanceled } = interaction.value;
-
-    let allowedStart = event.start;
-    let allowedEnd = event.end;
-
-    const isFullyContained = overlaps.some((ov) => ov.start <= event.start && ov.end >= event.end);
-
-    if (isFullyContained) {
-        await onCanceled();
-        return;
-    }
-
-    overlaps.forEach((ov) => {
-        if (ov.start > event.start && ov.start < event.end) {
-            allowedEnd = Math.min(allowedEnd, ov.start);
-        }
-        if (ov.end > event.start && ov.end < event.end) {
-            allowedStart = Math.max(allowedStart, ov.end);
-        }
-    });
-
-    if (allowedEnd <= allowedStart) {
-        await onCanceled();
-        return;
-    }
-
-    await onResolved({ start: allowedStart, end: allowedEnd });
-};
-
-const resolveShift = async (down: boolean) => {
-    if (interaction.value.kind !== "conflict") return;
-    const { event, onResolved, onCanceled } = interaction.value;
-    const duration = event.end - event.start;
-
-    const sorted = [...existingEvents.value].filter((e) => e.uiId !== event.uiId).sort((a, b) => a.start - b.start);
-
-    const dayStart = new Date(event.start).setHours(0, 0, 0, 0);
-    const dayEnd = new Date(event.start).setHours(23, 59, 59, 999);
-    const dayEvents = sorted.filter((e) => e.end > dayStart && e.start < dayEnd);
-
-    let foundStart = -1;
-
-    if (down) {
-        let searchTime = event.start;
-        let safe = false;
-        while (!safe && searchTime < dayEnd) {
-            const overlap = dayEvents.find((e) => searchTime < e.end && searchTime + duration > e.start);
-            if (overlap) {
-                searchTime = overlap.end;
-            } else {
-                safe = true;
-                foundStart = searchTime;
-            }
-        }
-    } else {
-        let searchTime = event.start;
-        let safe = false;
-        while (!safe && searchTime > dayStart) {
-            const potentialStart = searchTime;
-            const potentialEnd = searchTime + duration;
-            const overlap = dayEvents.find((e) => potentialStart < e.end && potentialEnd > e.start);
-            if (overlap) {
-                searchTime = overlap.start - duration;
-            } else {
-                safe = true;
-                foundStart = searchTime;
-            }
-        }
-    }
-
-    if (foundStart !== -1) {
-        await onResolved({ start: foundStart, end: foundStart + duration });
-    } else {
-        await onCanceled();
-    }
-};
-
-const resolveForce = async () => {
-    if (interaction.value.kind !== "conflict") return;
-    const { event, overlaps, onResolved } = interaction.value;
-
-    for (const ov of overlaps) {
-        if (event.start <= ov.start && event.end >= ov.end) {
-            removeEvent(ov);
-            continue;
-        }
-
-        if (event.start > ov.start && event.start < ov.end) {
-            ov.end = event.start;
-            updateEvent(ov);
-        }
-
-        if (event.end > ov.start && event.end < ov.end) {
-            ov.start = event.end;
-            updateEvent(ov);
-        }
-
-        if (event.start > ov.start && event.end < ov.end) {
-            const headSize = event.start - ov.start;
-            const tailSize = ov.end - event.end;
-            if (headSize > tailSize) {
-                ov.end = event.start;
-            } else {
-                ov.start = event.end;
-            }
-            updateEvent(ov);
-        }
-    }
-
-    await onResolved({ start: event.start, end: event.end });
 };
 
 const addDraftEvent = (anchorStartMs: number) => {

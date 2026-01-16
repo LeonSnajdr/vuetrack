@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx vue-tsc:*)",
+      "Bash(yarn build:*)",
+      "Bash(volta yarn build:*)",
+      "Bash(volta run yarn build:*)"
+    ]
+  }
+}
