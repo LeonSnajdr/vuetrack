@@ -23,6 +23,7 @@
     "TimeEntrySuggestionContract": true,
     "TimeEntrySuggestionId": true,
     "TimeEntrySuggestionService": true,
+    "TimeEntrySuggestionUpdateContract": true,
     "TimeEntryUpdateContract": true,
     "UseAsyncTaskOptions": true,
     "UseAsyncTaskReturn": true,
