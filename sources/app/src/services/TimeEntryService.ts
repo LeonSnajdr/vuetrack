@@ -1,6 +1,8 @@
+import type { TimeEntryContract, TimeEntryCreateContract, TimeEntryId, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
+
 class TimeEntryService {
-    public async load() {
-        await new Promise<void>((resolve) => setTimeout(resolve, 100));
+    public async load(): Promise<TimeEntryContract[]> {
+        await new Promise<void>((resolve) => setTimeout(resolve, 3000));
 
         return [
             {
@@ -11,6 +13,35 @@ class TimeEntryService {
                 taskId: "myTask"
             }
         ];
+    }
+
+    public async create(createContract: TimeEntryCreateContract): Promise<TimeEntryContract> {
+        await new Promise<void>((resolve) => setTimeout(resolve, 3000));
+
+        console.log("create", createContract);
+
+        return {
+            id: "newTimeEntry" as TimeEntryId,
+            user: "myUser",
+            ...createContract
+        };
+    }
+
+    public async update(id: TimeEntryId, updateContract: TimeEntryUpdateContract): Promise<TimeEntryContract> {
+        await new Promise<void>((resolve) => setTimeout(resolve, 3000));
+        console.log("update", id, updateContract);
+
+        return {
+            id: id,
+            user: "myUser",
+            ...updateContract
+        };
+    }
+
+    public async delete(id: TimeEntryId): Promise<void> {
+        await new Promise<void>((resolve) => setTimeout(resolve, 3000));
+
+        console.log("delete", id);
     }
 }
 

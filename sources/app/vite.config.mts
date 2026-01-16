@@ -29,7 +29,7 @@ export default defineConfig({
                     vuetify: ["useDate"]
                 }
             ],
-            dirs: ["src/contracts/**", "src/stores/**", "src/services/**"],
+            dirs: ["src/contracts/**", "src/stores/**", "src/services/**", "src/composables/**"],
             dts: "typings/auto-imports.d.ts",
             eslintrc: {
                 enabled: true

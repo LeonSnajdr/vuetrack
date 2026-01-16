@@ -15,3 +15,9 @@ export type TimeEntryContract = {
     startTime: Date;
     endTime: Date;
 };
+
+export type TimeEntryUpdateContract = {
+    taskId: string;
+    startTime: Date;
+    endTime: Date;
+};

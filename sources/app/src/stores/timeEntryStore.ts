@@ -1,5 +1,37 @@
+import type { TimeEntryCreateContract, TimeEntryId, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
+
 export const useTimeEntryStore = defineStore("timeEntry", () => {
     const { state: timeEntries } = useAsyncState(TimeEntryService.load, [], { immediate: true, shallow: false });
+
+    const create = async (createContract: TimeEntryCreateContract) => {
+        try {
+            const created = await TimeEntryService.create(createContract);
+            timeEntries.value.push(created);
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const update = async (id: TimeEntryId, updateContract: TimeEntryUpdateContract) => {
+        try {
+            const updated = await TimeEntryService.update(id, updateContract);
+            const cur = timeEntries.value.find((x) => x.id === id);
+
+            Object.assign(cur!, updated);
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const remove = async (id: TimeEntryId) => {
+        try {
+            await TimeEntryService.delete(id);
+
+            timeEntries.value = timeEntries.value.filter((x) => x.id !== id);
+        } catch (e) {
+            console.error(e);
+        }
+    };
 
     const add = () => {
         timeEntries.value.push({
@@ -22,5 +54,5 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
         entry.endTime = new Date(entry.endTime.getTime() + 60 * 60 * 1000);
     };
 
-    return { timeEntries, add, removeLast, addOneHour };
+    return { timeEntries, add, removeLast, addOneHour, create, update, remove };
 });
