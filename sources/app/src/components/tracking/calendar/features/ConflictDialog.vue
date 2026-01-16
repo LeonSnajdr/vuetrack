@@ -4,20 +4,23 @@
             <VCardTitle class="text-subtitle-1 text-error pa-0 mb-2"> Overlap Detected </VCardTitle>
             <VCardSubtitle class="pa-0 mb-3"> This event overlaps with {{ overlaps.length }} other(s). </VCardSubtitle>
 
-            <VList density="compact" nav>
-                <VListItem
+            <div class="d-flex flex-column ga-2">
+                <VBtn
                     v-for="strategy in defaultStrategies"
                     :key="strategy.id"
                     @click="executeStrategy(strategy)"
-                    :class="strategy.variant ? `text-${strategy.variant}` : ''"
+                    :color="strategy.variant"
+                    :disabled="loadingStrategyId !== null"
+                    :loading="loadingStrategyId === strategy.id"
                     :prependIcon="strategy.icon"
-                    :subtitle="strategy.subtitle"
-                    :title="strategy.label"
-                />
-            </VList>
+                    variant="tonal"
+                >
+                    {{ strategy.label }}
+                </VBtn>
+            </div>
 
             <div class="d-flex justify-end mt-2 border-t pt-2">
-                <VBtn @click="emit('canceled')" size="small" variant="plain">Cancel</VBtn>
+                <VBtn @click="emit('canceled')" :disabled="loadingStrategyId !== null" size="small" variant="plain">Cancel</VBtn>
             </div>
         </VCard>
     </VMenu>
@@ -39,11 +42,14 @@ const props = defineProps<{
 }>();
 
 const open = defineModel<boolean>({ required: true });
+const loadingStrategyId = defineModel<string | null>("loadingStrategyId", { required: true });
 
 const targetSelector = computed(() => (props.event ? "#" + props.event.uiId : ""));
 
 const executeStrategy = (strategy: ConflictResolutionStrategy) => {
     if (!props.event) return;
+
+    loadingStrategyId.value = strategy.id;
 
     const ctx: ConflictContext = {
         event: props.event,
@@ -55,6 +61,7 @@ const executeStrategy = (strategy: ConflictResolutionStrategy) => {
     if (result) {
         emit("resolved", result);
     } else {
+        loadingStrategyId.value = null;
         emit("canceled");
     }
 };

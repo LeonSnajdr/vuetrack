@@ -3,33 +3,39 @@ import type { TimeEntryCreateContract, TimeEntryId, TimeEntryUpdateContract } fr
 export const useTimeEntryStore = defineStore("timeEntry", () => {
     const { state: timeEntries } = useAsyncState(TimeEntryService.load, [], { immediate: true, shallow: false });
 
-    const create = async (createContract: TimeEntryCreateContract) => {
+    const create = async (createContract: TimeEntryCreateContract): Promise<boolean> => {
         try {
             const created = await TimeEntryService.create(createContract);
             timeEntries.value.push(created);
+            return true;
         } catch (e) {
             console.error(e);
+            return false;
         }
     };
 
-    const update = async (id: TimeEntryId, updateContract: TimeEntryUpdateContract) => {
+    const update = async (id: TimeEntryId, updateContract: TimeEntryUpdateContract): Promise<boolean> => {
         try {
             const updated = await TimeEntryService.update(id, updateContract);
             const cur = timeEntries.value.find((x) => x.id === id);
 
             Object.assign(cur!, updated);
+            return true;
         } catch (e) {
             console.error(e);
+            return false;
         }
     };
 
-    const remove = async (id: TimeEntryId) => {
+    const remove = async (id: TimeEntryId): Promise<boolean> => {
         try {
             await TimeEntryService.delete(id);
 
             timeEntries.value = timeEntries.value.filter((x) => x.id !== id);
+            return true;
         } catch (e) {
             console.error(e);
+            return false;
         }
     };
 

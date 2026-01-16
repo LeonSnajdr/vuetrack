@@ -35,11 +35,13 @@
         v-model:event="createDialogEvent"
         @cancel="cancelCreate"
         @confirm="confirmEvent"
+        :loading="createLoading"
         :targetSelector="interaction.kind === 'create' ? '#' + interaction.event.uiId : ''"
     />
 
     <TrackingCalendarFeaturesConflictDialog
         v-model="isConflictOpen"
+        v-model:loadingStrategyId="conflictLoadingId"
         @canceled="handleConflictCanceled"
         @resolved="handleConflictResolved"
         :allEvents="existingEvents"
@@ -69,6 +71,9 @@ const events = computed<TimeEntryEvent[]>(() => [...existingEvents.value, ...sug
 
 const interaction = ref<Interaction>({ kind: "idle" });
 
+const createLoading = ref(false);
+const conflictLoadingId = ref<string | null>(null);
+
 const isCreateOpen = computed({
     get: () => interaction.value.kind === "create",
     set: (v) => {
@@ -92,10 +97,11 @@ const isConflictOpen = computed({
     }
 });
 
-const handleConflictResolved = (result: ConflictResolutionResult) => {
+const handleConflictResolved = async (result: ConflictResolutionResult) => {
     if (interaction.value.kind !== "conflict") return;
-    applyMutations(result.mutations);
-    interaction.value.onResolved(result.position);
+    await applyMutations(result.mutations);
+    await interaction.value.onResolved(result.position);
+    conflictLoadingId.value = null;
 };
 
 const handleConflictCanceled = () => {
@@ -103,16 +109,19 @@ const handleConflictCanceled = () => {
     interaction.value.onCanceled();
 };
 
-const applyMutations = (mutations?: EventMutation[]) => {
-    for (const m of mutations ?? []) {
+const applyMutations = async (mutations?: EventMutation[]) => {
+    const promises = (mutations ?? []).map(async (m) => {
         if (m.action === "remove") {
-            removeEvent(m.event);
+            await removeEvent(m.event);
         } else if (m.action === "update") {
-            m.event.start = m.start;
-            m.event.end = m.end;
-            updateEvent(m.event);
+            const success = await updateEvent(m.event, { start: m.start, end: m.end });
+            if (success) {
+                m.event.start = m.start;
+                m.event.end = m.end;
+            }
         }
-    }
+    });
+    await Promise.all(promises);
 };
 
 const dateFormatter = useDate();
@@ -121,69 +130,62 @@ const acceptSuggestion = (event: SuggestionTimeEntryEvent) => {
     interaction.value = { kind: "create", event: event };
 };
 
-const createEvent = async (event: TimeEntryEvent) => {
-    const startTime = new Date(event.start);
-    const endTime = new Date(event.end);
-
-    let newTimeEntry: TimeEntryContract;
+const createEvent = async (event: TimeEntryEvent, position?: { start: number; end: number }) => {
+    const startTime = new Date(position?.start ?? event.start);
+    const endTime = new Date(position?.end ?? event.end);
 
     if (event.kind === "draft") {
         if (!event.createEntry.taskId) {
             removeEvent(event);
-            return;
+            return false;
         }
 
-        newTimeEntry = {
-            id: "testId" as TimeEntryId,
-            user: "testUser",
-            startTime: startTime,
-            endTime: endTime,
+        const success = await timeEntryStore.create({
+            startTime,
+            endTime,
             taskId: event.createEntry.taskId
-        };
-    } else if (event.kind === "suggestion") {
-        newTimeEntry = {
-            id: "testId" as TimeEntryId,
-            user: "testUser",
-            startTime: startTime,
-            endTime: endTime,
-            taskId: event.timeEntry.taskId
-        };
-    } else {
-        return;
-    }
+        });
 
-    timeEntries.value.push(newTimeEntry);
-    removeEvent(event);
+        if (success) {
+            removeEvent(event);
+        }
+        return success;
+    } else if (event.kind === "suggestion") {
+        const success = await timeEntryStore.create({
+            startTime,
+            endTime,
+            taskId: event.timeEntry.taskId
+        });
+
+        if (success) {
+            await timeEntrySuggestionStore.dismiss(event.timeEntry.id);
+        }
+        return success;
+    }
+    return false;
 };
 
-const updateEvent = (event: TimeEntryEvent) => {
-    const startTime = new Date(event.start);
-    const endTime = new Date(event.end);
+const updateEvent = async (event: TimeEntryEvent, position?: { start: number; end: number }) => {
+    const startTime = new Date(position?.start ?? event.start);
+    const endTime = new Date(position?.end ?? event.end);
 
     if (event.kind === "existing") {
-        event.timeEntry.startTime = startTime;
-        event.timeEntry.endTime = endTime;
-        console.log("Event updated", event.uiId);
+        return await timeEntryStore.update(event.timeEntry.id, { startTime, endTime, taskId: event.timeEntry.taskId });
     } else if (event.kind === "suggestion") {
-        event.timeEntry.startTime = startTime;
-        event.timeEntry.endTime = endTime;
-        console.log("Suggestion updated");
+        return await timeEntrySuggestionStore.update(event.timeEntry.id, { startTime, endTime, taskId: event.timeEntry.taskId });
     }
+    return false;
 };
 
-const removeEvent = (event: TimeEntryEvent) => {
+const removeEvent = async (event: TimeEntryEvent) => {
     if (event.kind === "draft") {
         const idx = draftEvents.value.indexOf(event);
         if (idx !== -1) draftEvents.value.splice(idx, 1);
     } else if (event.kind === "existing") {
-        const idx = timeEntries.value.indexOf(event.timeEntry);
-        if (idx !== -1) timeEntries.value.splice(idx, 1);
+        await timeEntryStore.remove(event.timeEntry.id);
     } else if (event.kind === "suggestion") {
-        const idx = timeEntrySuggestions.value.indexOf(event.timeEntry);
-        if (idx !== -1) timeEntrySuggestions.value.splice(idx, 1);
+        await timeEntrySuggestionStore.dismiss(event.timeEntry.id);
     }
-
-    console.log("Event removed", event.uiId);
 };
 
 const getOverlappingEvents = (subject: TimeEntryEvent, candidates: TimeEntryEvent[]): TimeEntryEvent[] => {
@@ -292,9 +294,14 @@ const finishInteraction = async () => {
                         event: cur.event,
                         overlaps: overlaps,
                         onResolved: async (position) => {
-                            cur.event.start = position.start;
-                            cur.event.end = position.end;
-                            updateEvent(cur.event);
+                            const success = await updateEvent(cur.event, position);
+                            if (success) {
+                                cur.event.start = position.start;
+                                cur.event.end = position.end;
+                            } else {
+                                cur.event.start = origStart;
+                                cur.event.end = origEnd;
+                            }
                             interaction.value = { kind: "idle" };
                         },
                         onCanceled: async () => {
@@ -308,7 +315,7 @@ const finishInteraction = async () => {
             }
 
             interaction.value = { kind: "idle" };
-            updateEvent(cur.event);
+            await updateEvent(cur.event);
             return;
         }
         default:
@@ -346,9 +353,7 @@ const confirmEvent = async (event: DraftTimeEntryEvent | SuggestionTimeEntryEven
             event: event,
             overlaps: overlaps,
             onResolved: async (position) => {
-                event.start = position.start;
-                event.end = position.end;
-                await createEvent(event);
+                await createEvent(event, position);
                 interaction.value = { kind: "idle" };
             },
             onCanceled: async () => {
@@ -358,7 +363,9 @@ const confirmEvent = async (event: DraftTimeEntryEvent | SuggestionTimeEntryEven
         return;
     }
 
+    createLoading.value = true;
     await createEvent(event);
+    createLoading.value = false;
     interaction.value = { kind: "idle" };
 };
 

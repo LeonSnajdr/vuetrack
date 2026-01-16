@@ -25,8 +25,8 @@
                 />
             </template>
             <div class="d-flex justify-end ga-2 mt-2">
-                <VBtn @click="emit('cancel')" variant="text">Cancel</VBtn>
-                <VBtn @click="confirm" color="primary">Save</VBtn>
+                <VBtn @click="emit('cancel')" :disabled="loading" variant="text">Cancel</VBtn>
+                <VBtn @click="confirm" :disabled="loading" :loading="loading" color="primary">Save</VBtn>
             </div>
         </VCard>
     </VMenu>
@@ -42,6 +42,7 @@ const emit = defineEmits<{
 
 defineProps<{
     targetSelector: string;
+    loading: boolean;
 }>();
 
 const open = defineModel<boolean>({ required: true });

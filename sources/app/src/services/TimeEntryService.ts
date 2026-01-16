@@ -21,7 +21,7 @@ class TimeEntryService {
         console.log("create", createContract);
 
         return {
-            id: "newTimeEntry" as TimeEntryId,
+            id: uuidv4() as TimeEntryId,
             user: "myUser",
             ...createContract
         };

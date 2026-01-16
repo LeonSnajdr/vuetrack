@@ -7,12 +7,10 @@ export type TimeEntrySuggestionContract = {
     taskId: string;
     startTime: Date;
     endTime: Date;
-    position: number;
 };
 
 export type TimeEntrySuggestionUpdateContract = {
     taskId: string;
     startTime: Date;
     endTime: Date;
-    position: number;
 };
