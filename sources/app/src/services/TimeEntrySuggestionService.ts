@@ -1,32 +1,19 @@
 import type { TimeEntrySuggestionContract, TimeEntrySuggestionId, TimeEntrySuggestionUpdateContract } from "@/contracts/TimeEntrySuggestion";
+import axios from "@/plugins/axios";
 
 class TimeEntrySuggestionService {
     public async load(): Promise<TimeEntrySuggestionContract[]> {
-        await new Promise<void>((resolve) => setTimeout(resolve, 3000));
-
-        return [
-            {
-                id: "mySuggestion" as TimeEntrySuggestionId,
-                startTime: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000),
-                endTime: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-                taskId: "my suggested id",
-                position: 0
-            }
-        ];
+        const result = await axios.api.get<TimeEntrySuggestionContract[]>(`timeEntrySuggestions`);
+        return result.data;
     }
 
     public async update(id: TimeEntrySuggestionId, updateContract: TimeEntrySuggestionUpdateContract): Promise<TimeEntrySuggestionContract> {
-        await new Promise<void>((resolve) => setTimeout(resolve, 3000));
-
-        console.log("update", id, updateContract);
-
-        return { id, ...updateContract };
+        const result = await axios.api.put<TimeEntrySuggestionContract>(`timeEntrySuggestions/${id}`, updateContract);
+        return result.data;
     }
 
     public async dismiss(id: TimeEntrySuggestionId): Promise<void> {
-        await new Promise<void>((resolve) => setTimeout(resolve, 3000));
-
-        console.log("dismiss", id);
+        await axios.api.delete(`timeEntrySuggestions/${id}`);
     }
 }
 

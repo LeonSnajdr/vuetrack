@@ -1,47 +1,24 @@
 import type { TimeEntryContract, TimeEntryCreateContract, TimeEntryId, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
+import axios from "@/plugins/axios";
 
 class TimeEntryService {
     public async load(): Promise<TimeEntryContract[]> {
-        await new Promise<void>((resolve) => setTimeout(resolve, 3000));
-
-        return [
-            {
-                id: "myId" as TimeEntryId,
-                user: "leon",
-                startTime: new Date(),
-                endTime: new Date(Date.now() + 60 * 60 * 1000),
-                taskId: "myTask"
-            }
-        ];
+        const result = await axios.api.get<TimeEntryContract[]>(`timeEntries`);
+        return result.data;
     }
 
     public async create(createContract: TimeEntryCreateContract): Promise<TimeEntryContract> {
-        await new Promise<void>((resolve) => setTimeout(resolve, 3000));
-
-        console.log("create", createContract);
-
-        return {
-            id: uuidv4() as TimeEntryId,
-            user: "myUser",
-            ...createContract
-        };
+        const result = await axios.api.post<TimeEntryContract>(`timeEntries`, createContract);
+        return result.data;
     }
 
     public async update(id: TimeEntryId, updateContract: TimeEntryUpdateContract): Promise<TimeEntryContract> {
-        await new Promise<void>((resolve) => setTimeout(resolve, 3000));
-        console.log("update", id, updateContract);
-
-        return {
-            id: id,
-            user: "myUser",
-            ...updateContract
-        };
+        const result = await axios.api.put<TimeEntryContract>(`timeEntries/${id}`, updateContract);
+        return result.data;
     }
 
     public async delete(id: TimeEntryId): Promise<void> {
-        await new Promise<void>((resolve) => setTimeout(resolve, 3000));
-
-        console.log("delete", id);
+        await axios.api.delete<TimeEntryContract>(`timeEntries/${id}`);
     }
 }
 
