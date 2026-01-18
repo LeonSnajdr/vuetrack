@@ -3,7 +3,7 @@ import type { ActionResult } from "@/util/ActionResult";
 
 export const useTimeEntryStore = defineStore("timeEntry", () => {
     const { state: timeEntries } = useAsyncState(TimeEntryService.load, [], { immediate: true, shallow: false });
-    const { execute: executeUpdate, isCancelledError, cancel: cancelPendingUpdate, hasPending: hasPendingUpdate } = useCancellableUpdate<TimeEntryId>();
+    const { execute: executeUpdate, isCancelledError, cancel: cancelPendingUpdate } = useCancellableUpdate<TimeEntryId>();
 
     const create = async (createContract: TimeEntryCreateContract): Promise<ActionResult<TimeEntryContract>> => {
         try {
@@ -63,5 +63,5 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
         entry.endTime = new Date(entry.endTime.getTime() + 60 * 60 * 1000);
     };
 
-    return { timeEntries, add, removeLast, addOneHour, create, update, remove, cancelPendingUpdate, hasPendingUpdate };
+    return { timeEntries, add, removeLast, addOneHour, create, update, remove, cancelPendingUpdate };
 });

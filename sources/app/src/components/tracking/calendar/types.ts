@@ -6,18 +6,30 @@ export type BaseCalendarEvent = {
     uiId: string;
     timed: boolean;
     color: string;
-    start: number;
-    end: number;
 };
 
-export type TimeEntryEvent =
-    | ({ kind: "draft"; createEntry: TimeEntryCreateContract } & BaseCalendarEvent)
-    | ({ kind: "existing"; timeEntry: TimeEntryContract } & BaseCalendarEvent)
-    | ({ kind: "suggestion"; timeEntry: TimeEntrySuggestionContract } & BaseCalendarEvent);
+export type DraftTimeEntryEvent = {
+    kind: "draft";
+    createEntry: TimeEntryCreateContract;
+    start: number;
+    end: number;
+} & BaseCalendarEvent;
 
-export type DraftTimeEntryEvent = Extract<TimeEntryEvent, { kind: "draft" }>;
-export type ExistingTimeEntryEvent = Extract<TimeEntryEvent, { kind: "existing" }>;
-export type SuggestionTimeEntryEvent = Extract<TimeEntryEvent, { kind: "suggestion" }>;
+export type ExistingTimeEntryEvent = {
+    kind: "existing";
+    timeEntry: TimeEntryContract;
+    start: number;
+    end: number;
+} & BaseCalendarEvent;
+
+export type SuggestionTimeEntryEvent = {
+    kind: "suggestion";
+    timeEntry: TimeEntrySuggestionContract;
+    start: number;
+    end: number;
+} & BaseCalendarEvent;
+
+export type TimeEntryEvent = DraftTimeEntryEvent | ExistingTimeEntryEvent | SuggestionTimeEntryEvent;
 
 export type Interaction =
     | { kind: "idle" }

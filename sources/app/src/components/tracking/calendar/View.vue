@@ -54,7 +54,7 @@
 import type { EventSlotScope } from "vuetify/lib/components/VCalendar/VCalendar.mjs";
 import type { CalendarDayBodySlotScope, CalendarEvent } from "vuetify/lib/components/VCalendar/types.mjs";
 import { isTimeEntryEvent, type DraftTimeEntryEvent, type Interaction, type SuggestionTimeEntryEvent, type TimeEntryEvent } from "./types";
-import useMappingToEvents from "./timeEntryEventSync";
+import { createExistingEventWrapper, createSuggestionEventWrapper, createDraftEvent } from "./createEventWrapper";
 import type { ConflictResolutionResult, EventMutation } from "./features/types";
 
 const timeEntryStore = useTimeEntryStore();
@@ -63,9 +63,9 @@ const timeEntrySuggestionStore = useTimeEntrySuggestionStore();
 const { timeEntries } = storeToRefs(timeEntryStore);
 const { timeEntrySuggestions } = storeToRefs(timeEntrySuggestionStore);
 
-const existingEvents = useMappingToEvents("existing", timeEntries, undefined, (e) => timeEntryStore.hasPendingUpdate(e.id));
-const suggestionEvents = useMappingToEvents("suggestion", timeEntrySuggestions, "#22C55E", (e) => timeEntrySuggestionStore.hasPendingUpdate(e.id));
-const draftEvents = ref<TimeEntryEvent[]>([]);
+const existingEvents = computed(() => timeEntries.value.map((c) => createExistingEventWrapper(c)));
+const suggestionEvents = computed(() => timeEntrySuggestions.value.map((c) => createSuggestionEventWrapper(c)));
+const draftEvents = ref<DraftTimeEntryEvent[]>([]);
 
 const events = computed<TimeEntryEvent[]>(() => [...existingEvents.value, ...suggestionEvents.value, ...draftEvents.value]);
 
@@ -146,9 +146,8 @@ const createEvent = async (event: TimeEntryEvent, position?: { start: number; en
             taskId: event.createEntry.taskId
         });
 
-        if (result.status === "success") {
-            removeEvent(event);
-        }
+        removeEvent(event);
+
         return result.status === "success";
     } else if (event.kind === "suggestion") {
         const result = await timeEntryStore.create({
@@ -165,7 +164,7 @@ const createEvent = async (event: TimeEntryEvent, position?: { start: number; en
     return false;
 };
 
-const updateEvent = async (event: TimeEntryEvent, position?: { start: number; end: number }, originalPosition?: { start: number; end: number }) => {
+const updateEvent = async (event: TimeEntryEvent, position?: { start: number; end: number }, originalPositionMs?: { start: number; end: number }) => {
     const startTime = new Date(position?.start ?? event.start);
     const endTime = new Date(position?.end ?? event.end);
 
@@ -177,9 +176,9 @@ const updateEvent = async (event: TimeEntryEvent, position?: { start: number; en
     }
 
     // Only revert on actual error, not on cancellation
-    if (result.status === "error" && originalPosition) {
-        event.start = originalPosition.start;
-        event.end = originalPosition.end;
+    if (result.status === "error" && originalPositionMs) {
+        event.start = originalPositionMs.start;
+        event.end = originalPositionMs.end;
     }
     return result;
 };
@@ -246,7 +245,8 @@ const beginGridInteraction = (_nativeEvent: Event, tms: CalendarDayBodySlotScope
     }
 
     const anchorStartMs = roundTime(mouseMs);
-    const newEvent = addDraftEvent(anchorStartMs);
+    const newEvent = createDraftEvent(anchorStartMs);
+    draftEvents.value.push(newEvent);
 
     interaction.value = {
         kind: "draft",
@@ -303,15 +303,15 @@ const finishInteraction = async () => {
                 const overlaps = getOverlappingEvents(cur.event, existingEvents.value);
 
                 if (overlaps.length > 0) {
-                    const origStart = cur.kind === "move" ? cur.originalStartMs : cur.event.start;
-                    const origEnd = cur.originalEndMs;
+                    const origStartMs = cur.kind === "move" ? cur.originalStartMs : cur.event.start;
+                    const origEndMs = cur.originalEndMs;
 
                     interaction.value = {
                         kind: "conflict",
                         event: cur.event,
                         overlaps: overlaps,
                         onResolved: async (position) => {
-                            const result = await updateEvent(cur.event, position, { start: origStart, end: origEnd });
+                            const result = await updateEvent(cur.event, position, { start: origStartMs, end: origEndMs });
                             if (result.status === "success") {
                                 cur.event.start = position.start;
                                 cur.event.end = position.end;
@@ -319,8 +319,8 @@ const finishInteraction = async () => {
                             interaction.value = { kind: "idle" };
                         },
                         onCanceled: async () => {
-                            cur.event.start = origStart;
-                            cur.event.end = origEnd;
+                            cur.event.start = origStartMs;
+                            cur.event.end = origEndMs;
                             interaction.value = { kind: "idle" };
                         }
                     };
@@ -328,35 +328,17 @@ const finishInteraction = async () => {
                 }
             }
 
-            const origStart = cur.kind === "move" ? cur.originalStartMs : cur.event.start;
-            const origEnd = cur.originalEndMs;
+            const origStartMs = cur.kind === "move" ? cur.originalStartMs : cur.event.start;
+            const origEndMs = cur.originalEndMs;
 
             interaction.value = { kind: "idle" };
-            await updateEvent(cur.event, undefined, { start: origStart, end: origEnd });
+            await updateEvent(cur.event, undefined, { start: origStartMs, end: origEndMs });
             return;
         }
         default:
             interaction.value = { kind: "idle" };
             return;
     }
-};
-
-const addDraftEvent = (anchorStartMs: number) => {
-    const newEvent: TimeEntryEvent = {
-        kind: "draft",
-        color: "#673AB7",
-        start: anchorStartMs,
-        end: anchorStartMs,
-        timed: true,
-        uiId: `event-uiId-${uuidv4()}`,
-        createEntry: {
-            endTime: new Date(anchorStartMs),
-            startTime: new Date(anchorStartMs),
-            taskId: ""
-        }
-    };
-    draftEvents.value.push(newEvent);
-    return newEvent;
 };
 
 const confirmEvent = async (event: DraftTimeEntryEvent | SuggestionTimeEntryEvent) => {
