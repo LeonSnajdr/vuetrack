@@ -114,8 +114,8 @@ const applyMutations = async (mutations?: EventMutation[]) => {
         if (m.action === "remove") {
             await removeEvent(m.event);
         } else if (m.action === "update") {
-            const success = await updateEvent(m.event, { start: m.start, end: m.end });
-            if (success) {
+            const result = await updateEvent(m.event, { start: m.start, end: m.end });
+            if (result.status === "success") {
                 m.event.start = m.start;
                 m.event.end = m.end;
             }
@@ -140,27 +140,27 @@ const createEvent = async (event: TimeEntryEvent, position?: { start: number; en
             return false;
         }
 
-        const success = await timeEntryStore.create({
+        const result = await timeEntryStore.create({
             startTime,
             endTime,
             taskId: event.createEntry.taskId
         });
 
-        if (success) {
+        if (result.status === "success") {
             removeEvent(event);
         }
-        return success;
+        return result.status === "success";
     } else if (event.kind === "suggestion") {
-        const success = await timeEntryStore.create({
+        const result = await timeEntryStore.create({
             startTime,
             endTime,
             taskId: event.timeEntry.taskId
         });
 
-        if (success) {
+        if (result.status === "success") {
             await timeEntrySuggestionStore.dismiss(event.timeEntry.id);
         }
-        return success;
+        return result.status === "success";
     }
     return false;
 };
@@ -169,19 +169,19 @@ const updateEvent = async (event: TimeEntryEvent, position?: { start: number; en
     const startTime = new Date(position?.start ?? event.start);
     const endTime = new Date(position?.end ?? event.end);
 
-    let success: boolean | null = false;
+    let result: ActionResult<unknown> = error();
     if (event.kind === "existing") {
-        success = await timeEntryStore.update(event.timeEntry.id, { startTime, endTime, taskId: event.timeEntry.taskId }, originalPosition);
+        result = await timeEntryStore.update(event.timeEntry.id, { startTime, endTime, taskId: event.timeEntry.taskId }, originalPosition);
     } else if (event.kind === "suggestion") {
-        success = await timeEntrySuggestionStore.update(event.timeEntry.id, { startTime, endTime, taskId: event.timeEntry.taskId }, originalPosition);
+        result = await timeEntrySuggestionStore.update(event.timeEntry.id, { startTime, endTime, taskId: event.timeEntry.taskId }, originalPosition);
     }
 
-    // Only revert on actual error (false), not on cancellation (null)
-    if (success === false && originalPosition) {
+    // Only revert on actual error, not on cancellation
+    if (result.status === "error" && originalPosition) {
         event.start = originalPosition.start;
         event.end = originalPosition.end;
     }
-    return success;
+    return result;
 };
 
 const removeEvent = async (event: TimeEntryEvent) => {
@@ -311,8 +311,8 @@ const finishInteraction = async () => {
                         event: cur.event,
                         overlaps: overlaps,
                         onResolved: async (position) => {
-                            const success = await updateEvent(cur.event, position, { start: origStart, end: origEnd });
-                            if (success) {
+                            const result = await updateEvent(cur.event, position, { start: origStart, end: origEnd });
+                            if (result.status === "success") {
                                 cur.event.start = position.start;
                                 cur.event.end = position.end;
                             }

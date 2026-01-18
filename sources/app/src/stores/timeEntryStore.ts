@@ -1,4 +1,5 @@
-import type { TimeEntryCreateContract, TimeEntryId, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
+import type { TimeEntryContract, TimeEntryCreateContract, TimeEntryId, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
+import type { ActionResult } from "@/util/ActionResult";
 
 export interface OriginalPosition {
     start: number;
@@ -9,26 +10,30 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
     const { state: timeEntries } = useAsyncState(TimeEntryService.load, [], { immediate: true, shallow: false });
     const { execute: executeUpdate, isCancelledError, cancel: cancelPendingUpdate } = useCancellableUpdate<TimeEntryId>();
 
-    const create = async (createContract: TimeEntryCreateContract): Promise<boolean> => {
+    const create = async (createContract: TimeEntryCreateContract): Promise<ActionResult<TimeEntryContract>> => {
         try {
             const created = await TimeEntryService.create(createContract);
             timeEntries.value.push(created);
-            return true;
+            return success(created);
         } catch (e) {
             console.error(e);
-            return false;
+            return error();
         }
     };
 
-    const update = async (id: TimeEntryId, updateContract: TimeEntryUpdateContract, originalPosition?: OriginalPosition): Promise<boolean | null> => {
+    const update = async (
+        id: TimeEntryId,
+        updateContract: TimeEntryUpdateContract,
+        originalPosition?: OriginalPosition
+    ): Promise<ActionResult<TimeEntryContract>> => {
         try {
             const updated = await executeUpdate(id, (signal) => TimeEntryService.update(id, updateContract, signal));
             const cur = timeEntries.value.find((x) => x.id === id);
 
             Object.assign(cur!, updated);
-            return true;
+            return success(updated);
         } catch (e) {
-            if (isCancelledError(e)) return null;
+            if (isCancelledError(e)) return cancelled();
             console.error(e);
             if (originalPosition) {
                 const cur = timeEntries.value.find((x) => x.id === id);
@@ -37,19 +42,19 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
                     cur.endTime = new Date(originalPosition.end);
                 }
             }
-            return false;
+            return error();
         }
     };
 
-    const remove = async (id: TimeEntryId): Promise<boolean> => {
+    const remove = async (id: TimeEntryId): Promise<ActionResult> => {
         try {
             await TimeEntryService.delete(id);
 
             timeEntries.value = timeEntries.value.filter((x) => x.id !== id);
-            return true;
+            return success();
         } catch (e) {
             console.error(e);
-            return false;
+            return error();
         }
     };
 
