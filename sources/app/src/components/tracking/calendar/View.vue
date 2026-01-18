@@ -165,16 +165,22 @@ const createEvent = async (event: TimeEntryEvent, position?: { start: number; en
     return false;
 };
 
-const updateEvent = async (event: TimeEntryEvent, position?: { start: number; end: number }) => {
+const updateEvent = async (event: TimeEntryEvent, position?: { start: number; end: number }, originalPosition?: { start: number; end: number }) => {
     const startTime = new Date(position?.start ?? event.start);
     const endTime = new Date(position?.end ?? event.end);
 
+    let success = false;
     if (event.kind === "existing") {
-        return await timeEntryStore.update(event.timeEntry.id, { startTime, endTime, taskId: event.timeEntry.taskId });
+        success = await timeEntryStore.update(event.timeEntry.id, { startTime, endTime, taskId: event.timeEntry.taskId }, originalPosition);
     } else if (event.kind === "suggestion") {
-        return await timeEntrySuggestionStore.update(event.timeEntry.id, { startTime, endTime, taskId: event.timeEntry.taskId });
+        success = await timeEntrySuggestionStore.update(event.timeEntry.id, { startTime, endTime, taskId: event.timeEntry.taskId }, originalPosition);
     }
-    return false;
+
+    if (!success && originalPosition) {
+        event.start = originalPosition.start;
+        event.end = originalPosition.end;
+    }
+    return success;
 };
 
 const removeEvent = async (event: TimeEntryEvent) => {
@@ -294,13 +300,10 @@ const finishInteraction = async () => {
                         event: cur.event,
                         overlaps: overlaps,
                         onResolved: async (position) => {
-                            const success = await updateEvent(cur.event, position);
+                            const success = await updateEvent(cur.event, position, { start: origStart, end: origEnd });
                             if (success) {
                                 cur.event.start = position.start;
                                 cur.event.end = position.end;
-                            } else {
-                                cur.event.start = origStart;
-                                cur.event.end = origEnd;
                             }
                             interaction.value = { kind: "idle" };
                         },
@@ -314,8 +317,11 @@ const finishInteraction = async () => {
                 }
             }
 
+            const origStart = cur.kind === "move" ? cur.originalStartMs : cur.event.start;
+            const origEnd = cur.originalEndMs;
+
             interaction.value = { kind: "idle" };
-            await updateEvent(cur.event);
+            await updateEvent(cur.event, undefined, { start: origStart, end: origEnd });
             return;
         }
         default:

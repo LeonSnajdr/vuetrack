@@ -12,8 +12,8 @@ class TimeEntryService {
         return result.data;
     }
 
-    public async update(id: TimeEntryId, updateContract: TimeEntryUpdateContract): Promise<TimeEntryContract> {
-        const result = await axios.api.put<TimeEntryContract>(`timeEntries/${id}`, updateContract);
+    public async update(id: TimeEntryId, updateContract: TimeEntryUpdateContract, signal?: AbortSignal): Promise<TimeEntryContract> {
+        const result = await axios.api.put<TimeEntryContract>(`timeEntries/${id}`, updateContract, { signal });
         return result.data;
     }
 
