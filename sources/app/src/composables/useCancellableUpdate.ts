@@ -21,5 +21,7 @@ export function useCancellableUpdate<TId extends string>() {
         pending.delete(id);
     };
 
-    return { execute, isCancelledError, cancel };
+    const hasPending = (id: TId) => pending.has(id);
+
+    return { execute, isCancelledError, cancel, hasPending };
 }

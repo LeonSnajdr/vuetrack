@@ -63,8 +63,8 @@ const timeEntrySuggestionStore = useTimeEntrySuggestionStore();
 const { timeEntries } = storeToRefs(timeEntryStore);
 const { timeEntrySuggestions } = storeToRefs(timeEntrySuggestionStore);
 
-const existingEvents = useMappingToEvents("existing", timeEntries);
-const suggestionEvents = useMappingToEvents("suggestion", timeEntrySuggestions, "#22C55E");
+const existingEvents = useMappingToEvents("existing", timeEntries, undefined, (e) => timeEntryStore.hasPendingUpdate(e.id));
+const suggestionEvents = useMappingToEvents("suggestion", timeEntrySuggestions, "#22C55E", (e) => timeEntrySuggestionStore.hasPendingUpdate(e.id));
 const draftEvents = ref<TimeEntryEvent[]>([]);
 
 const events = computed<TimeEntryEvent[]>(() => [...existingEvents.value, ...suggestionEvents.value, ...draftEvents.value]);

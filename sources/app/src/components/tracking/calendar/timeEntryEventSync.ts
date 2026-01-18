@@ -6,7 +6,8 @@ import type { ExistingTimeEntryEvent, SuggestionTimeEntryEvent } from "./types";
 export default function useMappingToEvents<T extends TimeEntryContract | TimeEntrySuggestionContract>(
     kind: (ExistingTimeEntryEvent | SuggestionTimeEntryEvent)["kind"],
     entriesRef: Ref<T[]>,
-    color = "#7da6c9"
+    color = "#7da6c9",
+    skipSyncFor?: (entry: T) => boolean
 ) {
     const events = ref<(ExistingTimeEntryEvent | SuggestionTimeEntryEvent)[]>([]);
 
@@ -31,8 +32,10 @@ export default function useMappingToEvents<T extends TimeEntryContract | TimeEnt
                 const existingEvent = eventMap.get(x);
 
                 if (existingEvent) {
-                    existingEvent.start = x.startTime.getTime();
-                    existingEvent.end = x.endTime.getTime();
+                    if (!skipSyncFor?.(x)) {
+                        existingEvent.start = x.startTime.getTime();
+                        existingEvent.end = x.endTime.getTime();
+                    }
                 } else {
                     newUIEvents.push({
                         kind: kind,

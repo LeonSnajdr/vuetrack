@@ -3,7 +3,7 @@ import type { ActionResult } from "@/util/ActionResult";
 
 export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", () => {
     const { state: timeEntrySuggestions } = useAsyncState(TimeEntrySuggestionService.load, [], { immediate: true, shallow: false });
-    const { execute: executeUpdate, isCancelledError, cancel: cancelPendingUpdate } = useCancellableUpdate<TimeEntrySuggestionId>();
+    const { execute: executeUpdate, isCancelledError, cancel: cancelPendingUpdate, hasPending: hasPendingUpdate } = useCancellableUpdate<TimeEntrySuggestionId>();
 
     const update = async (
         id: TimeEntrySuggestionId,
@@ -32,5 +32,5 @@ export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", ()
         }
     };
 
-    return { timeEntrySuggestions, update, dismiss, cancelPendingUpdate };
+    return { timeEntrySuggestions, update, dismiss, cancelPendingUpdate, hasPendingUpdate };
 });
