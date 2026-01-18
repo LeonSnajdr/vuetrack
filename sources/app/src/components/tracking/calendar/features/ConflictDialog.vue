@@ -1,5 +1,5 @@
 <template>
-    <VMenu :closeOnContentClick="false" :modelValue="open" :target="targetSelector" location="right" persistent>
+    <VMenu :closeOnContentClick="false" :target="targetSelector" location="right" modelValue persistent>
         <VCard class="pa-3" width="350">
             <VCardTitle class="text-subtitle-1 text-error pa-0 mb-2"> Overlap Detected </VCardTitle>
             <VCardSubtitle class="pa-0 mb-3"> This event overlaps with {{ overlaps.length }} other(s). </VCardSubtitle>
@@ -36,19 +36,16 @@ const emit = defineEmits<{
 }>();
 
 const props = defineProps<{
-    event: TimeEntryEvent | null;
+    event: TimeEntryEvent;
     overlaps: TimeEntryEvent[];
     allEvents: TimeEntryEvent[];
 }>();
 
-const open = defineModel<boolean>({ required: true });
 const loadingStrategyId = defineModel<string | null>("loadingStrategyId", { required: true });
 
-const targetSelector = computed(() => (props.event ? "#" + props.event.uiId : ""));
+const targetSelector = computed(() => "#" + props.event.uiId);
 
 const executeStrategy = (strategy: ConflictResolutionStrategy) => {
-    if (!props.event) return;
-
     loadingStrategyId.value = strategy.id;
 
     const ctx: ConflictContext = {

@@ -31,22 +31,21 @@
     </VCalendar>
 
     <TrackingCalendarFeaturesCreateDialog
-        v-model="isCreateOpen"
-        v-model:event="createDialogEvent"
+        v-if="interaction.kind === 'create'"
+        v-model:event="interaction.event"
         @cancel="cancelCreate"
         @confirm="confirmEvent"
         :loading="createLoading"
-        :targetSelector="interaction.kind === 'create' ? '#' + interaction.event.uiId : ''"
     />
 
     <TrackingCalendarFeaturesConflictDialog
-        v-model="isConflictOpen"
+        v-if="interaction.kind === 'conflict'"
         v-model:loadingStrategyId="conflictLoadingId"
         @canceled="handleConflictCanceled"
         @resolved="handleConflictResolved"
         :allEvents="existingEvents"
-        :event="interaction.kind === 'conflict' ? interaction.event : null"
-        :overlaps="interaction.kind === 'conflict' ? interaction.overlaps : []"
+        :event="interaction.event"
+        :overlaps="interaction.overlaps"
     />
 </template>
 
@@ -73,29 +72,6 @@ const interaction = ref<Interaction>({ kind: "idle" });
 
 const createLoading = ref(false);
 const conflictLoadingId = ref<string | null>(null);
-
-const isCreateOpen = computed({
-    get: () => interaction.value.kind === "create",
-    set: (v) => {
-        if (!v) cancelCreate();
-    }
-});
-
-const createDialogEvent = computed({
-    get: () => (interaction.value.kind === "create" ? interaction.value.event : null),
-    set: (v) => {
-        if (interaction.value.kind === "create" && v) {
-            interaction.value.event = v;
-        }
-    }
-});
-
-const isConflictOpen = computed({
-    get: () => interaction.value.kind === "conflict",
-    set: (v) => {
-        if (!v && interaction.value.kind === "conflict") interaction.value.onCanceled();
-    }
-});
 
 const handleConflictResolved = async (result: ConflictResolutionResult) => {
     if (interaction.value.kind !== "conflict") return;

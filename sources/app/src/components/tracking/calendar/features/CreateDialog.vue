@@ -1,29 +1,27 @@
 <template>
-    <VMenu @update:modelValue="(v) => !v && emit('cancel')" :closeOnContentClick="false" :modelValue="open" :target="targetSelector" location="right">
+    <VMenu @update:modelValue="(v) => !v && emit('cancel')" :closeOnContentClick="false" :target="targetSelector" location="right" modelValue>
         <VCard class="pa-3" width="320">
             <VCardTitle class="text-subtitle-1 pa-0">Name the event</VCardTitle>
-            <template v-if="event?.kind === 'draft'">
-                <VTextField
-                    v-model.trim="event.createEntry.taskId"
-                    @keydown.enter.prevent="confirm"
-                    @keydown.esc.prevent="emit('cancel')"
-                    class="mt-3"
-                    density="compact"
-                    label="Taskid"
-                    autofocus
-                />
-            </template>
-            <template v-if="event?.kind === 'suggestion'">
-                <VTextField
-                    v-model.trim="event.timeEntry.taskId"
-                    @keydown.enter.prevent="confirm"
-                    @keydown.esc.prevent="emit('cancel')"
-                    class="mt-3"
-                    density="compact"
-                    label="Taskid"
-                    autofocus
-                />
-            </template>
+            <VTextField
+                v-if="event.kind === 'draft'"
+                v-model.trim="event.createEntry.taskId"
+                @keydown.enter.prevent="confirm"
+                @keydown.esc.prevent="emit('cancel')"
+                class="mt-3"
+                density="compact"
+                label="Taskid"
+                autofocus
+            />
+            <VTextField
+                v-else
+                v-model.trim="event.timeEntry.taskId"
+                @keydown.enter.prevent="confirm"
+                @keydown.esc.prevent="emit('cancel')"
+                class="mt-3"
+                density="compact"
+                label="Taskid"
+                autofocus
+            />
             <div class="d-flex justify-end ga-2 mt-2">
                 <VBtn @click="emit('cancel')" :disabled="loading" variant="text">Cancel</VBtn>
                 <VBtn @click="confirm" :disabled="loading" :loading="loading" color="primary">Save</VBtn>
@@ -41,16 +39,14 @@ const emit = defineEmits<{
 }>();
 
 defineProps<{
-    targetSelector: string;
     loading: boolean;
 }>();
 
-const open = defineModel<boolean>({ required: true });
-const event = defineModel<DraftTimeEntryEvent | SuggestionTimeEntryEvent | null>("event", { required: true });
+const event = defineModel<DraftTimeEntryEvent | SuggestionTimeEntryEvent>("event", { required: true });
+
+const targetSelector = computed(() => "#" + event.value.uiId);
 
 const confirm = () => {
-    if (event.value) {
-        emit("confirm", event.value);
-    }
+    emit("confirm", event.value);
 };
 </script>
