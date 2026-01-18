@@ -16,5 +16,10 @@ export function useCancellableUpdate<TId extends string>() {
 
     const isCancelledError = (e: unknown) => axios.isCancel(e) || (e instanceof DOMException && e.name === "AbortError");
 
-    return { execute, isCancelledError };
+    const cancel = (id: TId) => {
+        pending.get(id)?.abort();
+        pending.delete(id);
+    };
+
+    return { execute, isCancelledError, cancel };
 }

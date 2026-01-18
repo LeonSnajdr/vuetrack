@@ -3,16 +3,16 @@ import type { OriginalPosition } from "./timeEntryStore";
 
 export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", () => {
     const { state: timeEntrySuggestions } = useAsyncState(TimeEntrySuggestionService.load, [], { immediate: true, shallow: false });
-    const { execute: executeUpdate, isCancelledError } = useCancellableUpdate<TimeEntrySuggestionId>();
+    const { execute: executeUpdate, isCancelledError, cancel: cancelPendingUpdate } = useCancellableUpdate<TimeEntrySuggestionId>();
 
-    const update = async (id: TimeEntrySuggestionId, updateContract: TimeEntrySuggestionUpdateContract, originalPosition?: OriginalPosition): Promise<boolean> => {
+    const update = async (id: TimeEntrySuggestionId, updateContract: TimeEntrySuggestionUpdateContract, originalPosition?: OriginalPosition): Promise<boolean | null> => {
         try {
             const updated = await executeUpdate(id, (signal) => TimeEntrySuggestionService.update(id, updateContract, signal));
             const cur = timeEntrySuggestions.value.find((x) => x.id === id);
             Object.assign(cur!, updated);
             return true;
         } catch (e) {
-            if (isCancelledError(e)) return false;
+            if (isCancelledError(e)) return null;
             console.error(e);
             if (originalPosition) {
                 const cur = timeEntrySuggestions.value.find((x) => x.id === id);
@@ -36,5 +36,5 @@ export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", ()
         }
     };
 
-    return { timeEntrySuggestions, update, dismiss };
+    return { timeEntrySuggestions, update, dismiss, cancelPendingUpdate };
 });

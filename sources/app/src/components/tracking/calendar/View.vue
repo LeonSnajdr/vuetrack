@@ -169,14 +169,15 @@ const updateEvent = async (event: TimeEntryEvent, position?: { start: number; en
     const startTime = new Date(position?.start ?? event.start);
     const endTime = new Date(position?.end ?? event.end);
 
-    let success = false;
+    let success: boolean | null = false;
     if (event.kind === "existing") {
         success = await timeEntryStore.update(event.timeEntry.id, { startTime, endTime, taskId: event.timeEntry.taskId }, originalPosition);
     } else if (event.kind === "suggestion") {
         success = await timeEntrySuggestionStore.update(event.timeEntry.id, { startTime, endTime, taskId: event.timeEntry.taskId }, originalPosition);
     }
 
-    if (!success && originalPosition) {
+    // Only revert on actual error (false), not on cancellation (null)
+    if (success === false && originalPosition) {
         event.start = originalPosition.start;
         event.end = originalPosition.end;
     }
@@ -194,6 +195,14 @@ const removeEvent = async (event: TimeEntryEvent) => {
     }
 };
 
+const cancelPendingUpdateForEvent = (event: TimeEntryEvent) => {
+    if (event.kind === "existing") {
+        timeEntryStore.cancelPendingUpdate(event.timeEntry.id);
+    } else if (event.kind === "suggestion") {
+        timeEntrySuggestionStore.cancelPendingUpdate(event.timeEntry.id);
+    }
+};
+
 const getOverlappingEvents = (subject: TimeEntryEvent, candidates: TimeEntryEvent[]): TimeEntryEvent[] => {
     return candidates.filter((other) => {
         if (other.uiId === subject.uiId) return false;
@@ -206,6 +215,7 @@ const beginMoveEvent = (_nativeEvent: Event, { event, timed }: EventSlotScope) =
     if (!event || !timed) return;
 
     const ev = event as TimeEntryEvent;
+    cancelPendingUpdateForEvent(ev);
 
     interaction.value = {
         kind: "move",
@@ -220,6 +230,7 @@ const beginResizeEvent = (event: CalendarEvent) => {
     if (interaction.value.kind === "create" || interaction.value.kind === "conflict") return;
 
     const ev = event as TimeEntryEvent;
+    cancelPendingUpdateForEvent(ev);
 
     interaction.value = { kind: "resize", event: ev, originalEndMs: ev.end };
 };

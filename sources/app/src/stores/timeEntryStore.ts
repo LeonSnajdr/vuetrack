@@ -7,7 +7,7 @@ export interface OriginalPosition {
 
 export const useTimeEntryStore = defineStore("timeEntry", () => {
     const { state: timeEntries } = useAsyncState(TimeEntryService.load, [], { immediate: true, shallow: false });
-    const { execute: executeUpdate, isCancelledError } = useCancellableUpdate<TimeEntryId>();
+    const { execute: executeUpdate, isCancelledError, cancel: cancelPendingUpdate } = useCancellableUpdate<TimeEntryId>();
 
     const create = async (createContract: TimeEntryCreateContract): Promise<boolean> => {
         try {
@@ -20,7 +20,7 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
         }
     };
 
-    const update = async (id: TimeEntryId, updateContract: TimeEntryUpdateContract, originalPosition?: OriginalPosition): Promise<boolean> => {
+    const update = async (id: TimeEntryId, updateContract: TimeEntryUpdateContract, originalPosition?: OriginalPosition): Promise<boolean | null> => {
         try {
             const updated = await executeUpdate(id, (signal) => TimeEntryService.update(id, updateContract, signal));
             const cur = timeEntries.value.find((x) => x.id === id);
@@ -28,7 +28,7 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
             Object.assign(cur!, updated);
             return true;
         } catch (e) {
-            if (isCancelledError(e)) return false;
+            if (isCancelledError(e)) return null;
             console.error(e);
             if (originalPosition) {
                 const cur = timeEntries.value.find((x) => x.id === id);
@@ -74,5 +74,5 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
         entry.endTime = new Date(entry.endTime.getTime() + 60 * 60 * 1000);
     };
 
-    return { timeEntries, add, removeLast, addOneHour, create, update, remove };
+    return { timeEntries, add, removeLast, addOneHour, create, update, remove, cancelPendingUpdate };
 });
