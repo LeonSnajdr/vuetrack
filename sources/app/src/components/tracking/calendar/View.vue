@@ -171,9 +171,9 @@ const updateEvent = async (event: TimeEntryEvent, position?: { start: number; en
 
     let result: ActionResult<unknown> = error();
     if (event.kind === "existing") {
-        result = await timeEntryStore.update(event.timeEntry.id, { startTime, endTime, taskId: event.timeEntry.taskId }, originalPosition);
+        result = await timeEntryStore.update(event.timeEntry.id, { startTime, endTime, taskId: event.timeEntry.taskId });
     } else if (event.kind === "suggestion") {
-        result = await timeEntrySuggestionStore.update(event.timeEntry.id, { startTime, endTime, taskId: event.timeEntry.taskId }, originalPosition);
+        result = await timeEntrySuggestionStore.update(event.timeEntry.id, { startTime, endTime, taskId: event.timeEntry.taskId });
     }
 
     // Only revert on actual error, not on cancellation

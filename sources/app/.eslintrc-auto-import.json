@@ -12,7 +12,6 @@
     "InjectionKey": true,
     "MaybeRef": true,
     "MaybeRefOrGetter": true,
-    "OriginalPosition": true,
     "PropType": true,
     "Ref": true,
     "ShallowRef": true,

@@ -1,11 +1,6 @@
 import type { TimeEntryContract, TimeEntryCreateContract, TimeEntryId, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
 import type { ActionResult } from "@/util/ActionResult";
 
-export interface OriginalPosition {
-    start: number;
-    end: number;
-}
-
 export const useTimeEntryStore = defineStore("timeEntry", () => {
     const { state: timeEntries } = useAsyncState(TimeEntryService.load, [], { immediate: true, shallow: false });
     const { execute: executeUpdate, isCancelledError, cancel: cancelPendingUpdate } = useCancellableUpdate<TimeEntryId>();
@@ -21,11 +16,7 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
         }
     };
 
-    const update = async (
-        id: TimeEntryId,
-        updateContract: TimeEntryUpdateContract,
-        originalPosition?: OriginalPosition
-    ): Promise<ActionResult<TimeEntryContract>> => {
+    const update = async (id: TimeEntryId, updateContract: TimeEntryUpdateContract): Promise<ActionResult<TimeEntryContract>> => {
         try {
             const updated = await executeUpdate(id, (signal) => TimeEntryService.update(id, updateContract, signal));
             const cur = timeEntries.value.find((x) => x.id === id);
@@ -35,13 +26,6 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
         } catch (e) {
             if (isCancelledError(e)) return cancelled();
             console.error(e);
-            if (originalPosition) {
-                const cur = timeEntries.value.find((x) => x.id === id);
-                if (cur) {
-                    cur.startTime = new Date(originalPosition.start);
-                    cur.endTime = new Date(originalPosition.end);
-                }
-            }
             return error();
         }
     };

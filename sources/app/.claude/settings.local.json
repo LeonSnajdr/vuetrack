@@ -5,7 +5,8 @@
       "Bash(yarn build:*)",
       "Bash(volta yarn build:*)",
       "Bash(volta run yarn build:*)",
-      "Bash(volta run yarn vue-tsc:*)"
+      "Bash(volta run yarn vue-tsc:*)",
+      "Bash(git show:*)"
     ]
   }
 }

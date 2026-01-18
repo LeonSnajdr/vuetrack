@@ -1,6 +1,5 @@
 import type { TimeEntrySuggestionContract, TimeEntrySuggestionId, TimeEntrySuggestionUpdateContract } from "@/contracts/TimeEntrySuggestion";
 import type { ActionResult } from "@/util/ActionResult";
-import type { OriginalPosition } from "./timeEntryStore";
 
 export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", () => {
     const { state: timeEntrySuggestions } = useAsyncState(TimeEntrySuggestionService.load, [], { immediate: true, shallow: false });
@@ -8,8 +7,7 @@ export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", ()
 
     const update = async (
         id: TimeEntrySuggestionId,
-        updateContract: TimeEntrySuggestionUpdateContract,
-        originalPosition?: OriginalPosition
+        updateContract: TimeEntrySuggestionUpdateContract
     ): Promise<ActionResult<TimeEntrySuggestionContract>> => {
         try {
             const updated = await executeUpdate(id, (signal) => TimeEntrySuggestionService.update(id, updateContract, signal));
@@ -19,13 +17,6 @@ export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", ()
         } catch (e) {
             if (isCancelledError(e)) return cancelled();
             console.error(e);
-            if (originalPosition) {
-                const cur = timeEntrySuggestions.value.find((x) => x.id === id);
-                if (cur) {
-                    cur.startTime = new Date(originalPosition.start);
-                    cur.endTime = new Date(originalPosition.end);
-                }
-            }
             return error();
         }
     };
