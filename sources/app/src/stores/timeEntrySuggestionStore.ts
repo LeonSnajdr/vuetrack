@@ -3,22 +3,19 @@ import type { ActionResult } from "@/util/ActionResult";
 
 export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", () => {
     const { state: timeEntrySuggestions } = useAsyncState(TimeEntrySuggestionService.load, [], { immediate: true, shallow: false });
-    const { execute: executeUpdate, isCancelledError, cancel: cancelPendingUpdate } = useCancellableUpdate<TimeEntrySuggestionId>();
+    const { execute: executeUpdate, cancel: cancelPendingUpdate } = useAsyncTask(TimeEntrySuggestionService.update, {
+        cancelPolicy: (x) => x.args[0]
+    });
 
-    const update = async (
-        id: TimeEntrySuggestionId,
-        updateContract: TimeEntrySuggestionUpdateContract
-    ): Promise<ActionResult<TimeEntrySuggestionContract>> => {
-        try {
-            const updated = await executeUpdate(id, (signal) => TimeEntrySuggestionService.update(id, updateContract, signal));
+    const update = async (id: TimeEntrySuggestionId, updateContract: TimeEntrySuggestionUpdateContract): Promise<ActionResult<TimeEntrySuggestionContract>> => {
+        const updateResult = await executeUpdate(id, updateContract);
+
+        if (updateResult.status === "success") {
             const cur = timeEntrySuggestions.value.find((x) => x.id === id);
-            Object.assign(cur!, updated);
-            return success(updated);
-        } catch (e) {
-            if (isCancelledError(e)) return cancelled();
-            console.error(e);
-            return error();
+            Object.assign(cur!, updateResult.data);
         }
+
+        return updateResult;
     };
 
     const dismiss = async (id: TimeEntrySuggestionId): Promise<ActionResult> => {
