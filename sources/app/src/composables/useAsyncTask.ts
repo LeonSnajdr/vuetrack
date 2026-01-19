@@ -1,66 +1,53 @@
-import type { Ref } from "vue";
+import type { ActionResult } from "@/util/ActionResult";
+import axios from "axios";
 
-export interface UseAsyncTaskOptions {
-    /**
-     * Callback when error is caught.
-     */
-    onError?: (e: unknown) => void;
+export type AsyncWithSignal<TArgs extends unknown[], TResult> = (...args: [...TArgs, AbortSignal?]) => Promise<TResult>;
 
-    /**
-     * Callback when success is caught.
-     */
-    onSuccess?: (data: unknown) => void;
-
-    /**
-     * Throw error when executing the execute function
-     *
-     * @default true
-     */
-    throwError?: boolean;
+export interface AsyncTaskKeyContext<TArgs extends unknown[]> {
+    args: TArgs;
 }
 
-export interface UseAsyncTaskReturn<Data, Params extends unknown[]> {
-    isLoading: Ref<boolean>;
-    error: Ref<unknown | undefined>;
-    execute: (...args: Params) => Promise<Data>;
-}
+export function useAsyncTask<TArgs extends unknown[], TResult, TKey>(
+    fn: AsyncWithSignal<TArgs, TResult>,
+    keySelector: (ctx: AsyncTaskKeyContext<TArgs>) => TKey
+) {
+    const pending = new Map<TKey, AbortController>();
 
-/**
- * Reactive async task. Wraps an async function with loading and error state.
- *
- * @param task      The async function to be executed
- * @param options   Optional configuration
- */
-export function useAsyncTask<Data, Params extends unknown[] = unknown[]>(
-    task: (...args: Params) => Promise<Data>,
-    options?: UseAsyncTaskOptions
-): UseAsyncTaskReturn<Data, Params> {
-    const { onError = globalThis.reportError ?? (() => {}), onSuccess, throwError = true } = options ?? {};
+    const execute = async (...args: TArgs): Promise<ActionResult<TResult>> => {
+        const key = keySelector({ args });
 
-    const isLoading = shallowRef(false);
-    const error = shallowRef<unknown | undefined>(undefined);
+        // Cancel any pending task with the same key
+        pending.get(key)?.abort();
 
-    async function execute(...args: Params): Promise<Data> {
-        error.value = undefined;
-        isLoading.value = true;
+        const controller = new AbortController();
+        pending.set(key, controller);
 
         try {
-            const data = await task(...args);
-            onSuccess?.(data);
-            return data;
+            const result = await fn(...args, controller.signal);
+
+            return success(result);
         } catch (e) {
-            error.value = e;
-            onError(e);
-            if (throwError) throw e;
-            return undefined as Data;
+            if (isCancelledError(e)) return cancelled();
+            console.error(e);
+            return error();
         } finally {
-            isLoading.value = false;
+            if (pending.get(key) === controller) {
+                pending.delete(key);
+            }
         }
-    }
+    };
+
+    const cancel = (...args: TArgs): void => {
+        const key = keySelector({ args });
+        pending.get(key)?.abort();
+        pending.delete(key);
+    };
+
+    const isCancelledError = (e: unknown): boolean => axios.isCancel(e) || (e instanceof DOMException && e.name === "AbortError");
 
     return {
-        isLoading,
-        error,
-        execute
+        execute,
+        cancel,
+        isCancelledError
     };
 }

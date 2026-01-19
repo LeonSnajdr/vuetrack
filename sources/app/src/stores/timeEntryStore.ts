@@ -3,7 +3,7 @@ import type { ActionResult } from "@/util/ActionResult";
 
 export const useTimeEntryStore = defineStore("timeEntry", () => {
     const { state: timeEntries } = useAsyncState(TimeEntryService.load, [], { immediate: true, shallow: false });
-    const { execute: executeUpdate, isCancelledError, cancel: cancelPendingUpdate } = useCancellableUpdate<TimeEntryId>();
+    const { execute: executeUpdate, cancel: cancelPendingUpdate } = useAsyncTask(TimeEntryService.update, (x) => x.args[0]);
 
     const create = async (createContract: TimeEntryCreateContract): Promise<ActionResult<TimeEntryContract>> => {
         try {
@@ -17,17 +17,14 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
     };
 
     const update = async (id: TimeEntryId, updateContract: TimeEntryUpdateContract): Promise<ActionResult<TimeEntryContract>> => {
-        try {
-            const updated = await executeUpdate(id, (signal) => TimeEntryService.update(id, updateContract, signal));
-            const cur = timeEntries.value.find((x) => x.id === id);
+        const updateResult = await executeUpdate(id, updateContract);
 
-            Object.assign(cur!, updated);
-            return success(updated);
-        } catch (e) {
-            if (isCancelledError(e)) return cancelled();
-            console.error(e);
-            return error();
+        if (updateResult.status === "success") {
+            const cur = timeEntries.value.find((x) => x.id === id);
+            Object.assign(cur!, updateResult.data);
         }
+
+        return updateResult;
     };
 
     const remove = async (id: TimeEntryId): Promise<ActionResult> => {

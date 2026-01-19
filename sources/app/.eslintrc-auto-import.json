@@ -1,6 +1,8 @@
 {
   "globals": {
     "ActionResult": true,
+    "AsyncTaskKeyContext": true,
+    "AsyncWithSignal": true,
     "Component": true,
     "ComponentPublicInstance": true,
     "ComputedRef": true,
@@ -26,8 +28,6 @@
     "TimeEntrySuggestionService": true,
     "TimeEntrySuggestionUpdateContract": true,
     "TimeEntryUpdateContract": true,
-    "UseAsyncTaskOptions": true,
-    "UseAsyncTaskReturn": true,
     "VNode": true,
     "WritableComputedRef": true,
     "acceptHMRUpdate": true,
