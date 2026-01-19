@@ -412,11 +412,11 @@ const end = computed<Date>(() => {
 <style scoped>
 .v-event-draggable {
     padding-left: 6px;
+    user-select: none;
 }
 
-.v-event-timed {
+:deep(.v-event-timed) {
     user-select: none;
-    -webkit-user-select: none;
 }
 
 .v-event-drag-bottom {
