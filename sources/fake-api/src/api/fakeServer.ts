@@ -40,9 +40,51 @@ type TimeEntrySuggestionUpdateContract = {
     endTime: Date;
 };
 
+// Seed data helpers
+const getWeekStart = (): Date => {
+    const now = new Date();
+    const day = now.getDay();
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1); // Monday
+    const monday = new Date(now.setDate(diff));
+    monday.setHours(0, 0, 0, 0);
+    return monday;
+};
+
+const createSuggestionDate = (dayOffset: number, hour: number): Date => {
+    const date = new Date(getWeekStart());
+    date.setDate(date.getDate() + dayOffset);
+    date.setHours(hour, 0, 0, 0);
+    return date;
+};
+
 // In-memory stores
 let timeEntries: TimeEntryContract[] = [];
-let timeEntrySuggestions: TimeEntrySuggestionContract[] = [];
+let timeEntrySuggestions: TimeEntrySuggestionContract[] = [
+    {
+        id: "suggestion-1" as TimeEntrySuggestionId,
+        taskId: "PROJ-101",
+        startTime: createSuggestionDate(0, 9),  // Monday 9am
+        endTime: createSuggestionDate(0, 11),   // Monday 11am
+    },
+    {
+        id: "suggestion-2" as TimeEntrySuggestionId,
+        taskId: "PROJ-102",
+        startTime: createSuggestionDate(1, 14), // Tuesday 2pm
+        endTime: createSuggestionDate(1, 16),   // Tuesday 4pm
+    },
+    {
+        id: "suggestion-3" as TimeEntrySuggestionId,
+        taskId: "PROJ-103",
+        startTime: createSuggestionDate(2, 10), // Wednesday 10am
+        endTime: createSuggestionDate(2, 12),   // Wednesday 12pm
+    },
+    {
+        id: "suggestion-4" as TimeEntrySuggestionId,
+        taskId: "PROJ-101",
+        startTime: createSuggestionDate(3, 13), // Thursday 1pm
+        endTime: createSuggestionDate(3, 15),   // Thursday 3pm
+    },
+];
 
 // Config
 const DELAY_MIN_MS = 100;
