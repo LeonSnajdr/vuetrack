@@ -51,6 +51,7 @@ export type Interaction =
           anchorStartMs: number;
       }
     | { kind: "create"; event: DraftTimeEntryEvent | SuggestionTimeEntryEvent }
+    | { kind: "edit"; event: ExistingTimeEntryEvent | SuggestionTimeEntryEvent }
     | {
           kind: "conflict";
           event: TimeEntryEvent;

@@ -31,10 +31,12 @@
 </template>
 
 <script setup lang="ts">
-import type { DraftTimeEntryEvent, SuggestionTimeEntryEvent } from "@/components/tracking/calendar/types";
+import type { DraftTimeEntryEvent, ExistingTimeEntryEvent, SuggestionTimeEntryEvent } from "@/components/tracking/calendar/types";
+
+type EventType = DraftTimeEntryEvent | ExistingTimeEntryEvent | SuggestionTimeEntryEvent;
 
 const emit = defineEmits<{
-    confirm: [event: DraftTimeEntryEvent | SuggestionTimeEntryEvent];
+    confirm: [event: EventType];
     cancel: [];
 }>();
 
@@ -42,7 +44,7 @@ defineProps<{
     loading: boolean;
 }>();
 
-const event = defineModel<DraftTimeEntryEvent | SuggestionTimeEntryEvent>("event", { required: true });
+const event = defineModel<EventType>("event", { required: true });
 
 const targetSelector = computed(() => "#" + event.value.uiId);
 

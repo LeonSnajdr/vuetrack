@@ -16,26 +16,51 @@
         type="custom-daily"
     >
         <template #event="{ event }">
-            <div v-if="isTimeEntryEvent(event)" :id="event.uiId">
-                <div class="v-event-draggable">
-                    <div v-if="event.kind === 'suggestion'">
-                        <VBtn @click="acceptSuggestion(event)" :icon="mdiCheck" />
+            <VHover v-if="isTimeEntryEvent(event)" v-slot="{ isHovering, props }">
+                <div :id="event.uiId" v-bind="props">
+                    <div class="v-event-draggable">
+                        <div v-show="isHovering && interaction.kind === 'idle'" class="position-absolute d-flex ga-1" style="top: 2px; right: 2px">
+                            <VBtn
+                                v-if="event.kind === 'suggestion'"
+                                @click.stop="acceptSuggestion(event)"
+                                @mousedown.stop
+                                :icon="mdiCheck"
+                                size="x-small"
+                                variant="text"
+                            />
+                            <VBtn
+                                v-if="event.kind === 'existing' || event.kind === 'suggestion'"
+                                @click.stop="beginEdit(event)"
+                                @mousedown.stop
+                                :icon="mdiPencil"
+                                size="x-small"
+                                variant="text"
+                            />
+                        </div>
+                        <p v-if="event.kind === 'existing' || event.kind === 'suggestion'">{{ event.timeEntry.taskId }}</p>
+                        <p v-else>Draft</p>
+                        <p>{{ dateFormatter.format(event.start, "fullTime24h") }} - {{ dateFormatter.format(event.end, "fullTime24h") }}</p>
                     </div>
-                    <p v-if="event.kind === 'existing' || event.kind === 'suggestion'">{{ event.timeEntry.taskId }}</p>
-                    <p v-else>Draft</p>
-                    <p>{{ dateFormatter.format(event.start, "fullTime24h") }} - {{ dateFormatter.format(event.end, "fullTime24h") }}</p>
+                    <div @mousedown.stop="beginResizeEvent(event)" class="v-event-drag-bottom" />
                 </div>
-                <div @mousedown.stop="beginResizeEvent(event)" class="v-event-drag-bottom" />
-            </div>
+            </VHover>
         </template>
     </VCalendar>
 
-    <TrackingCalendarFeaturesCreateDialog
+    <TrackingCalendarFeaturesEventDialog
         v-if="interaction.kind === 'create'"
         v-model:event="interaction.event"
         @cancel="cancelCreate"
         @confirm="confirmEvent"
         :loading="createLoading"
+    />
+
+    <TrackingCalendarFeaturesEventDialog
+        v-if="interaction.kind === 'edit'"
+        v-model:event="interaction.event"
+        @cancel="cancelEdit"
+        @confirm="confirmEdit"
+        :loading="editLoading"
     />
 
     <TrackingCalendarFeaturesConflictDialog
@@ -52,7 +77,14 @@
 <script setup lang="ts">
 import type { EventSlotScope } from "vuetify/lib/components/VCalendar/VCalendar.mjs";
 import type { CalendarDayBodySlotScope, CalendarEvent } from "vuetify/lib/components/VCalendar/types.mjs";
-import { isTimeEntryEvent, type DraftTimeEntryEvent, type Interaction, type SuggestionTimeEntryEvent, type TimeEntryEvent } from "./types";
+import {
+    isTimeEntryEvent,
+    type DraftTimeEntryEvent,
+    type ExistingTimeEntryEvent,
+    type Interaction,
+    type SuggestionTimeEntryEvent,
+    type TimeEntryEvent
+} from "./types";
 import { createExistingEventWrapper, createSuggestionEventWrapper, createDraftEvent } from "./createEventWrapper";
 import type { ConflictResolutionResult, EventMutation } from "./features/types";
 
@@ -71,6 +103,7 @@ const events = computed<TimeEntryEvent[]>(() => [...existingEvents.value, ...sug
 const interaction = ref<Interaction>({ kind: "idle" });
 
 const createLoading = ref(false);
+const editLoading = ref(false);
 const conflictLoadingId = ref<string | null>(null);
 
 const handleConflictResolved = async (result: ConflictResolutionResult) => {
@@ -104,6 +137,22 @@ const dateFormatter = useDate();
 
 const acceptSuggestion = (event: SuggestionTimeEntryEvent) => {
     interaction.value = { kind: "create", event: event };
+};
+
+const beginEdit = (event: ExistingTimeEntryEvent | SuggestionTimeEntryEvent) => {
+    interaction.value = { kind: "edit", event };
+};
+
+const confirmEdit = async (event: TimeEntryEvent) => {
+    if (event.kind === "draft") return;
+    editLoading.value = true;
+    await updateEvent(event);
+    editLoading.value = false;
+    interaction.value = { kind: "idle" };
+};
+
+const cancelEdit = () => {
+    interaction.value = { kind: "idle" };
 };
 
 const createEvent = async (event: TimeEntryEvent, position?: { start: number; end: number }) => {
@@ -186,7 +235,7 @@ const getOverlappingEvents = (subject: TimeEntryEvent, candidates: TimeEntryEven
 };
 
 const beginMoveEvent = (_nativeEvent: Event, { event, timed }: EventSlotScope) => {
-    if (interaction.value.kind === "create" || interaction.value.kind === "conflict") return;
+    if (interaction.value.kind === "create" || interaction.value.kind === "edit" || interaction.value.kind === "conflict") return;
     if (!event || !timed) return;
 
     const ev = event as TimeEntryEvent;
@@ -202,7 +251,7 @@ const beginMoveEvent = (_nativeEvent: Event, { event, timed }: EventSlotScope) =
 };
 
 const beginResizeEvent = (event: CalendarEvent) => {
-    if (interaction.value.kind === "create" || interaction.value.kind === "conflict") return;
+    if (interaction.value.kind === "create" || interaction.value.kind === "edit" || interaction.value.kind === "conflict") return;
 
     const ev = event as TimeEntryEvent;
     cancelPendingUpdateForEvent(ev);
@@ -211,7 +260,7 @@ const beginResizeEvent = (event: CalendarEvent) => {
 };
 
 const beginGridInteraction = (_nativeEvent: Event, tms: CalendarDayBodySlotScope) => {
-    if (interaction.value.kind === "create" || interaction.value.kind === "conflict") return;
+    if (interaction.value.kind === "create" || interaction.value.kind === "edit" || interaction.value.kind === "conflict") return;
 
     const mouseMs = toTime(tms);
 
@@ -268,6 +317,7 @@ const finishInteraction = async () => {
 
     switch (cur.kind) {
         case "create":
+        case "edit":
         case "conflict":
             return;
         case "draft":
@@ -317,8 +367,9 @@ const finishInteraction = async () => {
     }
 };
 
-const confirmEvent = async (event: DraftTimeEntryEvent | SuggestionTimeEntryEvent) => {
+const confirmEvent = async (event: TimeEntryEvent) => {
     if (interaction.value.kind !== "create") return;
+    if (event.kind === "existing") return;
 
     const overlaps = getOverlappingEvents(event, existingEvents.value);
 
@@ -360,6 +411,7 @@ const cancelInteractionOnLeave = () => {
 
     switch (cur.kind) {
         case "create":
+        case "edit":
         case "conflict":
             return;
         case "resize":
