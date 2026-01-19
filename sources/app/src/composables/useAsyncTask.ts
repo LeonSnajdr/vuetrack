@@ -57,10 +57,9 @@ export function useAsyncTask<TArgs extends unknown[], TResult, TKey = symbol>(fn
         }
     };
 
-    const cancel = (...args: TArgs): void => {
+    const cancel = (key: TKey | symbol): void => {
         if (!canCancel) return;
 
-        const key = getKey(args);
         pending.get(key)?.abort();
         pending.delete(key);
     };
