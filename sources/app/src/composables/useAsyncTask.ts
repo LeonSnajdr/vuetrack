@@ -1,7 +1,7 @@
 import type { ActionResult } from "@/util/ActionResult";
 import axios from "axios";
 
-export type AsyncTaskFn<TArgs extends unknown[], TResult> = (...args: [...TArgs, AbortSignal]) => Promise<TResult>;
+export type AsyncTaskFn<TArgs extends unknown[], TResult> = ((...args: TArgs) => Promise<TResult>) | ((...args: [...TArgs, AbortSignal]) => Promise<TResult>);
 
 export interface AsyncTaskKeyContext<TArgs extends unknown[]> {
     args: TArgs;
@@ -40,7 +40,7 @@ export function useAsyncTask<TArgs extends unknown[], TResult, TKey = symbol>(fn
         }
 
         try {
-            const result = await fn(...args, controller?.signal as AbortSignal);
+            const result = await (fn as (...a: [...TArgs, AbortSignal]) => Promise<TResult>)(...args, controller?.signal as AbortSignal);
 
             return success(result);
         } catch (e) {
