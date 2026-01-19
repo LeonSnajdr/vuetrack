@@ -1,7 +1,7 @@
 import type { ActionResult } from "@/util/ActionResult";
 import axios from "axios";
 
-export type AsyncTaskFn<TArgs extends unknown[], TResult> = ((...args: TArgs) => Promise<TResult>) | ((...args: [...TArgs, AbortSignal]) => Promise<TResult>);
+export type AsyncTaskFn<TArgs extends unknown[], TResult> = (...args: [...TArgs, AbortSignal]) => Promise<TResult>;
 
 export interface AsyncTaskKeyContext<TArgs extends unknown[]> {
     args: TArgs;
@@ -11,22 +11,19 @@ export type CancelPolicy<TKey, TArgs extends unknown[]> = "none" | "previous" | 
 
 export interface UseAsyncTaskConfig<TArgs extends unknown[], TKey> {
     cancelPolicy?: CancelPolicy<TKey, TArgs>;
-    supportsAbort?: boolean;
 }
 
 export function useAsyncTask<TArgs extends unknown[], TResult, TKey = symbol>(fn: AsyncTaskFn<TArgs, TResult>, config: UseAsyncTaskConfig<TArgs, TKey> = {}) {
-    const { cancelPolicy = "previous", supportsAbort = true } = config;
+    const { cancelPolicy = "none" } = config;
 
-    const globalKey = Symbol("global");
     const pending = new Map<TKey | symbol, AbortController>();
-
-    const canCancel = supportsAbort && cancelPolicy !== "none";
+    const canCancel = cancelPolicy !== "none";
 
     const getKey = (args: TArgs): TKey | symbol => {
         if (typeof cancelPolicy === "function") {
             return cancelPolicy({ args });
         }
-        return globalKey;
+        return Symbol("global");
     };
 
     const execute = async (...args: TArgs): Promise<ActionResult<TResult>> => {
@@ -43,15 +40,14 @@ export function useAsyncTask<TArgs extends unknown[], TResult, TKey = symbol>(fn
         }
 
         try {
-            const result = supportsAbort
-                ? await (fn as (...a: [...TArgs, AbortSignal]) => Promise<TResult>)(...args, controller!.signal)
-                : await (fn as (...a: TArgs) => Promise<TResult>)(...args);
+            const result = await fn(...args, controller?.signal as AbortSignal);
 
             return success(result);
         } catch (e) {
-            if (supportsAbort && isCancelledError(e)) {
+            if (isCancelledError(e)) {
                 return cancelled();
             }
+
             console.error(e);
             return error();
         } finally {
