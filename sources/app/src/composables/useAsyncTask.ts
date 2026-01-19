@@ -1,9 +1,6 @@
 import type { ActionResult } from "@/util/ActionResult";
 import axios from "axios";
 
-/**
- * Async task function with optional AbortSignal support
- */
 export type AsyncTaskFn<TArgs extends unknown[], TResult> = ((...args: TArgs) => Promise<TResult>) | ((...args: [...TArgs, AbortSignal]) => Promise<TResult>);
 
 export interface AsyncTaskKeyContext<TArgs extends unknown[]> {

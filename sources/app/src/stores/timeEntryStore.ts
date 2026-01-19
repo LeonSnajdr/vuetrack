@@ -3,19 +3,19 @@ import type { ActionResult } from "@/util/ActionResult";
 
 export const useTimeEntryStore = defineStore("timeEntry", () => {
     const { state: timeEntries } = useAsyncState(TimeEntryService.load, [], { immediate: true, shallow: false });
+    const { execute: executeCreate } = useAsyncTask(TimeEntryService.create);
     const { execute: executeUpdate, cancel: cancelPendingUpdate } = useAsyncTask(TimeEntryService.update, {
         cancelPolicy: (x) => x.args[0]
     });
 
     const create = async (createContract: TimeEntryCreateContract): Promise<ActionResult<TimeEntryContract>> => {
-        try {
-            const created = await TimeEntryService.create(createContract);
-            timeEntries.value.push(created);
-            return success(created);
-        } catch (e) {
-            console.error(e);
-            return error();
+        const createResult = await executeCreate(createContract);
+
+        if (createResult.status === "success") {
+            timeEntries.value.push(createResult.data);
         }
+
+        return createResult;
     };
 
     const update = async (id: TimeEntryId, updateContract: TimeEntryUpdateContract): Promise<ActionResult<TimeEntryContract>> => {
