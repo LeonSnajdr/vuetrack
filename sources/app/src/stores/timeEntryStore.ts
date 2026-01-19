@@ -7,6 +7,7 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
     const { execute: executeUpdate, cancel: cancelPendingUpdate } = useAsyncTask(TimeEntryService.update, {
         cancelPolicy: (x) => x.args[0]
     });
+    const { execute: executeDelete } = useAsyncTask(TimeEntryService.delete);
 
     const create = async (createContract: TimeEntryCreateContract): Promise<ActionResult<TimeEntryContract>> => {
         const createResult = await executeCreate(createContract);
@@ -30,15 +31,13 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
     };
 
     const remove = async (id: TimeEntryId): Promise<ActionResult> => {
-        try {
-            await TimeEntryService.delete(id);
+        const deleteResult = await executeDelete(id);
 
+        if (deleteResult.status === "success") {
             timeEntries.value = timeEntries.value.filter((x) => x.id !== id);
-            return success();
-        } catch (e) {
-            console.error(e);
-            return error();
         }
+
+        return deleteResult;
     };
 
     const add = () => {

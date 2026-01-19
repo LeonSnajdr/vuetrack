@@ -6,6 +6,7 @@ export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", ()
     const { execute: executeUpdate, cancel: cancelPendingUpdate } = useAsyncTask(TimeEntrySuggestionService.update, {
         cancelPolicy: (x) => x.args[0]
     });
+    const { execute: executeDismiss } = useAsyncTask(TimeEntrySuggestionService.dismiss);
 
     const update = async (id: TimeEntrySuggestionId, updateContract: TimeEntrySuggestionUpdateContract): Promise<ActionResult<TimeEntrySuggestionContract>> => {
         const updateResult = await executeUpdate(id, updateContract);
@@ -19,14 +20,13 @@ export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", ()
     };
 
     const dismiss = async (id: TimeEntrySuggestionId): Promise<ActionResult> => {
-        try {
-            await TimeEntrySuggestionService.dismiss(id);
+        const dismissResult = await executeDismiss(id);
+
+        if (dismissResult.status === "success") {
             timeEntrySuggestions.value = timeEntrySuggestions.value.filter((x) => x.id !== id);
-            return success();
-        } catch (e) {
-            console.error(e);
-            return error();
         }
+
+        return dismissResult;
     };
 
     return { timeEntrySuggestions, update, dismiss, cancelPendingUpdate };

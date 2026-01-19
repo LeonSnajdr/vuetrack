@@ -7626,7 +7626,6 @@
     "useBroadcastChannel": true,
     "useBrowserLocation": true,
     "useCached": true,
-    "useCancellableUpdate": true,
     "useClipboard": true,
     "useClipboardItems": true,
     "useCloned": true,
