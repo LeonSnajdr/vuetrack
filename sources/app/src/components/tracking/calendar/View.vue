@@ -17,32 +17,30 @@
     >
         <template #event="{ event }">
             <VHover v-if="isTimeEntryEvent(event)" v-slot="{ isHovering, props }">
-                <div :id="event.uiId" v-bind="props">
-                    <div class="v-event-draggable">
-                        <div v-show="isHovering && interaction.kind === 'idle'" class="position-absolute d-flex ga-1" style="top: 2px; right: 2px">
-                            <VBtn
-                                v-if="event.kind === 'suggestion'"
-                                @click.stop="acceptSuggestion(event)"
-                                @mousedown.stop
-                                :icon="mdiCheck"
-                                size="x-small"
-                                variant="text"
-                            />
-                            <VBtn
-                                v-if="event.kind === 'existing' || event.kind === 'suggestion'"
-                                @click.stop="beginEdit(event)"
-                                @mousedown.stop
-                                :icon="mdiPencil"
-                                size="x-small"
-                                variant="text"
-                            />
-                        </div>
-                        <p v-if="event.kind === 'existing' || event.kind === 'suggestion'">{{ event.timeEntry.taskId }}</p>
-                        <p v-else>{{ $t("calendar.event.draft") }}</p>
-                        <p>{{ dateFormatter.format(event.start, "fullTime24h") }} - {{ dateFormatter.format(event.end, "fullTime24h") }}</p>
+                <div :id="event.uiId" v-bind="props" class="h-100 pa-2 text-truncate">
+                    <div v-show="isHovering && interaction.kind === 'idle'" class="position-absolute d-flex ga-2" style="top: 5px; right: 5px">
+                        <VIconBtn
+                            v-if="event.kind === 'suggestion'"
+                            @click.stop="acceptSuggestion(event)"
+                            @mousedown.stop
+                            :icon="mdiCheck"
+                            iconColor="success"
+                            variant="flat"
+                        />
+                        <VIconBtn
+                            v-if="event.kind === 'existing' || event.kind === 'suggestion'"
+                            @click.stop="beginEdit(event)"
+                            @mousedown.stop
+                            :icon="mdiPencil"
+                            iconColor="white"
+                            variant="flat"
+                        />
                     </div>
-                    <div @mousedown.stop="beginResizeEvent(event)" class="v-event-drag-bottom" />
+                    <p v-if="event.kind === 'existing' || event.kind === 'suggestion'">{{ event.timeEntry.taskId }}</p>
+                    <p v-else>{{ $t("calendar.event.draft") }}</p>
+                    <p>{{ dateFormatter.format(event.start, "fullTime24h") }} - {{ dateFormatter.format(event.end, "fullTime24h") }}</p>
                 </div>
+                <div @mousedown.stop="beginResizeEvent(event)" class="v-event-drag-bottom" />
             </VHover>
         </template>
     </VCalendar>
@@ -462,11 +460,6 @@ const end = computed<Date>(() => {
 </script>
 
 <style scoped>
-.v-event-draggable {
-    padding-left: 6px;
-    user-select: none;
-}
-
 :deep(.v-event-timed) {
     user-select: none;
 }
