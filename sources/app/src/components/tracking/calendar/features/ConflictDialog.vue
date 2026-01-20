@@ -31,7 +31,28 @@
 
 <script setup lang="ts">
 import type { TimeEntryEvent } from "@/components/tracking/calendar/types";
-import type { ConflictContext, ConflictResolutionResult, ConflictResolutionStrategy, EventMutation } from "./types";
+
+export interface ConflictResolutionStrategy {
+    id: string;
+    label: string;
+    subtitle: string;
+    icon: string;
+    variant?: "error" | "warning";
+    resolve: (ctx: ConflictContext) => ConflictResolutionResult | null;
+}
+
+export interface ConflictContext {
+    event: TimeEntryEvent;
+    overlaps: TimeEntryEvent[];
+    allEvents: TimeEntryEvent[];
+}
+
+export interface ConflictResolutionResult {
+    position: { start: number; end: number };
+    mutations?: EventMutation[];
+}
+
+export type EventMutation = { action: "remove"; event: TimeEntryEvent } | { action: "update"; event: TimeEntryEvent; start: number; end: number };
 
 const emit = defineEmits<{
     resolved: [result: ConflictResolutionResult];
@@ -49,6 +70,38 @@ const loadingStrategyId = defineModel<string | null>("loadingStrategyId", { requ
 const { t } = useI18n();
 
 const targetSelector = computed(() => "#" + props.event.uiId);
+
+const defaultStrategies = computed<ConflictResolutionStrategy[]>(() => [
+    {
+        id: "shift-up",
+        label: t("calendar.conflict.strategy.movePrevious"),
+        subtitle: t("calendar.conflict.strategy.movePrevious.subtitle"),
+        icon: mdiArrowUpThin,
+        resolve: resolveShiftUp
+    },
+    {
+        id: "shift-down",
+        label: t("calendar.conflict.strategy.moveNext"),
+        subtitle: t("calendar.conflict.strategy.moveNext.subtitle"),
+        icon: mdiArrowDownThin,
+        resolve: resolveShiftDown
+    },
+    {
+        id: "truncate",
+        label: t("calendar.conflict.strategy.fitToGap"),
+        subtitle: t("calendar.conflict.strategy.fitToGap.subtitle"),
+        icon: mdiArrowCollapseVertical,
+        resolve: resolveTruncate
+    },
+    {
+        id: "force",
+        label: t("calendar.conflict.strategy.forcePosition"),
+        subtitle: t("calendar.conflict.strategy.forcePosition.subtitle"),
+        icon: mdiAlertBoxOutline,
+        variant: "error",
+        resolve: resolveForce
+    }
+]);
 
 const executeStrategy = (strategy: ConflictResolutionStrategy) => {
     loadingStrategyId.value = strategy.id;
@@ -183,36 +236,4 @@ const resolveForce = (ctx: ConflictContext): ConflictResolutionResult | null => 
 
     return { position: { start: event.start, end: event.end }, mutations };
 };
-
-const defaultStrategies = computed<ConflictResolutionStrategy[]>(() => [
-    {
-        id: "shift-up",
-        label: t("calendar.conflict.strategy.movePrevious"),
-        subtitle: t("calendar.conflict.strategy.movePrevious.subtitle"),
-        icon: mdiArrowUpThin,
-        resolve: resolveShiftUp
-    },
-    {
-        id: "shift-down",
-        label: t("calendar.conflict.strategy.moveNext"),
-        subtitle: t("calendar.conflict.strategy.moveNext.subtitle"),
-        icon: mdiArrowDownThin,
-        resolve: resolveShiftDown
-    },
-    {
-        id: "truncate",
-        label: t("calendar.conflict.strategy.fitToGap"),
-        subtitle: t("calendar.conflict.strategy.fitToGap.subtitle"),
-        icon: mdiArrowCollapseVertical,
-        resolve: resolveTruncate
-    },
-    {
-        id: "force",
-        label: t("calendar.conflict.strategy.forcePosition"),
-        subtitle: t("calendar.conflict.strategy.forcePosition.subtitle"),
-        icon: mdiAlertBoxOutline,
-        variant: "error",
-        resolve: resolveForce
-    }
-]);
 </script>

@@ -92,7 +92,7 @@ import {
     type TimeEntryEvent
 } from "./types";
 import { createExistingEventWrapper, createSuggestionEventWrapper, createDraftEvent } from "./createEventWrapper";
-import type { ConflictResolutionResult, EventMutation } from "./features/types";
+import type { ConflictResolutionResult, EventMutation } from "./features/ConflictDialog.vue";
 
 const timeEntryStore = useTimeEntryStore();
 const timeEntrySuggestionStore = useTimeEntrySuggestionStore();
