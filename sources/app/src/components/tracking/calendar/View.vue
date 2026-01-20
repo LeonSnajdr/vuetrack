@@ -129,11 +129,7 @@ const applyMutations = async (mutations?: EventMutation[]) => {
         if (m.action === "remove") {
             await removeEvent(m.event);
         } else if (m.action === "update") {
-            const result = await updateEvent(m.event, { start: m.start, end: m.end });
-            if (result.status === "success") {
-                m.event.start = m.start;
-                m.event.end = m.end;
-            }
+            await updateEvent(m.event, { start: m.start, end: m.end });
         }
     });
     await Promise.all(promises);
@@ -343,11 +339,7 @@ const finishInteraction = async () => {
                         event: cur.event,
                         overlaps: overlaps,
                         onResolved: async (position) => {
-                            const result = await updateEvent(cur.event, position, { start: origStartMs, end: origEndMs });
-                            if (result.status === "success") {
-                                cur.event.start = position.start;
-                                cur.event.end = position.end;
-                            }
+                            await updateEvent(cur.event, position, { start: origStartMs, end: origEndMs });
                             interaction.value = { kind: "idle" };
                         },
                         onCanceled: async () => {
