@@ -1,6 +1,7 @@
 {
   "action.add": "Add",
   "action.cancel": "Cancel",
+  "action.delete": "Delete",
   "action.save": "Save",
   "calendar.conflict.strategy.fitToGap": "Fit to Gap",
   "calendar.conflict.strategy.fitToGap.subtitle": "Truncate this event to fit",

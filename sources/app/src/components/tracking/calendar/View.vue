@@ -20,6 +20,14 @@
                 <div :id="event.uiId" v-bind="props" class="h-100 pa-2 text-truncate">
                     <div v-show="isHovering && interaction.kind === 'idle'" class="position-absolute d-flex ga-2" style="top: 5px; right: 5px">
                         <VIconBtn
+                            v-if="event.kind === 'existing' || event.kind === 'suggestion'"
+                            @click.stop="removeEvent(event)"
+                            @mousedown.stop
+                            :icon="mdiDelete"
+                            iconColor="error"
+                            variant="flat"
+                        />
+                        <VIconBtn
                             v-if="event.kind === 'suggestion'"
                             @click.stop="acceptSuggestion(event)"
                             @mousedown.stop

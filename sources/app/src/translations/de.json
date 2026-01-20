@@ -1,6 +1,7 @@
 {
   "action.add": "Hinzufügen",
   "action.cancel": "Abbrechen",
+  "action.delete": "Löschen",
   "action.save": "Speichern",
   "calendar.conflict.strategy.fitToGap": "In Lücke einpassen",
   "calendar.conflict.strategy.fitToGap.subtitle": "Ereignis kürzen um zu passen",
