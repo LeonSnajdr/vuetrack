@@ -1,3 +1,3 @@
 <template>
-    <VAppBar density="compact" />
+    <VAppBar class="v-app-bar" density="compact" />
 </template>
