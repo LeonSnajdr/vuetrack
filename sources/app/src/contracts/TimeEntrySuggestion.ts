@@ -1,6 +1,6 @@
 import type { Branded } from "typings/brand";
 
-export type TimeEntrySuggestionId = Branded<string, "timeEntryId">;
+export type TimeEntrySuggestionId = Branded<string, "timeEntrySuggestionId">;
 
 export type TimeEntrySuggestionContract = {
     id: TimeEntrySuggestionId;
