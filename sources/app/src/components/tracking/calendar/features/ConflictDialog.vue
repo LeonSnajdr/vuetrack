@@ -1,27 +1,30 @@
 <template>
     <VMenu :closeOnContentClick="false" :target="targetSelector" location="right" modelValue persistent>
-        <VCard class="pa-3" width="350">
-            <VCardTitle class="text-subtitle-1 text-error pa-0 mb-2">{{ $t("calendar.conflict.title") }}</VCardTitle>
-            <VCardSubtitle class="pa-0 mb-3">{{ $t("calendar.conflict.subtitle", { count: overlaps.length }) }}</VCardSubtitle>
-
-            <div class="d-flex flex-column ga-2">
-                <VBtn
-                    v-for="strategy in defaultStrategies"
-                    :key="strategy.id"
-                    @click="executeStrategy(strategy)"
-                    :color="strategy.variant"
-                    :disabled="loadingStrategyId !== null"
-                    :loading="loadingStrategyId === strategy.id"
-                    :prependIcon="strategy.icon"
-                    variant="tonal"
-                >
-                    {{ strategy.label }}
-                </VBtn>
-            </div>
-
-            <div class="d-flex justify-end mt-2 border-t pt-2">
+        <VCard width="350">
+            <VCardTitle class="text-subtitle-1 mb-n5">{{ $t("calendar.conflict.title") }}</VCardTitle>
+            <VCardSubtitle>
+                <p class="text-medium-emphasis text-caption">{{ $t("calendar.conflict.subtitle", { count: overlaps.length }) }}</p>
+            </VCardSubtitle>
+            <VCardText>
+                <div class="d-flex flex-column ga-2">
+                    <VBtn
+                        v-for="strategy in defaultStrategies"
+                        :key="strategy.id"
+                        @click="executeStrategy(strategy)"
+                        :color="strategy.variant"
+                        :disabled="loadingStrategyId !== null"
+                        :loading="loadingStrategyId === strategy.id"
+                        :prependIcon="strategy.icon"
+                        variant="tonal"
+                    >
+                        {{ strategy.label }}
+                    </VBtn>
+                </div>
+            </VCardText>
+            <VCardActions>
+                <VSpacer />
                 <VBtn @click="emit('canceled')" :disabled="loadingStrategyId !== null" size="small" variant="plain">{{ $t("action.cancel") }}</VBtn>
-            </div>
+            </VCardActions>
         </VCard>
     </VMenu>
 </template>
