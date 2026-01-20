@@ -9,6 +9,12 @@ This document guides an agent through translating the application safely and con
 - We use **i18n**.
 - Translations live in: **`src/translations`**.
 
+## Using translations in Vue components (required)
+
+- In Vue templates, **always use `$t(...)`**.
+- Do not call `t(...)` directly inside templates.
+- In `<script setup>`, always import `useI18n()` and destructure t
+
 ## Scope: which languages to translate
 
 - **All languages present in `src/translations` must be kept in sync.**
@@ -50,13 +56,6 @@ Good pattern (generic + parameterized):
 - `action.confirm`: `"Confirm"`
 - `action.close.error`: `"{type} '{name}' couldn't be closed"`
 
-Guidelines:
-
-- Use a consistent namespace:
-  - `action.*` for verbs/buttons
-  - `error.*` for generic errors
-  - `form.*` for form labels/help/validation
-  - `toast.*` for notifications
 - Prefer composition via variables over duplicating near-identical strings.
 
 ## Variables and interpolation
@@ -97,3 +96,17 @@ Pluralization is expressed using a pipe-separated singular/plural form in the sa
 - All languages in `src/translations` contain the same set of keys.
 - Repetition reduced via generic keys and interpolation.
 - Singular/plural handled via i18n pluralization features.
+
+## Agent docs (progressive disclosure)
+
+If you need more context, read the relevant file(s) in `agent_docs/` before
+making changes. Prefer using these docs instead of guessing project-specific
+behavior.
+
+When a task touches translation/localization, start by reading:
+
+- `agent_docs/translate_the_application.md` — How we translate the application
+  (workflow, conventions, file locations, QA checks, and pitfalls).
+
+If you’re unsure which doc applies, ask which `agent_docs/*` you should read,
+or propose the specific files you want to open and why.
