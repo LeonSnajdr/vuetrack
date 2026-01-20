@@ -1,35 +1,65 @@
-import type { TimeEntryCreateContract, TimeEntryContract } from "@/contracts/TimeEntryContract";
-import type { TimeEntrySuggestionContract } from "@/contracts/TimeEntrySuggestion";
+import type { TimeEntryCreateContract, TimeEntryContract, TimeEntryUpdateContract, TimeEntryId } from "@/contracts/TimeEntryContract";
+import type { TimeEntrySuggestionContract, TimeEntrySuggestionUpdateContract } from "@/contracts/TimeEntrySuggestion";
 import type { CalendarEvent } from "vuetify/lib/components/VCalendar/types.mjs";
+
+export type EventPosition = {
+    start: number;
+    end: number;
+};
 
 export type BaseCalendarEvent = {
     uiId: string;
     timed: boolean;
     color: string;
-};
+} & EventPosition;
 
 export type DraftTimeEntryEvent = {
     kind: "draft";
     createEntry: TimeEntryCreateContract;
-    start: number;
-    end: number;
 } & BaseCalendarEvent;
 
 export type ExistingTimeEntryEvent = {
     kind: "existing";
     timeEntry: TimeEntryContract;
-    start: number;
-    end: number;
 } & BaseCalendarEvent;
+
+export type ExistingTimeEntryUpdateMutation = {
+    kind: "update";
+    eventKind: "existing";
+    update: TimeEntryUpdateContract;
+    originalPosition: EventPosition;
+};
+
+export type ExistingTimeEntryDeleteMutation = {
+    kind: "delete";
+    eventKind: "existing";
+    id: TimeEntryId;
+};
 
 export type SuggestionTimeEntryEvent = {
     kind: "suggestion";
     timeEntry: TimeEntrySuggestionContract;
-    start: number;
-    end: number;
 } & BaseCalendarEvent;
 
+export type SuggestionTimeEntryUpdateMutation = {
+    kind: "update";
+    eventKind: "suggestion";
+    update: TimeEntrySuggestionUpdateContract;
+    originalPosition: EventPosition;
+};
+
+export type SuggestionTimeEntryDeleteMutation = {
+    kind: "delete";
+    eventKind: "suggestion";
+    id: TimeEntryId;
+};
+
 export type TimeEntryEvent = DraftTimeEntryEvent | ExistingTimeEntryEvent | SuggestionTimeEntryEvent;
+export type TimeEntryMutation =
+    | ExistingTimeEntryUpdateMutation
+    | ExistingTimeEntryDeleteMutation
+    | SuggestionTimeEntryUpdateMutation
+    | SuggestionTimeEntryDeleteMutation;
 
 export type Interaction =
     | { kind: "idle" }
