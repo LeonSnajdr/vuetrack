@@ -1,3 +1,22 @@
 {
-  "test.test": "test"
+  "action.add": "Hinzufügen",
+  "action.cancel": "Abbrechen",
+  "action.save": "Speichern",
+  "calendar.conflict.strategy.fitToGap": "In Lücke einpassen",
+  "calendar.conflict.strategy.fitToGap.subtitle": "Ereignis kürzen um zu passen",
+  "calendar.conflict.strategy.forcePosition": "Position erzwingen",
+  "calendar.conflict.strategy.forcePosition.subtitle": "Konfliktereignisse verkleinern oder entfernen",
+  "calendar.conflict.strategy.moveNext": "Zum nächsten Slot",
+  "calendar.conflict.strategy.moveNext.subtitle": "Nach unten zur nächsten Lücke verschieben",
+  "calendar.conflict.strategy.movePrevious": "Zum vorherigen Slot",
+  "calendar.conflict.strategy.movePrevious.subtitle": "Nach oben zur nächsten Lücke verschieben",
+  "calendar.conflict.subtitle": "Dieses Ereignis überlappt mit einem anderen. | Dieses Ereignis überlappt mit {count} anderen.",
+  "calendar.conflict.title": "Überlappung erkannt",
+  "calendar.event.draft": "Entwurf",
+  "calendar.event.taskIdLabel": "Aufgaben-ID",
+  "calendar.event.title": "Ereignis benennen",
+  "sidebar.greeting": "Hallo",
+  "test.test": "Test",
+  "tracking.addOneHour": "1 Stunde hinzufügen",
+  "tracking.removeLast": "Letztes entfernen"
 }

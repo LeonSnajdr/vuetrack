@@ -1,3 +1,22 @@
 {
-  "test.test": "hallo"
+  "action.add": "Add",
+  "action.cancel": "Cancel",
+  "action.save": "Save",
+  "calendar.conflict.strategy.fitToGap": "Fit to Gap",
+  "calendar.conflict.strategy.fitToGap.subtitle": "Truncate this event to fit",
+  "calendar.conflict.strategy.forcePosition": "Force Position",
+  "calendar.conflict.strategy.forcePosition.subtitle": "Shrink or remove conflicting events",
+  "calendar.conflict.strategy.moveNext": "Move to Next Slot",
+  "calendar.conflict.strategy.moveNext.subtitle": "Shift down to next free gap",
+  "calendar.conflict.strategy.movePrevious": "Move to Previous Slot",
+  "calendar.conflict.strategy.movePrevious.subtitle": "Shift up to next free gap",
+  "calendar.conflict.subtitle": "This event overlaps with one other. | This event overlaps with {count} others.",
+  "calendar.conflict.title": "Overlap Detected",
+  "calendar.event.draft": "Draft",
+  "calendar.event.taskIdLabel": "Task ID",
+  "calendar.event.title": "Name the event",
+  "sidebar.greeting": "Hello",
+  "test.test": "Test",
+  "tracking.addOneHour": "Add 1 hour",
+  "tracking.removeLast": "Remove last"
 }

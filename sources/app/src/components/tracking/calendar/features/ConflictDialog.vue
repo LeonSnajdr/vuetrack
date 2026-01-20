@@ -1,8 +1,8 @@
 <template>
     <VMenu :closeOnContentClick="false" :target="targetSelector" location="right" modelValue persistent>
         <VCard class="pa-3" width="350">
-            <VCardTitle class="text-subtitle-1 text-error pa-0 mb-2"> Overlap Detected </VCardTitle>
-            <VCardSubtitle class="pa-0 mb-3"> This event overlaps with {{ overlaps.length }} other(s). </VCardSubtitle>
+            <VCardTitle class="text-subtitle-1 text-error pa-0 mb-2">{{ $t("calendar.conflict.title") }}</VCardTitle>
+            <VCardSubtitle class="pa-0 mb-3">{{ $t("calendar.conflict.subtitle", { count: overlaps.length }) }}</VCardSubtitle>
 
             <div class="d-flex flex-column ga-2">
                 <VBtn
@@ -20,7 +20,7 @@
             </div>
 
             <div class="d-flex justify-end mt-2 border-t pt-2">
-                <VBtn @click="emit('canceled')" :disabled="loadingStrategyId !== null" size="small" variant="plain">Cancel</VBtn>
+                <VBtn @click="emit('canceled')" :disabled="loadingStrategyId !== null" size="small" variant="plain">{{ $t("action.cancel") }}</VBtn>
             </div>
         </VCard>
     </VMenu>
@@ -42,6 +42,8 @@ const props = defineProps<{
 }>();
 
 const loadingStrategyId = defineModel<string | null>("loadingStrategyId", { required: true });
+
+const { t } = useI18n();
 
 const targetSelector = computed(() => "#" + props.event.uiId);
 
@@ -179,35 +181,35 @@ const resolveForce = (ctx: ConflictContext): ConflictResolutionResult | null => 
     return { position: { start: event.start, end: event.end }, mutations };
 };
 
-const defaultStrategies: ConflictResolutionStrategy[] = [
+const defaultStrategies = computed<ConflictResolutionStrategy[]>(() => [
     {
         id: "shift-up",
-        label: "Move to Previous Slot",
-        subtitle: "Shift up to next free gap",
+        label: t("calendar.conflict.strategy.movePrevious"),
+        subtitle: t("calendar.conflict.strategy.movePrevious.subtitle"),
         icon: mdiArrowUpThin,
         resolve: resolveShiftUp
     },
     {
         id: "shift-down",
-        label: "Move to Next Slot",
-        subtitle: "Shift down to next free gap",
+        label: t("calendar.conflict.strategy.moveNext"),
+        subtitle: t("calendar.conflict.strategy.moveNext.subtitle"),
         icon: mdiArrowDownThin,
         resolve: resolveShiftDown
     },
     {
         id: "truncate",
-        label: "Fit to Gap",
-        subtitle: "Truncate this event to fit",
+        label: t("calendar.conflict.strategy.fitToGap"),
+        subtitle: t("calendar.conflict.strategy.fitToGap.subtitle"),
         icon: mdiArrowCollapseVertical,
         resolve: resolveTruncate
     },
     {
         id: "force",
-        label: "Force Position",
-        subtitle: "Shrink or remove conflicting events",
+        label: t("calendar.conflict.strategy.forcePosition"),
+        subtitle: t("calendar.conflict.strategy.forcePosition.subtitle"),
         icon: mdiAlertBoxOutline,
         variant: "error",
         resolve: resolveForce
     }
-];
+]);
 </script>

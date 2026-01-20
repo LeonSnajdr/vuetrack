@@ -1,5 +1,5 @@
 <template>
     <VNavigationDrawer location="left" permanent>
-        <h1>Hallo</h1>
+        <h1>{{ $t("sidebar.greeting") }}</h1>
     </VNavigationDrawer>
 </template>

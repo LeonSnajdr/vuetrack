@@ -38,7 +38,7 @@
                             />
                         </div>
                         <p v-if="event.kind === 'existing' || event.kind === 'suggestion'">{{ event.timeEntry.taskId }}</p>
-                        <p v-else>Draft</p>
+                        <p v-else>{{ $t("calendar.event.draft") }}</p>
                         <p>{{ dateFormatter.format(event.start, "fullTime24h") }} - {{ dateFormatter.format(event.end, "fullTime24h") }}</p>
                     </div>
                     <div @mousedown.stop="beginResizeEvent(event)" class="v-event-drag-bottom" />
