@@ -16,7 +16,5 @@
   "calendar.event.taskIdLabel": "Aufgaben-ID",
   "calendar.event.title": "Ereignis benennen",
   "sidebar.greeting": "Hallo",
-  "test.test": "Test",
-  "tracking.addOneHour": "1 Stunde hinzufügen",
-  "tracking.removeLast": "Letztes entfernen"
+  "test.test": "Test"
 }

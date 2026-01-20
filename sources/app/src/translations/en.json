@@ -16,7 +16,5 @@
   "calendar.event.taskIdLabel": "Task ID",
   "calendar.event.title": "Name the event",
   "sidebar.greeting": "Hello",
-  "test.test": "Test",
-  "tracking.addOneHour": "Add 1 hour",
-  "tracking.removeLast": "Remove last"
+  "test.test": "Test"
 }
