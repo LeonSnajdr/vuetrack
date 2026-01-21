@@ -154,45 +154,15 @@ const updateInteractionFromPointer = (_nativeEvent: Event, tms: CalendarDayBodyS
 };
 
 const finishInteraction = async () => {
-    switch (interaction.value.kind) {
-        case "create":
-        case "edit":
-        case "conflict":
-            return;
-        case "draft":
-            draft.finish();
-            return;
-        case "move":
-            await move.finish();
-            return;
-        case "resize":
-            await resize.finish();
-            return;
-        default:
-            interaction.value = { kind: "idle" };
-            return;
-    }
+    draft.finish();
+    await move.finish();
+    await resize.finish();
 };
 
 const cancelInteractionOnLeave = () => {
-    switch (interaction.value.kind) {
-        case "create":
-        case "edit":
-        case "conflict":
-            return;
-        case "resize":
-            resize.cancel();
-            return;
-        case "move":
-            move.cancel();
-            return;
-        case "draft":
-            draft.cancel();
-            return;
-        default:
-            interaction.value = { kind: "idle" };
-            return;
-    }
+    resize.cancel();
+    move.cancel();
+    draft.cancel();
 };
 
 const toTime = (tms: CalendarDayBodySlotScope) => {
