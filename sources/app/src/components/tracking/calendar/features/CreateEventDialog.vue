@@ -6,7 +6,7 @@
             </VCardTitle>
             <VTextField
                 v-model.trim="interaction.mutation.create.taskId"
-                @keydown.enter.prevent="create.finish(interaction.event)"
+                @keydown.enter.prevent="create.finish()"
                 @keydown.esc.prevent="create.cancel()"
                 :label="$t('calendar.event.taskIdLabel')"
                 class="mt-3"
@@ -17,7 +17,7 @@
                 <VBtn @click="create.cancel()" :disabled="createLoading" variant="text">
                     {{ $t("action.cancel") }}
                 </VBtn>
-                <VBtn @click="create.finish(interaction.event)" :disabled="createLoading" :loading="createLoading" color="primary">
+                <VBtn @click="create.finish()" :disabled="createLoading" :loading="createLoading" color="primary">
                     {{ $t("action.save") }}
                 </VBtn>
             </div>

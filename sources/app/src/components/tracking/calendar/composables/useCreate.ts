@@ -33,11 +33,10 @@ export function useCreate() {
         interaction.value = { kind: "create", event, mutation: createMutation };
     };
 
-    const finish = async (event: TimeEntryEvent) => {
+    const finish = async () => {
         if (interaction.value.kind !== "create") return;
-        if (event.kind === "existing") return;
 
-        const { mutation: createMutation } = interaction.value;
+        const { event, mutation: createMutation } = interaction.value;
 
         const overlaps = getOverlappingEvents(event, existingEvents.value);
 
