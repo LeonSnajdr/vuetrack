@@ -1,4 +1,4 @@
-import type { TimeEntryEvent } from "@/components/tracking/calendar/types";
+import type { ExistingTimeEntryUpdateMutation, SuggestionTimeEntryUpdateMutation, TimeEntryEvent } from "@/components/tracking/calendar/types";
 import { roundTime, getOverlappingEvents, cancelPendingUpdateForEvent } from "./shared";
 import { useEventMutation } from "./useEventMutation";
 
@@ -14,20 +14,22 @@ export function useResize() {
 
         cancelPendingUpdateForEvent(event, timeEntryStore, suggestionStore);
 
-        const resizeMutation =
-            event.kind === "existing"
-                ? {
-                      kind: "update" as const,
-                      event,
-                      update: withProxy({ taskId: event.timeEntry.taskId }).from(event.timeEntry, "startTime", "endTime").build(),
-                      originalPosition: { start: event.start, end: event.end }
-                  }
-                : {
-                      kind: "update" as const,
-                      event,
-                      update: withProxy({ taskId: event.timeEntry.taskId }).from(event.timeEntry, "startTime", "endTime").build(),
-                      originalPosition: { start: event.start, end: event.end }
-                  };
+        let resizeMutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation;
+        if (event.kind === "existing") {
+            resizeMutation = {
+                kind: "update",
+                event,
+                update: withProxy({ taskId: event.timeEntry.taskId }).from(event.timeEntry, "startTime", "endTime").build(),
+                originalPosition: { start: event.start, end: event.end }
+            };
+        } else {
+            resizeMutation = {
+                kind: "update",
+                event,
+                update: withProxy({ taskId: event.timeEntry.taskId }).from(event.timeEntry, "startTime", "endTime").build(),
+                originalPosition: { start: event.start, end: event.end }
+            };
+        }
 
         interaction.value = {
             kind: "resize",

@@ -15,22 +15,21 @@ export function useCreate() {
 
     const start = (event: DraftTimeEntryEvent | SuggestionTimeEntryEvent) => {
         let createMutation: DraftTimeEntryCreateMutation | SuggestionTimeEntryCreateMutation;
-
         if (event.kind === "draft") {
             createMutation = {
                 kind: "create",
                 event,
                 create: withProxy({ taskId: event.createEntry.taskId }).from(event.createEntry, "startTime", "endTime").build()
-            } as DraftTimeEntryCreateMutation;
-        } else if (event.kind === "suggestion") {
+            };
+        } else {
             createMutation = {
                 kind: "create",
                 event,
                 create: withProxy({ taskId: event.timeEntry.taskId }).from(event.timeEntry, "startTime", "endTime").build()
-            } as SuggestionTimeEntryCreateMutation;
+            };
         }
 
-        interaction.value = { kind: "create", event, mutation: createMutation! };
+        interaction.value = { kind: "create", event, mutation: createMutation };
     };
 
     const finish = async (event: TimeEntryEvent) => {

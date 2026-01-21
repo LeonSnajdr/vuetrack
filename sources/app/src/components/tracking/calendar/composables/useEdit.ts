@@ -1,4 +1,9 @@
-import type { ExistingTimeEntryEvent, SuggestionTimeEntryEvent } from "@/components/tracking/calendar/types";
+import type {
+    ExistingTimeEntryEvent,
+    ExistingTimeEntryUpdateMutation,
+    SuggestionTimeEntryEvent,
+    SuggestionTimeEntryUpdateMutation
+} from "@/components/tracking/calendar/types";
 import { useEventMutation } from "./useEventMutation";
 
 export function useEdit() {
@@ -7,20 +12,22 @@ export function useEdit() {
     const mutation = useEventMutation();
 
     const start = (event: ExistingTimeEntryEvent | SuggestionTimeEntryEvent) => {
-        const editMutation =
-            event.kind === "existing"
-                ? {
-                      kind: "update" as const,
-                      event,
-                      update: withProxy({ taskId: event.timeEntry.taskId }).from(event.timeEntry, "startTime", "endTime").build(),
-                      originalPosition: { start: event.start, end: event.end }
-                  }
-                : {
-                      kind: "update" as const,
-                      event,
-                      update: withProxy({ taskId: event.timeEntry.taskId }).from(event.timeEntry, "startTime", "endTime").build(),
-                      originalPosition: { start: event.start, end: event.end }
-                  };
+        let editMutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation;
+        if (event.kind === "existing") {
+            editMutation = {
+                kind: "update",
+                event,
+                update: withProxy({ taskId: event.timeEntry.taskId }).from(event.timeEntry, "startTime", "endTime").build(),
+                originalPosition: { start: event.start, end: event.end }
+            };
+        } else {
+            editMutation = {
+                kind: "update",
+                event,
+                update: withProxy({ taskId: event.timeEntry.taskId }).from(event.timeEntry, "startTime", "endTime").build(),
+                originalPosition: { start: event.start, end: event.end }
+            };
+        }
 
         interaction.value = { kind: "edit", event, mutation: editMutation };
     };
