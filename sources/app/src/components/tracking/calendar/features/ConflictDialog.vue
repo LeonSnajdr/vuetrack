@@ -3,7 +3,7 @@
         <VCard width="350">
             <VCardTitle class="text-subtitle-1 mb-n5">{{ $t("calendar.conflict.title") }}</VCardTitle>
             <VCardSubtitle>
-                <p class="text-medium-emphasis text-caption">{{ $t("calendar.conflict.subtitle", { count: overlaps.length }) }}</p>
+                <p class="text-medium-emphasis text-caption">{{ $t("calendar.conflict.subtitle", { count: interaction.overlaps.length }) }}</p>
             </VCardSubtitle>
             <VCardText>
                 <div class="d-flex flex-column ga-2">
@@ -12,8 +12,8 @@
                         :key="strategy.id"
                         @click="executeStrategy(strategy)"
                         :color="strategy.variant"
-                        :disabled="loadingStrategyId !== null"
-                        :loading="loadingStrategyId === strategy.id"
+                        :disabled="conflictLoadingId !== null"
+                        :loading="conflictLoadingId === strategy.id"
                         :prependIcon="strategy.icon"
                         variant="tonal"
                     >
@@ -23,14 +23,24 @@
             </VCardText>
             <VCardActions>
                 <VSpacer />
-                <VBtn @click="emit('canceled')" :disabled="loadingStrategyId !== null" size="small" variant="plain">{{ $t("action.cancel") }}</VBtn>
+                <VBtn @click="conflict.cancel()" :disabled="conflictLoadingId !== null" size="small" variant="plain">{{ $t("action.cancel") }}</VBtn>
             </VCardActions>
         </VCard>
     </VMenu>
 </template>
 
 <script setup lang="ts">
-import type { TimeEntryEvent } from "@/components/tracking/calendar/types";
+import type {
+    Interaction,
+    TimeEntryEvent,
+    TimeEntryMutation,
+    ExistingTimeEntryDeleteMutation,
+    ExistingTimeEntryUpdateMutation,
+    SuggestionTimeEntryDeleteMutation,
+    SuggestionTimeEntryUpdateMutation,
+    DraftTimeEntryDeleteMutation
+} from "@/components/tracking/calendar/types";
+import { useConflict } from "@/components/tracking/calendar/composables/useConflict";
 
 export interface ConflictResolutionStrategy {
     id: string;
@@ -38,38 +48,81 @@ export interface ConflictResolutionStrategy {
     subtitle: string;
     icon: string;
     variant?: "error" | "warning";
-    resolve: (ctx: ConflictContext) => ConflictResolutionResult | null;
+    resolve: () => TimeEntryMutation[] | null;
 }
 
-export interface ConflictContext {
-    event: TimeEntryEvent;
-    overlaps: TimeEntryEvent[];
-    allEvents: TimeEntryEvent[];
-}
+const interaction = defineModel<Extract<Interaction, { kind: "conflict" }>>("interaction", { required: true });
 
-export interface ConflictResolutionResult {
-    position: { start: number; end: number };
-    mutations?: EventMutation[];
-}
-
-export type EventMutation = { action: "remove"; event: TimeEntryEvent } | { action: "update"; event: TimeEntryEvent; start: number; end: number };
-
-const emit = defineEmits<{
-    resolved: [result: ConflictResolutionResult];
-    canceled: [];
-}>();
-
-const props = defineProps<{
-    event: TimeEntryEvent;
-    overlaps: TimeEntryEvent[];
-    allEvents: TimeEntryEvent[];
-}>();
-
-const loadingStrategyId = defineModel<string | null>("loadingStrategyId", { required: true });
+const conflict = useConflict();
+const calendarStore = useCalendarStore();
+const { conflictLoadingId, existingEvents } = storeToRefs(calendarStore);
 
 const { t } = useI18n();
 
-const targetSelector = computed(() => "#" + props.event.uiId);
+const targetSelector = computed(() => "#" + interaction.value.event.uiId);
+
+// Helper to create a mutation with updated position
+const updateMutationPosition = (mutation: TimeEntryMutation, start: number, end: number): TimeEntryMutation => {
+    if (mutation.kind === "update") {
+        return {
+            ...mutation,
+            update: {
+                ...mutation.update,
+                startTime: new Date(start),
+                endTime: new Date(end)
+            }
+        };
+    } else if (mutation.kind === "create") {
+        return {
+            ...mutation,
+            create: {
+                ...mutation.create,
+                startTime: new Date(start),
+                endTime: new Date(end)
+            }
+        };
+    }
+    return mutation;
+};
+
+// Helper to create delete mutation for an event
+const createDeleteMutation = (event: TimeEntryEvent): TimeEntryMutation => {
+    if (event.kind === "draft") {
+        return { kind: "delete", event } as DraftTimeEntryDeleteMutation;
+    } else if (event.kind === "existing") {
+        return { kind: "delete", event, id: event.timeEntry.id } as ExistingTimeEntryDeleteMutation;
+    } else {
+        return { kind: "delete", event, id: event.timeEntry.id } as SuggestionTimeEntryDeleteMutation;
+    }
+};
+
+// Helper to create update mutation for an event
+const createUpdateMutation = (event: TimeEntryEvent, newStart: number, newEnd: number): TimeEntryMutation | null => {
+    if (event.kind === "existing") {
+        return {
+            kind: "update",
+            event,
+            update: {
+                startTime: new Date(newStart),
+                endTime: new Date(newEnd),
+                taskId: event.timeEntry.taskId
+            },
+            originalPosition: { start: event.start, end: event.end }
+        } as ExistingTimeEntryUpdateMutation;
+    } else if (event.kind === "suggestion") {
+        return {
+            kind: "update",
+            event,
+            update: {
+                startTime: new Date(newStart),
+                endTime: new Date(newEnd),
+                taskId: event.timeEntry.taskId
+            },
+            originalPosition: { start: event.start, end: event.end }
+        } as SuggestionTimeEntryUpdateMutation;
+    }
+    return null;
+};
 
 const defaultStrategies = computed<ConflictResolutionStrategy[]>(() => [
     {
@@ -103,30 +156,25 @@ const defaultStrategies = computed<ConflictResolutionStrategy[]>(() => [
     }
 ]);
 
-const executeStrategy = (strategy: ConflictResolutionStrategy) => {
-    loadingStrategyId.value = strategy.id;
+const executeStrategy = async (strategy: ConflictResolutionStrategy) => {
+    conflictLoadingId.value = strategy.id;
 
-    const ctx: ConflictContext = {
-        event: props.event,
-        overlaps: props.overlaps,
-        allEvents: props.allEvents
-    };
-
-    const result = strategy.resolve(ctx);
-    if (result) {
-        emit("resolved", result);
+    const mutations = strategy.resolve();
+    if (mutations) {
+        await conflict.finish(mutations);
     } else {
-        loadingStrategyId.value = null;
-        emit("canceled");
+        conflictLoadingId.value = null;
+        await conflict.cancel();
     }
 };
 
 // Default strategies
-const resolveShiftUp = (ctx: ConflictContext): ConflictResolutionResult | null => {
-    const { event, allEvents } = ctx;
+const resolveShiftUp = (): TimeEntryMutation[] | null => {
+    const event = interaction.value.event;
+    const mutation = interaction.value.mutation;
     const duration = event.end - event.start;
 
-    const sorted = [...allEvents].filter((e) => e.uiId !== event.uiId).sort((a, b) => a.start - b.start);
+    const sorted = [...existingEvents.value].filter((e) => e.uiId !== event.uiId).sort((a, b) => a.start - b.start);
 
     const dayStart = new Date(event.start).setHours(0, 0, 0, 0);
     const dayEnd = new Date(event.start).setHours(23, 59, 59, 999);
@@ -148,16 +196,19 @@ const resolveShiftUp = (ctx: ConflictContext): ConflictResolutionResult | null =
     }
 
     if (foundStart !== -1) {
-        return { position: { start: foundStart, end: foundStart + duration } };
+        const foundEnd = foundStart + duration;
+        const updatedMutation = updateMutationPosition(mutation, foundStart, foundEnd);
+        return [updatedMutation];
     }
     return null;
 };
 
-const resolveShiftDown = (ctx: ConflictContext): ConflictResolutionResult | null => {
-    const { event, allEvents } = ctx;
+const resolveShiftDown = (): TimeEntryMutation[] | null => {
+    const event = interaction.value.event;
+    const mutation = interaction.value.mutation;
     const duration = event.end - event.start;
 
-    const sorted = [...allEvents].filter((e) => e.uiId !== event.uiId).sort((a, b) => a.start - b.start);
+    const sorted = [...existingEvents.value].filter((e) => e.uiId !== event.uiId).sort((a, b) => a.start - b.start);
 
     const dayStart = new Date(event.start).setHours(0, 0, 0, 0);
     const dayEnd = new Date(event.start).setHours(23, 59, 59, 999);
@@ -177,13 +228,17 @@ const resolveShiftDown = (ctx: ConflictContext): ConflictResolutionResult | null
     }
 
     if (foundStart !== -1) {
-        return { position: { start: foundStart, end: foundStart + duration } };
+        const foundEnd = foundStart + duration;
+        const updatedMutation = updateMutationPosition(mutation, foundStart, foundEnd);
+        return [updatedMutation];
     }
     return null;
 };
 
-const resolveTruncate = (ctx: ConflictContext): ConflictResolutionResult | null => {
-    const { event, overlaps } = ctx;
+const resolveTruncate = (): TimeEntryMutation[] | null => {
+    const event = interaction.value.event;
+    const overlaps = interaction.value.overlaps;
+    const mutation = interaction.value.mutation;
 
     let allowedStart = event.start;
     let allowedEnd = event.end;
@@ -202,38 +257,45 @@ const resolveTruncate = (ctx: ConflictContext): ConflictResolutionResult | null 
 
     if (allowedEnd <= allowedStart) return null;
 
-    return { position: { start: allowedStart, end: allowedEnd } };
+    const updatedMutation = updateMutationPosition(mutation, allowedStart, allowedEnd);
+    return [updatedMutation];
 };
 
-const resolveForce = (ctx: ConflictContext): ConflictResolutionResult | null => {
-    const { event, overlaps } = ctx;
-    const mutations: EventMutation[] = [];
+const resolveForce = (): TimeEntryMutation[] | null => {
+    const event = interaction.value.event;
+    const overlaps = interaction.value.overlaps;
+    const mutation = interaction.value.mutation;
+    const mutations: TimeEntryMutation[] = [mutation];
 
     for (const ov of overlaps) {
+        // Completely overlapped - delete it
         if (event.start <= ov.start && event.end >= ov.end) {
-            mutations.push({ action: "remove", event: ov });
+            mutations.push(createDeleteMutation(ov));
             continue;
         }
 
+        // Partially overlapped - truncate it
         if (event.start > ov.start && event.start < ov.end) {
-            mutations.push({ action: "update", event: ov, start: ov.start, end: event.start });
+            const updateMutation = createUpdateMutation(ov, ov.start, event.start);
+            if (updateMutation) mutations.push(updateMutation);
         }
 
         if (event.end > ov.start && event.end < ov.end) {
-            mutations.push({ action: "update", event: ov, start: event.end, end: ov.end });
+            const updateMutation = createUpdateMutation(ov, event.end, ov.end);
+            if (updateMutation) mutations.push(updateMutation);
         }
 
+        // Event is fully contained within overlap - keep larger portion
         if (event.start > ov.start && event.end < ov.end) {
             const headSize = event.start - ov.start;
             const tailSize = ov.end - event.end;
-            if (headSize > tailSize) {
-                mutations.push({ action: "update", event: ov, start: ov.start, end: event.start });
-            } else {
-                mutations.push({ action: "update", event: ov, start: event.end, end: ov.end });
-            }
+            const newStart = headSize > tailSize ? ov.start : event.end;
+            const newEnd = headSize > tailSize ? event.start : ov.end;
+            const updateMutation = createUpdateMutation(ov, newStart, newEnd);
+            if (updateMutation) mutations.push(updateMutation);
         }
     }
 
-    return { position: { start: event.start, end: event.end }, mutations };
+    return mutations;
 };
 </script>

@@ -52,19 +52,9 @@
             </VHover>
         </template>
     </VCalendar>
-
     <TrackingCalendarFeaturesCreateEventDialog v-if="interaction.kind === 'create'" v-model:interaction="interaction" />
     <TrackingCalendarFeaturesEditEventDialog v-if="interaction.kind === 'edit'" v-model:interaction="interaction" />
-
-    <TrackingCalendarFeaturesConflictDialog
-        v-if="interaction.kind === 'conflict'"
-        v-model:loadingStrategyId="conflictLoadingId"
-        @canceled="conflict.cancel"
-        @resolved="conflict.finish"
-        :allEvents="existingEvents"
-        :event="interaction.event"
-        :overlaps="interaction.overlaps"
-    />
+    <TrackingCalendarFeaturesConflictDialog v-if="interaction.kind === 'conflict'" v-model:interaction="interaction" />
 </template>
 
 <script setup lang="ts">
@@ -76,20 +66,18 @@ import { useResize } from "./composables/useResize";
 import { useDraft } from "./composables/useDraft";
 import { useCreate } from "./composables/useCreate";
 import { useEdit } from "./composables/useEdit";
-import { useConflict } from "./composables/useConflict";
 import { canStartInteraction } from "./composables/shared";
 import { useEventMutation } from "./composables/useEventMutation";
 
 const calendarStore = useCalendarStore();
 
-const { existingEvents, events, interaction, conflictLoadingId } = storeToRefs(calendarStore);
+const { events, interaction } = storeToRefs(calendarStore);
 
 const move = useMove();
 const resize = useResize();
 const draft = useDraft();
 const create = useCreate();
 const edit = useEdit();
-const conflict = useConflict();
 const mutation = useEventMutation();
 
 const dateFormatter = useDate();

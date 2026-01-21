@@ -17,7 +17,6 @@ declare module 'vue' {
     TrackingCalendarFeaturesConflictDialog: typeof import('./../src/components/tracking/calendar/features/ConflictDialog.vue')['default']
     TrackingCalendarFeaturesCreateEventDialog: typeof import('./../src/components/tracking/calendar/features/CreateEventDialog.vue')['default']
     TrackingCalendarFeaturesEditEventDialog: typeof import('./../src/components/tracking/calendar/features/EditEventDialog.vue')['default']
-    TrackingCalendarFeaturesEventDialog: typeof import('./../src/components/tracking/calendar/features/EventDialog.vue')['default']
     TrackingCalendarSidebar: typeof import('./../src/components/tracking/calendar/Sidebar.vue')['default']
     TrackingCalendarView: typeof import('./../src/components/tracking/calendar/View.vue')['default']
   }
