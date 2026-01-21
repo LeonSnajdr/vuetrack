@@ -1,0 +1,39 @@
+<template>
+    <VMenu @update:modelValue="(v) => !v && edit.cancel()" :closeOnContentClick="false" :target="targetSelector" location="right" modelValue>
+        <VCard class="pa-3" width="320">
+            <VCardTitle class="text-subtitle-1 pa-0">
+                {{ $t("calendar.event.title") }}
+            </VCardTitle>
+            <VTextField
+                v-model.trim="interaction.mutation.update.taskId"
+                @keydown.enter.prevent="edit.finish()"
+                @keydown.esc.prevent="edit.cancel()"
+                :label="$t('calendar.event.taskIdLabel')"
+                class="mt-3"
+                density="compact"
+                autofocus
+            />
+            <div class="d-flex justify-end ga-2 mt-2">
+                <VBtn @click="edit.cancel()" :disabled="editLoading" variant="text">
+                    {{ $t("action.cancel") }}
+                </VBtn>
+                <VBtn @click="edit.finish()" :disabled="editLoading" :loading="editLoading" color="primary">
+                    {{ $t("action.save") }}
+                </VBtn>
+            </div>
+        </VCard>
+    </VMenu>
+</template>
+
+<script setup lang="ts">
+import type { Interaction } from "@/components/tracking/calendar/types";
+import { useEdit } from "@/components/tracking/calendar/composables/useEdit";
+
+const interaction = defineModel<Extract<Interaction, { kind: "edit" }>>("interaction", { required: true });
+
+const edit = useEdit();
+const calendarStore = useCalendarStore();
+const { editLoading } = storeToRefs(calendarStore);
+
+const targetSelector = computed(() => "#" + interaction.value.event.uiId);
+</script>

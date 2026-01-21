@@ -10,8 +10,6 @@ import { useEventMutation } from "./useEventMutation";
 
 export function useCreate() {
     const calendarStore = useCalendarStore();
-    const timeEntryStore = useTimeEntryStore();
-    const suggestionStore = useTimeEntrySuggestionStore();
     const mutation = useEventMutation();
     const { interaction, existingEvents, draftEvents, createLoading } = storeToRefs(calendarStore);
 
@@ -54,10 +52,6 @@ export function useCreate() {
 
         const { mutation: createMutation } = interaction.value;
 
-        // Update Date references to match current event position
-        createMutation.create.startTime.setTime(event.start);
-        createMutation.create.endTime.setTime(event.end);
-
         const overlaps = getOverlappingEvents(event, existingEvents.value);
 
         if (overlaps.length > 0) {
@@ -85,39 +79,6 @@ export function useCreate() {
         }
 
         interaction.value = { kind: "idle" };
-    };
-
-    const createEvent = async (event: TimeEntryEvent, position?: { start: number; end: number }) => {
-        const startTime = new Date(position?.start ?? event.start);
-        const endTime = new Date(position?.end ?? event.end);
-
-        if (event.kind === "draft") {
-            if (!event.createEntry.taskId) {
-                removeEvent(event);
-                return false;
-            }
-
-            const result = await timeEntryStore.create({
-                startTime,
-                endTime,
-                taskId: event.createEntry.taskId
-            });
-
-            removeEvent(event);
-            return result.status === "success";
-        } else if (event.kind === "suggestion") {
-            const result = await timeEntryStore.create({
-                startTime,
-                endTime,
-                taskId: event.timeEntry.taskId
-            });
-
-            if (result.status === "success") {
-                await suggestionStore.dismiss(event.timeEntry.id);
-            }
-            return result.status === "success";
-        }
-        return false;
     };
 
     const removeEvent = (event: TimeEntryEvent) => {

@@ -29,7 +29,20 @@ export function useDraft() {
     const finish = () => {
         if (interaction.value.kind !== "draft") return;
         const cur = interaction.value;
-        interaction.value = { kind: "create", event: cur.event };
+        interaction.value = {
+            kind: "create",
+            event: cur.event,
+            mutation: {
+                kind: "create",
+                event: cur.event,
+                create: {
+                    startTime: cur.event.createEntry.startTime,
+                    endTime: cur.event.createEntry.endTime,
+                    taskId: cur.event.createEntry.taskId
+                },
+                originalPosition: { end: 0, start: 0 }
+            }
+        };
     };
 
     const cancel = () => {

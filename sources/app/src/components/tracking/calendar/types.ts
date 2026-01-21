@@ -119,11 +119,7 @@ export type Interaction =
           kind: "conflict";
           event: TimeEntryEvent;
           overlaps: TimeEntryEvent[];
-          mutation:
-              | ExistingTimeEntryUpdateMutation
-              | SuggestionTimeEntryUpdateMutation
-              | DraftTimeEntryCreateMutation
-              | SuggestionTimeEntryCreateMutation;
+          mutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation | DraftTimeEntryCreateMutation | SuggestionTimeEntryCreateMutation;
       };
 
 export function isTimeEntryEvent(e: CalendarEvent): e is TimeEntryEvent {

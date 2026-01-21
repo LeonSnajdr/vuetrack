@@ -1,4 +1,4 @@
-import type { ExistingTimeEntryEvent, SuggestionTimeEntryEvent, TimeEntryEvent } from "@/components/tracking/calendar/types";
+import type { ExistingTimeEntryEvent, SuggestionTimeEntryEvent } from "@/components/tracking/calendar/types";
 import { useEventMutation } from "./useEventMutation";
 
 export function useEdit() {
@@ -33,7 +33,7 @@ export function useEdit() {
         interaction.value = { kind: "edit", event, mutation: editMutation };
     };
 
-    const finish = async (event: TimeEntryEvent) => {
+    const finish = async () => {
         if (interaction.value.kind !== "edit") return;
 
         editLoading.value = true;

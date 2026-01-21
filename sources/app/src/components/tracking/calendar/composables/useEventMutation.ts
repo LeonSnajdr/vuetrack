@@ -8,9 +8,6 @@ export function useEventMutation() {
 
     const execute = async (mutation: TimeEntryMutation): Promise<ActionResult<void>> => {
         if (mutation.kind === "create") {
-            const startTime = new Date(mutation.create.startTime);
-            const endTime = new Date(mutation.create.endTime);
-
             if (mutation.event.kind === "draft") {
                 if (!mutation.create.taskId) {
                     const idx = draftEvents.value.indexOf(mutation.event);
@@ -18,11 +15,7 @@ export function useEventMutation() {
                     return error();
                 }
 
-                const result = await timeEntryStore.create({
-                    startTime,
-                    endTime,
-                    taskId: mutation.create.taskId
-                });
+                const result = await timeEntryStore.create(mutation.create);
 
                 if (result.status === "success") {
                     const idx = draftEvents.value.indexOf(mutation.event);
@@ -31,11 +24,7 @@ export function useEventMutation() {
 
                 return result.status === "success" ? success(undefined) : error();
             } else if (mutation.event.kind === "suggestion") {
-                const result = await timeEntryStore.create({
-                    startTime,
-                    endTime,
-                    taskId: mutation.create.taskId
-                });
+                const result = await timeEntryStore.create(mutation.create);
 
                 if (result.status === "success") {
                     await suggestionStore.dismiss(mutation.event.timeEntry.id);
@@ -46,22 +35,11 @@ export function useEventMutation() {
 
             return error();
         } else if (mutation.kind === "update") {
-            const startTime = new Date(mutation.update.startTime);
-            const endTime = new Date(mutation.update.endTime);
-
             let result: ActionResult<unknown>;
             if (mutation.event.kind === "existing") {
-                result = await timeEntryStore.update(mutation.event.timeEntry.id, {
-                    startTime,
-                    endTime,
-                    taskId: mutation.update.taskId
-                });
+                result = await timeEntryStore.update(mutation.event.timeEntry.id, mutation.update);
             } else if (mutation.event.kind === "suggestion") {
-                result = await suggestionStore.update(mutation.event.timeEntry.id, {
-                    startTime,
-                    endTime,
-                    taskId: mutation.update.taskId
-                });
+                result = await suggestionStore.update(mutation.event.timeEntry.id, mutation.update);
             } else {
                 return error();
             }

@@ -53,21 +53,8 @@
         </template>
     </VCalendar>
 
-    <TrackingCalendarFeaturesEventDialog
-        v-if="interaction.kind === 'create'"
-        v-model:event="interaction.event"
-        @cancel="create.cancel"
-        @confirm="create.finish"
-        :loading="createLoading"
-    />
-
-    <TrackingCalendarFeaturesEventDialog
-        v-if="interaction.kind === 'edit'"
-        v-model:event="interaction.event"
-        @cancel="edit.cancel"
-        @confirm="edit.finish"
-        :loading="editLoading"
-    />
+    <TrackingCalendarFeaturesCreateEventDialog v-if="interaction.kind === 'create'" v-model:interaction="interaction" />
+    <TrackingCalendarFeaturesEditEventDialog v-if="interaction.kind === 'edit'" v-model:interaction="interaction" />
 
     <TrackingCalendarFeaturesConflictDialog
         v-if="interaction.kind === 'conflict'"
@@ -95,7 +82,7 @@ import { useEventMutation } from "./composables/useEventMutation";
 
 const calendarStore = useCalendarStore();
 
-const { existingEvents, events, interaction, createLoading, editLoading, conflictLoadingId } = storeToRefs(calendarStore);
+const { existingEvents, events, interaction, conflictLoadingId } = storeToRefs(calendarStore);
 
 const move = useMove();
 const resize = useResize();
