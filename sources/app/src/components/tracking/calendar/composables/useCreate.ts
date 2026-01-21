@@ -1,19 +1,62 @@
-import type { DraftTimeEntryEvent, SuggestionTimeEntryEvent, TimeEntryEvent } from "@/components/tracking/calendar/types";
+import type {
+    DraftTimeEntryEvent,
+    DraftTimeEntryCreateMutation,
+    SuggestionTimeEntryEvent,
+    SuggestionTimeEntryCreateMutation,
+    TimeEntryEvent
+} from "@/components/tracking/calendar/types";
 import { getOverlappingEvents } from "./shared";
+import { useEventMutation } from "./useEventMutation";
 
 export function useCreate() {
     const calendarStore = useCalendarStore();
     const timeEntryStore = useTimeEntryStore();
     const suggestionStore = useTimeEntrySuggestionStore();
+    const mutation = useEventMutation();
     const { interaction, existingEvents, draftEvents, createLoading } = storeToRefs(calendarStore);
 
     const start = (event: DraftTimeEntryEvent | SuggestionTimeEntryEvent) => {
-        interaction.value = { kind: "create", event };
+        const startTimeRef = new Date(event.start);
+        const endTimeRef = new Date(event.end);
+
+        let createMutation: DraftTimeEntryCreateMutation | SuggestionTimeEntryCreateMutation;
+
+        if (event.kind === "draft") {
+            createMutation = {
+                kind: "create",
+                event,
+                create: {
+                    taskId: event.createEntry.taskId,
+                    startTime: startTimeRef,
+                    endTime: endTimeRef
+                },
+                originalPosition: { start: event.start, end: event.end }
+            };
+        } else {
+            createMutation = {
+                kind: "create",
+                event,
+                create: {
+                    taskId: event.timeEntry.taskId,
+                    startTime: startTimeRef,
+                    endTime: endTimeRef
+                },
+                originalPosition: { start: event.start, end: event.end }
+            };
+        }
+
+        interaction.value = { kind: "create", event, mutation: createMutation };
     };
 
     const finish = async (event: TimeEntryEvent) => {
         if (interaction.value.kind !== "create") return;
         if (event.kind === "existing") return;
+
+        const { mutation: createMutation } = interaction.value;
+
+        // Update Date references to match current event position
+        createMutation.create.startTime.setTime(event.start);
+        createMutation.create.endTime.setTime(event.end);
 
         const overlaps = getOverlappingEvents(event, existingEvents.value);
 
@@ -22,19 +65,13 @@ export function useCreate() {
                 kind: "conflict",
                 event,
                 overlaps,
-                onResolved: async (position) => {
-                    await createEvent(event, position);
-                    interaction.value = { kind: "idle" };
-                },
-                onCanceled: async () => {
-                    interaction.value = { kind: "idle" };
-                }
+                mutation: createMutation
             };
             return;
         }
 
         createLoading.value = true;
-        await createEvent(event);
+        await mutation.execute(createMutation);
         createLoading.value = false;
         interaction.value = { kind: "idle" };
     };

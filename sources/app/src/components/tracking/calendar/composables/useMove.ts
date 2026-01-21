@@ -1,21 +1,50 @@
 import type { TimeEntryEvent } from "@/components/tracking/calendar/types";
 import { roundTime, getOverlappingEvents, cancelPendingUpdateForEvent } from "./shared";
+import { useEventMutation } from "./useEventMutation";
 
 export function useMove() {
     const calendarStore = useCalendarStore();
     const timeEntryStore = useTimeEntryStore();
     const suggestionStore = useTimeEntrySuggestionStore();
     const { interaction, existingEvents } = storeToRefs(calendarStore);
+    const mutation = useEventMutation();
 
     const start = (event: TimeEntryEvent) => {
+        if (event.kind !== "existing" && event.kind !== "suggestion") return;
+
         cancelPendingUpdateForEvent(event, timeEntryStore, suggestionStore);
+
+        // Create Date objects that will be referenced by the mutation
+        const startTimeRef = new Date(event.start);
+        const endTimeRef = new Date(event.end);
+
+        const moveMutation = event.kind === "existing"
+            ? {
+                kind: "update" as const,
+                event,
+                update: {
+                    startTime: startTimeRef,
+                    endTime: endTimeRef,
+                    taskId: event.timeEntry.taskId
+                },
+                originalPosition: { start: event.start, end: event.end }
+              }
+            : {
+                kind: "update" as const,
+                event,
+                update: {
+                    startTime: startTimeRef,
+                    endTime: endTimeRef,
+                    taskId: event.timeEntry.taskId
+                },
+                originalPosition: { start: event.start, end: event.end }
+              };
 
         interaction.value = {
             kind: "move",
             event,
             pointerOffsetMs: undefined,
-            originalStartMs: event.start,
-            originalEndMs: event.end
+            mutation: moveMutation
         };
     };
 
@@ -27,13 +56,17 @@ export function useMove() {
 
     const update = (mouseMs: number) => {
         if (interaction.value.kind !== "move") return;
-        const { event, pointerOffsetMs } = interaction.value;
+        const { event, pointerOffsetMs, mutation: moveMutation } = interaction.value;
         if (pointerOffsetMs === undefined) return;
 
         const duration = event.end - event.start;
         const newStart = roundTime(mouseMs - pointerOffsetMs);
         event.start = newStart;
         event.end = newStart + duration;
+
+        // Update Date references - mutation automatically sees the new values
+        moveMutation.update.startTime.setTime(event.start);
+        moveMutation.update.endTime.setTime(event.end);
     };
 
     const finish = async () => {
@@ -44,57 +77,28 @@ export function useMove() {
             const overlaps = getOverlappingEvents(cur.event, existingEvents.value);
 
             if (overlaps.length > 0) {
-                const origStartMs = cur.originalStartMs;
-                const origEndMs = cur.originalEndMs;
-
                 interaction.value = {
                     kind: "conflict",
                     event: cur.event,
                     overlaps,
-                    onResolved: async (position) => {
-                        await updateEvent(cur.event, position, { start: origStartMs, end: origEndMs });
-                        interaction.value = { kind: "idle" };
-                    },
-                    onCanceled: async () => {
-                        cur.event.start = origStartMs;
-                        cur.event.end = origEndMs;
-                        interaction.value = { kind: "idle" };
-                    }
+                    mutation: cur.mutation
                 };
                 return;
             }
         }
 
-        const origStartMs = cur.originalStartMs;
-        const origEndMs = cur.originalEndMs;
         interaction.value = { kind: "idle" };
-        await updateEvent(cur.event, undefined, { start: origStartMs, end: origEndMs });
+        await mutation.execute(cur.mutation);
     };
 
     const cancel = () => {
         if (interaction.value.kind !== "move") return;
         const cur = interaction.value;
-        cur.event.start = cur.originalStartMs;
-        cur.event.end = cur.originalEndMs;
+        cur.event.start = cur.mutation.originalPosition.start;
+        cur.event.end = cur.mutation.originalPosition.end;
+        cur.mutation.update.startTime.setTime(cur.mutation.originalPosition.start);
+        cur.mutation.update.endTime.setTime(cur.mutation.originalPosition.end);
         interaction.value = { kind: "idle" };
-    };
-
-    const updateEvent = async (event: TimeEntryEvent, position?: { start: number; end: number }, originalPositionMs?: { start: number; end: number }) => {
-        const startTime = new Date(position?.start ?? event.start);
-        const endTime = new Date(position?.end ?? event.end);
-
-        let result: ActionResult<unknown> = error();
-        if (event.kind === "existing") {
-            result = await timeEntryStore.update(event.timeEntry.id, { startTime, endTime, taskId: event.timeEntry.taskId });
-        } else if (event.kind === "suggestion") {
-            result = await suggestionStore.update(event.timeEntry.id, { startTime, endTime, taskId: event.timeEntry.taskId });
-        }
-
-        if (result.status === "error" && originalPositionMs) {
-            event.start = originalPositionMs.start;
-            event.end = originalPositionMs.end;
-        }
-        return result;
     };
 
     return { start, setPointerOffset, update, finish, cancel };

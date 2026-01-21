@@ -9,7 +9,13 @@
       "Bash(git show:*)",
       "mcp__vuetify__get_component_api_by_version",
       "Bash(git mv:*)",
-      "Bash(volta run yarn type-check:*)"
+      "Bash(volta run yarn type-check:*)",
+      "Bash(volta run yarn run type-check:*)",
+      "Bash(volta run yarn run build:*)",
+      "Bash(ls:*)",
+      "Bash(volta run yarn run build-only:*)",
+      "Bash(volta run yarn typecheck:*)",
+      "Bash(volta run yarn run:*)"
     ]
   }
 }

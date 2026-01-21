@@ -91,12 +91,11 @@ import { useCreate } from "./composables/useCreate";
 import { useEdit } from "./composables/useEdit";
 import { useConflict } from "./composables/useConflict";
 import { canStartInteraction } from "./composables/shared";
+import { useEventMutation } from "./composables/useEventMutation";
 
-const timeEntryStore = useTimeEntryStore();
-const timeEntrySuggestionStore = useTimeEntrySuggestionStore();
 const calendarStore = useCalendarStore();
 
-const { existingEvents, events, interaction, draftEvents, createLoading, editLoading, conflictLoadingId } = storeToRefs(calendarStore);
+const { existingEvents, events, interaction, createLoading, editLoading, conflictLoadingId } = storeToRefs(calendarStore);
 
 const move = useMove();
 const resize = useResize();
@@ -104,6 +103,7 @@ const draft = useDraft();
 const create = useCreate();
 const edit = useEdit();
 const conflict = useConflict();
+const mutation = useEventMutation();
 
 const dateFormatter = useDate();
 
@@ -113,12 +113,11 @@ const acceptSuggestion = (event: SuggestionTimeEntryEvent) => {
 
 const removeEvent = async (event: TimeEntryEvent) => {
     if (event.kind === "draft") {
-        const idx = draftEvents.value.indexOf(event);
-        if (idx !== -1) draftEvents.value.splice(idx, 1);
+        await mutation.execute({ kind: "delete", event });
     } else if (event.kind === "existing") {
-        await timeEntryStore.remove(event.timeEntry.id);
+        await mutation.execute({ kind: "delete", event, id: event.timeEntry.id });
     } else if (event.kind === "suggestion") {
-        await timeEntrySuggestionStore.dismiss(event.timeEntry.id);
+        await mutation.execute({ kind: "delete", event, id: event.timeEntry.id });
     }
 };
 

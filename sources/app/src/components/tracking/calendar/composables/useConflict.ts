@@ -1,55 +1,92 @@
-import type { TimeEntryEvent } from "@/components/tracking/calendar/types";
+import type {
+    TimeEntryMutation,
+    DraftTimeEntryDeleteMutation,
+    ExistingTimeEntryDeleteMutation,
+    ExistingTimeEntryUpdateMutation,
+    SuggestionTimeEntryDeleteMutation,
+    SuggestionTimeEntryUpdateMutation
+} from "@/components/tracking/calendar/types";
 import type { ConflictResolutionResult, EventMutation } from "@/components/tracking/calendar/features/ConflictDialog.vue";
+import { useEventMutation } from "./useEventMutation";
 
 export function useConflict() {
     const calendarStore = useCalendarStore();
-    const timeEntryStore = useTimeEntryStore();
-    const suggestionStore = useTimeEntrySuggestionStore();
-    const { interaction, draftEvents, conflictLoadingId } = storeToRefs(calendarStore);
+    const { interaction, conflictLoadingId } = storeToRefs(calendarStore);
+    const mutation = useEventMutation();
 
     const finish = async (result: ConflictResolutionResult) => {
         if (interaction.value.kind !== "conflict") return;
+
+        // Apply side-effect mutations (other events being moved/removed)
         await applyMutations(result.mutations);
-        await interaction.value.onResolved(result.position);
+
+        // Update event wrapper to resolved position
+        const { event, mutation: conflictMutation } = interaction.value;
+        event.start = result.position.start;
+        event.end = result.position.end;
+
+        // Execute the main mutation (Date refs already updated via event wrapper)
+        await mutation.execute(conflictMutation);
+
         conflictLoadingId.value = null;
+        interaction.value = { kind: "idle" };
     };
 
     const cancel = async () => {
         if (interaction.value.kind !== "conflict") return;
-        await interaction.value.onCanceled();
+        const { event, mutation: conflictMutation } = interaction.value;
+
+        // Rollback to original position from mutation
+        event.start = conflictMutation.originalPosition.start;
+        event.end = conflictMutation.originalPosition.end;
+
+        // Update Date references to match rollback
+        if (conflictMutation.kind === "update") {
+            conflictMutation.update.startTime.setTime(conflictMutation.originalPosition.start);
+            conflictMutation.update.endTime.setTime(conflictMutation.originalPosition.end);
+        } else if (conflictMutation.kind === "create") {
+            conflictMutation.create.startTime.setTime(conflictMutation.originalPosition.start);
+            conflictMutation.create.endTime.setTime(conflictMutation.originalPosition.end);
+        }
+
+        conflictLoadingId.value = null;
+        interaction.value = { kind: "idle" };
     };
 
     const applyMutations = async (mutations?: EventMutation[]) => {
-        const promises = (mutations ?? []).map(async (m) => {
+        const timeEntryMutations: TimeEntryMutation[] = (mutations ?? []).map((m) => {
             if (m.action === "remove") {
-                await removeEvent(m.event);
-            } else if (m.action === "update") {
-                await updateEvent(m.event, { start: m.start, end: m.end });
+                if (m.event.kind === "draft") {
+                    return { kind: "delete", event: m.event } as DraftTimeEntryDeleteMutation;
+                } else if (m.event.kind === "existing") {
+                    return { kind: "delete", event: m.event, id: m.event.timeEntry.id } as ExistingTimeEntryDeleteMutation;
+                } else {
+                    return { kind: "delete", event: m.event, id: m.event.timeEntry.id } as SuggestionTimeEntryDeleteMutation;
+                }
+            } else {
+                const startTime = new Date(m.start);
+                const endTime = new Date(m.end);
+
+                if (m.event.kind === "existing") {
+                    return {
+                        kind: "update",
+                        event: m.event,
+                        update: { startTime, endTime, taskId: m.event.timeEntry.taskId },
+                        originalPosition: { start: m.event.start, end: m.event.end }
+                    } as ExistingTimeEntryUpdateMutation;
+                } else if (m.event.kind === "suggestion") {
+                    return {
+                        kind: "update",
+                        event: m.event,
+                        update: { startTime, endTime, taskId: m.event.timeEntry.taskId },
+                        originalPosition: { start: m.event.start, end: m.event.end }
+                    } as SuggestionTimeEntryUpdateMutation;
+                }
+                throw new Error("Unexpected event kind for update mutation");
             }
         });
-        await Promise.all(promises);
-    };
 
-    const removeEvent = async (event: TimeEntryEvent) => {
-        if (event.kind === "draft") {
-            const idx = draftEvents.value.indexOf(event);
-            if (idx !== -1) draftEvents.value.splice(idx, 1);
-        } else if (event.kind === "existing") {
-            await timeEntryStore.remove(event.timeEntry.id);
-        } else if (event.kind === "suggestion") {
-            await suggestionStore.dismiss(event.timeEntry.id);
-        }
-    };
-
-    const updateEvent = async (event: TimeEntryEvent, position: { start: number; end: number }) => {
-        const startTime = new Date(position.start);
-        const endTime = new Date(position.end);
-
-        if (event.kind === "existing") {
-            await timeEntryStore.update(event.timeEntry.id, { startTime, endTime, taskId: event.timeEntry.taskId });
-        } else if (event.kind === "suggestion") {
-            await suggestionStore.update(event.timeEntry.id, { startTime, endTime, taskId: event.timeEntry.taskId });
-        }
+        await mutation.executeAll(timeEntryMutations);
     };
 
     return { finish, cancel };
