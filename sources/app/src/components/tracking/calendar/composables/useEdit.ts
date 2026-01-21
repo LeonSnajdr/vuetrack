@@ -10,10 +10,6 @@ export function useEdit() {
         interaction.value = { kind: "edit", event };
     };
 
-    const update = () => {
-        // no-op for edit dialog
-    };
-
     const finish = async (event: TimeEntryEvent) => {
         if (event.kind === "draft") return;
 
@@ -41,5 +37,5 @@ export function useEdit() {
         return result;
     };
 
-    return { start, update, finish, cancel };
+    return { start, finish, cancel };
 }

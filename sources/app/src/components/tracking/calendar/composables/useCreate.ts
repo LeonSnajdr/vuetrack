@@ -11,10 +11,6 @@ export function useCreate() {
         interaction.value = { kind: "create", event };
     };
 
-    const update = () => {
-        // no-op for create dialog
-    };
-
     const finish = async (event: TimeEntryEvent) => {
         if (interaction.value.kind !== "create") return;
         if (event.kind === "existing") return;
@@ -94,5 +90,5 @@ export function useCreate() {
         }
     };
 
-    return { start, update, finish, cancel };
+    return { start, finish, cancel };
 }

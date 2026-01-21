@@ -7,14 +7,6 @@ export function useConflict() {
     const suggestionStore = useTimeEntrySuggestionStore();
     const { interaction, draftEvents, conflictLoadingId } = storeToRefs(calendarStore);
 
-    const start = () => {
-        // N/A - conflict is set by other composables
-    };
-
-    const update = () => {
-        // no-op
-    };
-
     const finish = async (result: ConflictResolutionResult) => {
         if (interaction.value.kind !== "conflict") return;
         await applyMutations(result.mutations);
@@ -60,5 +52,5 @@ export function useConflict() {
         }
     };
 
-    return { start, update, finish, cancel };
+    return { finish, cancel };
 }
