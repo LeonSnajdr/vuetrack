@@ -9,7 +9,6 @@ export function useConflict() {
     const finish = async (mutations: TimeEntryMutation[]) => {
         if (interaction.value.kind !== "conflict") return;
 
-        // Execute all mutations
         await mutation.executeAll(mutations);
 
         conflictLoadingId.value = null;
@@ -20,9 +19,10 @@ export function useConflict() {
         if (interaction.value.kind !== "conflict") return;
         const { event, mutation: conflictMutation } = interaction.value;
 
-        // Rollback to original position from mutation
-        event.start = conflictMutation.originalPosition.start;
-        event.end = conflictMutation.originalPosition.end;
+        if ("originalPosition" in conflictMutation) {
+            event.start = conflictMutation.originalPosition.start;
+            event.end = conflictMutation.originalPosition.end;
+        }
 
         conflictLoadingId.value = null;
         interaction.value = { kind: "idle" };

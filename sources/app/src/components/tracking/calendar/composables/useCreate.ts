@@ -14,9 +14,6 @@ export function useCreate() {
     const { interaction, existingEvents, draftEvents, createLoading } = storeToRefs(calendarStore);
 
     const start = (event: DraftTimeEntryEvent | SuggestionTimeEntryEvent) => {
-        const startTimeRef = new Date(event.start);
-        const endTimeRef = new Date(event.end);
-
         let createMutation: DraftTimeEntryCreateMutation | SuggestionTimeEntryCreateMutation;
 
         if (event.kind === "draft") {
@@ -24,26 +21,32 @@ export function useCreate() {
                 kind: "create",
                 event,
                 create: {
-                    taskId: event.createEntry.taskId,
-                    startTime: startTimeRef,
-                    endTime: endTimeRef
-                },
-                originalPosition: { start: event.start, end: event.end }
-            };
-        } else {
+                    get startTime() {
+                        return event.createEntry.startTime;
+                    },
+                    get endTime() {
+                        return event.createEntry.endTime;
+                    },
+                    taskId: event.createEntry.taskId
+                }
+            } as DraftTimeEntryCreateMutation;
+        } else if (event.kind === "suggestion") {
             createMutation = {
                 kind: "create",
                 event,
                 create: {
-                    taskId: event.timeEntry.taskId,
-                    startTime: startTimeRef,
-                    endTime: endTimeRef
-                },
-                originalPosition: { start: event.start, end: event.end }
-            };
+                    get startTime() {
+                        return event.timeEntry.startTime;
+                    },
+                    get endTime() {
+                        return event.timeEntry.endTime;
+                    },
+                    taskId: event.timeEntry.taskId
+                }
+            } as SuggestionTimeEntryCreateMutation;
         }
 
-        interaction.value = { kind: "create", event, mutation: createMutation };
+        interaction.value = { kind: "create", event, mutation: createMutation! };
     };
 
     const finish = async (event: TimeEntryEvent) => {

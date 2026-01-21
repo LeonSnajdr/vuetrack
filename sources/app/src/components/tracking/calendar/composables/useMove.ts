@@ -14,31 +14,36 @@ export function useMove() {
 
         cancelPendingUpdateForEvent(event, timeEntryStore, suggestionStore);
 
-        // Create Date objects that will be referenced by the mutation
-        const startTimeRef = new Date(event.start);
-        const endTimeRef = new Date(event.end);
-
-        const moveMutation = event.kind === "existing"
-            ? {
-                kind: "update" as const,
-                event,
-                update: {
-                    startTime: startTimeRef,
-                    endTime: endTimeRef,
-                    taskId: event.timeEntry.taskId
-                },
-                originalPosition: { start: event.start, end: event.end }
-              }
-            : {
-                kind: "update" as const,
-                event,
-                update: {
-                    startTime: startTimeRef,
-                    endTime: endTimeRef,
-                    taskId: event.timeEntry.taskId
-                },
-                originalPosition: { start: event.start, end: event.end }
-              };
+        const moveMutation =
+            event.kind === "existing"
+                ? {
+                      kind: "update" as const,
+                      event,
+                      update: {
+                          get startTime() {
+                              return event.timeEntry.startTime;
+                          },
+                          get endTime() {
+                              return event.timeEntry.endTime;
+                          },
+                          taskId: event.timeEntry.taskId
+                      },
+                      originalPosition: { start: event.start, end: event.end }
+                  }
+                : {
+                      kind: "update" as const,
+                      event,
+                      update: {
+                          get startTime() {
+                              return event.timeEntry.startTime;
+                          },
+                          get endTime() {
+                              return event.timeEntry.endTime;
+                          },
+                          taskId: event.timeEntry.taskId
+                      },
+                      originalPosition: { start: event.start, end: event.end }
+                  };
 
         interaction.value = {
             kind: "move",
@@ -56,17 +61,14 @@ export function useMove() {
 
     const update = (mouseMs: number) => {
         if (interaction.value.kind !== "move") return;
-        const { event, pointerOffsetMs, mutation: moveMutation } = interaction.value;
+        const { event, pointerOffsetMs } = interaction.value;
         if (pointerOffsetMs === undefined) return;
 
         const duration = event.end - event.start;
         const newStart = roundTime(mouseMs - pointerOffsetMs);
+
         event.start = newStart;
         event.end = newStart + duration;
-
-        // Update Date references - mutation automatically sees the new values
-        moveMutation.update.startTime.setTime(event.start);
-        moveMutation.update.endTime.setTime(event.end);
     };
 
     const finish = async () => {
@@ -93,11 +95,12 @@ export function useMove() {
 
     const cancel = () => {
         if (interaction.value.kind !== "move") return;
+
         const cur = interaction.value;
+
         cur.event.start = cur.mutation.originalPosition.start;
         cur.event.end = cur.mutation.originalPosition.end;
-        cur.mutation.update.startTime.setTime(cur.mutation.originalPosition.start);
-        cur.mutation.update.endTime.setTime(cur.mutation.originalPosition.end);
+
         interaction.value = { kind: "idle" };
     };
 

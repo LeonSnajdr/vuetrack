@@ -13,8 +13,12 @@ export function useEdit() {
                       kind: "update" as const,
                       event,
                       update: {
-                          startTime: event.timeEntry.startTime,
-                          endTime: event.timeEntry.endTime,
+                          get startTime() {
+                              return event.timeEntry.startTime;
+                          },
+                          get endTime() {
+                              return event.timeEntry.endTime;
+                          },
                           taskId: event.timeEntry.taskId
                       },
                       originalPosition: { start: event.start, end: event.end }
@@ -23,8 +27,12 @@ export function useEdit() {
                       kind: "update" as const,
                       event,
                       update: {
-                          startTime: event.timeEntry.startTime,
-                          endTime: event.timeEntry.endTime,
+                          get startTime() {
+                              return event.timeEntry.startTime;
+                          },
+                          get endTime() {
+                              return event.timeEntry.endTime;
+                          },
                           taskId: event.timeEntry.taskId
                       },
                       originalPosition: { start: event.start, end: event.end }

@@ -48,6 +48,12 @@ export type SuggestionTimeEntryUpdateMutation = {
     originalPosition: EventPosition;
 };
 
+export type SuggestionTimeEntryCreateMutation = {
+    kind: "create";
+    event: SuggestionTimeEntryEvent;
+    create: TimeEntryCreateContract;
+};
+
 export type SuggestionTimeEntryDeleteMutation = {
     kind: "delete";
     event: SuggestionTimeEntryEvent;
@@ -63,18 +69,6 @@ export type DraftTimeEntryCreateMutation = {
     kind: "create";
     event: DraftTimeEntryEvent;
     create: TimeEntryCreateContract;
-    originalPosition: EventPosition;
-};
-
-export type SuggestionTimeEntryCreateMutation = {
-    kind: "create";
-    event: SuggestionTimeEntryEvent;
-    create: {
-        taskId: string;
-        startTime: Date;
-        endTime: Date;
-    };
-    originalPosition: EventPosition;
 };
 
 export type TimeEntryEvent = DraftTimeEntryEvent | ExistingTimeEntryEvent | SuggestionTimeEntryEvent;

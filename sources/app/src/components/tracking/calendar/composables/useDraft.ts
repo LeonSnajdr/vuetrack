@@ -39,8 +39,7 @@ export function useDraft() {
                     startTime: cur.event.createEntry.startTime,
                     endTime: cur.event.createEntry.endTime,
                     taskId: cur.event.createEntry.taskId
-                },
-                originalPosition: { end: 0, start: 0 }
+                }
             }
         };
     };

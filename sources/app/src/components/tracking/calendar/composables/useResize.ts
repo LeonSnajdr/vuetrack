@@ -14,31 +14,36 @@ export function useResize() {
 
         cancelPendingUpdateForEvent(event, timeEntryStore, suggestionStore);
 
-        // Create Date objects that will be referenced by the mutation
-        const startTimeRef = new Date(event.start);
-        const endTimeRef = new Date(event.end);
-
-        const resizeMutation = event.kind === "existing"
-            ? {
-                kind: "update" as const,
-                event,
-                update: {
-                    startTime: startTimeRef,
-                    endTime: endTimeRef,
-                    taskId: event.timeEntry.taskId
-                },
-                originalPosition: { start: event.start, end: event.end }
-              }
-            : {
-                kind: "update" as const,
-                event,
-                update: {
-                    startTime: startTimeRef,
-                    endTime: endTimeRef,
-                    taskId: event.timeEntry.taskId
-                },
-                originalPosition: { start: event.start, end: event.end }
-              };
+        const resizeMutation =
+            event.kind === "existing"
+                ? {
+                      kind: "update" as const,
+                      event,
+                      update: {
+                          get startTime() {
+                              return event.timeEntry.startTime;
+                          },
+                          get endTime() {
+                              return event.timeEntry.endTime;
+                          },
+                          taskId: event.timeEntry.taskId
+                      },
+                      originalPosition: { start: event.start, end: event.end }
+                  }
+                : {
+                      kind: "update" as const,
+                      event,
+                      update: {
+                          get startTime() {
+                              return event.timeEntry.startTime;
+                          },
+                          get endTime() {
+                              return event.timeEntry.endTime;
+                          },
+                          taskId: event.timeEntry.taskId
+                      },
+                      originalPosition: { start: event.start, end: event.end }
+                  };
 
         interaction.value = {
             kind: "resize",
@@ -49,12 +54,11 @@ export function useResize() {
 
     const update = (mouseMs: number) => {
         if (interaction.value.kind !== "resize") return;
-        const { event, mutation: resizeMutation } = interaction.value;
-        const mouseRounded = roundTime(mouseMs, false);
-        event.end = Math.max(mouseRounded, event.start);
 
-        // Update endTime Date reference only (startTime stays constant)
-        resizeMutation.update.endTime.setTime(event.end);
+        const { event } = interaction.value;
+        const mouseRounded = roundTime(mouseMs, false);
+
+        event.end = Math.max(mouseRounded, event.start);
     };
 
     const finish = async () => {
@@ -81,11 +85,11 @@ export function useResize() {
 
     const cancel = () => {
         if (interaction.value.kind !== "resize") return;
+
         const cur = interaction.value;
         cur.event.start = cur.mutation.originalPosition.start;
         cur.event.end = cur.mutation.originalPosition.end;
-        cur.mutation.update.startTime.setTime(cur.mutation.originalPosition.start);
-        cur.mutation.update.endTime.setTime(cur.mutation.originalPosition.end);
+
         interaction.value = { kind: "idle" };
     };
 
