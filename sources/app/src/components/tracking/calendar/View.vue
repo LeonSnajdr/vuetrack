@@ -83,34 +83,15 @@
 <script setup lang="ts">
 import type { EventSlotScope } from "vuetify/lib/components/VCalendar/VCalendar.mjs";
 import type { CalendarDayBodySlotScope, CalendarEvent } from "vuetify/lib/components/VCalendar/types.mjs";
-import {
-    isTimeEntryEvent,
-    type DraftTimeEntryEvent,
-    type ExistingTimeEntryEvent,
-    type Interaction,
-    type SuggestionTimeEntryEvent,
-    type TimeEntryEvent
-} from "./types";
-import { createExistingEventWrapper, createSuggestionEventWrapper, createDraftEvent } from "./createEventWrapper";
+import { isTimeEntryEvent, type ExistingTimeEntryEvent, type SuggestionTimeEntryEvent, type TimeEntryEvent } from "./types";
+import { createDraftEvent } from "./createEventWrapper";
 import type { ConflictResolutionResult, EventMutation } from "./features/ConflictDialog.vue";
 
 const timeEntryStore = useTimeEntryStore();
 const timeEntrySuggestionStore = useTimeEntrySuggestionStore();
+const calendarStore = useCalendarStore();
 
-const { timeEntries } = storeToRefs(timeEntryStore);
-const { timeEntrySuggestions } = storeToRefs(timeEntrySuggestionStore);
-
-const existingEvents = computed(() => timeEntries.value.map((c) => createExistingEventWrapper(c)));
-const suggestionEvents = computed(() => timeEntrySuggestions.value.map((c) => createSuggestionEventWrapper(c)));
-const draftEvents = ref<DraftTimeEntryEvent[]>([]);
-
-const events = computed<TimeEntryEvent[]>(() => [...existingEvents.value, ...suggestionEvents.value, ...draftEvents.value]);
-
-const interaction = ref<Interaction>({ kind: "idle" });
-
-const createLoading = ref(false);
-const editLoading = ref(false);
-const conflictLoadingId = ref<string | null>(null);
+const { existingEvents, events, interaction, draftEvents, createLoading, editLoading, conflictLoadingId } = storeToRefs(calendarStore);
 
 const handleConflictResolved = async (result: ConflictResolutionResult) => {
     if (interaction.value.kind !== "conflict") return;

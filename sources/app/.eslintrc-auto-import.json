@@ -7626,6 +7626,7 @@
     "useBroadcastChannel": true,
     "useBrowserLocation": true,
     "useCached": true,
+    "useCalendarStore": true,
     "useClipboard": true,
     "useClipboardItems": true,
     "useCloned": true,
