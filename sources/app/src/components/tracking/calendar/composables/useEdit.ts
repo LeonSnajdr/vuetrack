@@ -39,16 +39,18 @@ export function useEdit() {
 
         const { event, mutation: editMutation } = interaction.value;
 
-        const overlaps = getOverlappingEvents(event, existingEvents.value);
+        if (event.kind === "existing") {
+            const overlaps = getOverlappingEvents(event, existingEvents.value);
 
-        if (overlaps.length > 0) {
-            interaction.value = {
-                kind: "conflict",
-                event,
-                overlaps,
-                mutation: editMutation
-            };
-            return;
+            if (overlaps.length > 0) {
+                interaction.value = {
+                    kind: "conflict",
+                    event,
+                    overlaps,
+                    mutation: editMutation
+                };
+                return;
+            }
         }
 
         editLoading.value = true;
