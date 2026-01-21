@@ -1,8 +1,10 @@
 import { createDraftEvent } from "@/components/tracking/calendar/createEventWrapper";
 import { roundTime } from "./shared";
+import { useEventMutation } from "./useEventMutation";
 
 export function useDraft() {
     const calendarStore = useCalendarStore();
+    const mutation = useEventMutation();
     const { interaction, draftEvents } = storeToRefs(calendarStore);
 
     const start = (anchorMs: number) => {
@@ -43,8 +45,7 @@ export function useDraft() {
     const cancel = () => {
         if (interaction.value.kind !== "draft") return;
         const cur = interaction.value;
-        const idx = draftEvents.value.indexOf(cur.event);
-        if (idx !== -1) draftEvents.value.splice(idx, 1);
+        mutation.execute({ kind: "delete", event: cur.event });
         interaction.value = { kind: "idle" };
     };
 

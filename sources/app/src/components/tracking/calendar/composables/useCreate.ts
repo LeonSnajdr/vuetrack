@@ -2,8 +2,7 @@ import type {
     DraftTimeEntryEvent,
     DraftTimeEntryCreateMutation,
     SuggestionTimeEntryEvent,
-    SuggestionTimeEntryCreateMutation,
-    TimeEntryEvent
+    SuggestionTimeEntryCreateMutation
 } from "@/components/tracking/calendar/types";
 import { getOverlappingEvents } from "./shared";
 import { useEventMutation } from "./useEventMutation";
@@ -12,7 +11,7 @@ export function useCreate() {
     const calendarStore = useCalendarStore();
     const mutation = useEventMutation();
 
-    const { interaction, existingEvents, draftEvents, createLoading } = storeToRefs(calendarStore);
+    const { interaction, existingEvents, createLoading } = storeToRefs(calendarStore);
 
     const start = (event: DraftTimeEntryEvent | SuggestionTimeEntryEvent) => {
         let createMutation: DraftTimeEntryCreateMutation | SuggestionTimeEntryCreateMutation;
@@ -61,17 +60,10 @@ export function useCreate() {
         const ev = interaction.value.event;
 
         if (ev.kind === "draft") {
-            removeEvent(ev);
+            mutation.execute({ kind: "delete", event: ev });
         }
 
         interaction.value = { kind: "idle" };
-    };
-
-    const removeEvent = (event: TimeEntryEvent) => {
-        if (event.kind === "draft") {
-            const idx = draftEvents.value.indexOf(event);
-            if (idx !== -1) draftEvents.value.splice(idx, 1);
-        }
     };
 
     return { start, finish, cancel };
