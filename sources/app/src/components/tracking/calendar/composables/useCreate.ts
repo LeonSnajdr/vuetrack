@@ -11,6 +11,7 @@ import { useEventMutation } from "./useEventMutation";
 export function useCreate() {
     const calendarStore = useCalendarStore();
     const mutation = useEventMutation();
+
     const { interaction, existingEvents, draftEvents, createLoading } = storeToRefs(calendarStore);
 
     const start = (event: DraftTimeEntryEvent | SuggestionTimeEntryEvent) => {

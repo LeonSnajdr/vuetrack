@@ -5,11 +5,13 @@ import type {
     SuggestionTimeEntryUpdateMutation
 } from "@/components/tracking/calendar/types";
 import { useEventMutation } from "./useEventMutation";
+import { getOverlappingEvents } from "./shared";
 
 export function useEdit() {
     const calendarStore = useCalendarStore();
-    const { interaction, editLoading } = storeToRefs(calendarStore);
     const mutation = useEventMutation();
+
+    const { interaction, existingEvents, editLoading } = storeToRefs(calendarStore);
 
     const start = (event: ExistingTimeEntryEvent | SuggestionTimeEntryEvent) => {
         let editMutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation;
@@ -35,12 +37,22 @@ export function useEdit() {
     const finish = async () => {
         if (interaction.value.kind !== "edit") return;
 
+        const { event, mutation: editMutation } = interaction.value;
+
+        const overlaps = getOverlappingEvents(event, existingEvents.value);
+
+        if (overlaps.length > 0) {
+            interaction.value = {
+                kind: "conflict",
+                event,
+                overlaps,
+                mutation: editMutation
+            };
+            return;
+        }
+
         editLoading.value = true;
-
-        const { mutation: editMutation } = interaction.value;
-
         await mutation.execute(editMutation);
-
         editLoading.value = false;
         interaction.value = { kind: "idle" };
     };
