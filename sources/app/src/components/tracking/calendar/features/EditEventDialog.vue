@@ -13,6 +13,7 @@
                 density="compact"
                 autofocus
             />
+            <VBtn @click="interaction.mutation.update.endTime = new Date(interaction.event.end + 60 * 60 * 1000)"> +1h </VBtn>
             <div class="d-flex justify-end ga-2 mt-2">
                 <VBtn @click="edit.cancel()" :disabled="editLoading" variant="text">
                     {{ $t("action.cancel") }}

@@ -23,8 +23,14 @@ export function useMove() {
                           get startTime() {
                               return event.timeEntry.startTime;
                           },
+                          set startTime(value) {
+                              event.timeEntry.startTime = value;
+                          },
                           get endTime() {
                               return event.timeEntry.endTime;
+                          },
+                          set endTime(value) {
+                              event.timeEntry.endTime = value;
                           },
                           taskId: event.timeEntry.taskId
                       },
@@ -37,8 +43,14 @@ export function useMove() {
                           get startTime() {
                               return event.timeEntry.startTime;
                           },
+                          set startTime(value) {
+                              event.timeEntry.startTime = value;
+                          },
                           get endTime() {
                               return event.timeEntry.endTime;
+                          },
+                          set endTime(value) {
+                              event.timeEntry.endTime = value;
                           },
                           taskId: event.timeEntry.taskId
                       },

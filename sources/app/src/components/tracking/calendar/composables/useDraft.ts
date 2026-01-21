@@ -36,6 +36,7 @@ export function useDraft() {
                 kind: "create",
                 event: cur.event,
                 create: {
+                    // TODO: Check if getter & setter are needed
                     startTime: cur.event.createEntry.startTime,
                     endTime: cur.event.createEntry.endTime,
                     taskId: cur.event.createEntry.taskId

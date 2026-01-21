@@ -12,29 +12,13 @@ export function useEdit() {
                 ? {
                       kind: "update" as const,
                       event,
-                      update: {
-                          get startTime() {
-                              return event.timeEntry.startTime;
-                          },
-                          get endTime() {
-                              return event.timeEntry.endTime;
-                          },
-                          taskId: event.timeEntry.taskId
-                      },
+                      update: withProxy({ taskId: event.timeEntry.taskId }, event.timeEntry, "startTime", "endTime"),
                       originalPosition: { start: event.start, end: event.end }
                   }
                 : {
                       kind: "update" as const,
                       event,
-                      update: {
-                          get startTime() {
-                              return event.timeEntry.startTime;
-                          },
-                          get endTime() {
-                              return event.timeEntry.endTime;
-                          },
-                          taskId: event.timeEntry.taskId
-                      },
+                      update: withProxy({ taskId: event.timeEntry.taskId }, event.timeEntry, "startTime", "endTime"),
                       originalPosition: { start: event.start, end: event.end }
                   };
 

@@ -1,7 +1,6 @@
 import axios from "axios";
 import qs from "qs";
 import type { AxiosInstance } from "axios";
-import { transformResponse } from "@/util/axiosTransform";
 
 class Axios {
     public api: AxiosInstance;
