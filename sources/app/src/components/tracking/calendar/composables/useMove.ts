@@ -19,41 +19,13 @@ export function useMove() {
                 ? {
                       kind: "update" as const,
                       event,
-                      update: {
-                          get startTime() {
-                              return event.timeEntry.startTime;
-                          },
-                          set startTime(value) {
-                              event.timeEntry.startTime = value;
-                          },
-                          get endTime() {
-                              return event.timeEntry.endTime;
-                          },
-                          set endTime(value) {
-                              event.timeEntry.endTime = value;
-                          },
-                          taskId: event.timeEntry.taskId
-                      },
+                      update: withProxy({ taskId: event.timeEntry.taskId }).from(event.timeEntry, "startTime", "endTime").build(),
                       originalPosition: { start: event.start, end: event.end }
                   }
                 : {
                       kind: "update" as const,
                       event,
-                      update: {
-                          get startTime() {
-                              return event.timeEntry.startTime;
-                          },
-                          set startTime(value) {
-                              event.timeEntry.startTime = value;
-                          },
-                          get endTime() {
-                              return event.timeEntry.endTime;
-                          },
-                          set endTime(value) {
-                              event.timeEntry.endTime = value;
-                          },
-                          taskId: event.timeEntry.taskId
-                      },
+                      update: withProxy({ taskId: event.timeEntry.taskId }).from(event.timeEntry, "startTime", "endTime").build(),
                       originalPosition: { start: event.start, end: event.end }
                   };
 

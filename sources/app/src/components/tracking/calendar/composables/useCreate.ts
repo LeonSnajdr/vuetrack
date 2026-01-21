@@ -20,29 +20,13 @@ export function useCreate() {
             createMutation = {
                 kind: "create",
                 event,
-                create: {
-                    get startTime() {
-                        return event.createEntry.startTime;
-                    },
-                    get endTime() {
-                        return event.createEntry.endTime;
-                    },
-                    taskId: event.createEntry.taskId
-                }
+                create: withProxy({ taskId: event.createEntry.taskId }).from(event.createEntry, "startTime", "endTime").build()
             } as DraftTimeEntryCreateMutation;
         } else if (event.kind === "suggestion") {
             createMutation = {
                 kind: "create",
                 event,
-                create: {
-                    get startTime() {
-                        return event.timeEntry.startTime;
-                    },
-                    get endTime() {
-                        return event.timeEntry.endTime;
-                    },
-                    taskId: event.timeEntry.taskId
-                }
+                create: withProxy({ taskId: event.timeEntry.taskId }).from(event.timeEntry, "startTime", "endTime").build()
             } as SuggestionTimeEntryCreateMutation;
         }
 

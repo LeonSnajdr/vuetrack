@@ -12,13 +12,13 @@ export function useEdit() {
                 ? {
                       kind: "update" as const,
                       event,
-                      update: withProxy({ taskId: event.timeEntry.taskId }, event.timeEntry, "startTime", "endTime"),
+                      update: withProxy({ taskId: event.timeEntry.taskId }).from(event.timeEntry, "startTime", "endTime").build(),
                       originalPosition: { start: event.start, end: event.end }
                   }
                 : {
                       kind: "update" as const,
                       event,
-                      update: withProxy({ taskId: event.timeEntry.taskId }, event.timeEntry, "startTime", "endTime"),
+                      update: withProxy({ taskId: event.timeEntry.taskId }).from(event.timeEntry, "startTime", "endTime").build(),
                       originalPosition: { start: event.start, end: event.end }
                   };
 

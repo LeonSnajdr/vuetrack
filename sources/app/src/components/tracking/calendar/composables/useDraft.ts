@@ -35,12 +35,7 @@ export function useDraft() {
             mutation: {
                 kind: "create",
                 event: cur.event,
-                create: {
-                    // TODO: Check if getter & setter are needed
-                    startTime: cur.event.createEntry.startTime,
-                    endTime: cur.event.createEntry.endTime,
-                    taskId: cur.event.createEntry.taskId
-                }
+                create: withProxy({ taskId: cur.event.createEntry.taskId }).from(cur.event.createEntry, "startTime", "endTime").build()
             }
         };
     };
