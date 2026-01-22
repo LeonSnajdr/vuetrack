@@ -1,4 +1,4 @@
-import type { TimeEntryMutation } from "@/components/tracking/calendar/types";
+﻿import type { TimeEntryMutation } from "@/components/tracking/calendar/types";
 import { useEventMutation } from "./useEventMutation";
 
 export function useConflict() {
@@ -18,6 +18,10 @@ export function useConflict() {
     const cancel = async () => {
         if (interaction.value.kind !== "conflict") return;
         const { event, mutation: conflictMutation } = interaction.value;
+
+        if (event.kind === "draft") {
+            mutation.execute({ kind: "delete", event });
+        }
 
         if ("originalPosition" in conflictMutation) {
             event.start = conflictMutation.originalPosition.start;
