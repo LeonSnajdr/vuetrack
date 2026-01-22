@@ -60,6 +60,15 @@ export function useEdit() {
     };
 
     const cancel = () => {
+        if (interaction.value.kind !== "edit") return;
+
+        const { event, mutation: conflictMutation } = interaction.value;
+
+        if ("originalPosition" in conflictMutation) {
+            event.start = conflictMutation.originalPosition.start;
+            event.end = conflictMutation.originalPosition.end;
+        }
+
         interaction.value = { kind: "idle" };
     };
 
