@@ -15,7 +15,8 @@
       "Bash(ls:*)",
       "Bash(volta run yarn run build-only:*)",
       "Bash(volta run yarn typecheck:*)",
-      "Bash(volta run yarn run:*)"
+      "Bash(volta run yarn run:*)",
+      "mcp__vuetify-mcp__get_component_api_by_version"
     ]
   }
 }
