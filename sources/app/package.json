@@ -19,8 +19,6 @@
     "@fontsource/roboto": "5.2.9",
     "@mdi/font": "7.4.47",
     "@mdi/js": "^7.4.47",
-    "@types/lodash": "^4.17.23",
-    "@types/qs": "^6.14.0",
     "@vueuse/core": "^14.1.0",
     "axios": "^1.13.2",
     "date-fns": "^4.1.0",
@@ -36,7 +34,9 @@
   "devDependencies": {
     "@cspell/dict-de-de": "^4.1.2",
     "@tsconfig/node24": "^24.0.3",
+    "@types/lodash": "^4.17.23",
     "@types/node": "^25.0.3",
+    "@types/qs": "^6.14.0",
     "@vitejs/plugin-vue": "^6.0.3",
     "@vue/eslint-config-typescript": "^14.6.0",
     "@vue/tsconfig": "^0.8.1",

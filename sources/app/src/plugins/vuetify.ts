@@ -12,10 +12,12 @@ import i18n from "./i18n";
 import dateFns from "./dateFns";
 
 import { VIconBtn } from "vuetify/labs/VIconBtn";
+import { VDateInput } from "vuetify/labs/VDateInput";
 
 export default createVuetify({
     components: {
-        VIconBtn
+        VIconBtn,
+        VDateInput
     },
     date: {
         adapter: dateFns
