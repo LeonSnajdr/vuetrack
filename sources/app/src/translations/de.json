@@ -1,8 +1,11 @@
 {
   "action.add": "Hinzufügen",
+  "action.add.error": "Hinzufügen fehlgeschlagen",
   "action.cancel": "Abbrechen",
   "action.delete": "Löschen",
+  "action.delete.error": "Löschen fehlgeschlagen",
   "action.save": "Speichern",
+  "action.save.error": "Speichern fehlgeschlagen",
   "calendar.conflict.strategy.fitToGap": "In Lücke einpassen",
   "calendar.conflict.strategy.fitToGap.subtitle": "Ereignis kürzen um zu passen",
   "calendar.conflict.strategy.forcePosition": "Position erzwingen",

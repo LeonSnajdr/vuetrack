@@ -16,7 +16,7 @@
                 </p>
                 <template #append>
                     <BaseBtnExpand v-if="notification.expandableText" v-model="notification.expanded" />
-                    <VIconBtn @click="notification.remove()" icon="mdi-close" />
+                    <VIconBtn @click="notification.remove()" :icon="mdiClose" />
                 </template>
             </VAlert>
         </template>

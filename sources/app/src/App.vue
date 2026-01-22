@@ -1,6 +1,7 @@
 <template>
     <VApp>
         <VMain class="h-screen nav-left">
+            <AppNotificationView />
             <AppHeader />
             <RouterView />
         </VMain>
