@@ -35,6 +35,21 @@ declare module 'vue-router/auto-routes' {
       '/tracking',
       Record<never, never>,
       Record<never, never>,
+      | '/tracking/calendar'
+      | '/tracking/list'
+    >,
+    '/tracking/calendar': RouteRecordInfo<
+      '/tracking/calendar',
+      '/tracking/calendar',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/tracking/list': RouteRecordInfo<
+      '/tracking/list',
+      '/tracking/list',
+      Record<never, never>,
+      Record<never, never>,
       | never
     >,
   }
@@ -59,6 +74,20 @@ declare module 'vue-router/auto-routes' {
     'src/pages/tracking.vue': {
       routes:
         | '/tracking'
+        | '/tracking/calendar'
+        | '/tracking/list'
+      views:
+        | 'default'
+    }
+    'src/pages/tracking/calendar.vue': {
+      routes:
+        | '/tracking/calendar'
+      views:
+        | never
+    }
+    'src/pages/tracking/list.vue': {
+      routes:
+        | '/tracking/list'
       views:
         | never
     }

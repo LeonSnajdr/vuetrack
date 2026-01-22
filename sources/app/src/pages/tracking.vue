@@ -1,8 +1,3 @@
 <template>
-    <TrackingCalendarSidebar />
-    <VContainer class="h-100">
-        <TrackingCalendarView />
-    </VContainer>
+    <RouterView />
 </template>
-
-<script setup lang="ts"></script>

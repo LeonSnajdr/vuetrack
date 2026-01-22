@@ -20,5 +20,6 @@ declare module 'vue' {
     TrackingCalendarFeaturesEditEventDialog: typeof import('./../src/components/tracking/calendar/features/EditEventDialog.vue')['default']
     TrackingCalendarSidebar: typeof import('./../src/components/tracking/calendar/Sidebar.vue')['default']
     TrackingCalendarView: typeof import('./../src/components/tracking/calendar/View.vue')['default']
+    TrackingListView: typeof import('./../src/components/tracking/list/View.vue')['default']
   }
 }
