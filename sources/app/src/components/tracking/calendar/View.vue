@@ -10,7 +10,6 @@
         :events="events"
         :start="start"
         :weekdays="[1, 2, 3, 4, 5]"
-        class="h-100"
         color="primary"
         eventOverlapMode="column"
         type="custom-daily"

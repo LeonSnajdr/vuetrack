@@ -87,6 +87,7 @@ export default createVuetify({
                     "tertiary-lighten-3": "#1E3332",
                     background: "#121212",
                     surface: "#1b1b1b",
+                    "surface-light": "#1b1b1b",
                     "on-surface": "#FFFFFF",
                     error: "#E52727",
                     "error-lighten-1": "#DCBABA",
