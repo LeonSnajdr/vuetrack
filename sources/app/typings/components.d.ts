@@ -13,6 +13,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     AppHeader: typeof import('./../src/components/app/Header.vue')['default']
     AppNotificationView: typeof import('./../src/components/app/NotificationView.vue')['default']
+    BaseBtnExpand: typeof import('./../src/components/base/btn/Expand.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     TrackingCalendarFeaturesConflictDialog: typeof import('./../src/components/tracking/calendar/features/ConflictDialog.vue')['default']
@@ -21,5 +22,6 @@ declare module 'vue' {
     TrackingCalendarSidebar: typeof import('./../src/components/tracking/calendar/Sidebar.vue')['default']
     TrackingCalendarView: typeof import('./../src/components/tracking/calendar/View.vue')['default']
     TrackingListView: typeof import('./../src/components/tracking/list/View.vue')['default']
+    VRowSingle: typeof import('./../src/components/VRowSingle.vue')['default']
   }
 }
