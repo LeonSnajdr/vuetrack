@@ -1,4 +1,4 @@
-# agent_doc: Translating the Application (i18n)
+﻿# agent_doc: Translating the Application (i18n)
 
 ## Purpose
 
@@ -96,17 +96,3 @@ Pluralization is expressed using a pipe-separated singular/plural form in the sa
 - All languages in `src/translations` contain the same set of keys.
 - Repetition reduced via generic keys and interpolation.
 - Singular/plural handled via i18n pluralization features.
-
-## Agent docs (progressive disclosure)
-
-If you need more context, read the relevant file(s) in `agent_docs/` before
-making changes. Prefer using these docs instead of guessing project-specific
-behavior.
-
-When a task touches translation/localization, start by reading:
-
-- `agent_docs/translate_the_application.md` — How we translate the application
-  (workflow, conventions, file locations, QA checks, and pitfalls).
-
-If you’re unsure which doc applies, ask which `agent_docs/*` you should read,
-or propose the specific files you want to open and why.

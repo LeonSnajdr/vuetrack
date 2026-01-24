@@ -1,4 +1,4 @@
-# CLAUDE.md
+﻿# CLAUDE.md
 
 ## Architecture Overview
 
@@ -56,3 +56,17 @@ This is a Vue 3 time tracking application built with:
 **Store Pattern**: Stores use `useAsyncState` from VueUse for reactive async data loading and provide methods for CRUD operations that update local state and call services.
 
 **Contract System**: All data interfaces are defined as contracts with branded types for IDs (e.g., `TimeEntryId`) to prevent type mixing.
+
+## Agent docs (progressive disclosure)
+
+If you need more context, read the relevant file(s) in `agent_docs/` before
+making changes. Prefer using these docs instead of guessing project-specific
+behavior.
+
+When a task touches translation/localization, start by reading:
+
+- `agent_docs/translate_the_application.md` — How we translate the application
+  (workflow, conventions, file locations, QA checks, and pitfalls).
+
+If you’re unsure which doc applies, ask which `agent_docs/*` you should read,
+or propose the specific files you want to open and why.
