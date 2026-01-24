@@ -5,6 +5,7 @@
         @mouseleave="cancelInteractionOnLeave"
         @mousemove:time="updateInteractionFromPointer"
         @mouseup:time="finishInteraction"
+        v-bind="$attrs"
         :end="end"
         :eventRipple="false"
         :events="events"

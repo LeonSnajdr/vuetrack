@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <TrackingCalendarSidebar />
     <VContainer class="h-100 d-flex flex-column">
         <VToolbar class="px-2" flat>
