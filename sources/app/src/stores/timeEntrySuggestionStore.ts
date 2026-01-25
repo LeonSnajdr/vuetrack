@@ -8,8 +8,9 @@ export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", ()
     });
     const { execute: executeDismiss } = useAsyncTask(TimeEntrySuggestionService.dismiss);
 
-    onMounted(() => {
-        executeLoad();
+    onMounted(async () => {
+        await executeLoad();
+        console.log(timeEntrySuggestions.value);
     });
 
     const update = async (id: TimeEntrySuggestionId, updateContract: TimeEntrySuggestionUpdateContract): Promise<ActionResult<TimeEntrySuggestionContract>> => {

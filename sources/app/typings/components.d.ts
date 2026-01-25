@@ -16,6 +16,7 @@ declare module 'vue' {
     BaseBtnExpand: typeof import('./../src/components/base/btn/Expand.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    TimeEntryFieldTaskId: typeof import('./../src/components/timeEntry/field/TaskId.vue')['default']
     TrackingCalendarFeaturesConflictDialog: typeof import('./../src/components/tracking/calendar/features/ConflictDialog.vue')['default']
     TrackingCalendarFeaturesCreateEventDialog: typeof import('./../src/components/tracking/calendar/features/CreateEventDialog.vue')['default']
     TrackingCalendarFeaturesEditEventDialog: typeof import('./../src/components/tracking/calendar/features/EditEventDialog.vue')['default']

@@ -1,4 +1,4 @@
-{
+﻿{
   "action.add": "Hinzufügen",
   "action.add.error": "Hinzufügen fehlgeschlagen",
   "action.cancel": "Abbrechen",
@@ -17,8 +17,8 @@
   "calendar.conflict.subtitle": "Dieses Ereignis überlappt mit einem anderen. | Dieses Ereignis überlappt mit {count} anderen.",
   "calendar.conflict.title": "Überlappung erkannt",
   "calendar.event.draft": "Entwurf",
-  "calendar.event.taskIdLabel": "Aufgaben-ID",
   "calendar.event.title": "Ereignis benennen",
   "sidebar.greeting": "Hallo",
-  "test.test": "Test"
+  "test.test": "Test",
+  "timeEntry.field.taskId": "TaskId"
 }

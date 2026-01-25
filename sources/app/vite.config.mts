@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+﻿import { defineConfig } from "vite";
 import Vue from "@vitejs/plugin-vue";
 import { fileURLToPath, URL } from "node:url";
 import AutoImport from "unplugin-auto-import/vite";
@@ -26,7 +26,8 @@ export default defineConfig({
                 {
                     "@mdi/js": Object.keys(await import("@mdi/js")).filter((x) => x.startsWith("mdi")),
                     uuid: [["v4", "uuidv4"]],
-                    vuetify: ["useDate"]
+                    vuetify: ["useDate"],
+                    "vuetify/labs/rules": ["useRules"]
                 }
             ],
             dirs: ["src/contracts/**", "src/stores/**", "src/services/**", "src/composables/**", "src/util/**"],

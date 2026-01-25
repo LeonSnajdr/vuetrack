@@ -1,4 +1,4 @@
-{
+﻿{
   "action.add": "Add",
   "action.add.error": "Failed to add",
   "action.cancel": "Cancel",
@@ -17,8 +17,8 @@
   "calendar.conflict.subtitle": "This event overlaps with one other. | This event overlaps with {count} others.",
   "calendar.conflict.title": "Overlap Detected",
   "calendar.event.draft": "Draft",
-  "calendar.event.taskIdLabel": "Task ID",
   "calendar.event.title": "Name the event",
   "sidebar.greeting": "Hello",
-  "test.test": "Test"
+  "test.test": "Test",
+  "timeEntry.field.taskId": "TaskId"
 }

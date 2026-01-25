@@ -1,26 +1,27 @@
-<template>
+﻿<template>
     <VMenu @update:modelValue="(v) => !v && create.cancel()" :closeOnContentClick="false" :target="targetSelector" location="right" modelValue>
-        <VCard class="pa-3" width="320">
-            <VCardTitle class="text-subtitle-1 pa-0">
+        <VCard width="320">
+            <VCardTitle>
                 {{ $t("calendar.event.title") }}
             </VCardTitle>
-            <VTextField
-                v-model.trim="interaction.mutation.create.taskId"
-                @keydown.enter.prevent="create.finish()"
-                @keydown.esc.prevent="create.cancel()"
-                :label="$t('calendar.event.taskIdLabel')"
-                class="mt-3"
-                density="compact"
-                autofocus
-            />
-            <div class="d-flex justify-end ga-2 mt-2">
+            <VCardText>
+                <TimeEntryFieldTaskId
+                    v-model="interaction.mutation.create.taskId"
+                    @keydown.enter.prevent="create.finish()"
+                    @keydown.esc.prevent="create.cancel()"
+                    density="compact"
+                    autofocus
+                />
+            </VCardText>
+            <VCardActions>
+                <VSpacer />
                 <VBtn @click="create.cancel()" :disabled="createLoading" variant="text">
                     {{ $t("action.cancel") }}
                 </VBtn>
                 <VBtn @click="create.finish()" :disabled="createLoading" :loading="createLoading" color="primary">
                     {{ $t("action.save") }}
                 </VBtn>
-            </div>
+            </VCardActions>
         </VCard>
     </VMenu>
 </template>
