@@ -1,13 +1,21 @@
-import type { TimeEntryContract, TimeEntryCreateContract, TimeEntryId, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
+﻿import type { TimeEntryContract, TimeEntryCreateContract, TimeEntryId, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
 import type { ActionResult } from "@/util/ActionResult";
 
 export const useTimeEntryStore = defineStore("timeEntry", () => {
-    const { state: timeEntries } = useAsyncState(TimeEntryService.load, [], { immediate: true, shallow: false });
+    const trackingStore = useTrackingStore();
+
+    const { startTime, endTime } = storeToRefs(trackingStore);
+
+    const { data: timeEntries, execute: executeLoad } = useAsyncState(TimeEntryService.load, { initialValue: [], shallow: false });
     const { execute: executeCreate } = useAsyncTask(TimeEntryService.create);
     const { execute: executeUpdate, cancel: cancelPendingUpdate } = useAsyncTask(TimeEntryService.update, {
         cancelPolicy: (x) => x.args[0]
     });
     const { execute: executeDelete } = useAsyncTask(TimeEntryService.delete);
+
+    onMounted(() => {
+        executeLoad({ startTime: startTime.value, endTime: endTime.value });
+    });
 
     const create = async (createContract: TimeEntryCreateContract): Promise<ActionResult<TimeEntryContract>> => {
         const createResult = await executeCreate(createContract);

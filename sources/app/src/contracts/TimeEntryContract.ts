@@ -1,4 +1,9 @@
-import type { Branded } from "typings/brand";
+﻿import type { Branded } from "typings/brand";
+
+export type TimeEntryFilter = {
+    startTime: Date;
+    endTime: Date;
+};
 
 export type TimeEntryCreateContract = {
     taskId: string;

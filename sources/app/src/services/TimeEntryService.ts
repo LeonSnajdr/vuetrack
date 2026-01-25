@@ -1,8 +1,10 @@
-import type { TimeEntryContract, TimeEntryCreateContract, TimeEntryId, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
+﻿import type { TimeEntryContract, TimeEntryCreateContract, TimeEntryFilter, TimeEntryId, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
 import axios from "@/plugins/axios";
 
 class TimeEntryService {
-    public async load(): Promise<TimeEntryContract[]> {
+    public async load(filter: TimeEntryFilter): Promise<TimeEntryContract[]> {
+        console.log(filter);
+
         const result = await axios.api.get<TimeEntryContract[]>(`timeEntries`);
         return result.data;
     }

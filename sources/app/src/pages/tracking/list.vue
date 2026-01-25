@@ -1,5 +1,6 @@
-<template>
+﻿<template>
     <VContainer class="h-100">
+        <TrackingToolbar />
         <TrackingListView />
     </VContainer>
 </template>
