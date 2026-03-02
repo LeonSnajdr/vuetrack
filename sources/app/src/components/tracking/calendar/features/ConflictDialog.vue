@@ -1,5 +1,5 @@
 <template>
-    <VMenu :closeOnContentClick="false" :target="targetSelector" location="right" modelValue persistent>
+    <VMenu @update:modelValue="(v) => !v && conflict.cancel()" :closeOnContentClick="false" :target="targetSelector" location="right" modelValue>
         <VCard width="350">
             <VCardTitle class="text-subtitle-1 mb-n5">{{ $t("calendar.conflict.title") }}</VCardTitle>
             <VCardSubtitle>
