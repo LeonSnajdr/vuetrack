@@ -14,20 +14,27 @@ export function useMove() {
 
         cancelPendingUpdateForEvent(event, timeEntryStore, suggestionStore);
 
+        const cur = interaction.value;
+
+        const originalPosition =
+            cur.kind === "conflict" && cur.event.uiId === event.uiId && "originalPosition" in cur.mutation
+                ? cur.mutation.originalPosition
+                : { start: event.start, end: event.end };
+
         let moveMutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation;
         if (event.kind === "existing") {
             moveMutation = {
                 kind: "update",
                 event,
                 update: withProxy({ taskId: event.timeEntry.taskId }).from(event.timeEntry, "startTime", "endTime").build(),
-                originalPosition: { start: event.start, end: event.end }
+                originalPosition
             };
         } else {
             moveMutation = {
                 kind: "update",
                 event,
                 update: withProxy({ taskId: event.timeEntry.taskId }).from(event.timeEntry, "startTime", "endTime").build(),
-                originalPosition: { start: event.start, end: event.end }
+                originalPosition
             };
         }
 

@@ -96,9 +96,16 @@ const removeEvent = async (event: TimeEntryEvent) => {
     }
 };
 
+const canMoveEvent = (event: CalendarEvent): boolean => {
+    if (canStartInteraction(interaction.value.kind)) return true;
+    if (interaction.value.kind !== "conflict") return false;
+
+    return event.uiId === interaction.value.event.uiId;
+};
+
 const beginMoveEvent = (_nativeEvent: Event, { event, timed }: EventSlotScope) => {
-    if (!canStartInteraction(interaction.value.kind)) return;
     if (!event || !timed) return;
+    if (!canMoveEvent(event)) return;
     move.start(event as TimeEntryEvent);
 };
 
