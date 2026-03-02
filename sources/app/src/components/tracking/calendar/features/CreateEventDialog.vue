@@ -1,4 +1,4 @@
-﻿<template>
+<template>
     <VMenu @update:modelValue="(v) => !v && create.cancel()" :closeOnContentClick="false" :target="targetSelector" location="right" modelValue>
         <VCard width="320">
             <VCardTitle>

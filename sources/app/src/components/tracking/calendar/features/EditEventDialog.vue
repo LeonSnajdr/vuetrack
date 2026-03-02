@@ -4,11 +4,10 @@
             <VCardTitle class="text-subtitle-1 pa-0">
                 {{ $t("calendar.event.title") }}
             </VCardTitle>
-            <VTextField
-                v-model.trim="interaction.mutation.update.taskId"
+            <TimeEntryFieldTaskId
+                v-model="interaction.mutation.update.taskId"
                 @keydown.enter.prevent="edit.finish()"
                 @keydown.esc.prevent="edit.cancel()"
-                :label="$t('calendar.event.taskIdLabel')"
                 class="mt-3"
                 density="compact"
                 autofocus
