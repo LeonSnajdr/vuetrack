@@ -24,7 +24,3 @@ export const cancelPendingUpdateForEvent = (
         suggestionStore.cancelPendingUpdate(event.timeEntry.id);
     }
 };
-
-export const canStartInteraction = (currentKind: string): boolean => {
-    return currentKind !== "create" && currentKind !== "edit" && currentKind !== "conflict";
-};

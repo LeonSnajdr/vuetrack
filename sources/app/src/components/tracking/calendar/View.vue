@@ -66,7 +66,6 @@ import { useResize } from "./composables/useResize";
 import { useDraft } from "./composables/useDraft";
 import { useCreate } from "./composables/useCreate";
 import { useEdit } from "./composables/useEdit";
-import { canStartInteraction } from "./composables/shared";
 import { useEventMutation } from "./composables/useEventMutation";
 
 const calendarStore = useCalendarStore();
@@ -96,7 +95,11 @@ const removeEvent = async (event: TimeEntryEvent) => {
     }
 };
 
-const canMoveEvent = (event: CalendarEvent): boolean => {
+const canStartInteraction = (currentKind: string): boolean => {
+    return currentKind !== "create" && currentKind !== "edit" && currentKind !== "conflict";
+};
+
+const canAdjustEvent = (event: CalendarEvent): boolean => {
     if (canStartInteraction(interaction.value.kind)) return true;
     if (interaction.value.kind !== "conflict") return false;
 
@@ -105,12 +108,12 @@ const canMoveEvent = (event: CalendarEvent): boolean => {
 
 const beginMoveEvent = (_nativeEvent: Event, { event, timed }: EventSlotScope) => {
     if (!event || !timed) return;
-    if (!canMoveEvent(event)) return;
+    if (!canAdjustEvent(event)) return;
     move.start(event as TimeEntryEvent);
 };
 
 const beginResizeEvent = (event: CalendarEvent) => {
-    if (!canStartInteraction(interaction.value.kind)) return;
+    if (!canAdjustEvent(event)) return;
     resize.start(event as TimeEntryEvent);
 };
 
