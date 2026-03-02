@@ -56,6 +56,7 @@ const interaction = defineModel<Extract<Interaction, { kind: "conflict" }>>("int
 const conflict = useConflict();
 const calendarStore = useCalendarStore();
 const { conflictLoadingId, existingEvents } = storeToRefs(calendarStore);
+const notify = useNotify();
 
 const { t } = useI18n();
 
@@ -165,6 +166,7 @@ const executeStrategy = async (strategy: ConflictResolutionStrategy) => {
     } else {
         conflictLoadingId.value = null;
         await conflict.cancel();
+        notify.warning(t("calendar.conflict.reverted"));
     }
 };
 
