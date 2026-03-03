@@ -114,6 +114,11 @@ export type Interaction =
           event: TimeEntryEvent;
           overlaps: TimeEntryEvent[];
           mutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation | DraftTimeEntryCreateMutation | SuggestionTimeEntryCreateMutation;
+      }
+    | {
+          kind: "delete";
+          event: TimeEntryEvent;
+          mutation: DraftTimeEntryDeleteMutation | ExistingTimeEntryDeleteMutation | SuggestionTimeEntryDeleteMutation;
       };
 
 export function isTimeEntryEvent(e: CalendarEvent): e is TimeEntryEvent {

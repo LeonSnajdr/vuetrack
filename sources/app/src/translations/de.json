@@ -4,6 +4,7 @@
   "action.cancel": "Abbrechen",
   "action.delete": "Löschen",
   "action.delete.error": "Löschen fehlgeschlagen",
+  "action.delete.info": "Möchtest du wirklich löschen?",
   "action.save": "Speichern",
   "action.save.error": "Speichern fehlgeschlagen",
   "calendar.conflict.reverted": "Kein freier Slot gefunden. Das Ereignis wurde auf seine ursprüngliche Position zurückgesetzt.",

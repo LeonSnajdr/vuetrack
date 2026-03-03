@@ -21,7 +21,7 @@
                     <VSheet v-show="isHovering && interaction.kind === 'idle'" class="position-absolute d-flex ga-2 rounded" style="top: 5px; right: 5px">
                         <VIconBtn
                             v-if="event.kind === 'existing' || event.kind === 'suggestion'"
-                            @click.stop="removeEvent(event)"
+                            @click.stop="remove.start(event)"
                             @mousedown.stop
                             :icon="mdiDelete"
                             iconColor="error"
@@ -55,6 +55,7 @@
     <TrackingCalendarFeaturesCreateEventDialog v-if="interaction.kind === 'create'" v-model:interaction="interaction" />
     <TrackingCalendarFeaturesEditEventDialog v-if="interaction.kind === 'edit'" v-model:interaction="interaction" />
     <TrackingCalendarFeaturesConflictDialog v-if="interaction.kind === 'conflict'" v-model:interaction="interaction" />
+    <TrackingCalendarFeaturesDeleteEventDialog v-if="interaction.kind === 'delete'" v-model:interaction="interaction" />
 </template>
 
 <script setup lang="ts">
@@ -66,7 +67,7 @@ import { useResize } from "./composables/useResize";
 import { useDraft } from "./composables/useDraft";
 import { useCreate } from "./composables/useCreate";
 import { useEdit } from "./composables/useEdit";
-import { useEventMutation } from "./composables/useEventMutation";
+import { useDelete } from "./composables/useDelete";
 
 const calendarStore = useCalendarStore();
 
@@ -77,7 +78,7 @@ const resize = useResize();
 const draft = useDraft();
 const create = useCreate();
 const edit = useEdit();
-const mutation = useEventMutation();
+const remove = useDelete();
 
 const dateFormatter = useDate();
 
@@ -85,18 +86,8 @@ const acceptSuggestion = (event: SuggestionTimeEntryEvent) => {
     create.start(event);
 };
 
-const removeEvent = async (event: TimeEntryEvent) => {
-    if (event.kind === "draft") {
-        await mutation.execute({ kind: "delete", event });
-    } else if (event.kind === "existing") {
-        await mutation.execute({ kind: "delete", event, id: event.timeEntry.id });
-    } else if (event.kind === "suggestion") {
-        await mutation.execute({ kind: "delete", event, id: event.timeEntry.id });
-    }
-};
-
 const canStartInteraction = (currentKind: string): boolean => {
-    return currentKind !== "create" && currentKind !== "edit" && currentKind !== "conflict";
+    return currentKind !== "create" && currentKind !== "edit" && currentKind !== "conflict" && currentKind !== "delete";
 };
 
 const canAdjustEvent = (event: CalendarEvent): boolean => {

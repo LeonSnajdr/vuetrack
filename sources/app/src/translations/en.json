@@ -4,6 +4,7 @@
   "action.cancel": "Cancel",
   "action.delete": "Delete",
   "action.delete.error": "Failed to delete",
+  "action.delete.info": "Are you sure you want to delete?",
   "action.save": "Save",
   "action.save.error": "Failed to save",
   "calendar.conflict.reverted": "No free slot found. Event was moved back to its original position.",
