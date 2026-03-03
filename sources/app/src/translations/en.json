@@ -20,7 +20,8 @@
   "calendar.conflict.title": "Overlap Detected",
   "calendar.event.draft": "Draft",
   "calendar.event.title": "Name the event",
-  "sidebar.greeting": "Hello",
+  "sidebar.preselectedTaskId": "Preselected task ID",
+  "sidebar.preselectedTaskId.hint": "Drag on the calendar to create an entry directly with this task ID.",
   "test.test": "Test",
   "timeEntry.field.taskId": "TaskId"
 }

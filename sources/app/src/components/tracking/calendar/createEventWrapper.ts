@@ -59,11 +59,11 @@ export function createSuggestionEventWrapper(contract: TimeEntrySuggestionContra
     return wrapper;
 }
 
-export function createDraftEvent(anchorStartMs: number): DraftTimeEntryEvent {
+export function createDraftEvent(anchorStartMs: number, taskId = ""): DraftTimeEntryEvent {
     const createEntry: TimeEntryCreateContract = {
         startTime: new Date(anchorStartMs),
         endTime: new Date(anchorStartMs),
-        taskId: ""
+        taskId
     };
 
     return {

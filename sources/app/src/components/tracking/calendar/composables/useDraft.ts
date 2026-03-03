@@ -5,11 +5,11 @@ import { useEventMutation } from "./useEventMutation";
 export function useDraft() {
     const calendarStore = useCalendarStore();
     const mutation = useEventMutation();
-    const { interaction, draftEvents } = storeToRefs(calendarStore);
+    const { interaction, draftEvents, preselectedTaskId } = storeToRefs(calendarStore);
 
     const start = (anchorMs: number) => {
         const anchorStartMs = roundTime(anchorMs);
-        const newEvent = createDraftEvent(anchorStartMs);
+        const newEvent = createDraftEvent(anchorStartMs, preselectedTaskId.value.trim());
         draftEvents.value.push(newEvent);
 
         interaction.value = {

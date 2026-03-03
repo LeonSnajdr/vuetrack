@@ -20,7 +20,8 @@
   "calendar.conflict.title": "Überlappung erkannt",
   "calendar.event.draft": "Entwurf",
   "calendar.event.title": "Ereignis benennen",
-  "sidebar.greeting": "Hallo",
+  "sidebar.preselectedTaskId": "Vorausgewählte TaskId",
+  "sidebar.preselectedTaskId.hint": "Im Kalender ziehen, um direkt einen Eintrag mit dieser TaskId zu erstellen.",
   "test.test": "Test",
   "timeEntry.field.taskId": "TaskId"
 }
