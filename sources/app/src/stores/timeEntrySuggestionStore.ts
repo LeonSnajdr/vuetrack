@@ -4,7 +4,8 @@ import type { ActionResult } from "@/util/ActionResult";
 export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", () => {
     const { data: timeEntrySuggestions, execute: executeLoad } = useAsyncState(TimeEntrySuggestionService.load, { initialValue: [], shallow: false });
     const { execute: executeUpdate, cancel: cancelPendingUpdate } = useAsyncTask(TimeEntrySuggestionService.update, {
-        cancelPolicy: (x) => x.args[0]
+        cancelPolicy: "byKey",
+        key: (x) => x.args[0]
     });
     const { execute: executeDismiss } = useAsyncTask(TimeEntrySuggestionService.dismiss);
 

@@ -87,8 +87,8 @@ let timeEntrySuggestions: TimeEntrySuggestionContract[] = [
 ];
 
 // Config
-const DELAY_MIN_MS = 100;
-const DELAY_MAX_MS = 400;
+const DELAY_MIN_MS = 1000;
+const DELAY_MAX_MS = 4000;
 const FAILURE_RATE = 0.05; // 0-1, probability of request failing (0.1 = 10%)
 
 // Utils

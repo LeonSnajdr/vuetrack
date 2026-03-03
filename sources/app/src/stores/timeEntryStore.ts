@@ -8,8 +8,13 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
 
     const { data: timeEntries, execute: executeLoad } = useAsyncState(TimeEntryService.load, { initialValue: [], shallow: false });
     const { execute: executeCreate } = useAsyncTask(TimeEntryService.create);
-    const { execute: executeUpdate, cancel: cancelPendingUpdate } = useAsyncTask(TimeEntryService.update, {
-        cancelPolicy: (x) => x.args[0]
+    const {
+        execute: executeUpdate,
+        cancel: cancelPendingUpdate,
+        isLoading: isUpdating
+    } = useAsyncTask(TimeEntryService.update, {
+        cancelPolicy: "byKey",
+        key: (x) => x.args[0]
     });
     const { execute: executeDelete } = useAsyncTask(TimeEntryService.delete);
 
