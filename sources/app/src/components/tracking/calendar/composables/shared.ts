@@ -1,4 +1,4 @@
-import type { TimeEntryEvent } from "@/components/tracking/calendar/types";
+import type { Interaction, TimeEntryEvent } from "@/components/tracking/calendar/types";
 
 export const roundTime = (time: number, down = true): number => {
     const roundTo = 15;
@@ -11,6 +11,12 @@ export const getOverlappingEvents = (subject: TimeEntryEvent, candidates: TimeEn
         if (other.uiId === subject.uiId) return false;
         return subject.start < other.end && subject.end > other.start;
     });
+};
+
+export const getOriginalPositon = (event: TimeEntryEvent, cur: Interaction) => {
+    return cur.kind === "conflict" && cur.event.uiId === event.uiId && "originalPosition" in cur.mutation
+        ? cur.mutation.originalPosition
+        : { start: event.start, end: event.end };
 };
 
 export const cancelPendingUpdateForEvent = (

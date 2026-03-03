@@ -5,7 +5,7 @@ import type {
     SuggestionTimeEntryUpdateMutation
 } from "@/components/tracking/calendar/types";
 import { useEventMutation } from "./useEventMutation";
-import { getOverlappingEvents } from "./shared";
+import { getOriginalPositon, getOverlappingEvents } from "./shared";
 
 export function useEdit() {
     const calendarStore = useCalendarStore();
@@ -14,20 +14,22 @@ export function useEdit() {
     const { interaction, existingEvents, editLoading } = storeToRefs(calendarStore);
 
     const start = (event: ExistingTimeEntryEvent | SuggestionTimeEntryEvent) => {
+        const originalPosition = getOriginalPositon(event, interaction.value);
+
         let editMutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation;
         if (event.kind === "existing") {
             editMutation = {
                 kind: "update",
                 event,
                 update: withProxy({ taskId: event.timeEntry.taskId }).from(event.timeEntry, "startTime", "endTime").build(),
-                originalPosition: { start: event.start, end: event.end }
+                originalPosition
             };
         } else {
             editMutation = {
                 kind: "update",
                 event,
                 update: withProxy({ taskId: event.timeEntry.taskId }).from(event.timeEntry, "startTime", "endTime").build(),
-                originalPosition: { start: event.start, end: event.end }
+                originalPosition
             };
         }
 

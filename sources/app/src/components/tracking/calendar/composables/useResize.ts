@@ -1,5 +1,5 @@
 import type { ExistingTimeEntryUpdateMutation, SuggestionTimeEntryUpdateMutation, TimeEntryEvent } from "@/components/tracking/calendar/types";
-import { roundTime, getOverlappingEvents, cancelPendingUpdateForEvent } from "./shared";
+import { roundTime, getOverlappingEvents, cancelPendingUpdateForEvent, getOriginalPositon } from "./shared";
 import { useEventMutation } from "./useEventMutation";
 
 export function useResize() {
@@ -14,20 +14,22 @@ export function useResize() {
 
         cancelPendingUpdateForEvent(event, timeEntryStore, suggestionStore);
 
+        const originalPosition = getOriginalPositon(event, interaction.value);
+
         let resizeMutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation;
         if (event.kind === "existing") {
             resizeMutation = {
                 kind: "update",
                 event,
                 update: withProxy({ taskId: event.timeEntry.taskId }).from(event.timeEntry, "startTime", "endTime").build(),
-                originalPosition: { start: event.start, end: event.end }
+                originalPosition
             };
         } else {
             resizeMutation = {
                 kind: "update",
                 event,
                 update: withProxy({ taskId: event.timeEntry.taskId }).from(event.timeEntry, "startTime", "endTime").build(),
-                originalPosition: { start: event.start, end: event.end }
+                originalPosition
             };
         }
 

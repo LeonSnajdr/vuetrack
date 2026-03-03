@@ -1,5 +1,5 @@
 import type { ExistingTimeEntryUpdateMutation, SuggestionTimeEntryUpdateMutation, TimeEntryEvent } from "@/components/tracking/calendar/types";
-import { roundTime, getOverlappingEvents, cancelPendingUpdateForEvent } from "./shared";
+import { roundTime, getOverlappingEvents, cancelPendingUpdateForEvent, getOriginalPositon } from "./shared";
 import { useEventMutation } from "./useEventMutation";
 
 export function useMove() {
@@ -14,12 +14,7 @@ export function useMove() {
 
         cancelPendingUpdateForEvent(event, timeEntryStore, suggestionStore);
 
-        const cur = interaction.value;
-
-        const originalPosition =
-            cur.kind === "conflict" && cur.event.uiId === event.uiId && "originalPosition" in cur.mutation
-                ? cur.mutation.originalPosition
-                : { start: event.start, end: event.end };
+        const originalPosition = getOriginalPositon(event, interaction.value);
 
         let moveMutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation;
         if (event.kind === "existing") {
