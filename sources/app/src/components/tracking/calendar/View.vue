@@ -18,6 +18,9 @@
         <template #event="{ event }">
             <VHover v-if="isTimeEntryEvent(event)" v-slot="{ isHovering, props }">
                 <div :id="event.uiId" v-bind="props" class="h-100 pa-2 text-truncate">
+                    <template v-if="event.kind === 'existing'">
+                        <VProgressLinear :indeterminate="isUpdating(event.timeEntry.id)"></VProgressLinear>
+                    </template>
                     <VSheet v-show="isHovering && interaction.kind === 'idle'" class="position-absolute d-flex ga-2 rounded" style="top: 5px; right: 5px">
                         <VIconBtn
                             v-if="event.kind === 'existing' || event.kind === 'suggestion'"
@@ -44,7 +47,9 @@
                             variant="flat"
                         />
                     </VSheet>
-                    <p v-if="event.kind === 'existing' || event.kind === 'suggestion'">{{ event.timeEntry.taskId }}</p>
+                    <p v-if="event.kind === 'existing' || event.kind === 'suggestion'">
+                        {{ event.timeEntry.taskId }}
+                    </p>
                     <p v-else>{{ $t("calendar.event.draft") }}</p>
                     <p>{{ dateFormatter.format(event.start, "fullTime24h") }} - {{ dateFormatter.format(event.end, "fullTime24h") }}</p>
                 </div>
@@ -70,8 +75,10 @@ import { useEdit } from "./composables/useEdit";
 import { useDelete } from "./composables/useDelete";
 
 const calendarStore = useCalendarStore();
+const timeEntryStore = useTimeEntryStore();
 
 const { events, interaction } = storeToRefs(calendarStore);
+const { isUpdating } = storeToRefs(timeEntryStore);
 
 const move = useMove();
 const resize = useResize();

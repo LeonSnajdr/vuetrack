@@ -6,8 +6,8 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
 
     const { startTime, endTime } = storeToRefs(trackingStore);
 
-    const { data: timeEntries, execute: executeLoad } = useAsyncState(TimeEntryService.load, { initialValue: [], shallow: false });
-    const { execute: executeCreate } = useAsyncTask(TimeEntryService.create);
+    const { data: timeEntries, execute: executeLoad, isLoading } = useAsyncState(TimeEntryService.load, { initialValue: [], shallow: false });
+    const { execute: executeCreate, isLoading: isCreating } = useAsyncTask(TimeEntryService.create);
     const {
         execute: executeUpdate,
         cancel: cancelPendingUpdate,
@@ -16,7 +16,9 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
         cancelPolicy: "byKey",
         key: (x) => x.args[0]
     });
-    const { execute: executeDelete } = useAsyncTask(TimeEntryService.delete);
+    const { execute: executeDelete, isLoading: isDeleting } = useAsyncTask(TimeEntryService.delete, {
+        key: (x) => x.args[0]
+    });
 
     onMounted(() => {
         executeLoad({ startTime: startTime.value, endTime: endTime.value });
@@ -53,5 +55,5 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
         return deleteResult;
     };
 
-    return { timeEntries, create, update, remove, cancelPendingUpdate };
+    return { timeEntries, isLoading, create, isCreating, update, isUpdating, remove, isDeleting, cancelPendingUpdate };
 });

@@ -2,12 +2,22 @@
 import type { ActionResult } from "@/util/ActionResult";
 
 export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", () => {
-    const { data: timeEntrySuggestions, execute: executeLoad } = useAsyncState(TimeEntrySuggestionService.load, { initialValue: [], shallow: false });
-    const { execute: executeUpdate, cancel: cancelPendingUpdate } = useAsyncTask(TimeEntrySuggestionService.update, {
+    const {
+        data: timeEntrySuggestions,
+        execute: executeLoad,
+        isLoading
+    } = useAsyncState(TimeEntrySuggestionService.load, { initialValue: [], shallow: false });
+    const {
+        execute: executeUpdate,
+        cancel: cancelPendingUpdate,
+        isLoading: isUpdating
+    } = useAsyncTask(TimeEntrySuggestionService.update, {
         cancelPolicy: "byKey",
         key: (x) => x.args[0]
     });
-    const { execute: executeDismiss } = useAsyncTask(TimeEntrySuggestionService.dismiss);
+    const { execute: executeDismiss, isLoading: isDismissing } = useAsyncTask(TimeEntrySuggestionService.dismiss, {
+        key: (x) => x.args[0]
+    });
 
     onMounted(async () => {
         await executeLoad();
@@ -35,5 +45,5 @@ export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", ()
         return dismissResult;
     };
 
-    return { timeEntrySuggestions, update, dismiss, cancelPendingUpdate };
+    return { timeEntrySuggestions, isLoading, update, isUpdating, dismiss, isDismissing, cancelPendingUpdate };
 });
