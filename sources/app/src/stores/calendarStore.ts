@@ -12,9 +12,18 @@ export const useCalendarStore = defineStore("calendar", () => {
 
     const interaction = ref<Interaction>({ kind: "idle" });
     const preselectedTaskId = ref("");
-    const createLoading = ref(false);
-    const editLoading = ref(false);
-    const conflictLoadingId = ref<string | null>(null);
+
+    const isDeletingEvent = computed(() => {
+        return timeEntryStore.isDeleting() || suggestionStore.isDismissing();
+    });
+
+    const isCreatingEvent = computed(() => {
+        return timeEntryStore.isCreating();
+    });
+
+    const isUpdatingEvent = computed(() => {
+        return timeEntryStore.isUpdating() || suggestionStore.isUpdating();
+    });
 
     return {
         existingEvents,
@@ -23,8 +32,8 @@ export const useCalendarStore = defineStore("calendar", () => {
         events,
         interaction,
         preselectedTaskId,
-        createLoading,
-        editLoading,
-        conflictLoadingId
+        isDeletingEvent,
+        isCreatingEvent,
+        isUpdatingEvent
     };
 });

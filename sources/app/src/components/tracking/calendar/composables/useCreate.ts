@@ -11,7 +11,7 @@ export function useCreate() {
     const calendarStore = useCalendarStore();
     const mutation = useEventMutation();
 
-    const { interaction, existingEvents, createLoading } = storeToRefs(calendarStore);
+    const { interaction, existingEvents } = storeToRefs(calendarStore);
 
     const start = (event: DraftTimeEntryEvent | SuggestionTimeEntryEvent) => {
         let createMutation: DraftTimeEntryCreateMutation | SuggestionTimeEntryCreateMutation;
@@ -49,9 +49,8 @@ export function useCreate() {
             return;
         }
 
-        createLoading.value = true;
         await mutation.execute(createMutation);
-        createLoading.value = false;
+
         interaction.value = { kind: "idle" };
     };
 

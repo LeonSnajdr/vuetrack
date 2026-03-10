@@ -11,7 +11,7 @@ export function useEdit() {
     const calendarStore = useCalendarStore();
     const mutation = useEventMutation();
 
-    const { interaction, existingEvents, editLoading } = storeToRefs(calendarStore);
+    const { interaction, existingEvents } = storeToRefs(calendarStore);
 
     const start = (event: ExistingTimeEntryEvent | SuggestionTimeEntryEvent) => {
         const originalPosition = getOriginalPositon(event, interaction.value);
@@ -55,9 +55,8 @@ export function useEdit() {
             }
         }
 
-        editLoading.value = true;
         await mutation.execute(editMutation);
-        editLoading.value = false;
+
         interaction.value = { kind: "idle" };
     };
 

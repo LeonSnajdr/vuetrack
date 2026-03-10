@@ -1,5 +1,12 @@
 <template>
-    <VMenu @update:modelValue="(v) => !v && edit.cancel()" :closeOnContentClick="false" :target="targetSelector" location="right" modelValue>
+    <VMenu
+        @update:modelValue="(v) => !v && edit.cancel()"
+        :closeOnContentClick="false"
+        :persistent="isUpdatingEvent"
+        :target="targetSelector"
+        location="right"
+        modelValue
+    >
         <VCard class="pa-3" width="320">
             <VCardTitle class="text-subtitle-1 pa-0">
                 {{ $t("calendar.event.title") }}
@@ -14,10 +21,10 @@
             />
             <VBtn @click="interaction.mutation.update.endTime = new Date(interaction.event.end + 60 * 60 * 1000)"> +1h </VBtn>
             <div class="d-flex justify-end ga-2 mt-2">
-                <VBtn @click="edit.cancel()" :disabled="editLoading" variant="text">
+                <VBtn @click="edit.cancel()" :disabled="isUpdatingEvent" variant="text">
                     {{ $t("action.cancel") }}
                 </VBtn>
-                <VBtn @click="edit.finish()" :disabled="editLoading" :loading="editLoading" color="primary">
+                <VBtn @click="edit.finish()" :disabled="isUpdatingEvent" :loading="isUpdatingEvent" color="primary">
                     {{ $t("action.save") }}
                 </VBtn>
             </div>
@@ -33,7 +40,7 @@ const interaction = defineModel<Extract<Interaction, { kind: "edit" }>>("interac
 
 const edit = useEdit();
 const calendarStore = useCalendarStore();
-const { editLoading } = storeToRefs(calendarStore);
+const { isUpdatingEvent } = storeToRefs(calendarStore);
 
 const targetSelector = computed(() => "#" + interaction.value.event.uiId);
 </script>

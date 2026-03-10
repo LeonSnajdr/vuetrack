@@ -1,5 +1,12 @@
 <template>
-    <VMenu @update:modelValue="(v) => !v && conflict.cancel()" :closeOnContentClick="false" :target="targetSelector" location="right" modelValue>
+    <VMenu
+        @update:modelValue="(v) => !v && conflict.cancel()"
+        :closeOnContentClick="false"
+        :persistent="conflictLoadingId !== null"
+        :target="targetSelector"
+        location="right"
+        modelValue
+    >
         <VCard width="350">
             <VCardTitle class="text-subtitle-1 mb-n5">{{ $t("calendar.conflict.title") }}</VCardTitle>
             <VCardSubtitle>
@@ -55,10 +62,12 @@ const interaction = defineModel<Extract<Interaction, { kind: "conflict" }>>("int
 
 const conflict = useConflict();
 const calendarStore = useCalendarStore();
-const { conflictLoadingId, existingEvents } = storeToRefs(calendarStore);
+const { existingEvents } = storeToRefs(calendarStore);
 const notify = useNotify();
 
 const { t } = useI18n();
+
+const conflictLoadingId = ref<string | null>(null);
 
 const targetSelector = computed(() => "#" + interaction.value.event.uiId);
 

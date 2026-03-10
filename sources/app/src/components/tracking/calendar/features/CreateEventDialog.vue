@@ -1,5 +1,12 @@
 <template>
-    <VMenu @update:modelValue="(v) => !v && create.cancel()" :closeOnContentClick="false" :target="targetSelector" location="right" modelValue>
+    <VMenu
+        @update:modelValue="(v) => !v && create.cancel()"
+        :closeOnContentClick="false"
+        :persistent="isCreatingEvent"
+        :target="targetSelector"
+        location="right"
+        modelValue
+    >
         <VCard width="320">
             <VCardTitle>
                 {{ $t("calendar.event.title") }}
@@ -15,10 +22,10 @@
             </VCardText>
             <VCardActions>
                 <VSpacer />
-                <VBtn @click="create.cancel()" :disabled="createLoading" variant="text">
+                <VBtn @click="create.cancel()" :disabled="isCreatingEvent" variant="text">
                     {{ $t("action.cancel") }}
                 </VBtn>
-                <VBtn @click="create.finish()" :disabled="createLoading" :loading="createLoading" color="primary">
+                <VBtn @click="create.finish()" :disabled="isCreatingEvent" :loading="isCreatingEvent" color="primary">
                     {{ $t("action.save") }}
                 </VBtn>
             </VCardActions>
@@ -34,7 +41,7 @@ const interaction = defineModel<Extract<Interaction, { kind: "create" }>>("inter
 
 const create = useCreate();
 const calendarStore = useCalendarStore();
-const { createLoading } = storeToRefs(calendarStore);
+const { isCreatingEvent } = storeToRefs(calendarStore);
 
 const targetSelector = computed(() => "#" + interaction.value.event.uiId);
 </script>

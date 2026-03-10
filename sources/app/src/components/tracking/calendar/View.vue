@@ -19,7 +19,7 @@
             <VHover v-if="isTimeEntryEvent(event)" v-slot="{ isHovering, props }">
                 <div :id="event.uiId" v-bind="props" class="h-100 pa-2 text-truncate">
                     <template v-if="event.kind === 'existing'">
-                        <VProgressLinear :indeterminate="isUpdating(event.timeEntry.id)"></VProgressLinear>
+                        <VProgressLinear :indeterminate="isUpdating(event.timeEntry.id)" />
                     </template>
                     <VSheet v-show="isHovering && interaction.kind === 'idle'" class="position-absolute d-flex ga-2 rounded" style="top: 5px; right: 5px">
                         <VIconBtn
