@@ -25,7 +25,7 @@
 <script setup lang="ts">
 import type { TimeEntryCreateContract } from "@/contracts/TimeEntryContract";
 
-const emit = defineEmits(["delete", "cancel"]);
+const emit = defineEmits(["create", "cancel"]);
 
 defineProps<{
     loading: boolean;
@@ -37,7 +37,7 @@ const form = useTemplateRef("form");
 
 const finish = () => {
     if (!form.value?.isValid) return;
-    emit("delete");
+    emit("create");
 };
 
 useHotkey("cmd+s", finish, { inputs: true });

@@ -26,7 +26,7 @@
 import type { TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
 import type { TimeEntrySuggestionUpdateContract } from "@/contracts/TimeEntrySuggestion";
 
-const emit = defineEmits(["delete", "cancel"]);
+const emit = defineEmits(["edit", "cancel"]);
 
 defineProps<{
     loading: boolean;
@@ -38,7 +38,7 @@ const form = useTemplateRef("form");
 
 const finish = () => {
     if (!form.value?.isValid) return;
-    emit("delete");
+    emit("edit");
 };
 
 useHotkey("cmd+s", finish, { inputs: true });

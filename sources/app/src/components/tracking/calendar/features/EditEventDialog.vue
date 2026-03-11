@@ -1,11 +1,5 @@
 <template>
-    <TimeEntryFeatureEdit
-        v-model="interaction.mutation.update"
-        @cancel="edit.cancel"
-        @update="edit.finish"
-        :loading="isUpdatingEvent"
-        :target="targetSelector"
-    />
+    <TimeEntryFeatureEdit v-model="interaction.mutation.update" @cancel="edit.cancel" @edit="edit.finish" :loading="isUpdatingEvent" :target="targetSelector" />
 </template>
 
 <script setup lang="ts">
