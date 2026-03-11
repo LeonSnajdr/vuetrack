@@ -3,8 +3,6 @@ import axios from "@/plugins/axios";
 
 class TimeEntryService {
     public async load(filter: TimeEntryFilter): Promise<TimeEntryContract[]> {
-        console.log(filter);
-
         const result = await axios.api.get<TimeEntryContract[]>(`timeEntries`);
         return result.data;
     }

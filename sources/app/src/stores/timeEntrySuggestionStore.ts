@@ -21,7 +21,6 @@ export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", ()
 
     onMounted(async () => {
         await executeLoad();
-        console.log(timeEntrySuggestions.value);
     });
 
     const update = async (id: TimeEntrySuggestionId, updateContract: TimeEntrySuggestionUpdateContract): Promise<ActionResult<TimeEntrySuggestionContract>> => {
