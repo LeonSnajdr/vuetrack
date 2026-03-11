@@ -25,13 +25,13 @@
 <script setup lang="ts">
 import type { TimeEntryCreateContract } from "@/contracts/TimeEntryContract";
 
-const timeEntry = defineModel<TimeEntryCreateContract>({ required: true });
-
 const emit = defineEmits(["delete", "cancel"]);
 
-const props = defineProps<{
+defineProps<{
     loading: boolean;
 }>();
+
+const timeEntry = defineModel<TimeEntryCreateContract>({ required: true });
 
 const form = useTemplateRef("form");
 

@@ -1,5 +1,5 @@
 <template>
-    <TimeEntryFeatureDelete :target="targetSelector" :loading="isDeletingEvent" @delete="remove.finish" @cancel="remove.cancel" />
+    <TimeEntryFeatureDelete @cancel="remove.cancel" @delete="remove.finish" :loading="isDeletingEvent" :target="targetSelector" />
 </template>
 
 <script setup lang="ts">

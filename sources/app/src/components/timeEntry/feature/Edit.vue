@@ -26,13 +26,13 @@
 import type { TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
 import type { TimeEntrySuggestionUpdateContract } from "@/contracts/TimeEntrySuggestion";
 
-const timeEntry = defineModel<TimeEntryUpdateContract | TimeEntrySuggestionUpdateContract>({ required: true });
-
 const emit = defineEmits(["delete", "cancel"]);
 
-const props = defineProps<{
+defineProps<{
     loading: boolean;
 }>();
+
+const timeEntry = defineModel<TimeEntryUpdateContract | TimeEntrySuggestionUpdateContract>({ required: true });
 
 const form = useTemplateRef("form");
 

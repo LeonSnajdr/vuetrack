@@ -1,11 +1,11 @@
 <template>
     <TimeEntryFeatureCreate
         v-model="interaction.mutation.create"
-        :target="targetSelector"
-        :loading="isCreatingEvent"
-        @create="create.finish"
         @cancel="create.cancel"
-    ></TimeEntryFeatureCreate>
+        @create="create.finish"
+        :loading="isCreatingEvent"
+        :target="targetSelector"
+    />
 </template>
 
 <script setup lang="ts">
