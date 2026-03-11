@@ -7,28 +7,23 @@
         location="right"
         modelValue
     >
-        <VCard class="pa-3" width="320">
-            <VCardTitle class="text-subtitle-1 pa-0">
-                {{ $t("calendar.event.title") }}
-            </VCardTitle>
-            <TimeEntryFieldTaskId
-                v-model="interaction.mutation.update.taskId"
-                @keydown.enter.prevent="edit.finish()"
-                @keydown.esc.prevent="edit.cancel()"
-                class="mt-3"
-                density="compact"
-                autofocus
-            />
-            <VBtn @click="interaction.mutation.update.endTime = new Date(interaction.event.end + 60 * 60 * 1000)"> +1h </VBtn>
-            <div class="d-flex justify-end ga-2 mt-2">
-                <VBtn @click="edit.cancel()" :disabled="isUpdatingEvent" variant="text">
-                    {{ $t("action.cancel") }}
-                </VBtn>
-                <VBtn @click="edit.finish()" :disabled="isUpdatingEvent" :loading="isUpdatingEvent" color="primary">
-                    {{ $t("action.save") }}
-                </VBtn>
-            </div>
-        </VCard>
+        <VForm ref="form">
+            <VCard class="pa-3" width="320">
+                <VCardTitle class="text-subtitle-1 pa-0">
+                    {{ $t("calendar.event.title") }}
+                </VCardTitle>
+                <TimeEntryFieldTaskId v-model="interaction.mutation.update.taskId" class="mt-3" density="compact" autofocus />
+                <VBtn @click="interaction.mutation.update.endTime = new Date(interaction.event.end + 60 * 60 * 1000)"> +1h </VBtn>
+                <div class="d-flex justify-end ga-2 mt-2">
+                    <VBtn @click="edit.cancel()" :disabled="isUpdatingEvent" variant="text">
+                        {{ $t("action.cancel") }}
+                    </VBtn>
+                    <VBtn @click="finish()" :disabled="isUpdatingEvent || !form?.isValid" :loading="isUpdatingEvent" color="primary">
+                        {{ $t("action.save") }}
+                    </VBtn>
+                </div>
+            </VCard>
+        </VForm>
     </VMenu>
 </template>
 
@@ -39,8 +34,18 @@ import { useEdit } from "@/components/tracking/calendar/composables/useEdit";
 const interaction = defineModel<Extract<Interaction, { kind: "edit" }>>("interaction", { required: true });
 
 const edit = useEdit();
+const form = useTemplateRef("form");
+
 const calendarStore = useCalendarStore();
+
 const { isUpdatingEvent } = storeToRefs(calendarStore);
 
 const targetSelector = computed(() => "#" + interaction.value.event.uiId);
+
+const finish = () => {
+    if (!form.value?.isValid) return;
+    edit.finish();
+};
+
+useHotkey("cmd+s", finish, { inputs: true });
 </script>

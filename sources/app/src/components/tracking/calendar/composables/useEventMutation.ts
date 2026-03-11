@@ -38,12 +38,6 @@ export function useEventMutation() {
 
     const executeCreate = async (mutation: DraftTimeEntryCreateMutation | SuggestionTimeEntryCreateMutation): Promise<void> => {
         if (mutation.event.kind === "draft") {
-            if (!mutation.create.taskId) {
-                const idx = draftEvents.value.indexOf(mutation.event);
-                if (idx !== -1) draftEvents.value.splice(idx, 1);
-                return;
-            }
-
             const result = await timeEntryStore.create(mutation.create);
 
             if (result.status === "success") {

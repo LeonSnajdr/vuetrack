@@ -7679,6 +7679,7 @@
     "useFullscreen": true,
     "useGamepad": true,
     "useGeolocation": true,
+    "useHotkey": true,
     "useI18n": true,
     "useId": true,
     "useIdle": true,

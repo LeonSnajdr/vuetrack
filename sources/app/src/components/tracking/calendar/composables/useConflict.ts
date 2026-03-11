@@ -3,7 +3,7 @@ import { useEventMutation } from "./useEventMutation";
 
 export function useConflict() {
     const calendarStore = useCalendarStore();
-    const { interaction, conflictLoadingId } = storeToRefs(calendarStore);
+    const { interaction } = storeToRefs(calendarStore);
     const mutation = useEventMutation();
 
     const finish = async (mutations: TimeEntryMutation[]) => {
@@ -11,7 +11,6 @@ export function useConflict() {
 
         await mutation.executeAll(mutations);
 
-        conflictLoadingId.value = null;
         interaction.value = { kind: "idle" };
     };
 
@@ -28,7 +27,6 @@ export function useConflict() {
             event.end = conflictMutation.originalPosition.end;
         }
 
-        conflictLoadingId.value = null;
         interaction.value = { kind: "idle" };
     };
 

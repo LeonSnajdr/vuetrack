@@ -26,7 +26,7 @@ export default defineConfig({
                 {
                     "@mdi/js": Object.keys(await import("@mdi/js")).filter((x) => x.startsWith("mdi")),
                     uuid: [["v4", "uuidv4"]],
-                    vuetify: ["useDate"],
+                    vuetify: ["useDate", "useHotkey"],
                     "vuetify/labs/rules": ["useRules"]
                 }
             ],
