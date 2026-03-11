@@ -1,12 +1,5 @@
 <template>
-    <VMenu
-        @update:modelValue="(v) => !v && conflict.cancel()"
-        :closeOnContentClick="false"
-        :persistent="conflictLoadingId !== null"
-        :target="targetSelector"
-        location="right"
-        modelValue
-    >
+    <BaseOverlayProvider @closed="conflict.cancel()" :persistent="conflictLoadingId !== null" :target="targetSelector">
         <VCard width="350">
             <VCardTitle class="text-subtitle-1 mb-n5">{{ $t("calendar.conflict.title") }}</VCardTitle>
             <VCardSubtitle>
@@ -33,7 +26,7 @@
                 <VBtn @click="conflict.cancel()" :disabled="conflictLoadingId !== null" size="small" variant="plain">{{ $t("action.cancel") }}</VBtn>
             </VCardActions>
         </VCard>
-    </VMenu>
+    </BaseOverlayProvider>
 </template>
 
 <script setup lang="ts">

@@ -13,7 +13,7 @@
         :weekdays="[1, 2, 3, 4, 5]"
         color="primary"
         eventOverlapMode="column"
-        type="custom-daily"
+        type="week"
     >
         <template #event="{ event }">
             <VHover v-if="isTimeEntryEvent(event)" v-slot="{ isHovering, props }">
