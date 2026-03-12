@@ -57,9 +57,10 @@ defineProps<{
     loading: boolean;
 }>();
 
-const overlayType = ref<OverlayType>(OverlayType.Menu);
+const overlayOpen = defineModel<boolean>({ default: true });
 
-const overlayOpen = ref(true);
+const overlayType = ref<OverlayType>(OverlayType.Drawer);
+
 const valid = ref(false);
 
 whenever(

@@ -10,26 +10,17 @@
             {{ formatDuration(item.startTime, item.endTime) }}
         </template>
         <template #item.actions="{ item }">
-            <VIconBtn @click="startEdit(item)" :icon="mdiPencil" variant="text" />
+            <VIconBtn :id="'time-entry-edit-' + item.id" @click="timeEntryEdit = item" :icon="mdiPencil" variant="text" />
             <VIconBtn @click="remove(item.id)" :icon="mdiDelete" iconColor="error" variant="text" />
         </template>
     </VDataTable>
 
-    <VDialog v-model="editDialog" maxWidth="400" persistent>
-        <VCard>
-            <VCardTitle>{{ $t("calendar.event.title") }}</VCardTitle>
-            <VCardText>
-                <VTextField v-model.trim="editForm.taskId" @keydown.enter.prevent="saveEdit" :label="$t('calendar.event.taskIdLabel')" autofocus />
-                <VTextField v-model="editForm.startTime" class="mt-3" label="Start" type="datetime-local" />
-                <VTextField v-model="editForm.endTime" class="mt-3" label="End" type="datetime-local" />
-            </VCardText>
-            <VCardActions>
-                <VSpacer />
-                <VBtn @click="cancelEdit" variant="text">{{ $t("action.cancel") }}</VBtn>
-                <VBtn @click="saveEdit" color="primary">{{ $t("action.save") }}</VBtn>
-            </VCardActions>
-        </VCard>
-    </VDialog>
+    <TrackingListFeaturesEditOverlay
+        v-if="timeEntryEdit"
+        @closed="timeEntryEdit = undefined"
+        :target="'#time-entry-edit-' + timeEntryEdit.id"
+        :timeEntry="timeEntryEdit"
+    />
 </template>
 
 <script setup lang="ts">
@@ -39,6 +30,8 @@ const store = useTimeEntryStore();
 const { timeEntries } = storeToRefs(store);
 const dateFormatter = useDate();
 const notify = useNotify();
+
+const timeEntryEdit = ref<TimeEntryContract>();
 
 const headers = [
     { title: "Task", key: "taskId", sortable: true },
@@ -53,52 +46,6 @@ const formatDuration = (start: Date, end: Date) => {
     const hours = Math.floor(ms / (1000 * 60 * 60));
     const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
     return `${hours}h ${minutes}m`;
-};
-
-const editDialog = ref(false);
-const editingId = ref<TimeEntryId | null>(null);
-const editForm = ref({
-    taskId: "",
-    startTime: "",
-    endTime: ""
-});
-
-const toDatetimeLocal = (date: Date) => {
-    const pad = (n: number) => n.toString().padStart(2, "0");
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-};
-
-const startEdit = (item: TimeEntryContract) => {
-    editingId.value = item.id;
-    editForm.value = {
-        taskId: item.taskId,
-        startTime: toDatetimeLocal(item.startTime),
-        endTime: toDatetimeLocal(item.endTime)
-    };
-    editDialog.value = true;
-};
-
-const cancelEdit = () => {
-    editDialog.value = false;
-    editingId.value = null;
-};
-
-const saveEdit = async () => {
-    if (!editingId.value) return;
-
-    const result = await store.update(editingId.value, {
-        taskId: editForm.value.taskId,
-        startTime: new Date(editForm.value.startTime),
-        endTime: new Date(editForm.value.endTime)
-    });
-
-    if (result.status === "success") {
-        notify.success($t("action.save"));
-        editDialog.value = false;
-        editingId.value = null;
-    } else {
-        notify.error($t("action.save.error"));
-    }
 };
 
 const remove = async (id: TimeEntryId) => {
