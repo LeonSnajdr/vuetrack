@@ -1,9 +1,9 @@
 <template>
-    <div class="d-flex justify-end mb-4">
+    <Teleport defer to="#tracking-toolbar-actions">
         <VBtn id="time-entry-create" @click="startCreate" :prependIcon="mdiPlus" color="primary" variant="flat">
             {{ $t("action.add") }}
         </VBtn>
-    </div>
+    </Teleport>
 
     <VDataTable :headers="headers" :items="timeEntries" itemValue="id" hover>
         <template #item.startTime="{ value }">
