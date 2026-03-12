@@ -172,38 +172,51 @@ const executeStrategy = async (strategy: ConflictResolutionStrategy) => {
     }
 };
 
+const getSearchWindow = (event: TimeEntryEvent) => {
+    const windowStart = new Date(event.start).setHours(0, 0, 0, 0);
+    const lastOccupiedMs = Math.max(event.start, event.end - 1);
+    const windowEndExclusive = new Date(lastOccupiedMs).setHours(24, 0, 0, 0);
+
+    return { windowStart, windowEndExclusive };
+};
+
+const getSearchCandidates = (event: TimeEntryEvent) => {
+    const { windowStart, windowEndExclusive } = getSearchWindow(event);
+    const candidates = [...existingEvents.value]
+        .filter((candidate) => candidate.uiId !== event.uiId)
+        .sort((a, b) => a.start - b.start)
+        .filter((candidate) => candidate.end > windowStart && candidate.start < windowEndExclusive);
+
+    return { candidates, windowStart, windowEndExclusive };
+};
+
 // Default strategies
 const resolveShiftUp = (): TimeEntryMutation[] | null => {
     const event = interaction.value.event;
     const mutation = interaction.value.mutation;
     const duration = event.end - event.start;
-
-    const sorted = [...existingEvents.value].filter((e) => e.uiId !== event.uiId).sort((a, b) => a.start - b.start);
-
-    const dayStart = new Date(event.start).setHours(0, 0, 0, 0);
-    const dayEnd = new Date(event.start).setHours(23, 59, 59, 999);
-    const dayEvents = sorted.filter((e) => e.end > dayStart && e.start < dayEnd);
+    const { candidates, windowStart, windowEndExclusive } = getSearchCandidates(event);
 
     let searchTime = event.start;
-    let foundStart = -1;
 
-    while (searchTime > dayStart) {
+    while (searchTime >= windowStart) {
         const potentialStart = searchTime;
         const potentialEnd = searchTime + duration;
-        const overlap = dayEvents.find((e) => potentialStart < e.end && potentialEnd > e.start);
+
+        if (potentialEnd > windowEndExclusive) {
+            searchTime = windowEndExclusive - duration;
+            continue;
+        }
+
+        const overlap = candidates.find((candidate) => potentialStart < candidate.end && potentialEnd > candidate.start);
         if (overlap) {
             searchTime = overlap.start - duration;
         } else {
-            foundStart = searchTime;
-            break;
+            const updatedMutation = updateMutationPosition(mutation, potentialStart, potentialEnd);
+            return [updatedMutation];
         }
     }
 
-    if (foundStart !== -1) {
-        const foundEnd = foundStart + duration;
-        const updatedMutation = updateMutationPosition(mutation, foundStart, foundEnd);
-        return [updatedMutation];
-    }
     return null;
 };
 
@@ -211,31 +224,21 @@ const resolveShiftDown = (): TimeEntryMutation[] | null => {
     const event = interaction.value.event;
     const mutation = interaction.value.mutation;
     const duration = event.end - event.start;
-
-    const sorted = [...existingEvents.value].filter((e) => e.uiId !== event.uiId).sort((a, b) => a.start - b.start);
-
-    const dayStart = new Date(event.start).setHours(0, 0, 0, 0);
-    const dayEnd = new Date(event.start).setHours(23, 59, 59, 999);
-    const dayEvents = sorted.filter((e) => e.end > dayStart && e.start < dayEnd);
+    const { candidates, windowEndExclusive } = getSearchCandidates(event);
 
     let searchTime = event.start;
-    let foundStart = -1;
 
-    while (searchTime < dayEnd) {
-        const overlap = dayEvents.find((e) => searchTime < e.end && searchTime + duration > e.start);
+    while (searchTime + duration <= windowEndExclusive) {
+        const overlap = candidates.find((candidate) => searchTime < candidate.end && searchTime + duration > candidate.start);
         if (overlap) {
             searchTime = overlap.end;
         } else {
-            foundStart = searchTime;
-            break;
+            const foundEnd = searchTime + duration;
+            const updatedMutation = updateMutationPosition(mutation, searchTime, foundEnd);
+            return [updatedMutation];
         }
     }
 
-    if (foundStart !== -1) {
-        const foundEnd = foundStart + duration;
-        const updatedMutation = updateMutationPosition(mutation, foundStart, foundEnd);
-        return [updatedMutation];
-    }
     return null;
 };
 
