@@ -1,11 +1,17 @@
 <template>
-    <TimeEntryFeatureCreate
-        v-model="interaction.mutation.create"
-        @cancel="create.cancel"
-        @create="create.finish"
-        :loading="isCreatingEvent"
-        :target="targetSelector"
-    />
+    <BaseOverlayProvider @closed="create.cancel" :persistent="isCreatingEvent" :target="targetSelector">
+        <template #title>
+            {{ $t("calendar.event.title") }}
+        </template>
+        <template #content>
+            <TimeEntryFieldTaskId v-model="interaction.mutation.create.taskId" density="compact" autofocus />
+        </template>
+        <template #actions="{ valid }">
+            <VBtn @click="create.finish" :disabled="!valid" :loading="isCreatingEvent" color="primary" variant="flat">
+                {{ $t("action.save") }}
+            </VBtn>
+        </template>
+    </BaseOverlayProvider>
 </template>
 
 <script setup lang="ts">

@@ -1,5 +1,17 @@
 <template>
-    <TimeEntryFeatureEdit v-model="interaction.mutation.update" @cancel="edit.cancel" @edit="edit.finish" :loading="isUpdatingEvent" :target="targetSelector" />
+    <BaseOverlayProvider @closed="edit.cancel" :persistent="isUpdatingEvent" :target="targetSelector">
+        <template #title>
+            {{ $t("calendar.event.title") }}
+        </template>
+        <template #content>
+            <TimeEntryFieldTaskId v-model="interaction.mutation.update.taskId" density="compact" autofocus />
+        </template>
+        <template #actions="{ valid }">
+            <VBtn @click="edit.finish" :disabled="!valid" :loading="isUpdatingEvent" color="primary" variant="flat">
+                {{ $t("action.save") }}
+            </VBtn>
+        </template>
+    </BaseOverlayProvider>
 </template>
 
 <script setup lang="ts">

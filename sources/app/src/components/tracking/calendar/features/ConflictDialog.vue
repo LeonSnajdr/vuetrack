@@ -1,31 +1,31 @@
 <template>
     <BaseOverlayProvider @closed="conflict.cancel()" :persistent="conflictLoadingId !== null" :target="targetSelector">
-        <VCard>
-            <VCardTitle class="text-subtitle-1 mb-n5">{{ $t("calendar.conflict.title") }}</VCardTitle>
-            <VCardSubtitle>
-                <p class="text-medium-emphasis text-caption">{{ $t("calendar.conflict.subtitle", { count: interaction.overlaps.length }) }}</p>
-            </VCardSubtitle>
-            <VCardText>
-                <div class="d-flex flex-column ga-2">
-                    <VBtn
-                        v-for="strategy in defaultStrategies"
-                        :key="strategy.id"
-                        @click="executeStrategy(strategy)"
-                        :color="strategy.variant"
-                        :disabled="conflictLoadingId !== null"
-                        :loading="conflictLoadingId === strategy.id"
-                        :prependIcon="strategy.icon"
-                        variant="tonal"
-                    >
-                        {{ strategy.label }}
-                    </VBtn>
-                </div>
-            </VCardText>
-            <VCardActions>
-                <VSpacer />
-                <VBtn @click="conflict.cancel()" :disabled="conflictLoadingId !== null" size="small" variant="plain">{{ $t("action.cancel") }}</VBtn>
-            </VCardActions>
-        </VCard>
+        <template #title>
+            {{ $t("calendar.conflict.title") }}
+        </template>
+        <template #content>
+            <p class="text-medium-emphasis text-caption mb-4">
+                {{ $t("calendar.conflict.subtitle", { count: interaction.overlaps.length }) }}
+            </p>
+            <div class="d-flex flex-column ga-2">
+                <VBtn
+                    v-for="strategy in defaultStrategies"
+                    :key="strategy.id"
+                    @click="executeStrategy(strategy)"
+                    :color="strategy.variant"
+                    :disabled="conflictLoadingId !== null"
+                    :loading="conflictLoadingId === strategy.id"
+                    :prependIcon="strategy.icon"
+                    class="justify-start"
+                    variant="tonal"
+                >
+                    <div class="d-flex flex-column align-start text-none">
+                        <span>{{ strategy.label }}</span>
+                        <span class="text-caption text-medium-emphasis">{{ strategy.subtitle }}</span>
+                    </div>
+                </VBtn>
+            </div>
+        </template>
     </BaseOverlayProvider>
 </template>
 

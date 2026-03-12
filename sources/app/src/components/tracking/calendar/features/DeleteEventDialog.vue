@@ -1,5 +1,14 @@
 <template>
-    <TimeEntryFeatureDelete @cancel="remove.cancel" @delete="remove.finish" :loading="isDeletingEvent" :target="targetSelector" />
+    <BaseOverlayProvider @closed="remove.cancel" :persistent="isDeletingEvent" :target="targetSelector">
+        <template #title>
+            {{ $t("action.delete.info") }}
+        </template>
+        <template #actions>
+            <VBtn @click="remove.finish" :disabled="isDeletingEvent" :loading="isDeletingEvent" color="error" variant="flat">
+                {{ $t("action.delete") }}
+            </VBtn>
+        </template>
+    </BaseOverlayProvider>
 </template>
 
 <script setup lang="ts">
