@@ -1,5 +1,12 @@
 <template>
-    <VMenu v-if="overlayType === OverlayType.Menu" @update:modelValue="(v) => !v && emit('closed')" v-bind="$attrs" :closeOnContentClick="false" modelValue>
+    <VMenu
+        v-if="overlayType === OverlayType.Menu"
+        @update:modelValue="(v) => !v && emit('closed')"
+        v-bind="$attrs"
+        :closeOnContentClick="false"
+        location="right"
+        modelValue
+    >
         <slot />
     </VMenu>
     <VDialog
@@ -7,7 +14,7 @@
         @update:modelValue="(v) => !v && emit('closed')"
         v-bind="$attrs"
         :closeOnContentClick="false"
-        widht="800"
+        width="800"
         modelValue
     >
         <slot />
@@ -16,7 +23,6 @@
         v-if="overlayType === OverlayType.Drawer"
         @update:modelValue="(v) => !v && emit('closed')"
         v-bind="$attrs"
-        :closeOnContentClick="false"
         location="right"
         width="300"
         disableResizeWatcher
