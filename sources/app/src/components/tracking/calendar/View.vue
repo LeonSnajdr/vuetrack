@@ -73,6 +73,7 @@ import { useDraft } from "./composables/useDraft";
 import { useCreate } from "./composables/useCreate";
 import { useEdit } from "./composables/useEdit";
 import { useDelete } from "./composables/useDelete";
+import { useConflict } from "./composables/useConflict";
 
 const calendarStore = useCalendarStore();
 const timeEntryStore = useTimeEntryStore();
@@ -86,8 +87,19 @@ const draft = useDraft();
 const create = useCreate();
 const edit = useEdit();
 const remove = useDelete();
+const conflict = useConflict();
 
 const dateFormatter = useDate();
+
+onBeforeUnmount(() => {
+    move.cancel();
+    resize.cancel();
+    draft.cancel();
+    create.cancel();
+    edit.cancel();
+    remove.cancel();
+    conflict.cancel();
+});
 
 const acceptSuggestion = (event: SuggestionTimeEntryEvent) => {
     create.start(event);

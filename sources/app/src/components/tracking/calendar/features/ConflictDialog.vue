@@ -1,6 +1,6 @@
 <template>
     <BaseOverlayProvider @closed="conflict.cancel()" :persistent="conflictLoadingId !== null" :target="targetSelector">
-        <VCard width="350">
+        <VCard>
             <VCardTitle class="text-subtitle-1 mb-n5">{{ $t("calendar.conflict.title") }}</VCardTitle>
             <VCardSubtitle>
                 <p class="text-medium-emphasis text-caption">{{ $t("calendar.conflict.subtitle", { count: interaction.overlaps.length }) }}</p>

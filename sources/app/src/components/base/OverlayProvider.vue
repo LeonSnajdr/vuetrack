@@ -5,6 +5,7 @@
         v-bind="$attrs"
         :closeOnContentClick="false"
         location="right"
+        minWidth="350"
         modelValue
     >
         <slot />
