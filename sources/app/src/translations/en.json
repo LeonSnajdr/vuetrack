@@ -23,5 +23,7 @@
   "sidebar.preselectedTaskId": "Preselected task ID",
   "sidebar.preselectedTaskId.hint": "Drag on the calendar to create an entry directly with this task ID.",
   "test.test": "Test",
+  "timeEntry.field.endTime": "End time",
+  "timeEntry.field.startTime": "Start time",
   "timeEntry.field.taskId": "TaskId"
 }

@@ -123,6 +123,12 @@ export default createVuetify({
             persistentPlaceholder: true,
             VIcon: { size: "small" }
         },
+        VDateInput: {
+            variant: "outlined",
+            hideDetails: "auto",
+            persistentPlaceholder: true,
+            VIcon: { size: "small" }
+        },
         VSelect: {
             variant: "outlined",
             hideDetails: "auto",

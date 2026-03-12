@@ -4,7 +4,9 @@
             {{ $t("calendar.event.title") }}
         </template>
         <template #content>
-            <TimeEntryFieldTaskId v-model="timeEntryUpdate.taskId" density="compact" autofocus />
+            <TimeEntryFieldTaskId v-model="timeEntryUpdate.taskId" />
+            <TimeEntryFieldStartTime v-model="timeEntryUpdate.startTime" />
+            <TimeEntryFieldEndTime v-model="timeEntryUpdate.endTime" />
         </template>
         <template #actions="{ valid }">
             <VBtn @click="finish" :disabled="!valid" :loading="isUpdating(timeEntry.id)" color="primary" variant="flat">

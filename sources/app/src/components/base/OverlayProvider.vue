@@ -44,7 +44,7 @@
             v-bind="$attrs"
             :persistent="loading"
             location="right"
-            width="300"
+            width="500"
             disableResizeWatcher
         >
             <VCard>
@@ -75,7 +75,7 @@ defineProps<{
 
 const overlayOpen = defineModel<boolean>({ default: true });
 
-const overlayType = ref<OverlayType>(OverlayType.Menu);
+const overlayType = ref<OverlayType>(OverlayType.Drawer);
 
 const valid = ref(false);
 

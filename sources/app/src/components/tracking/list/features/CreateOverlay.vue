@@ -5,6 +5,8 @@
         </template>
         <template #content>
             <TimeEntryFieldTaskId v-model="draftTimeEntry.taskId" density="compact" autofocus />
+            <TimeEntryFieldStartTime v-model="draftTimeEntry.startTime" />
+            <TimeEntryFieldEndTime v-model="draftTimeEntry.endTime" />
         </template>
         <template #actions="{ valid }">
             <VBtn @click="finish" :disabled="!valid" :loading="isCreating()" color="primary" variant="flat">
