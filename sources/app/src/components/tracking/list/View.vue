@@ -25,20 +25,17 @@
         v-if="timeEntryCreate"
         @closed="timeEntryCreate = undefined"
         :timeEntryCreate="timeEntryCreate"
-        target="#time-entry-create"
     />
 
     <TrackingListFeaturesEditOverlay
         v-if="timeEntryEdit"
         @closed="timeEntryEdit = undefined"
-        :target="'#time-entry-edit-' + timeEntryEdit.id"
         :timeEntry="timeEntryEdit"
     />
 
     <TrackingListFeaturesDeleteOverlay
         v-if="timeEntryDelete"
         @closed="timeEntryDelete = undefined"
-        :target="'#time-entry-delete-' + timeEntryDelete.id"
         :timeEntry="timeEntryDelete"
     />
 </template>

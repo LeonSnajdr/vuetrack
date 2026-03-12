@@ -1,5 +1,5 @@
 <template>
-    <BaseOverlayProvider @closed="emit('closed')" :loading="isDeleting(timeEntry.id)">
+    <BaseOverlayProvider @closed="emit('closed')" :loading="isDeleting(timeEntry.id)" :target="targetSelector">
         <template #title>
             {{ $t("action.delete.info") }}
         </template>
@@ -25,6 +25,7 @@ const { t } = useI18n();
 const timeEntryStore = useTimeEntryStore();
 
 const { isDeleting } = storeToRefs(timeEntryStore);
+const targetSelector = computed(() => "#time-entry-delete-" + props.timeEntry.id);
 
 const finish = async () => {
     const result = await timeEntryStore.remove(props.timeEntry.id);

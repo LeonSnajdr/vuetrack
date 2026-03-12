@@ -1,5 +1,5 @@
 <template>
-    <BaseOverlayProvider @closed="emit('closed')" :loading="isCreating()">
+    <BaseOverlayProvider @closed="emit('closed')" :loading="isCreating()" :target="targetSelector">
         <template #title>
             {{ $t("calendar.event.title") }}
         </template>
@@ -29,6 +29,7 @@ const timeEntryStore = useTimeEntryStore();
 
 const { isCreating } = storeToRefs(timeEntryStore);
 const draftTimeEntry = ref<TimeEntryCreateContract>({} as TimeEntryCreateContract);
+const targetSelector = "#time-entry-create";
 
 watch(
     () => props.timeEntryCreate,
