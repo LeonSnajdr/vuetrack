@@ -10,7 +10,7 @@
                 </VCardText>
                 <VCardActions>
                     <VSpacer />
-                    <VBtn @click="overlayOpen = false" variant="flat">{{ $t("action.cancel") }}</VBtn>
+                    <VBtn @click="overlayOpen = false" :disabled="loading" variant="flat">{{ $t("action.cancel") }}</VBtn>
                     <slot :valid="valid" name="actions" />
                 </VCardActions>
             </VCard>
@@ -25,7 +25,7 @@
                 </VCardText>
                 <VCardActions>
                     <VSpacer />
-                    <VBtn @click="overlayOpen = false" variant="flat">{{ $t("action.cancel") }}</VBtn>
+                    <VBtn @click="overlayOpen = false" :disabled="loading" variant="flat">{{ $t("action.cancel") }}</VBtn>
                     <slot :valid="valid" name="actions" />
                 </VCardActions>
             </VCard>
@@ -40,7 +40,7 @@
                 </VCardText>
                 <VCardActions>
                     <VSpacer />
-                    <VBtn @click="overlayOpen = false" variant="flat">{{ $t("action.cancel") }}</VBtn>
+                    <VBtn @click="overlayOpen = false" :disabled="loading" variant="flat">{{ $t("action.cancel") }}</VBtn>
                     <slot :valid="valid" name="actions" />
                 </VCardActions>
             </VCard>
@@ -53,7 +53,11 @@ import { OverlayType } from "@/models/DisplaySettings";
 
 const emit = defineEmits(["closed"]);
 
-const overlayType = ref<OverlayType>(OverlayType.Drawer);
+defineProps<{
+    loading: boolean;
+}>();
+
+const overlayType = ref<OverlayType>(OverlayType.Menu);
 
 const overlayOpen = ref(true);
 const valid = ref(false);

@@ -1,5 +1,5 @@
 <template>
-    <BaseOverlayProvider @closed="conflict.cancel()" :persistent="conflictLoadingId !== null" :target="targetSelector">
+    <BaseOverlayProvider @closed="conflict.cancel()" :loading="conflictLoadingId != null" :persistent="conflictLoadingId !== null" :target="targetSelector">
         <template #title>
             {{ $t("calendar.conflict.title") }}
         </template>
