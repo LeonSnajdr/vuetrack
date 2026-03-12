@@ -1,5 +1,5 @@
 <template>
-    <BaseOverlayProvider @closed="create.cancel" :loading="isCreatingEvent" :persistent="isCreatingEvent" :target="targetSelector">
+    <BaseOverlayProvider @closed="create.cancel" :loading="isCreatingEvent" :target="targetSelector">
         <template #title>
             {{ $t("calendar.event.title") }}
         </template>

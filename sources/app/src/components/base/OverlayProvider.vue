@@ -1,6 +1,14 @@
 <template>
     <VForm v-model="valid">
-        <VMenu v-if="overlayType === OverlayType.Menu" v-model="overlayOpen" v-bind="$attrs" :closeOnContentClick="false" location="right" minWidth="350">
+        <VMenu
+            v-if="overlayType === OverlayType.Menu"
+            v-model="overlayOpen"
+            v-bind="$attrs"
+            :closeOnContentClick="false"
+            :persistent="loading"
+            location="right"
+            minWidth="350"
+        >
             <VCard>
                 <VCardTitle>
                     <slot name="title" />
@@ -15,7 +23,7 @@
                 </VCardActions>
             </VCard>
         </VMenu>
-        <VDialog v-if="overlayType === OverlayType.Dialog" v-model="overlayOpen" v-bind="$attrs" :closeOnContentClick="false" width="800">
+        <VDialog v-if="overlayType === OverlayType.Dialog" v-model="overlayOpen" v-bind="$attrs" :closeOnContentClick="false" :persistent="loading" width="800">
             <VCard>
                 <VCardTitle>
                     <slot name="title" />
@@ -30,7 +38,15 @@
                 </VCardActions>
             </VCard>
         </VDialog>
-        <VNavigationDrawer v-if="overlayType === OverlayType.Drawer" v-model="overlayOpen" v-bind="$attrs" location="right" width="300" disableResizeWatcher>
+        <VNavigationDrawer
+            v-if="overlayType === OverlayType.Drawer"
+            v-model="overlayOpen"
+            v-bind="$attrs"
+            :persistent="loading"
+            location="right"
+            width="300"
+            disableResizeWatcher
+        >
             <VCard>
                 <VCardTitle>
                     <slot name="title" />

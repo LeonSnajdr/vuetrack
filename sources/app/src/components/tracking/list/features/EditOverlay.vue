@@ -1,5 +1,5 @@
 <template>
-    <BaseOverlayProvider @closed="emit('closed')" :loading="isUpdating(timeEntry.id)" :persistent="isUpdating(timeEntry.id)">
+    <BaseOverlayProvider @closed="emit('closed')" :loading="isUpdating(timeEntry.id)">
         <template #title>
             {{ $t("calendar.event.title") }}
         </template>

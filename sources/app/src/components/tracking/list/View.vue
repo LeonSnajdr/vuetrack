@@ -26,10 +26,12 @@
 <script setup lang="ts">
 import type { TimeEntryContract, TimeEntryId } from "@/contracts/TimeEntryContract";
 
-const store = useTimeEntryStore();
-const { timeEntries } = storeToRefs(store);
 const dateFormatter = useDate();
 const notify = useNotify();
+const { t } = useI18n();
+
+const store = useTimeEntryStore();
+const { timeEntries } = storeToRefs(store);
 
 const timeEntryEdit = ref<TimeEntryContract>();
 
@@ -51,11 +53,9 @@ const formatDuration = (start: Date, end: Date) => {
 const remove = async (id: TimeEntryId) => {
     const result = await store.remove(id);
     if (result.status === "success") {
-        notify.success($t("action.delete"));
+        notify.success(t("action.delete"));
     } else {
-        notify.error($t("action.delete.error"));
+        notify.error(t("action.delete.error"));
     }
 };
-
-const { t: $t } = useI18n();
 </script>

@@ -1,5 +1,5 @@
 <template>
-    <BaseOverlayProvider @closed="remove.cancel" :loading="isDeletingEvent" :persistent="isDeletingEvent" :target="targetSelector">
+    <BaseOverlayProvider @closed="remove.cancel" :loading="isDeletingEvent" :target="targetSelector">
         <template #title>
             {{ $t("action.delete.info") }}
         </template>
