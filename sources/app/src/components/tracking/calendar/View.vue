@@ -57,10 +57,10 @@
             </VHover>
         </template>
     </VCalendar>
-    <TrackingCalendarFeaturesCreateEventDialog v-if="interaction.kind === 'create'" v-model:interaction="interaction" />
-    <TrackingCalendarFeaturesEditEventDialog v-if="interaction.kind === 'edit'" v-model:interaction="interaction" />
-    <TrackingCalendarFeaturesConflictDialog v-if="interaction.kind === 'conflict'" v-model:interaction="interaction" />
-    <TrackingCalendarFeaturesDeleteEventDialog v-if="interaction.kind === 'delete'" v-model:interaction="interaction" />
+    <TrackingCalendarFeaturesCreateOverlay v-if="interaction.kind === 'create'" v-model:interaction="interaction" />
+    <TrackingCalendarFeaturesEditOverlay v-if="interaction.kind === 'edit'" v-model:interaction="interaction" />
+    <TrackingCalendarFeaturesConflictOverlay v-if="interaction.kind === 'conflict'" v-model:interaction="interaction" />
+    <TrackingCalendarFeaturesDeleteOverlay v-if="interaction.kind === 'delete'" v-model:interaction="interaction" />
 </template>
 
 <script setup lang="ts">
