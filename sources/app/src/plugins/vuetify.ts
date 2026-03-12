@@ -126,6 +126,7 @@ export default createVuetify({
         VDateInput: {
             variant: "outlined",
             hideDetails: "auto",
+            prependIcon: "",
             persistentPlaceholder: true,
             VIcon: { size: "small" }
         },
