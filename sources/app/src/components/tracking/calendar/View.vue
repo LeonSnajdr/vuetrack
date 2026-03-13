@@ -1,4 +1,7 @@
 ﻿<template>
+    <Teleport to="#tracking-toolbar-actions" defer>
+        <TrackingCalendarWeekdaySelection v-model="selectedWeekdays" />
+    </Teleport>
     <VCalendar
         @mousedown:event="beginMoveEvent"
         @mousedown:time="beginGridInteraction"
@@ -10,7 +13,7 @@
         :eventRipple="false"
         :events="events"
         :start="start"
-        :weekdays="[1, 2, 3, 4, 5]"
+        :weekdays="selectedWeekdays"
         color="primary"
         eventOverlapMode="column"
         type="week"
@@ -90,6 +93,7 @@ const remove = useDelete();
 const conflict = useConflict();
 
 const dateFormatter = useDate();
+const selectedWeekdays = ref<number[]>([1, 2, 3, 4, 5]);
 
 onBeforeUnmount(() => {
     move.cancel();
@@ -163,21 +167,35 @@ const toTime = (tms: CalendarDayBodySlotScope) => {
     return new Date(tms.year, tms.month - 1, tms.day, tms.hour, tms.minute).getTime();
 };
 
-const start = computed<Date>(() => {
+const getMondayOfCurrentWeek = () => {
     const now = new Date();
     const daysSinceMonday = (now.getDay() + 6) % 7;
     const monday = new Date(now);
     monday.setDate(now.getDate() - daysSinceMonday);
     monday.setHours(0, 0, 0, 0);
     return monday;
+};
+
+const getWeekdayOffset = (weekday: number) => {
+    return weekday === 0 ? 6 : weekday - 1;
+};
+
+const start = computed<Date>(() => {
+    const monday = getMondayOfCurrentWeek();
+    const offsets = selectedWeekdays.value.map(getWeekdayOffset);
+    const startDate = new Date(monday);
+    startDate.setDate(monday.getDate() + Math.min(...offsets));
+    startDate.setHours(0, 0, 0, 0);
+    return startDate;
 });
 
 const end = computed<Date>(() => {
-    const monday = start.value;
-    const friday = new Date(monday);
-    friday.setDate(monday.getDate() + 4);
-    friday.setHours(23, 59, 59, 999);
-    return friday;
+    const monday = getMondayOfCurrentWeek();
+    const offsets = selectedWeekdays.value.map(getWeekdayOffset);
+    const endDate = new Date(monday);
+    endDate.setDate(monday.getDate() + Math.max(...offsets));
+    endDate.setHours(23, 59, 59, 999);
+    return endDate;
 });
 </script>
 
