@@ -197,6 +197,6 @@ const periodLabel = computed(() => {
 });
 
 const getPresetVariant = computed(() => (preset: Exclude<TrackingPeriodPreset, "custom">) => {
-    return detectedPreset.value === preset ? "flat" : "tonal";
+    return detectedPreset.value === preset ? "tonal" : "flat";
 });
 </script>
