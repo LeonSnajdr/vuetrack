@@ -1,7 +1,7 @@
 <template>
     <VBtn :appendIcon="mdiChevronDown" :prependIcon="mdiCalendarRange">
         {{ periodLabel }}
-        <VMenu :closeOnContentClick="false" activator="parent" location="bottom start">
+        <VMenu v-model="menuOpen" :closeOnContentClick="false" activator="parent" location="bottom start">
             <VCard minWidth="500">
                 <VCardText class="d-flex ga-2">
                     <div class="d-flex flex-column ga-2">
@@ -47,6 +47,7 @@ const endTime = defineModel<Date>("endTime", { required: true });
 const { t, locale } = useI18n();
 
 const dateFormatter = computed(() => new Intl.DateTimeFormat(locale.value, { month: "short", day: "numeric" }));
+const menuOpen = ref(false);
 const pickerRange = ref<Date[]>([]);
 
 const startOfDay = (date: Date) => {
@@ -144,6 +145,12 @@ watch(
     },
     { immediate: true }
 );
+
+watch(menuOpen, (isOpen) => {
+    if (isOpen || pickerRange.value.length !== 1) return;
+
+    applyPeriod(pickerRange.value[0], pickerRange.value[0]);
+});
 
 const onPickerRangeUpdate = (value: unknown) => {
     const nextRange = Array.isArray(value) ? value.filter((item): item is Date => item instanceof Date && !Number.isNaN(item.getTime())) : [];
