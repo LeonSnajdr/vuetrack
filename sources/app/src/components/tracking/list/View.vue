@@ -4,7 +4,7 @@
             {{ $t("action.add") }}
         </VBtn>
     </Teleport>
-    <VDataTable :headers="headers" :items="timeEntries" itemValue="id" hover v-bind="$attrs">
+    <VDataTable :headers="headers" :items="timeEntries" v-bind="$attrs" :itemsPerPage="-1" class="overflow-hidden" hideDefaultFooter="" itemValue="id" hover>
         <template #item.startTime="{ value }">
             {{ dateFormatter.format(value, "fullDateTime24h") }}
         </template>
