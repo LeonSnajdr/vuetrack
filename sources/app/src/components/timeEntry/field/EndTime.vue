@@ -4,7 +4,7 @@
             ref="endTimeInputRef"
             v-model="endTime"
             :label="$t('timeEntry.field.endTime')"
-            :rules="[rules.required(), rules.dateAfter(props.startTime, $t('timeEntry.field.endTime.dateAfter'))]"
+            :rules="[rules.required(), rules.dateAfter(props.startTime)]"
         />
     </VRowSingle>
 </template>

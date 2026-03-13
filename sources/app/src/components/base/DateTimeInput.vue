@@ -1,5 +1,6 @@
 <template>
-    <VValidation v-slot="{ errorMessages, isValid }" v-model="dateTime" :rules="rules">
+    <VValidation v-slot="{ errorMessages, isValid, validate }" v-model="dateTime" :rules="rules">
+        <BaseValidationDynamicRulesSupport @rulesChanged="validate" :rules="rules" />
         <div class="d-flex flex-column ga-2">
             <div class="d-flex ga-2">
                 <VDateInput

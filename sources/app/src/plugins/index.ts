@@ -21,7 +21,7 @@ export function registerPlugins(app: App) {
                                 return true;
                             }
 
-                            return value.getTime() >= startTime.getTime() || err || i18n.global.t("timeEntry.field.endTime.dateAfter");
+                            return value.getTime() > startTime.getTime() || err || i18n.global.t("$vuetify.rules.dateAfter");
                         };
                     }
                 }

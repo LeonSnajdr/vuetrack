@@ -1,4 +1,5 @@
 ﻿{
+  "$vuetify.rules.dateAfter": "Value must be after the reference date",
   "action.add": "Add",
   "action.add.error": "Failed to add",
   "action.cancel": "Cancel",
@@ -24,7 +25,6 @@
   "sidebar.preselectedTaskId.hint": "Drag on the calendar to create an entry directly with this task ID.",
   "test.test": "Test",
   "timeEntry.field.endTime": "End time",
-  "timeEntry.field.endTime.dateAfter": "End time must be at or after the start time",
   "timeEntry.field.startTime": "Start time",
   "timeEntry.field.taskId": "TaskId"
 }
