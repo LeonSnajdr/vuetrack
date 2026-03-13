@@ -1,28 +1,49 @@
 <template>
-    <div class="d-flex ga-2">
-        <VDateInput ref="dateInputRef" v-model="selectedDate" v-model:menu="isDateMenuOpen" v-bind="$attrs" @keydown.capture="onDateInputKeydown" />
-        <VTextField ref="timeInputRef" v-model="timeInput" @blur="onTimeInputBlur" @keydown.enter.prevent="commitTimeInput">
-            <VMenu ref="timeMenuRef" v-model="isTimeMenuOpen" :closeOnContentClick="false" activator="parent" minWidth="0">
-                <VTimePicker
-                    v-model="selectedTime"
-                    v-model:viewMode="timePickerViewMode"
-                    @pointerdown="onTimePickerPointerDown"
-                    @update:minute="closeTimeMenu"
-                    format="24hr"
-                    hideHeader
+    <VValidation v-slot="{ errorMessages, isValid }" v-model="dateTime" :rules="rules">
+        <div class="d-flex flex-column ga-2">
+            <div class="d-flex ga-2">
+                <VDateInput
+                    ref="dateInputRef"
+                    v-model="selectedDate"
+                    v-model:menu="isDateMenuOpen"
+                    v-bind="$attrs"
+                    @keydown.capture="onDateInputKeydown"
+                    :error="!(isValid.value ?? true)"
                 />
-            </VMenu>
-        </VTextField>
-    </div>
+                <VTextField
+                    ref="timeInputRef"
+                    v-model="timeInput"
+                    @blur="onTimeInputBlur"
+                    @keydown.enter.prevent="commitTimeInput"
+                    :error="!(isValid.value ?? true)"
+                >
+                    <VMenu ref="timeMenuRef" v-model="isTimeMenuOpen" :closeOnContentClick="false" activator="parent" minWidth="0">
+                        <VTimePicker
+                            v-model="selectedTime"
+                            v-model:viewMode="timePickerViewMode"
+                            @pointerdown="onTimePickerPointerDown"
+                            @update:minute="closeTimeMenu"
+                            format="24hr"
+                            hideHeader
+                        />
+                    </VMenu>
+                </VTextField>
+            </div>
+            <div v-if="!(isValid.value ?? true)" class="ml-4">
+                <VMessages :active="errorMessages.value.length > 0" :messages="errorMessages.value" color="error" style="opacity: 1" />
+            </div>
+        </div>
+    </VValidation>
 </template>
 
 <script setup lang="ts">
+import type { ValidationRule } from "vuetify";
+
+defineProps<{
+    rules?: ValidationRule[];
+}>();
+
 const dateTime = defineModel<Date>({ required: true });
-
-defineOptions({
-    inheritAttrs: false
-});
-
 const dateInputRef = useTemplateRef("dateInputRef");
 const timeInputRef = useTemplateRef("timeInputRef");
 const timeMenuRef = useTemplateRef("timeMenuRef");
@@ -31,11 +52,6 @@ const isTimeMenuOpen = ref(false);
 const timePickerViewMode = ref<"hour" | "minute">("hour");
 const timeInput = ref("");
 let skipTimeMenuCloseOnBlur = false;
-
-defineExpose({
-    validate: () => dateInputRef.value?.validate?.(),
-    resetValidation: () => dateInputRef.value?.resetValidation?.()
-});
 
 const selectedDate = computed({
     get: () => dateTime.value,
