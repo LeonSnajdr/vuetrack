@@ -1,5 +1,7 @@
 ﻿<template>
     <VCalendar
+        @click:date="jumpToDate"
+        @click:more="jumpToMoreDay"
         @mousedown:event="beginMoveEvent"
         @mousedown:time="beginGridInteraction"
         @mouseleave="cancelInteractionOnLeave"
@@ -95,6 +97,7 @@ const create = useCreate();
 const edit = useEdit();
 const remove = useDelete();
 const conflict = useConflict();
+const { jumpToDay } = useTrackingTimePeriod();
 const { start, end, weekdays, isReadonly, calendarType } = useCalendarTimePeriod();
 
 const dateFormatter = useDate();
@@ -111,6 +114,14 @@ onBeforeUnmount(() => {
 
 const acceptSuggestion = (event: SuggestionTimeEntryEvent) => {
     create.start(event);
+};
+
+const jumpToDate = (_nativeEvent: Event, day: { year: number; month: number; day: number }) => {
+    jumpToDay(new Date(day.year, day.month - 1, day.day));
+};
+
+const jumpToMoreDay = (_nativeEvent: Event, day: { year: number; month: number; day: number }) => {
+    jumpToDay(new Date(day.year, day.month - 1, day.day));
 };
 
 const canStartInteraction = (currentKind: string): boolean => {
