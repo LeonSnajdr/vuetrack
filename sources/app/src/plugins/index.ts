@@ -7,7 +7,28 @@ import { createRulesPlugin } from "vuetify/labs/rules";
 
 export function registerPlugins(app: App) {
     app.use(vuetify);
-    app.use(createRulesPlugin({}, vuetify.locale));
+    app.use(
+        createRulesPlugin(
+            {
+                aliases: {
+                    dateAfter: (startTime: Date | null | undefined, err?: string) => {
+                        return (value: Date | null | undefined) => {
+                            if (!(startTime instanceof Date) || Number.isNaN(startTime.getTime())) {
+                                return true;
+                            }
+
+                            if (!(value instanceof Date) || Number.isNaN(value.getTime())) {
+                                return true;
+                            }
+
+                            return value.getTime() >= startTime.getTime() || err || i18n.global.t("timeEntry.field.endTime.dateAfter");
+                        };
+                    }
+                }
+            },
+            vuetify.locale
+        )
+    );
     app.use(router);
     app.use(pinia);
     app.use(i18n);

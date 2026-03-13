@@ -1,12 +1,19 @@
 <template>
-    <VRowSingle colClass="d-flex ga-2">
+    <div class="d-flex ga-2">
         <VDateInput ref="dateInputRef" v-model="selectedDate" v-model:menu="isDateMenuOpen" v-bind="$attrs" @keydown.capture="onDateInputKeydown" />
         <VTextField ref="timeInputRef" v-model="timeInput" @blur="onTimeInputBlur" @keydown.enter.prevent="commitTimeInput">
             <VMenu ref="timeMenuRef" v-model="isTimeMenuOpen" :closeOnContentClick="false" activator="parent" minWidth="0">
-                <VTimePicker v-model="selectedTime" v-model:viewMode="timePickerViewMode" @pointerdown="onTimePickerPointerDown" @update:minute="closeTimeMenu" format="24hr" hideHeader />
+                <VTimePicker
+                    v-model="selectedTime"
+                    v-model:viewMode="timePickerViewMode"
+                    @pointerdown="onTimePickerPointerDown"
+                    @update:minute="closeTimeMenu"
+                    format="24hr"
+                    hideHeader
+                />
             </VMenu>
         </VTextField>
-    </VRowSingle>
+    </div>
 </template>
 
 <script setup lang="ts">
@@ -24,6 +31,11 @@ const isTimeMenuOpen = ref(false);
 const timePickerViewMode = ref<"hour" | "minute">("hour");
 const timeInput = ref("");
 let skipTimeMenuCloseOnBlur = false;
+
+defineExpose({
+    validate: () => dateInputRef.value?.validate?.(),
+    resetValidation: () => dateInputRef.value?.resetValidation?.()
+});
 
 const selectedDate = computed({
     get: () => dateTime.value,
@@ -147,8 +159,10 @@ function isElementInsideTimeInputOrMenu(element: HTMLElement): boolean {
     const timeInputElement = timeInputRef.value?.$el;
     const timeMenuContentElement = timeMenuRef.value?.contentEl;
 
-    return (timeInputElement instanceof Element && timeInputElement.contains(element))
-        || (timeMenuContentElement instanceof Element && timeMenuContentElement.contains(element));
+    return (
+        (timeInputElement instanceof Element && timeInputElement.contains(element)) ||
+        (timeMenuContentElement instanceof Element && timeMenuContentElement.contains(element))
+    );
 }
 
 function parseTimeInput(value: string): { hours: number; minutes: number } | null {

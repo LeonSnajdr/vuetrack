@@ -24,6 +24,7 @@
   "sidebar.preselectedTaskId.hint": "Im Kalender ziehen, um direkt einen Eintrag mit dieser TaskId zu erstellen.",
   "test.test": "Test",
   "timeEntry.field.endTime": "Endzeit",
+  "timeEntry.field.endTime.dateAfter": "Die Endzeit muss gleich oder nach der Startzeit liegen",
   "timeEntry.field.startTime": "Startzeit",
   "timeEntry.field.taskId": "TaskId"
 }
