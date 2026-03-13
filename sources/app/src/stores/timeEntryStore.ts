@@ -20,9 +20,13 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
         key: (x) => x.args[0]
     });
 
-    onMounted(() => {
-        executeLoad({ startTime: startTime.value, endTime: endTime.value });
-    });
+    watch(
+        [startTime, endTime],
+        () => {
+            executeLoad({ startTime: startTime.value, endTime: endTime.value });
+        },
+        { immediate: true }
+    );
 
     const create = async (createContract: TimeEntryCreateContract): Promise<ActionResult<TimeEntryContract>> => {
         const createResult = await executeCreate(createContract);

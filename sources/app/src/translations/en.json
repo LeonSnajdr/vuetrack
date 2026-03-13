@@ -21,13 +21,17 @@
   "calendar.conflict.title": "Overlap Detected",
   "calendar.event.draft": "Draft",
   "calendar.event.title": "Name the event",
-  "calendar.weekdaySelection.fullWeek": "Full week",
-  "calendar.weekdaySelection.today": "Today",
-  "calendar.weekdaySelection.workweek": "Workweek",
   "sidebar.preselectedTaskId": "Preselected task ID",
   "sidebar.preselectedTaskId.hint": "Drag on the calendar to create an entry directly with this task ID.",
   "test.test": "Test",
   "timeEntry.field.endTime": "End time",
   "timeEntry.field.startTime": "Start time",
-  "timeEntry.field.taskId": "TaskId"
+  "timeEntry.field.taskId": "TaskId",
+  "tracking.period.customRange": "Custom range",
+  "tracking.period.last7Days": "Last 7 days",
+  "tracking.period.lastMonth": "Last month",
+  "tracking.period.thisMonth": "This month",
+  "tracking.period.today": "Today",
+  "tracking.period.workweek": "This work week",
+  "tracking.period.yesterday": "Yesterday"
 }

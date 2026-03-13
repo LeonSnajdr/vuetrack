@@ -17,11 +17,19 @@ function endOfWeek(date: Date, weekStartsOn: 0 | 1 = 1) {
     return end;
 }
 
+function endOfWorkWeek(date: Date, weekStartsOn: 0 | 1 = 1) {
+    const start = startOfWeek(date, weekStartsOn);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 4);
+    end.setHours(23, 59, 59, 999);
+    return end;
+}
+
 export const useTrackingStore = defineStore("tracking", () => {
     const now = new Date();
 
     const startTime = ref<Date>(startOfWeek(now, 1)); // 1 = Monday
-    const endTime = ref<Date>(endOfWeek(now, 1));
+    const endTime = ref<Date>(endOfWorkWeek(now, 1));
 
     return { startTime, endTime };
 });

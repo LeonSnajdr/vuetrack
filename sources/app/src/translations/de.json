@@ -21,13 +21,17 @@
   "calendar.conflict.title": "Überlappung erkannt",
   "calendar.event.draft": "Entwurf",
   "calendar.event.title": "Ereignis benennen",
-  "calendar.weekdaySelection.fullWeek": "Ganze Woche",
-  "calendar.weekdaySelection.today": "Heute",
-  "calendar.weekdaySelection.workweek": "Arbeitswoche",
   "sidebar.preselectedTaskId": "Vorausgewählte TaskId",
   "sidebar.preselectedTaskId.hint": "Im Kalender ziehen, um direkt einen Eintrag mit dieser TaskId zu erstellen.",
   "test.test": "Test",
   "timeEntry.field.endTime": "Endzeit",
   "timeEntry.field.startTime": "Startzeit",
-  "timeEntry.field.taskId": "TaskId"
+  "timeEntry.field.taskId": "TaskId",
+  "tracking.period.customRange": "Benutzerdefinierter Zeitraum",
+  "tracking.period.last7Days": "Letzte 7 Tage",
+  "tracking.period.lastMonth": "Letzter Monat",
+  "tracking.period.thisMonth": "Dieser Monat",
+  "tracking.period.today": "Heute",
+  "tracking.period.workweek": "Diese Arbeitswoche",
+  "tracking.period.yesterday": "Gestern"
 }

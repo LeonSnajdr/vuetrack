@@ -35,6 +35,7 @@ declare module 'vue' {
     TrackingListFeaturesDeleteOverlay: typeof import('./../src/components/tracking/list/features/DeleteOverlay.vue')['default']
     TrackingListFeaturesEditOverlay: typeof import('./../src/components/tracking/list/features/EditOverlay.vue')['default']
     TrackingListView: typeof import('./../src/components/tracking/list/View.vue')['default']
+    TrackingTimePeriodSelection: typeof import('./../src/components/tracking/TimePeriodSelection.vue')['default']
     TrackingToolbar: typeof import('./../src/components/tracking/Toolbar.vue')['default']
     VRowSingle: typeof import('./../src/components/VRowSingle.vue')['default']
   }
