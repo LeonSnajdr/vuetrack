@@ -3,8 +3,8 @@
         {{ periodLabel }}
         <VMenu v-model="menuOpen" :closeOnContentClick="false" activator="parent" location="bottom start">
             <VCard minWidth="500">
-                <VCardText class="d-flex ga-2">
-                    <div class="d-flex flex-column ga-2">
+                <VCardText class="d-flex">
+                    <div class="d-flex flex-column ga-2 mr-4">
                         <VBtn @click="setPreset('today')" :variant="getPresetVariant('today')" justify="start">{{ $t("tracking.period.today") }}</VBtn>
                         <VBtn @click="setPreset('yesterday')" :variant="getPresetVariant('yesterday')" justify="start">
                             {{ $t("tracking.period.yesterday") }}
@@ -189,14 +189,16 @@ const periodLabel = computed(() => {
         thisMonth: t("tracking.period.thisMonth"),
         lastMonth: t("tracking.period.lastMonth")
     };
-    const rangeLabel = `${dateFormatter.value.format(startTime.value)} - ${dateFormatter.value.format(endTime.value)}`;
+    const rangeLabel = sameDay(startTime.value, endTime.value)
+        ? dateFormatter.value.format(startTime.value)
+        : `${dateFormatter.value.format(startTime.value)} - ${dateFormatter.value.format(endTime.value)}`;
 
     if (detectedPreset.value === "custom") return rangeLabel;
 
-    return `${presetLabels[detectedPreset.value]} · ${rangeLabel}`;
+    return presetLabels[detectedPreset.value];
 });
 
-const getPresetVariant = (preset: Exclude<TrackingPeriodPreset, "custom">) => {
+const getPresetVariant = computed(() => (preset: Exclude<TrackingPeriodPreset, "custom">) => {
     return detectedPreset.value === preset ? "flat" : "tonal";
-};
+});
 </script>
