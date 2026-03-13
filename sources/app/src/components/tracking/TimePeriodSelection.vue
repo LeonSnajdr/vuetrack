@@ -107,35 +107,33 @@ const applyPeriod = (start: Date, end: Date) => {
 
 const setPreset = (preset: Exclude<TrackingPeriodPreset, "custom">) => {
     const today = new Date();
+    let start: Date;
+    let end: Date;
 
     if (preset === "today") {
-        applyPeriod(today, today);
-        return;
-    }
-
-    if (preset === "yesterday") {
+        start = today;
+        end = today;
+    } else if (preset === "yesterday") {
         const yesterday = addDays(today, -1);
-        applyPeriod(yesterday, yesterday);
-        return;
+        start = yesterday;
+        end = yesterday;
+    } else if (preset === "last7Days") {
+        start = addDays(today, -6);
+        end = today;
+    } else if (preset === "workweek") {
+        start = startOfWeek(today, 1);
+        end = endOfWorkWeek(today, 1);
+    } else if (preset === "thisMonth") {
+        start = startOfMonth(today);
+        end = endOfMonth(today);
+    } else {
+        const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        start = startOfMonth(lastMonth);
+        end = endOfMonth(lastMonth);
     }
 
-    if (preset === "last7Days") {
-        applyPeriod(addDays(today, -6), today);
-        return;
-    }
-
-    if (preset === "workweek") {
-        applyPeriod(startOfWeek(today, 1), endOfWorkWeek(today, 1));
-        return;
-    }
-
-    if (preset === "thisMonth") {
-        applyPeriod(startOfMonth(today), endOfMonth(today));
-        return;
-    }
-
-    const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-    applyPeriod(startOfMonth(lastMonth), endOfMonth(lastMonth));
+    applyPeriod(start, end);
+    menuOpen.value = false;
 };
 
 watch(

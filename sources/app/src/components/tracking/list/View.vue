@@ -4,8 +4,7 @@
             {{ $t("action.add") }}
         </VBtn>
     </Teleport>
-
-    <VDataTable :headers="headers" :items="timeEntries" itemValue="id" hover>
+    <VDataTable :headers="headers" :items="timeEntries" itemValue="id" hover v-bind="$attrs">
         <template #item.startTime="{ value }">
             {{ dateFormatter.format(value, "fullDateTime24h") }}
         </template>
@@ -20,11 +19,8 @@
             <VIconBtn :id="'time-entry-delete-' + item.id" @click="timeEntryDelete = item" :icon="mdiDelete" iconColor="error" variant="text" />
         </template>
     </VDataTable>
-
     <TrackingListFeaturesCreateOverlay v-if="timeEntryCreate" @closed="timeEntryCreate = undefined" :timeEntryCreate="timeEntryCreate" />
-
     <TrackingListFeaturesEditOverlay v-if="timeEntryEdit" @closed="timeEntryEdit = undefined" :timeEntry="timeEntryEdit" />
-
     <TrackingListFeaturesDeleteOverlay v-if="timeEntryDelete" @closed="timeEntryDelete = undefined" :timeEntry="timeEntryDelete" />
 </template>
 

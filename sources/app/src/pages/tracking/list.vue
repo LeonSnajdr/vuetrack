@@ -1,7 +1,7 @@
 ﻿<template>
-    <VContainer class="h-100">
+    <VContainer class="h-100 d-flex flex-column">
         <TrackingToolbar />
-        <TrackingListView />
+        <TrackingListView class="flex-grow-1" />
     </VContainer>
 </template>
 
