@@ -1,9 +1,32 @@
 import type { Interaction, TimeEntryEvent } from "@/components/tracking/calendar/types";
 
-export const roundTime = (time: number, down = true): number => {
-    const roundTo = 15;
+type RoundTimeOptions = {
+    down?: boolean;
+    roundTo?: number;
+    snapPoints?: number[];
+};
+
+export const roundTime = (time: number, options: RoundTimeOptions = {}): number => {
+    const { down = true, roundTo = 15, snapPoints = [] } = options;
     const step = roundTo * 60 * 1000;
-    return down ? time - (time % step) : time + (step - (time % step));
+    const offset = time % step;
+    const rounded = down ? time - offset : time + (step - offset);
+    const roundedDistance = Math.abs(rounded - time);
+    const snapped = snapPoints
+        .filter((snapPoint) => (down ? snapPoint <= time : snapPoint >= time))
+        .reduce<number | undefined>((closest, snapPoint) => {
+            const snapDistance = Math.abs(snapPoint - time);
+            if (snapDistance > step || snapDistance >= roundedDistance) return closest;
+            if (closest === undefined) return snapPoint;
+
+            return snapDistance < Math.abs(closest - time) ? snapPoint : closest;
+        }, undefined);
+
+    return snapped ?? rounded;
+};
+
+export const getEventBoundaries = (subject: TimeEntryEvent, candidates: TimeEntryEvent[]): number[] => {
+    return candidates.filter((other) => other.uiId !== subject.uiId).flatMap((other) => [other.start, other.end]);
 };
 
 export const getOverlappingEvents = (subject: TimeEntryEvent, candidates: TimeEntryEvent[]): TimeEntryEvent[] => {

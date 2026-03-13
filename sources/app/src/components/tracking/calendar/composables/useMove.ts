@@ -1,5 +1,5 @@
 import type { ExistingTimeEntryUpdateMutation, SuggestionTimeEntryUpdateMutation, TimeEntryEvent } from "@/components/tracking/calendar/types";
-import { roundTime, getOverlappingEvents, cancelPendingUpdateForEvent, getOriginalPositon } from "./shared";
+import { roundTime, getOverlappingEvents, cancelPendingUpdateForEvent, getOriginalPositon, getEventBoundaries } from "./shared";
 import { useEventMutation } from "./useEventMutation";
 
 export function useMove() {
@@ -53,7 +53,8 @@ export function useMove() {
         if (pointerOffsetMs === undefined) return;
 
         const duration = event.end - event.start;
-        const newStart = roundTime(mouseMs - pointerOffsetMs);
+        const snapPoints = getEventBoundaries(event, existingEvents.value).flatMap((boundary) => [boundary, boundary - duration]);
+        const newStart = roundTime(mouseMs - pointerOffsetMs, { snapPoints });
 
         event.start = newStart;
         event.end = newStart + duration;

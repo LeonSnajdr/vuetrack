@@ -1,5 +1,5 @@
 import type { ExistingTimeEntryUpdateMutation, SuggestionTimeEntryUpdateMutation, TimeEntryEvent } from "@/components/tracking/calendar/types";
-import { roundTime, getOverlappingEvents, cancelPendingUpdateForEvent, getOriginalPositon } from "./shared";
+import { roundTime, getOverlappingEvents, cancelPendingUpdateForEvent, getOriginalPositon, getEventBoundaries } from "./shared";
 import { useEventMutation } from "./useEventMutation";
 
 export function useResize() {
@@ -44,7 +44,8 @@ export function useResize() {
         if (interaction.value.kind !== "resize") return;
 
         const { event } = interaction.value;
-        const mouseRounded = roundTime(mouseMs, false);
+        const snapPoints = getEventBoundaries(event, existingEvents.value);
+        const mouseRounded = roundTime(mouseMs, { down: false, snapPoints });
 
         event.end = Math.max(mouseRounded, event.start);
     };
