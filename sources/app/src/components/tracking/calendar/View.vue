@@ -10,10 +10,10 @@
         :eventRipple="false"
         :events="events"
         :start="start"
+        :type="calendarType"
         :weekdays="weekdays"
         color="primary"
         eventOverlapMode="column"
-        type="week"
     >
         <template #event="{ event }">
             <VHover v-if="isTimeEntryEvent(event)" v-slot="{ isHovering, props }">
@@ -21,7 +21,7 @@
                     <template v-if="event.kind === 'existing'">
                         <VProgressLinear :indeterminate="isUpdating(event.timeEntry.id)" />
                     </template>
-                    <VSheet v-show="isHovering && interaction.kind === 'idle'" class="position-absolute d-flex ga-2 rounded" style="top: 5px; right: 5px">
+                    <VSheet v-show="!isReadonly && isHovering && interaction.kind === 'idle'" class="position-absolute d-flex ga-2 rounded" style="top: 5px; right: 5px">
                         <VIconBtn
                             v-if="event.kind === 'existing' || event.kind === 'suggestion'"
                             @click.stop="remove.start(event)"
@@ -53,7 +53,7 @@
                     <p v-else>{{ $t("calendar.event.draft") }}</p>
                     <p>{{ dateFormatter.format(event.start, "fullTime24h") }} - {{ dateFormatter.format(event.end, "fullTime24h") }}</p>
                 </div>
-                <div @mousedown.stop="beginResizeEvent(event)" class="v-event-drag-bottom" />
+                <div v-if="!isReadonly" @mousedown.stop="beginResizeEvent(event)" class="v-event-drag-bottom" />
             </VHover>
         </template>
     </VCalendar>
@@ -89,7 +89,7 @@ const create = useCreate();
 const edit = useEdit();
 const remove = useDelete();
 const conflict = useConflict();
-const { start, end, weekdays } = useCalendarTimePeriod();
+const { start, end, weekdays, isReadonly, calendarType } = useCalendarTimePeriod();
 
 const dateFormatter = useDate();
 
@@ -119,17 +119,20 @@ const canAdjustEvent = (event: CalendarEvent): boolean => {
 };
 
 const beginMoveEvent = (_nativeEvent: Event, { event, timed }: EventSlotScope) => {
+    if (isReadonly.value) return;
     if (!event || !timed) return;
     if (!canAdjustEvent(event)) return;
     move.start(event as TimeEntryEvent);
 };
 
 const beginResizeEvent = (event: CalendarEvent) => {
+    if (isReadonly.value) return;
     if (!canAdjustEvent(event)) return;
     resize.start(event as TimeEntryEvent);
 };
 
 const beginGridInteraction = (_nativeEvent: Event, tms: CalendarDayBodySlotScope) => {
+    if (isReadonly.value) return;
     if (!canStartInteraction(interaction.value.kind)) return;
 
     const mouseMs = toTime(tms);
@@ -143,6 +146,7 @@ const beginGridInteraction = (_nativeEvent: Event, tms: CalendarDayBodySlotScope
 };
 
 const updateInteractionFromPointer = (_nativeEvent: Event, tms: CalendarDayBodySlotScope) => {
+    if (isReadonly.value) return;
     const mouseMs = toTime(tms);
     move.update(mouseMs);
     resize.update(mouseMs);
@@ -150,12 +154,14 @@ const updateInteractionFromPointer = (_nativeEvent: Event, tms: CalendarDayBodyS
 };
 
 const finishInteraction = async () => {
+    if (isReadonly.value) return;
     draft.finish();
     await move.finish();
     await resize.finish();
 };
 
 const cancelInteractionOnLeave = () => {
+    if (isReadonly.value) return;
     resize.cancel();
     move.cancel();
     draft.cancel();

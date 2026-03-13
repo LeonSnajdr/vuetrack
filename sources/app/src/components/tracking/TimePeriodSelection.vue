@@ -1,33 +1,41 @@
 <template>
-    <VMenu :closeOnContentClick="false" location="bottom end">
-        <template #activator="{ props }">
-            <VBtn v-bind="props" :appendIcon="mdiChevronDown" :prependIcon="mdiCalendarRange">
-                {{ periodLabel }}
-            </VBtn>
-        </template>
-        <VCard minWidth="320">
-            <VCardText class="d-flex flex-wrap ga-2 pb-2">
-                <VBtn @click="setPreset('today')" :variant="getPresetVariant('today')" size="small">{{ $t("tracking.period.today") }}</VBtn>
-                <VBtn @click="setPreset('yesterday')" :variant="getPresetVariant('yesterday')" size="small">{{ $t("tracking.period.yesterday") }}</VBtn>
-                <VBtn @click="setPreset('last7Days')" :variant="getPresetVariant('last7Days')" size="small">{{ $t("tracking.period.last7Days") }}</VBtn>
-                <VBtn @click="setPreset('workweek')" :variant="getPresetVariant('workweek')" size="small">{{ $t("tracking.period.workweek") }}</VBtn>
-                <VBtn @click="setPreset('thisMonth')" :variant="getPresetVariant('thisMonth')" size="small">{{ $t("tracking.period.thisMonth") }}</VBtn>
-                <VBtn @click="setPreset('lastMonth')" :variant="getPresetVariant('lastMonth')" size="small">{{ $t("tracking.period.lastMonth") }}</VBtn>
-            </VCardText>
-            <VDivider />
-            <VCardText class="pt-4">
-                <VDatePicker
-                    @update:modelValue="onPickerRangeUpdate"
-                    :header="$t('tracking.period.customRange')"
-                    :modelValue="pickerRange"
-                    multiple="range"
-                    width="100%"
-                    hideHeader
-                    showAdjacentMonths
-                />
-            </VCardText>
-        </VCard>
-    </VMenu>
+    <VBtn :appendIcon="mdiChevronDown" :prependIcon="mdiCalendarRange">
+        {{ periodLabel }}
+        <VMenu :closeOnContentClick="false" activator="parent" location="bottom start">
+            <VCard minWidth="500">
+                <VCardText class="d-flex ga-2">
+                    <div class="d-flex flex-column ga-2">
+                        <VBtn @click="setPreset('today')" :variant="getPresetVariant('today')" justify="start">{{ $t("tracking.period.today") }}</VBtn>
+                        <VBtn @click="setPreset('yesterday')" :variant="getPresetVariant('yesterday')" justify="start">
+                            {{ $t("tracking.period.yesterday") }}
+                        </VBtn>
+                        <VBtn @click="setPreset('last7Days')" :variant="getPresetVariant('last7Days')" justify="start">
+                            {{ $t("tracking.period.last7Days") }}
+                        </VBtn>
+                        <VBtn @click="setPreset('workweek')" :variant="getPresetVariant('workweek')" justify="start">
+                            {{ $t("tracking.period.workweek") }}
+                        </VBtn>
+                        <VBtn @click="setPreset('thisMonth')" :variant="getPresetVariant('thisMonth')" justify="start">
+                            {{ $t("tracking.period.thisMonth") }}
+                        </VBtn>
+                        <VBtn @click="setPreset('lastMonth')" :variant="getPresetVariant('lastMonth')" justify="start">
+                            {{ $t("tracking.period.lastMonth") }}
+                        </VBtn>
+                    </div>
+                    <VDivider vertical />
+                    <VDatePicker
+                        @update:modelValue="onPickerRangeUpdate"
+                        :header="$t('tracking.period.customRange')"
+                        :modelValue="pickerRange"
+                        class="w-100 mt-n2"
+                        multiple="range"
+                        hideHeader
+                        showAdjacentMonths
+                    />
+                </VCardText>
+            </VCard>
+        </VMenu>
+    </VBtn>
 </template>
 
 <script setup lang="ts">
