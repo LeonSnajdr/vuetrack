@@ -1,5 +1,5 @@
 <template>
-    <Teleport defer to="#tracking-toolbar-actions">
+    <Teleport to="#tracking-toolbar-actions" defer>
         <VBtn id="time-entry-create" @click="startCreate" :prependIcon="mdiPlus" color="primary" variant="flat">
             {{ $t("action.add") }}
         </VBtn>
@@ -21,23 +21,11 @@
         </template>
     </VDataTable>
 
-    <TrackingListFeaturesCreateOverlay
-        v-if="timeEntryCreate"
-        @closed="timeEntryCreate = undefined"
-        :timeEntryCreate="timeEntryCreate"
-    />
+    <TrackingListFeaturesCreateOverlay v-if="timeEntryCreate" @closed="timeEntryCreate = undefined" :timeEntryCreate="timeEntryCreate" />
 
-    <TrackingListFeaturesEditOverlay
-        v-if="timeEntryEdit"
-        @closed="timeEntryEdit = undefined"
-        :timeEntry="timeEntryEdit"
-    />
+    <TrackingListFeaturesEditOverlay v-if="timeEntryEdit" @closed="timeEntryEdit = undefined" :timeEntry="timeEntryEdit" />
 
-    <TrackingListFeaturesDeleteOverlay
-        v-if="timeEntryDelete"
-        @closed="timeEntryDelete = undefined"
-        :timeEntry="timeEntryDelete"
-    />
+    <TrackingListFeaturesDeleteOverlay v-if="timeEntryDelete" @closed="timeEntryDelete = undefined" :timeEntry="timeEntryDelete" />
 </template>
 
 <script setup lang="ts">
@@ -85,4 +73,6 @@ const createDefaultTimeEntry = (): TimeEntryCreateContract => {
 const startCreate = () => {
     timeEntryCreate.value = createDefaultTimeEntry();
 };
+
+useHotkey("#", startCreate);
 </script>
