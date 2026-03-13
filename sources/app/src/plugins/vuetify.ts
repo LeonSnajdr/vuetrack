@@ -191,7 +191,7 @@ export default createVuetify({
             railWidth: "72",
             width: "210",
             rounded: true,
-
+            retainFocus: true,
             VListItem: {
                 rounded: true,
                 class: "mx-3 px-3 my-1",
@@ -222,9 +222,14 @@ export default createVuetify({
         },
         VDialog: {
             transition: false,
+            retainFocus: true,
             VCardActions: {
                 class: "mx-4"
             }
+        },
+        VMenu: {
+            transition: false,
+            retainFocus: true
         },
         VTooltip: {
             openDelay: 400

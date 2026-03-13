@@ -69,7 +69,7 @@ import { OverlayType } from "@/models/DisplaySettings";
 
 const emit = defineEmits(["closed"]);
 
-defineProps<{
+const props = defineProps<{
     loading: boolean;
 }>();
 
@@ -78,6 +78,15 @@ const overlayOpen = defineModel<boolean>({ default: true });
 const overlayType = ref<OverlayType>(OverlayType.Drawer);
 
 const valid = ref(false);
+
+useHotkey(
+    "escape",
+    () => {
+        if (props.loading) return;
+        overlayOpen.value = false;
+    },
+    { inputs: true }
+);
 
 whenever(
     () => !overlayOpen.value,

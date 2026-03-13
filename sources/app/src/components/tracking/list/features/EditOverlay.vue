@@ -4,7 +4,7 @@
             {{ $t("calendar.event.title") }}
         </template>
         <template #content>
-            <TimeEntryFieldTaskId v-model="timeEntryUpdate.taskId" />
+            <TimeEntryFieldTaskId v-model="timeEntryUpdate.taskId" autofocus />
             <TimeEntryFieldStartTime v-model="timeEntryUpdate.startTime" />
             <TimeEntryFieldEndTime v-model="timeEntryUpdate.endTime" :startTime="timeEntryUpdate.startTime" />
         </template>
