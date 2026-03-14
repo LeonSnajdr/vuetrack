@@ -1,6 +1,6 @@
 <template>
     <div v-if="isVisible" :style="lineStyle" aria-hidden="true" class="current-time-line">
-        <div class="current-time-line__dot" />
+        <div v-if="isCurrentDay" class="current-time-line__dot" />
     </div>
 </template>
 
@@ -27,7 +27,7 @@ const isWithinVisibleRange = computed(() => {
 });
 
 const isVisible = computed(() => {
-    return isCurrentDay.value && isWithinVisibleRange.value;
+    return isWithinVisibleRange.value;
 });
 
 const lineStyle = computed(() => {
