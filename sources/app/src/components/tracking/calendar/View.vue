@@ -22,47 +22,49 @@
         </template>
         <template #event="{ event }">
             <VHover v-if="isTimeEntryEvent(event)" v-slot="{ isHovering, props }">
-                <VSheet
-                    v-show="!isReadonly && isHovering && interaction.kind === 'idle'"
-                    class="position-absolute d-flex ga-2 rounded"
-                    style="top: 5px; right: 5px"
-                >
-                    <VIconBtn
-                        v-if="event.kind === 'existing' || event.kind === 'suggestion'"
-                        @click.stop="remove.start(event)"
-                        @mousedown.stop
-                        :icon="mdiDelete"
-                        iconColor="error"
-                        variant="flat"
-                    />
-                    <VIconBtn
-                        v-if="event.kind === 'suggestion'"
-                        @click.stop="acceptSuggestion(event)"
-                        @mousedown.stop
-                        :icon="mdiCheck"
-                        iconColor="success"
-                        variant="flat"
-                    />
-                    <VIconBtn
-                        v-if="event.kind === 'existing' || event.kind === 'suggestion'"
-                        @click.stop="edit.start(event)"
-                        @mousedown.stop
-                        :icon="mdiPencil"
-                        iconColor="white"
-                        variant="flat"
-                    />
-                </VSheet>
-                <template v-if="event.kind === 'existing'">
-                    <VProgressLinear :indeterminate="isUpdating(event.timeEntry.id)" />
-                </template>
-                <div :id="event.uiId" v-bind="props" class="h-100 px-2 d-flex flex-column ga-2 text-truncate">
-                    <div>
-                        <template v-if="event.kind === 'existing' || event.kind === 'suggestion'">
-                            {{ event.timeEntry.taskId }}
-                        </template>
-                        <template v-else>{{ $t("calendar.event.draft") }}</template>
+                <div :id="event.uiId" v-bind="props" class="h-100 position-relative">
+                    <VSheet
+                        v-show="!isReadonly && isHovering && interaction.kind === 'idle'"
+                        class="position-absolute d-flex ga-2 rounded"
+                        style="top: 5px; right: 5px"
+                    >
+                        <VIconBtn
+                            v-if="event.kind === 'existing' || event.kind === 'suggestion'"
+                            @click.stop="remove.start(event)"
+                            @mousedown.stop
+                            :icon="mdiDelete"
+                            iconColor="error"
+                            variant="flat"
+                        />
+                        <VIconBtn
+                            v-if="event.kind === 'suggestion'"
+                            @click.stop="acceptSuggestion(event)"
+                            @mousedown.stop
+                            :icon="mdiCheck"
+                            iconColor="success"
+                            variant="flat"
+                        />
+                        <VIconBtn
+                            v-if="event.kind === 'existing' || event.kind === 'suggestion'"
+                            @click.stop="edit.start(event)"
+                            @mousedown.stop
+                            :icon="mdiPencil"
+                            iconColor="white"
+                            variant="flat"
+                        />
+                    </VSheet>
+                    <template v-if="event.kind === 'existing'">
+                        <VProgressLinear :indeterminate="isUpdating(event.timeEntry.id)" />
+                    </template>
+                    <div class="h-100 px-2 d-flex flex-column ga-2 text-truncate">
+                        <div>
+                            <template v-if="event.kind === 'existing' || event.kind === 'suggestion'">
+                                {{ event.timeEntry.taskId }}
+                            </template>
+                            <template v-else>{{ $t("calendar.event.draft") }}</template>
+                        </div>
+                        <div>{{ dateFormatter.format(event.start, "fullTime24h") }} - {{ dateFormatter.format(event.end, "fullTime24h") }}</div>
                     </div>
-                    <div>{{ dateFormatter.format(event.start, "fullTime24h") }} - {{ dateFormatter.format(event.end, "fullTime24h") }}</div>
                 </div>
                 <div v-if="!isReadonly" @mousedown.stop="beginResizeEvent(event)" class="v-event-drag-bottom" />
             </VHover>
