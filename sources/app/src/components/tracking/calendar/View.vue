@@ -17,6 +17,9 @@
         color="primary"
         eventOverlapMode="column"
     >
+        <template #day-body="day">
+            <TrackingCalendarCurrentTimeLine :day="day" />
+        </template>
         <template #event="{ event }">
             <VHover v-if="isTimeEntryEvent(event)" v-slot="{ isHovering, props }">
                 <VSheet

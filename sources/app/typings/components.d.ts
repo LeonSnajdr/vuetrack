@@ -24,6 +24,7 @@ declare module 'vue' {
     TimeEntryFieldEndTime: typeof import('./../src/components/timeEntry/field/EndTime.vue')['default']
     TimeEntryFieldStartTime: typeof import('./../src/components/timeEntry/field/StartTime.vue')['default']
     TimeEntryFieldTaskId: typeof import('./../src/components/timeEntry/field/TaskId.vue')['default']
+    TrackingCalendarCurrentTimeLine: typeof import('./../src/components/tracking/calendar/CurrentTimeLine.vue')['default']
     TrackingCalendarFeaturesConflictOverlay: typeof import('./../src/components/tracking/calendar/features/ConflictOverlay.vue')['default']
     TrackingCalendarFeaturesCreateOverlay: typeof import('./../src/components/tracking/calendar/features/CreateOverlay.vue')['default']
     TrackingCalendarFeaturesDeleteOverlay: typeof import('./../src/components/tracking/calendar/features/DeleteOverlay.vue')['default']
