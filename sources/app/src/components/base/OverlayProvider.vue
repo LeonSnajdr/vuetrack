@@ -47,7 +47,7 @@
             width="500"
             disableResizeWatcher
         >
-            <VCard>
+            <VCard elevation="0">
                 <VCardTitle>
                     <slot name="title" />
                 </VCardTitle>
