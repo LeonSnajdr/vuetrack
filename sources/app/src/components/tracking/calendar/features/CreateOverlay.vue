@@ -1,14 +1,14 @@
 <template>
     <BaseOverlayProvider @closed="create.cancel" :loading="isCreatingEvent" :target="targetSelector">
         <template #title>
-            {{ $t("calendar.event.title") }}
+            {{ $t("action.create.title", { type: $t("timeEntry.singular") }) }}
         </template>
         <template #content>
             <TimeEntryFieldTaskId v-model="interaction.mutation.create.taskId" density="compact" autofocus />
         </template>
         <template #actions="{ valid }">
             <VBtn @click="create.finish" :disabled="!valid" :loading="isCreatingEvent" color="primary" variant="flat">
-                {{ $t("action.save") }}
+                {{ $t("action.create") }}
             </VBtn>
         </template>
     </BaseOverlayProvider>

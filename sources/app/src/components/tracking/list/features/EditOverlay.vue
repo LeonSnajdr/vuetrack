@@ -1,7 +1,7 @@
 <template>
     <BaseOverlayProvider @closed="emit('closed')" :loading="isUpdating(timeEntry.id)" :target="targetSelector">
         <template #title>
-            {{ $t("calendar.event.title") }}
+            {{ $t("action.save.title", { type: $t("timeEntry.singular") }) }}
         </template>
         <template #content>
             <TimeEntryFieldTaskId v-model="timeEntryUpdate.taskId" autofocus />
@@ -49,7 +49,7 @@ const finish = async () => {
     const result = await timeEntryStore.update(props.timeEntry.id, timeEntryUpdate.value);
 
     if (result.status === "error") {
-        notify.error(t("action.save.error"), { timeout: 5000 });
+        notify.error(t("action.save.error", { type: t("timeEntry.singular") }), { timeout: 5000 });
     }
 
     emit("closed");

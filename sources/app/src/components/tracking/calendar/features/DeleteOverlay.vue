@@ -1,6 +1,9 @@
 <template>
     <BaseOverlayProvider @closed="remove.cancel" :loading="isDeletingEvent" :target="targetSelector">
         <template #title>
+            {{ $t("action.delete.title", { type: $t("timeEntry.singular") }) }}
+        </template>
+        <template #content>
             {{ $t("action.delete.info") }}
         </template>
         <template #actions>

@@ -1,7 +1,7 @@
 <template>
     <Teleport to="#tracking-toolbar-actions" defer>
         <VBtn id="time-entry-create" @click="startCreate" :prependIcon="mdiPlus" color="primary" variant="flat">
-            {{ $t("action.add") }}
+            {{ $t("action.create") }}
         </VBtn>
     </Teleport>
     <VDataTable :headers="headers" :items="timeEntries" v-bind="$attrs" :itemsPerPage="-1" class="overflow-hidden" itemValue="id" hideDefaultFooter hover>

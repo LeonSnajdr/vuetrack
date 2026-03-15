@@ -44,7 +44,7 @@ export function useEventMutation() {
                 const idx = draftEvents.value.indexOf(mutation.event);
                 if (idx !== -1) draftEvents.value.splice(idx, 1);
             } else if (result.status === "error") {
-                notify.error(t("action.add.error"), { timeout: 5000 });
+                notify.error(t("action.create.error", { type: t("timeEntry.singular") }), { timeout: 5000 });
             }
         } else {
             const result = await timeEntryStore.create(mutation.create);
@@ -52,7 +52,7 @@ export function useEventMutation() {
             if (result.status === "success") {
                 await suggestionStore.dismiss(mutation.event.timeEntry.id);
             } else if (result.status === "error") {
-                notify.error(t("action.add.error"), { timeout: 5000 });
+                notify.error(t("action.create.error", { type: t("timeEntry.singular") }), { timeout: 5000 });
             }
         }
     };
@@ -68,7 +68,7 @@ export function useEventMutation() {
         if (result.status === "error") {
             mutation.event.start = mutation.originalPosition.start;
             mutation.event.end = mutation.originalPosition.end;
-            notify.error(t("action.save.error"), { timeout: 5000 });
+            notify.error(t("action.save.error", { type: t("timeEntry.singular") }), { timeout: 5000 });
         }
     };
 
@@ -87,7 +87,7 @@ export function useEventMutation() {
         }
 
         if (result.status === "error") {
-            notify.error(t("action.delete.error"), { timeout: 5000 });
+            notify.error(t("action.delete.error", { type: t("timeEntry.singular") }), { timeout: 5000 });
         }
     };
 

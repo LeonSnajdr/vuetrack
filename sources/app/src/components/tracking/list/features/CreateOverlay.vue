@@ -1,7 +1,7 @@
 <template>
     <BaseOverlayProvider @closed="emit('closed')" :loading="isCreating()" :target="targetSelector">
         <template #title>
-            {{ $t("calendar.event.title") }}
+            {{ $t("action.create.title", { type: $t("timeEntry.singular") }) }}
         </template>
         <template #content>
             <TimeEntryFieldTaskId v-model="draftTimeEntry.taskId" density="compact" autofocus />
@@ -10,7 +10,7 @@
         </template>
         <template #actions="{ valid }">
             <VBtn @click="finish" :disabled="!valid" :loading="isCreating()" color="primary" variant="flat">
-                {{ $t("action.add") }}
+                {{ $t("action.create") }}
             </VBtn>
         </template>
     </BaseOverlayProvider>
@@ -49,7 +49,7 @@ const finish = async () => {
     const result = await timeEntryStore.create(draftTimeEntry.value);
 
     if (result.status === "error") {
-        notify.error(t("action.add.error"), { timeout: 5000 });
+        notify.error(t("action.create.error", { type: t("timeEntry.singular") }), { timeout: 5000 });
     }
 
     emit("closed");

@@ -1,7 +1,7 @@
 <template>
     <BaseOverlayProvider @closed="edit.cancel" :loading="isUpdatingEvent" :target="targetSelector">
         <template #title>
-            {{ $t("calendar.event.title") }}
+            {{ $t("action.save.title", { type: $t("timeEntry.singular") }) }}
         </template>
         <template #content>
             <TimeEntryFieldTaskId v-model="interaction.mutation.update.taskId" density="compact" autofocus />
