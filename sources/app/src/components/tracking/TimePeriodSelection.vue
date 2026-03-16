@@ -31,7 +31,13 @@
                         multiple="range"
                         hideHeader
                         showAdjacentMonths
-                    />
+                    >
+                        <template #day="{ props, item }">
+                            <VBtn @click="onPickerDayClick(item.date, props.onClick)" v-bind="getDayButtonProps(props)">
+                                {{ item.localized }}
+                            </VBtn>
+                        </template>
+                    </VDatePicker>
                 </VCardText>
             </VCard>
         </VMenu>
@@ -42,12 +48,28 @@
 import type { TrackingPeriodPreset } from "@/composables/useTrackingTimePeriod";
 
 const { t, locale } = useI18n();
-const { startTime, endTime, setPreset: applyPreset, applyPeriod, startOfDay, endOfDay, startOfWeek, endOfWorkWeek, addDays, startOfMonth, endOfMonth, sameDay } =
-    useTrackingTimePeriod();
+const {
+    startTime,
+    endTime,
+    setPreset: applyPreset,
+    applyPeriod,
+    startOfDay,
+    endOfDay,
+    startOfWeek,
+    endOfWorkWeek,
+    addDays,
+    startOfMonth,
+    endOfMonth,
+    sameDay
+} = useTrackingTimePeriod();
 
 const dateFormatter = computed(() => new Intl.DateTimeFormat(locale.value, { month: "short", day: "numeric" }));
 const menuOpen = ref(false);
 const pickerRange = ref<Date[]>([]);
+
+const syncPickerRange = () => {
+    pickerRange.value = [startOfDay(startTime.value), startOfDay(endTime.value)];
+};
 
 const setPreset = (preset: Exclude<TrackingPeriodPreset, "custom">) => {
     applyPreset(preset);
@@ -57,13 +79,18 @@ const setPreset = (preset: Exclude<TrackingPeriodPreset, "custom">) => {
 watch(
     [startTime, endTime],
     () => {
-        pickerRange.value = [startOfDay(startTime.value), startOfDay(endTime.value)];
+        syncPickerRange();
     },
     { immediate: true }
 );
 
 watch(menuOpen, (isOpen) => {
-    if (isOpen || pickerRange.value.length !== 1) return;
+    if (isOpen) {
+        syncPickerRange();
+        return;
+    }
+
+    if (pickerRange.value.length !== 1) return;
 
     applyPeriod(pickerRange.value[0], pickerRange.value[0]);
 });
@@ -75,6 +102,27 @@ const onPickerRangeUpdate = (value: unknown) => {
     if (nextRange.length < 2) return;
 
     applyPeriod(nextRange[0], nextRange[nextRange.length - 1]);
+    menuOpen.value = false;
+};
+
+const onPickerDayClick = (value: unknown, defaultClick?: () => void) => {
+    const nextDay = value instanceof Date && !Number.isNaN(value.getTime()) ? startOfDay(value) : null;
+    const repeatedSingleDayClick = nextDay !== null && pickerRange.value.length === 1 && sameDay(pickerRange.value[0], nextDay);
+
+    defaultClick?.();
+
+    if (!repeatedSingleDayClick || nextDay === null) return;
+
+    pickerRange.value = [nextDay, nextDay];
+    applyPeriod(nextDay, nextDay);
+    menuOpen.value = false;
+};
+
+const getDayButtonProps = (props: Record<string, unknown>) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { onClick: _onClick, ...buttonProps } = props;
+
+    return buttonProps;
 };
 
 const detectedPreset = computed<TrackingPeriodPreset>(() => {
