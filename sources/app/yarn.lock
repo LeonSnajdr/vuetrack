@@ -16,19 +16,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@babel/generator@npm:^7.28.5":
-  version: 7.28.5
-  resolution: "@babel/generator@npm:7.28.5"
-  dependencies:
-    "@babel/parser": "npm:^7.28.5"
-    "@babel/types": "npm:^7.28.5"
-    "@jridgewell/gen-mapping": "npm:^0.3.12"
-    "@jridgewell/trace-mapping": "npm:^0.3.28"
-    jsesc: "npm:^3.0.2"
-  checksum: 10c0/9f219fe1d5431b6919f1a5c60db8d5d34fe546c0d8f5a8511b32f847569234ffc8032beb9e7404649a143f54e15224ecb53a3d11b6bb85c3203e573d91fca752
-  languageName: node
-  linkType: hard
-
 "@babel/generator@npm:^7.28.6":
   version: 7.29.1
   resolution: "@babel/generator@npm:7.29.1"
@@ -1618,6 +1605,19 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@samhammer/authentication-vue@npm:^2.5.2":
+  version: 2.5.2
+  resolution: "@samhammer/authentication-vue@npm:2.5.2"
+  dependencies:
+    axios: "npm:^1.7.9"
+    emittery: "npm:^1.0.1"
+    keycloak-js: "npm:25.0.2"
+    lodash: "npm:^4.17.21"
+    uuid: "npm:^9.0.0"
+  checksum: 10c0/70bef49b4df40415e2b850d2639bec7b94fa1804a0b12d3db626b55bab36a52ebdc1a674844d5cf74b1412003017df7c51d405474b8557e3faab03e851633b0c
+  languageName: node
+  linkType: hard
+
 "@sindresorhus/merge-streams@npm:^4.0.0":
   version: 4.0.0
   resolution: "@sindresorhus/merge-streams@npm:4.0.0"
@@ -2069,7 +2069,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vue/language-core@npm:3.2.5, @vue/language-core@npm:^3.2.1":
+"@vue/language-core@npm:3.2.5":
   version: 3.2.5
   resolution: "@vue/language-core@npm:3.2.5"
   dependencies:
@@ -2450,7 +2450,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:^1.13.6":
+"axios@npm:^1.13.6, axios@npm:^1.7.9":
   version: 1.13.6
   resolution: "axios@npm:1.13.6"
   dependencies:
@@ -3108,6 +3108,13 @@ __metadata:
     es-errors: "npm:^1.3.0"
     gopd: "npm:^1.2.0"
   checksum: 10c0/199f2a0c1c16593ca0a145dbf76a962f8033ce3129f01284d48c45ed4e14fea9bbacd7b3610b6cdc33486cef20385ac054948fefc6272fcce645c09468f93031
+  languageName: node
+  linkType: hard
+
+"emittery@npm:^1.0.1":
+  version: 1.2.1
+  resolution: "emittery@npm:1.2.1"
+  checksum: 10c0/188f6ee8725589df6d49a8ed18b216709dfda3574547860c122bc0223570d839bb2c8ca5cd95483a6b064636af195d7c6ab99a35a317f9734d8bc455f644c785
   languageName: node
   linkType: hard
 
@@ -4615,6 +4622,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"js-sha256@npm:^0.11.0":
+  version: 0.11.1
+  resolution: "js-sha256@npm:0.11.1"
+  checksum: 10c0/ef8e294b6f38f218e4834cb653471dd1a76808cea93dc66eaffcb04124116bc36d6cebc4e8866753e184ab4e57892b6ef21918e8ab0450179a7e093ea962d974
+  languageName: node
+  linkType: hard
+
 "js-tokens@npm:^4.0.0":
   version: 4.0.0
   resolution: "js-tokens@npm:4.0.0"
@@ -4711,6 +4725,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"jwt-decode@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "jwt-decode@npm:4.0.0"
+  checksum: 10c0/de75bbf89220746c388cf6a7b71e56080437b77d2edb29bae1c2155048b02c6b8c59a3e5e8d6ccdfd54f0b8bda25226e491a4f1b55ac5f8da04cfbadec4e546c
+  languageName: node
+  linkType: hard
+
+"keycloak-js@npm:25.0.2":
+  version: 25.0.2
+  resolution: "keycloak-js@npm:25.0.2"
+  dependencies:
+    js-sha256: "npm:^0.11.0"
+    jwt-decode: "npm:^4.0.0"
+  checksum: 10c0/5e44f55156e192070e373e5a3565d1196dac7a0a78e60dded887296fd1dcd33d534830e33479fbfe965634a956674629ada1ba88ac946ac3e1d29f403c498ad0
+  languageName: node
+  linkType: hard
+
 "keyv@npm:^4.5.4":
   version: 4.5.4
   resolution: "keyv@npm:4.5.4"
@@ -4794,7 +4825,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lodash@npm:^4.17.23":
+"lodash@npm:^4.17.21, lodash@npm:^4.17.23":
   version: 4.17.23
   resolution: "lodash@npm:4.17.23"
   checksum: 10c0/1264a90469f5bb95d4739c43eb6277d15b6d9e186df4ac68c3620443160fc669e2f14c11e7d8b2ccf078b81d06147c01a8ccced9aab9f9f63d50dcf8cace6bf6
@@ -6959,37 +6990,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"unplugin-vue-router@npm:^0.19.2":
-  version: 0.19.2
-  resolution: "unplugin-vue-router@npm:0.19.2"
-  dependencies:
-    "@babel/generator": "npm:^7.28.5"
-    "@vue-macros/common": "npm:^3.1.1"
-    "@vue/language-core": "npm:^3.2.1"
-    ast-walker-scope: "npm:^0.8.3"
-    chokidar: "npm:^5.0.0"
-    json5: "npm:^2.2.3"
-    local-pkg: "npm:^1.1.2"
-    magic-string: "npm:^0.30.21"
-    mlly: "npm:^1.8.0"
-    muggle-string: "npm:^0.4.1"
-    pathe: "npm:^2.0.3"
-    picomatch: "npm:^4.0.3"
-    scule: "npm:^1.3.0"
-    tinyglobby: "npm:^0.2.15"
-    unplugin: "npm:^2.3.11"
-    unplugin-utils: "npm:^0.3.1"
-    yaml: "npm:^2.8.2"
-  peerDependencies:
-    "@vue/compiler-sfc": ^3.5.17
-    vue-router: ^4.6.0
-  peerDependenciesMeta:
-    vue-router:
-      optional: true
-  checksum: 10c0/cf178d46bca9032f246a4876d1eea93ab2145c523ebf4332858553522d9971a4a9cfb23c2ab56e4722b1d67aa5a19b19da3cdf1fdcc90038b5ac5a6ea367e76e
-  languageName: node
-  linkType: hard
-
 "unplugin@npm:2.3.5":
   version: 2.3.5
   resolution: "unplugin@npm:2.3.5"
@@ -7053,6 +7053,15 @@ __metadata:
   bin:
     uuid: dist-node/bin/uuid
   checksum: 10c0/950e4c18d57fef6c69675344f5700a08af21e26b9eff2bf2180427564297368c538ea11ac9fb2e6528b17fc3966a9fd2c5049361b0b63c7d654f3c550c9b3d67
+  languageName: node
+  linkType: hard
+
+"uuid@npm:^9.0.0":
+  version: 9.0.1
+  resolution: "uuid@npm:9.0.1"
+  bin:
+    uuid: dist/bin/uuid
+  checksum: 10c0/1607dd32ac7fc22f2d8f77051e6a64845c9bce5cd3dd8aa0070c074ec73e666a1f63c7b4e0f4bf2bc8b9d59dc85a15e17807446d9d2b17c8485fbc2147b27f9b
   languageName: node
   linkType: hard
 
@@ -7288,6 +7297,7 @@ __metadata:
     "@fontsource/roboto": "npm:5.2.10"
     "@mdi/font": "npm:7.4.47"
     "@mdi/js": "npm:^7.4.47"
+    "@samhammer/authentication-vue": "npm:^2.5.2"
     "@tsconfig/node24": "npm:^24.0.4"
     "@types/lodash": "npm:^4.17.24"
     "@types/node": "npm:^25.4.0"
@@ -7317,7 +7327,6 @@ __metadata:
     unplugin-auto-import: "npm:^21.0.0"
     unplugin-fonts: "npm:^1.4.0"
     unplugin-vue-components: "npm:^31.0.0"
-    unplugin-vue-router: "npm:^0.19.2"
     uuid: "npm:^13.0.0"
     vite: "npm:^7.3.1"
     vite-plugin-vue-layouts-next: "npm:^2.0.1"
