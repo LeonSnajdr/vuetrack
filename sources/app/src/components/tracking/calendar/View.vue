@@ -11,6 +11,8 @@
         :end="end"
         :eventRipple="false"
         :events="events"
+        :intervalCount="intervalCount"
+        :intervalMinutes="intervalMinutes"
         :start="start"
         :type="calendarType"
         :weekdays="weekdays"
@@ -88,6 +90,7 @@ import { useEdit } from "./composables/useEdit";
 import { useDelete } from "./composables/useDelete";
 import { useConflict } from "./composables/useConflict";
 import { useCalendarTimePeriod } from "./composables/useCalendarTimePeriod";
+import { useCalendarInterval } from "./composables/useCalendarInterval";
 
 const calendarStore = useCalendarStore();
 const timeEntryStore = useTimeEntryStore();
@@ -104,6 +107,7 @@ const remove = useDelete();
 const conflict = useConflict();
 const { jumpToDay } = useTrackingTimePeriod();
 const { start, end, weekdays, isReadonly, calendarType } = useCalendarTimePeriod();
+const { intervalMinutes, intervalCount } = useCalendarInterval();
 
 const dateFormatter = useDate();
 

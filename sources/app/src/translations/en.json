@@ -24,6 +24,8 @@
   "calendar.conflict.subtitle": "This event overlaps with one other. | This event overlaps with {count} others.",
   "calendar.conflict.title": "Overlap Detected",
   "calendar.event.draft": "Draft",
+  "calendar.intervalMinutes": "Calendar interval",
+  "calendar.intervalMinutes.option": "{minutes} min",
   "sidebar.preselectedTaskId": "Preselected task ID",
   "sidebar.preselectedTaskId.hint": "Drag on the calendar to create an entry directly with this task ID.",
   "timeEntry.field.endTime": "End time",

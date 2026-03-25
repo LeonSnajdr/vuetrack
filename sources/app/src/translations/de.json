@@ -24,6 +24,8 @@
   "calendar.conflict.subtitle": "Dieses Ereignis überlappt mit einem anderen. | Dieses Ereignis überlappt mit {count} anderen.",
   "calendar.conflict.title": "Überlappung erkannt",
   "calendar.event.draft": "Entwurf",
+  "calendar.intervalMinutes": "Kalenderintervall",
+  "calendar.intervalMinutes.option": "{minutes} Min.",
   "sidebar.preselectedTaskId": "Vorausgewählte TaskId",
   "sidebar.preselectedTaskId.hint": "Im Kalender ziehen, um direkt einen Eintrag mit dieser TaskId zu erstellen.",
   "timeEntry.field.endTime": "Endzeit",
