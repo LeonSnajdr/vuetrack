@@ -3,9 +3,10 @@ import pinia from "./pinia";
 import router from "./router";
 import vuetify from "./vuetify";
 import i18n from "./i18n";
+import { setupAuth } from "./auth";
 import { createRulesPlugin } from "vuetify/labs/rules";
 
-export function registerPlugins(app: App) {
+export async function registerPlugins(app: App) {
     app.use(vuetify);
     app.use(
         createRulesPlugin(
@@ -32,4 +33,6 @@ export function registerPlugins(app: App) {
     app.use(router);
     app.use(pinia);
     app.use(i18n);
+
+    await setupAuth();
 }
