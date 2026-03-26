@@ -27,7 +27,7 @@ const isWithinVisibleRange = computed(() => {
 });
 
 const isVisible = computed(() => {
-    return isWithinVisibleRange.value;
+    return isCurrentDay.value && isWithinVisibleRange.value;
 });
 
 const lineStyle = computed(() => {
