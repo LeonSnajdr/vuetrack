@@ -1,4 +1,7 @@
 ﻿<template>
+    <Teleport to="#tracking-toolbar-prepend" defer>
+        <TrackingCalendarIntervalSelection />
+    </Teleport>
     <VCalendar
         @click:date="jumpToDate"
         @click:more="jumpToMoreDay"

@@ -1,5 +1,5 @@
 <template>
-    <Teleport to="#tracking-toolbar-actions" defer>
+    <Teleport to="#tracking-toolbar-append" defer>
         <VBtn id="time-entry-create" @click="startCreate" :prependIcon="mdiPlus" color="primary" variant="flat">
             {{ $t("action.create") }}
         </VBtn>
