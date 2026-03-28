@@ -38,8 +38,8 @@ class TimeEntryService {
     public load = async (filter: TimeEntryFilter): Promise<TimeEntryContract[]> => {
         const result = await axios.api.get<TimeEntryDTO[]>("timeEntry", {
             params: {
-                from: this.formatFilterDate(filter.startTime),
-                to: this.formatFilterDate(filter.endTime)
+                from: this.formatFilterDate(filter.from),
+                to: this.formatFilterDate(filter.to)
             }
         });
 
@@ -106,8 +106,8 @@ class TimeEntryService {
             timeEntryId: id ? id : currentDto?.timeEntryId,
             userId: currentDto?.userId ?? 3,
             createdByUserId: currentDto?.createdByUserId,
-            project: { id: contract.projectId },
-            activity: { id: contract.activityId },
+            project: { id: contract.projectId! },
+            activity: { id: contract.activityId! },
             breakDetails: currentDto?.breakDetails,
             taskId: contract.taskId,
             startDate: startParts.date,

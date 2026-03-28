@@ -3,8 +3,8 @@ import type { ActivityId } from "@/contracts/ActivityContract";
 import type { ProjectId } from "@/contracts/ProjectContract";
 
 export type TimeEntryFilter = {
-    startTime: Date;
-    endTime: Date;
+    from: Date;
+    to: Date;
 };
 
 export type TimeEntryCreateContract = {

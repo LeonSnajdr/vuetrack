@@ -21,7 +21,7 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
     });
 
     const executeLoadWithFilters = async () => {
-        await executeLoad({ startTime: startTime.value, endTime: endTime.value });
+        await executeLoad({ from: startTime.value, to: endTime.value });
     };
 
     watch([startTime, endTime], executeLoadWithFilters);
