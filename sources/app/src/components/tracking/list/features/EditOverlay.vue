@@ -4,14 +4,9 @@
             {{ $t("action.save.title", { type: $t("timeEntry.singular") }) }}
         </template>
         <template #content>
-            <TimeEntryFieldTaskId v-model="timeEntryUpdate.taskId" autofocus />
-            <TimeEntryFieldStartTime v-model="timeEntryUpdate.startTime" />
-            <TimeEntryFieldEndTime v-model="timeEntryUpdate.endTime" :startTime="timeEntryUpdate.startTime" />
-            <TimeEntryFieldProjectId v-model="timeEntryUpdate.projectId" :taskId="timeEntryUpdate.taskId" />
-            <TimeEntryFieldActivityId v-model="timeEntryUpdate.activityId" :projectId="timeEntryUpdate.projectId" />
-            <TimeEntryFieldComment v-model="timeEntryUpdate.comment" />
+            <TimeEntryFieldContainer v-model="timeEntryUpdate" v-model:valid="valid" />
         </template>
-        <template #actions="{ valid }">
+        <template #actions>
             <VBtn @click="finish" :disabled="!valid" :loading="isUpdating(timeEntry.id)" color="primary" variant="flat">
                 {{ $t("action.save") }}
             </VBtn>
@@ -35,6 +30,7 @@ const timeEntryStore = useTimeEntryStore();
 const { isUpdating } = storeToRefs(timeEntryStore);
 const timeEntryUpdate = ref<TimeEntryUpdateContract>({} as TimeEntryUpdateContract);
 const targetSelector = computed(() => "#time-entry-edit-" + props.timeEntry.id);
+const valid = ref(false);
 
 watch(
     () => props.timeEntry,

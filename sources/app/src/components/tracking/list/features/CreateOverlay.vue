@@ -4,14 +4,9 @@
             {{ $t("action.create.title", { type: $t("timeEntry.singular") }) }}
         </template>
         <template #content>
-            <TimeEntryFieldTaskId v-model="draftTimeEntry.taskId" autofocus />
-            <TimeEntryFieldStartTime v-model="draftTimeEntry.startTime" />
-            <TimeEntryFieldEndTime v-model="draftTimeEntry.endTime" :startTime="draftTimeEntry.startTime" />
-            <TimeEntryFieldProjectId v-model="draftTimeEntry.projectId" :taskId="draftTimeEntry.taskId" />
-            <TimeEntryFieldActivityId v-model="draftTimeEntry.activityId" :projectId="draftTimeEntry.projectId" />
-            <TimeEntryFieldComment v-model="draftTimeEntry.comment" />
+            <TimeEntryFieldContainer v-model="draftTimeEntry" v-model:valid="valid" />
         </template>
-        <template #actions="{ valid }">
+        <template #actions>
             <VBtn @click="finish" :disabled="!valid" :loading="isCreating()" color="primary" variant="flat">
                 {{ $t("action.create") }}
             </VBtn>
@@ -33,6 +28,7 @@ const { t } = useI18n();
 const timeEntryStore = useTimeEntryStore();
 
 const { isCreating } = storeToRefs(timeEntryStore);
+const valid = ref(false);
 const draftTimeEntry = ref<TimeEntryCreateContract>({} as TimeEntryCreateContract);
 const targetSelector = "#time-entry-create";
 

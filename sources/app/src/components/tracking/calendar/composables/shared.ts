@@ -1,5 +1,5 @@
-import type { ActivityId, ProjectId } from "@/contracts/TimeEntryContract";
 import type { Interaction, TimeEntryEvent } from "@/components/tracking/calendar/types";
+import type { ProjectId } from "@/contracts/ProjectContract";
 
 type RoundTimeOptions = {
     down?: boolean;

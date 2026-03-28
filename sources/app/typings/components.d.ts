@@ -21,6 +21,7 @@ declare module 'vue' {
     RouterView: typeof import('vue-router')['RouterView']
     TimeEntryFieldActivityId: typeof import('./../src/components/timeEntry/field/ActivityId.vue')['default']
     TimeEntryFieldComment: typeof import('./../src/components/timeEntry/field/Comment.vue')['default']
+    TimeEntryFieldContainer: typeof import('./../src/components/timeEntry/field/Container.vue')['default']
     TimeEntryFieldEndTime: typeof import('./../src/components/timeEntry/field/EndTime.vue')['default']
     TimeEntryFieldProjectId: typeof import('./../src/components/timeEntry/field/ProjectId.vue')['default']
     TimeEntryFieldStartTime: typeof import('./../src/components/timeEntry/field/StartTime.vue')['default']

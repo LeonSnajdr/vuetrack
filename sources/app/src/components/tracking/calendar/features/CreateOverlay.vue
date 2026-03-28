@@ -4,12 +4,9 @@
             {{ $t("action.create.title", { type: $t("timeEntry.singular") }) }}
         </template>
         <template #content>
-            <TimeEntryFieldTaskId v-model="interaction.mutation.create.taskId" autofocus />
-            <TimeEntryFieldProjectId v-model="interaction.mutation.create.projectId" :taskId="interaction.mutation.create.taskId" />
-            <TimeEntryFieldActivityId v-model="interaction.mutation.create.activityId" :projectId="interaction.mutation.create.projectId" />
-            <TimeEntryFieldComment v-model="interaction.mutation.create.comment" />
+            <TimeEntryFieldContainer v-model="interaction.mutation.create" v-model:valid="valid" />
         </template>
-        <template #actions="{ valid }">
+        <template #actions>
             <VBtn @click="create.finish" :disabled="!valid" :loading="isCreatingEvent" color="primary" variant="flat">
                 {{ $t("action.create") }}
             </VBtn>
@@ -26,6 +23,7 @@ const interaction = defineModel<Extract<Interaction, { kind: "create" }>>("inter
 const create = useCreate();
 const calendarStore = useCalendarStore();
 const { isCreatingEvent } = storeToRefs(calendarStore);
+const valid = ref(false);
 
 const targetSelector = computed(() => "#" + interaction.value.event.uiId);
 </script>
