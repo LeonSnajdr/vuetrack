@@ -9,14 +9,6 @@
     return d;
 }
 
-function endOfWeek(date: Date, weekStartsOn: 0 | 1 = 1) {
-    const start = startOfWeek(date, weekStartsOn);
-    const end = new Date(start);
-    end.setDate(start.getDate() + 6);
-    end.setHours(23, 59, 59, 999);
-    return end;
-}
-
 function endOfWorkWeek(date: Date, weekStartsOn: 0 | 1 = 1) {
     const start = startOfWeek(date, weekStartsOn);
     const end = new Date(start);

@@ -19,10 +19,6 @@ export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", ()
         key: (x) => x.args[0]
     });
 
-    onMounted(async () => {
-        await executeLoad();
-    });
-
     const update = async (id: TimeEntrySuggestionId, updateContract: TimeEntrySuggestionUpdateContract): Promise<ActionResult<TimeEntrySuggestionContract>> => {
         const updateResult = await executeUpdate(id, updateContract);
 
@@ -44,5 +40,5 @@ export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", ()
         return dismissResult;
     };
 
-    return { timeEntrySuggestions, isLoading, update, isUpdating, dismiss, isDismissing, cancelPendingUpdate };
+    return { timeEntrySuggestions, executeLoad, isLoading, update, isUpdating, dismiss, isDismissing, cancelPendingUpdate };
 });

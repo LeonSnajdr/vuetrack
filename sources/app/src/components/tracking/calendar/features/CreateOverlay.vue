@@ -6,7 +6,7 @@
         <template #content>
             <TimeEntryFieldTaskId v-model="interaction.mutation.create.taskId" autofocus />
             <TimeEntryFieldProjectId v-model="interaction.mutation.create.projectId" />
-            <TimeEntryFieldActivityId v-model="interaction.mutation.create.activityId" />
+            <TimeEntryFieldActivityId v-model="interaction.mutation.create.activityId" :projectId="interaction.mutation.create.projectId" />
             <TimeEntryFieldComment v-model="interaction.mutation.create.comment" />
         </template>
         <template #actions="{ valid }">

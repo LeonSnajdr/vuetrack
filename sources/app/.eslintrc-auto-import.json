@@ -7732,6 +7732,7 @@
     "usePreferredReducedMotion": true,
     "usePreferredReducedTransparency": true,
     "usePrevious": true,
+    "useProjectStore": true,
     "useRafFn": true,
     "useRefHistory": true,
     "useResizeObserver": true,

@@ -20,13 +20,11 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
         key: (x) => x.args[0]
     });
 
-    watch(
-        [startTime, endTime],
-        () => {
-            executeLoad({ startTime: startTime.value, endTime: endTime.value });
-        },
-        { immediate: true }
-    );
+    const executeLoadWithFilters = async () => {
+        await executeLoad({ startTime: startTime.value, endTime: endTime.value });
+    };
+
+    watch([startTime, endTime], executeLoadWithFilters);
 
     const create = async (createContract: TimeEntryCreateContract): Promise<ActionResult<TimeEntryContract>> => {
         const createResult = await executeCreate(createContract);
@@ -59,5 +57,5 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
         return deleteResult;
     };
 
-    return { timeEntries, isLoading, create, isCreating, update, isUpdating, remove, isDeleting, cancelPendingUpdate };
+    return { timeEntries, executeLoadWithFilters, isLoading, create, isCreating, update, isUpdating, remove, isDeleting, cancelPendingUpdate };
 });

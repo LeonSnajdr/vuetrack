@@ -8,7 +8,7 @@
             <TimeEntryFieldStartTime v-model="draftTimeEntry.startTime" />
             <TimeEntryFieldEndTime v-model="draftTimeEntry.endTime" :startTime="draftTimeEntry.startTime" />
             <TimeEntryFieldProjectId v-model="draftTimeEntry.projectId" />
-            <TimeEntryFieldActivityId v-model="draftTimeEntry.activityId" />
+            <TimeEntryFieldActivityId v-model="draftTimeEntry.activityId" :projectId="draftTimeEntry.projectId" />
             <TimeEntryFieldComment v-model="draftTimeEntry.comment" />
         </template>
         <template #actions="{ valid }">

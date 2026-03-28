@@ -3,7 +3,7 @@
         <VAutocomplete
             v-bind="$attrs"
             v-model="projectId"
-            :items="availableProjects"
+            :items="projects"
             :label="$t('timeEntry.field.projectId')"
             :rules="[rules.required()]"
             itemTitle="name"
@@ -19,10 +19,7 @@ const projectId = defineModel<ProjectId>({ required: true });
 
 const rules = useRules();
 
-const availableProjects = ref([
-    {
-        id: 5,
-        name: "Das super Project"
-    }
-]);
+const projectStore = useProjectStore();
+
+const { projects } = storeToRefs(projectStore);
 </script>
