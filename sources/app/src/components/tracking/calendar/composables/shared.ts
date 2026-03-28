@@ -1,4 +1,5 @@
 import type { Interaction, TimeEntryEvent } from "@/components/tracking/calendar/types";
+import type { ActivityId } from "@/contracts/ActivityContract";
 import type { ProjectId } from "@/contracts/ProjectContract";
 
 type RoundTimeOptions = {
