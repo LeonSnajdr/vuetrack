@@ -23,7 +23,7 @@ type BreakDTO = {
 };
 
 type TimeEntryDTO = {
-    id?: number;
+    timeEntryId?: number;
     userId: number;
     createdByUserId?: number;
     project: ProjectDTO;
@@ -86,13 +86,13 @@ class TimeEntryService {
 
     private storeDtos(dtos: TimeEntryDTO[]): void {
         for (const dto of dtos) {
-            this.dtoById.set(dto.id as TimeEntryId, dto);
+            this.dtoById.set(dto.timeEntryId as TimeEntryId, dto);
         }
     }
 
     private mapDtoToContract(dto: TimeEntryDTO): TimeEntryContract {
         return {
-            id: dto.id as TimeEntryId,
+            id: dto.timeEntryId as TimeEntryId,
             userId: dto.userId,
             taskId: dto.taskId,
             projectId: dto.project.id as ProjectId,
@@ -109,7 +109,7 @@ class TimeEntryService {
         const endParts = this.splitDateAndTime(contract.endTime);
 
         return {
-            id: id ? id : currentDto?.id,
+            timeEntryId: id ? id : currentDto?.timeEntryId,
             userId: currentDto?.userId ?? 3,
             createdByUserId: currentDto?.createdByUserId,
             project: { id: contract.projectId },

@@ -1,5 +1,12 @@
 import type { ExistingTimeEntryUpdateMutation, SuggestionTimeEntryUpdateMutation, TimeEntryEvent } from "@/components/tracking/calendar/types";
-import { roundTime, getOverlappingEvents, cancelPendingUpdateForEvent, getOriginalPositon, getEventBoundaries } from "./shared";
+import {
+    roundTime,
+    getOverlappingEvents,
+    cancelPendingUpdateForEvent,
+    getOriginalPositon,
+    getEventBoundaries,
+    createEditableTimeEntryPayload
+} from "./shared";
 import { useEventMutation } from "./useEventMutation";
 
 export function useMove() {
@@ -21,14 +28,14 @@ export function useMove() {
             moveMutation = {
                 kind: "update",
                 event,
-                update: withProxy({ taskId: event.timeEntry.taskId }).from(event.timeEntry, "startTime", "endTime").build(),
+                update: createEditableTimeEntryPayload(event.timeEntry),
                 originalPosition
             };
         } else {
             moveMutation = {
                 kind: "update",
                 event,
-                update: withProxy({ taskId: event.timeEntry.taskId }).from(event.timeEntry, "startTime", "endTime").build(),
+                update: createEditableTimeEntryPayload(event.timeEntry),
                 originalPosition
             };
         }

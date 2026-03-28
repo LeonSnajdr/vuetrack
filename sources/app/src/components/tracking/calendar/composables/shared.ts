@@ -1,3 +1,4 @@
+import type { ActivityId, ProjectId } from "@/contracts/TimeEntryContract";
 import type { Interaction, TimeEntryEvent } from "@/components/tracking/calendar/types";
 
 type RoundTimeOptions = {
@@ -52,4 +53,26 @@ export const cancelPendingUpdateForEvent = (
     } else if (event.kind === "suggestion") {
         suggestionStore.cancelPendingUpdate(event.timeEntry.id);
     }
+};
+
+type EditableTimeEntrySource = {
+    taskId: string;
+    projectId: ProjectId;
+    activityId: ActivityId;
+    comment: string;
+    startTime: Date;
+    endTime: Date;
+};
+
+type EditableTimeEntryPayload<T extends EditableTimeEntrySource> = Pick<T, "taskId" | "projectId" | "activityId" | "comment" | "startTime" | "endTime">;
+
+export const createEditableTimeEntryPayload = <T extends EditableTimeEntrySource>(source: T): EditableTimeEntryPayload<T> => {
+    return withProxy({
+        taskId: source.taskId,
+        projectId: source.projectId,
+        activityId: source.activityId,
+        comment: source.comment
+    })
+        .from(source, "startTime", "endTime")
+        .build();
 };

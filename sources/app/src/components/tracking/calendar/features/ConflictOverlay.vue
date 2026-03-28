@@ -108,7 +108,10 @@ const createUpdateMutation = (event: TimeEntryEvent, newStart: number, newEnd: n
             update: {
                 startTime: new Date(newStart),
                 endTime: new Date(newEnd),
-                taskId: event.timeEntry.taskId
+                taskId: event.timeEntry.taskId,
+                projectId: event.timeEntry.projectId,
+                activityId: event.timeEntry.activityId,
+                comment: event.timeEntry.comment
             },
             originalPosition: { start: event.start, end: event.end }
         } as ExistingTimeEntryUpdateMutation;
@@ -119,7 +122,10 @@ const createUpdateMutation = (event: TimeEntryEvent, newStart: number, newEnd: n
             update: {
                 startTime: new Date(newStart),
                 endTime: new Date(newEnd),
-                taskId: event.timeEntry.taskId
+                taskId: event.timeEntry.taskId,
+                projectId: event.timeEntry.projectId,
+                activityId: event.timeEntry.activityId,
+                comment: event.timeEntry.comment
             },
             originalPosition: { start: event.start, end: event.end }
         } as SuggestionTimeEntryUpdateMutation;

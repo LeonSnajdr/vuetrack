@@ -4,7 +4,7 @@ import type {
     SuggestionTimeEntryEvent,
     SuggestionTimeEntryCreateMutation
 } from "@/components/tracking/calendar/types";
-import { getOverlappingEvents } from "./shared";
+import { createEditableTimeEntryPayload, getOverlappingEvents } from "./shared";
 import { useEventMutation } from "./useEventMutation";
 
 export function useCreate() {
@@ -19,13 +19,13 @@ export function useCreate() {
             createMutation = {
                 kind: "create",
                 event,
-                create: withProxy({ taskId: event.createEntry.taskId }).from(event.createEntry, "startTime", "endTime").build()
+                create: createEditableTimeEntryPayload(event.createEntry)
             };
         } else {
             createMutation = {
                 kind: "create",
                 event,
-                create: withProxy({ taskId: event.timeEntry.taskId }).from(event.timeEntry, "startTime", "endTime").build()
+                create: createEditableTimeEntryPayload(event.timeEntry)
             };
         }
 

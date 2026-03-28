@@ -1,4 +1,4 @@
-import type { TimeEntryContract, TimeEntryCreateContract } from "@/contracts/TimeEntryContract";
+import type { ActivityId, ProjectId, TimeEntryContract, TimeEntryCreateContract } from "@/contracts/TimeEntryContract";
 import type { TimeEntrySuggestionContract } from "@/contracts/TimeEntrySuggestion";
 import type { DraftTimeEntryEvent, ExistingTimeEntryEvent, SuggestionTimeEntryEvent } from "./types";
 
@@ -63,7 +63,10 @@ export function createDraftEvent(anchorStartMs: number, taskId = ""): DraftTimeE
     const createEntry: TimeEntryCreateContract = {
         startTime: new Date(anchorStartMs),
         endTime: new Date(anchorStartMs),
-        taskId
+        taskId,
+        projectId: 0 as ProjectId,
+        activityId: 0 as ActivityId,
+        comment: ""
     };
 
     return {
