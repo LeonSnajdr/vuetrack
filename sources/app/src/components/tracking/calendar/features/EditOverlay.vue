@@ -5,6 +5,9 @@
         </template>
         <template #content>
             <TimeEntryFieldTaskId v-model="interaction.mutation.update.taskId" density="compact" autofocus />
+            <TimeEntryFieldProjectId v-model="interaction.mutation.update.projectId" density="compact" />
+            <TimeEntryFieldActivityId v-model="interaction.mutation.update.activityId" density="compact" />
+            <TimeEntryFieldComment v-model="interaction.mutation.update.comment" density="compact" />
         </template>
         <template #actions="{ valid }">
             <VBtn @click="edit.finish" :disabled="!valid" :loading="isUpdatingEvent" color="primary" variant="flat">

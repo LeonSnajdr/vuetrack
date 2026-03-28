@@ -5,6 +5,9 @@
         </template>
         <template #content>
             <TimeEntryFieldTaskId v-model="interaction.mutation.create.taskId" density="compact" autofocus />
+            <TimeEntryFieldProjectId v-model="interaction.mutation.create.projectId" density="compact" />
+            <TimeEntryFieldActivityId v-model="interaction.mutation.create.activityId" density="compact" />
+            <TimeEntryFieldComment v-model="interaction.mutation.create.comment" density="compact" />
         </template>
         <template #actions="{ valid }">
             <VBtn @click="create.finish" :disabled="!valid" :loading="isCreatingEvent" color="primary" variant="flat">

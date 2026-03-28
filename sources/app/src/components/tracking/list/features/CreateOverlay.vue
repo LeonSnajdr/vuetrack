@@ -4,9 +4,12 @@
             {{ $t("action.create.title", { type: $t("timeEntry.singular") }) }}
         </template>
         <template #content>
-            <TimeEntryFieldTaskId v-model="draftTimeEntry.taskId" density="compact" autofocus />
+            <TimeEntryFieldTaskId v-model="draftTimeEntry.taskId" autofocus />
             <TimeEntryFieldStartTime v-model="draftTimeEntry.startTime" />
             <TimeEntryFieldEndTime v-model="draftTimeEntry.endTime" :startTime="draftTimeEntry.startTime" />
+            <TimeEntryFieldProjectId v-model="draftTimeEntry.projectId" />
+            <TimeEntryFieldActivityId v-model="draftTimeEntry.activityId" />
+            <TimeEntryFieldComment v-model="draftTimeEntry.comment" />
         </template>
         <template #actions="{ valid }">
             <VBtn @click="finish" :disabled="!valid" :loading="isCreating()" color="primary" variant="flat">
@@ -39,7 +42,10 @@ watch(
         draftTimeEntry.value = {
             taskId: props.timeEntryCreate.taskId,
             startTime: props.timeEntryCreate.startTime,
-            endTime: props.timeEntryCreate.endTime
+            endTime: props.timeEntryCreate.endTime,
+            projectId: props.timeEntryCreate.projectId,
+            activityId: props.timeEntryCreate.activityId,
+            comment: props.timeEntryCreate.comment
         };
     },
     { immediate: true }

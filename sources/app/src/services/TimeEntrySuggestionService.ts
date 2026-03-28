@@ -3,11 +3,16 @@ import axios from "@/plugins/axios";
 
 class TimeEntrySuggestionService {
     public async load(): Promise<TimeEntrySuggestionContract[]> {
-        const result = await axios.api.get<TimeEntrySuggestionContract[]>(`timeEntrySuggestions`);
-        return result.data;
+        /*const result = await axios.api.get<TimeEntrySuggestionContract[]>(`timeEntrySuggestions`);
+        return result.data;*/
+        return [];
     }
 
-    public async update(id: TimeEntrySuggestionId, updateContract: TimeEntrySuggestionUpdateContract, signal?: AbortSignal): Promise<TimeEntrySuggestionContract> {
+    public async update(
+        id: TimeEntrySuggestionId,
+        updateContract: TimeEntrySuggestionUpdateContract,
+        signal?: AbortSignal
+    ): Promise<TimeEntrySuggestionContract> {
         const result = await axios.api.put<TimeEntrySuggestionContract>(`timeEntrySuggestions/${id}`, updateContract, { signal });
         return result.data;
     }

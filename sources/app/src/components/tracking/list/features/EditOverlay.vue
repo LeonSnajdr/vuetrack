@@ -7,6 +7,9 @@
             <TimeEntryFieldTaskId v-model="timeEntryUpdate.taskId" autofocus />
             <TimeEntryFieldStartTime v-model="timeEntryUpdate.startTime" />
             <TimeEntryFieldEndTime v-model="timeEntryUpdate.endTime" :startTime="timeEntryUpdate.startTime" />
+            <TimeEntryFieldProjectId v-model="timeEntryUpdate.projectId" />
+            <TimeEntryFieldActivityId v-model="timeEntryUpdate.activityId" />
+            <TimeEntryFieldComment v-model="timeEntryUpdate.comment" />
         </template>
         <template #actions="{ valid }">
             <VBtn @click="finish" :disabled="!valid" :loading="isUpdating(timeEntry.id)" color="primary" variant="flat">
@@ -39,7 +42,10 @@ watch(
         timeEntryUpdate.value = {
             taskId: props.timeEntry.taskId,
             endTime: props.timeEntry.endTime,
-            startTime: props.timeEntry.startTime
+            startTime: props.timeEntry.startTime,
+            projectId: props.timeEntry.projectId,
+            activityId: props.timeEntry.activityId,
+            comment: props.timeEntry.comment
         };
     },
     { immediate: true }

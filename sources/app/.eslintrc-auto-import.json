@@ -1,6 +1,7 @@
 {
   "globals": {
     "ActionResult": true,
+    "ActivityId": true,
     "AsyncTaskFn": true,
     "AsyncTaskKeyContext": true,
     "CancelPolicy": true,
@@ -18,6 +19,7 @@
     "NotificaionOptionsModel": true,
     "NotificationActionModel": true,
     "NotificationModel": true,
+    "ProjectId": true,
     "PropType": true,
     "Ref": true,
     "ShallowRef": true,

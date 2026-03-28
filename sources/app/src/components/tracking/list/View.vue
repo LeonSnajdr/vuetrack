@@ -25,7 +25,7 @@
 </template>
 
 <script setup lang="ts">
-import type { TimeEntryContract, TimeEntryCreateContract } from "@/contracts/TimeEntryContract";
+import type { ActivityId, ProjectId, TimeEntryContract, TimeEntryCreateContract } from "@/contracts/TimeEntryContract";
 
 const dateFormatter = useDate();
 
@@ -62,7 +62,10 @@ const createDefaultTimeEntry = (): TimeEntryCreateContract => {
     return {
         taskId: "",
         startTime: new Date(defaultStartMs),
-        endTime: new Date(defaultStartMs + hourMs)
+        endTime: new Date(defaultStartMs + hourMs),
+        activityId: 0 as ActivityId,
+        projectId: 0 as ProjectId,
+        comment: ""
     };
 };
 

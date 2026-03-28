@@ -5,24 +5,36 @@ export type TimeEntryFilter = {
     endTime: Date;
 };
 
+export type ProjectId = Branded<number, "projectId">;
+export type ActivityId = Branded<number, "activityId">;
+
 export type TimeEntryCreateContract = {
     taskId: string;
     startTime: Date;
     endTime: Date;
+    projectId: ProjectId;
+    activityId: ActivityId;
+    comment: string;
 };
 
-export type TimeEntryId = Branded<string, "timeEntryId">;
+export type TimeEntryId = Branded<number, "timeEntryId">;
 
 export type TimeEntryContract = {
     id: TimeEntryId;
-    user: string;
+    userId: number;
     taskId: string;
+    projectId: ProjectId;
+    activityId: ActivityId;
     startTime: Date;
     endTime: Date;
+    comment: string;
 };
 
 export type TimeEntryUpdateContract = {
     taskId: string;
+    projectId: ProjectId;
+    activityId: ActivityId;
     startTime: Date;
     endTime: Date;
+    comment: string;
 };
