@@ -1,5 +1,6 @@
 import type { Branded } from "typings/brand";
-import type { ProjectId, ActivityId } from "@/contracts/TimeEntryContract";
+import type { ActivityId } from "@/contracts/ActivityContract";
+import type { ProjectId } from "@/contracts/ProjectContract";
 
 export type TimeEntrySuggestionId = Branded<string, "timeEntrySuggestionId">;
 

@@ -1,12 +1,6 @@
-﻿import type {
-    ActivityId,
-    ProjectId,
-    TimeEntryContract,
-    TimeEntryCreateContract,
-    TimeEntryFilter,
-    TimeEntryId,
-    TimeEntryUpdateContract
-} from "@/contracts/TimeEntryContract";
+﻿import type { TimeEntryContract, TimeEntryCreateContract, TimeEntryFilter, TimeEntryId, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
+import type { ActivityId } from "@/contracts/ActivityContract";
+import type { ProjectId } from "@/contracts/ProjectContract";
 import axios from "@/plugins/axios";
 
 type ActivityDTO = {
@@ -79,7 +73,7 @@ class TimeEntryService {
     public delete = async (id: TimeEntryId): Promise<void> => {
         await axios.api.delete(`timeEntry`, {
             data: {
-                idsToDelete: [id]
+                idsToDelete: `${id}`
             }
         });
     };

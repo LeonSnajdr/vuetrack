@@ -1,6 +1,8 @@
-import type { ActivityId, ProjectId, TimeEntryContract, TimeEntryCreateContract } from "@/contracts/TimeEntryContract";
+import type { TimeEntryContract, TimeEntryCreateContract } from "@/contracts/TimeEntryContract";
 import type { TimeEntrySuggestionContract } from "@/contracts/TimeEntrySuggestion";
 import type { DraftTimeEntryEvent, ExistingTimeEntryEvent, SuggestionTimeEntryEvent } from "./types";
+import type { ActivityId } from "@/contracts/ActivityContract";
+import type { ProjectId } from "@/contracts/ProjectContract";
 
 const existingWrapperCache = new WeakMap<TimeEntryContract, ExistingTimeEntryEvent>();
 const suggestionWrapperCache = new WeakMap<TimeEntrySuggestionContract, SuggestionTimeEntryEvent>();
@@ -64,8 +66,8 @@ export function createDraftEvent(anchorStartMs: number, taskId = ""): DraftTimeE
         startTime: new Date(anchorStartMs),
         endTime: new Date(anchorStartMs),
         taskId,
-        projectId: 0 as ProjectId,
-        activityId: 0 as ActivityId,
+        activityId: undefined as unknown as ActivityId,
+        projectId: undefined as unknown as ProjectId,
         comment: ""
     };
 

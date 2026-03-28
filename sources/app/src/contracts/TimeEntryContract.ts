@@ -1,12 +1,11 @@
 ﻿import type { Branded } from "typings/brand";
+import type { ActivityId } from "@/contracts/ActivityContract";
+import type { ProjectId } from "@/contracts/ProjectContract";
 
 export type TimeEntryFilter = {
     startTime: Date;
     endTime: Date;
 };
-
-export type ProjectId = Branded<number, "projectId">;
-export type ActivityId = Branded<number, "activityId">;
 
 export type TimeEntryCreateContract = {
     taskId: string;
