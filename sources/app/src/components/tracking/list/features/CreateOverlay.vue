@@ -7,7 +7,7 @@
             <TimeEntryFieldTaskId v-model="draftTimeEntry.taskId" autofocus />
             <TimeEntryFieldStartTime v-model="draftTimeEntry.startTime" />
             <TimeEntryFieldEndTime v-model="draftTimeEntry.endTime" :startTime="draftTimeEntry.startTime" />
-            <TimeEntryFieldProjectId v-model="draftTimeEntry.projectId" />
+            <TimeEntryFieldProjectId v-model="draftTimeEntry.projectId" :taskId="draftTimeEntry.taskId" />
             <TimeEntryFieldActivityId v-model="draftTimeEntry.activityId" :projectId="draftTimeEntry.projectId" />
             <TimeEntryFieldComment v-model="draftTimeEntry.comment" />
         </template>
