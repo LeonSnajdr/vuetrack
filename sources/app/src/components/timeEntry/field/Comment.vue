@@ -1,6 +1,6 @@
 <template>
     <VRowSingle>
-        <VTextField v-bind="$attrs" v-model.trim="comment" :label="$t('timeEntry.field.comment')" />
+        <VTextarea v-bind="$attrs" v-model.trim="comment" :label="$t('timeEntry.field.comment')" maxRows="5" rows="1" autoGrow />
     </VRowSingle>
 </template>
 
