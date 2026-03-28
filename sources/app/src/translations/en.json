@@ -12,6 +12,8 @@
   "action.save": "Save",
   "action.save.error": "{type} could not be saved",
   "action.save.title": "Save {type}",
+  "auth.login.loading": "Login in progress...",
+  "auth.logout.loading": "Logout in progress...",
   "calendar.conflict.reverted": "No free slot found. Event was moved back to its original position.",
   "calendar.conflict.strategy.fitToGap": "Fit to Gap",
   "calendar.conflict.strategy.fitToGap.subtitle": "Truncate this event to fit",

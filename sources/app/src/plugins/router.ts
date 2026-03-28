@@ -1,4 +1,5 @@
 import Login from "@/pages/auth/login.vue";
+import Logout from "@/pages/auth/logout.vue";
 import Tracking from "@/pages/tracking.vue";
 import Calendar from "@/pages/tracking/calendar.vue";
 import List from "@/pages/tracking/list.vue";
@@ -17,6 +18,11 @@ const router = createRouter({
                     path: "login",
                     name: "authLogin",
                     component: Login
+                },
+                {
+                    path: "logout",
+                    name: "authLogout",
+                    component: Logout
                 }
             ]
         },
@@ -42,11 +48,15 @@ const router = createRouter({
 });
 
 router.beforeEach((to, _from, next) => {
-    if (to.name === "authLogin" || to.name === "authLogout") {
+    if (to.name === "authLogin") {
         if (AuthPlugin.authenticated) {
             return next({ name: "tracking" });
         }
 
+        return next();
+    }
+
+    if (to.name === "authLogout") {
         return next();
     }
 

@@ -1,5 +1,7 @@
 <template>
-    <div>Login...</div>
+    <VContainer>
+        <VAlert :icon="mdiLogin">{{ $t("auth.login.loading") }}</VAlert>
+    </VContainer>
 </template>
 
 <script setup lang="ts">

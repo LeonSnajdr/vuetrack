@@ -12,6 +12,8 @@
   "action.save": "Speichern",
   "action.save.error": "{type} konnte nicht gespeichert werden",
   "action.save.title": "{type} speichern",
+  "auth.login.loading": "Anmeldung läuft...",
+  "auth.logout.loading": "Abmeldung läuft...",
   "calendar.conflict.reverted": "Kein freier Slot gefunden. Das Ereignis wurde auf seine ursprüngliche Position zurückgesetzt.",
   "calendar.conflict.strategy.fitToGap": "In Lücke einpassen",
   "calendar.conflict.strategy.fitToGap.subtitle": "Ereignis kürzen um zu passen",
