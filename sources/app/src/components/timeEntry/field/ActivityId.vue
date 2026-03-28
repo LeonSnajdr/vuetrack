@@ -9,6 +9,7 @@
             :rules="[rules.required()]"
             itemTitle="name"
             itemValue="id"
+            autoSelectFirst
         />
     </VRowSingle>
 </template>
@@ -24,12 +25,22 @@ const props = defineProps<{
 const activityId = defineModel<ActivityId>({ required: true });
 
 const rules = useRules();
-
 const { data: activities, execute: loadActivities, isLoading } = useAsyncState(ProjectService.loadActivities, { initialValue: [] });
 
 watch(
     () => props.projectId,
-    () => loadActivities(props.projectId),
+    async () => {
+        activityId.value = undefined as unknown as ActivityId;
+        loadActivities(props.projectId);
+    },
+    { immediate: true }
+);
+
+whenever(
+    () => activities.value.length === 1,
+    () => {
+        activityId.value = activities.value[0]!.id;
+    },
     { immediate: true }
 );
 </script>

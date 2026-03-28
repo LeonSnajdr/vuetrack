@@ -9,6 +9,7 @@
             :rules="[rules.required()]"
             itemTitle="name"
             itemValue="id"
+            autoSelectFirst
         />
     </VRowSingle>
 </template>
