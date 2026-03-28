@@ -16,7 +16,7 @@ export type TimeEntryCreateContract = {
     comment: string;
 };
 
-export type TimeEntryId = Branded<number, "timeEntryId">;
+export type TimeEntryId = Branded<number, "timeEntryId"> | null;
 
 export type TimeEntryContract = {
     id: TimeEntryId;

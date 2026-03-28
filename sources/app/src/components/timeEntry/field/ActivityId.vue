@@ -29,11 +29,13 @@ const { data: activities, execute: loadActivities, isLoading } = useAsyncState(P
 
 watch(
     () => props.projectId,
-    async () => {
-        activityId.value = undefined as unknown as ActivityId;
-        loadActivities(props.projectId);
-    },
+    () => loadActivities(props.projectId),
     { immediate: true }
+);
+
+watch(
+    () => props.projectId,
+    () => (activityId.value = null)
 );
 
 whenever(
