@@ -1,5 +1,5 @@
 import { createDraftEvent } from "@/components/tracking/calendar/createEventWrapper";
-import { createEditableTimeEntryPayload, roundTime } from "./shared";
+import { createEditableTimeEntry, roundTime } from "./shared";
 import { useEventMutation } from "./useEventMutation";
 
 export function useDraft() {
@@ -40,7 +40,7 @@ export function useDraft() {
             mutation: {
                 kind: "create",
                 event: cur.event,
-                create: createEditableTimeEntryPayload(cur.event.createEntry)
+                create: createEditableTimeEntry(cur.event.createEntry)
             }
         };
     };

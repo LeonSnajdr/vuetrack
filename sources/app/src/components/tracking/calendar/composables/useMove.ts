@@ -5,7 +5,8 @@ import {
     cancelPendingUpdateForEvent,
     getOriginalPositon,
     getEventBoundaries,
-    createEditableTimeEntryPayload
+    createEditableTimeEntry,
+    createEditableTimeEntrySuggestion
 } from "./shared";
 import { useEventMutation } from "./useEventMutation";
 
@@ -28,14 +29,14 @@ export function useMove() {
             moveMutation = {
                 kind: "update",
                 event,
-                update: createEditableTimeEntryPayload(event.timeEntry),
+                update: createEditableTimeEntry(event.timeEntry),
                 originalPosition
             };
         } else {
             moveMutation = {
                 kind: "update",
                 event,
-                update: createEditableTimeEntryPayload(event.timeEntry),
+                update: createEditableTimeEntrySuggestion(event.timeEntry),
                 originalPosition
             };
         }

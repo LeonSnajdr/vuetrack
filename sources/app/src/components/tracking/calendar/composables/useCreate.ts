@@ -4,7 +4,7 @@ import type {
     SuggestionTimeEntryEvent,
     SuggestionTimeEntryCreateMutation
 } from "@/components/tracking/calendar/types";
-import { createEditableTimeEntryPayload, getOverlappingEvents } from "./shared";
+import { createEditableTimeEntry, createEditableTimeEntrySuggestion, getOverlappingEvents } from "./shared";
 import { useEventMutation } from "./useEventMutation";
 
 export function useCreate() {
@@ -19,13 +19,13 @@ export function useCreate() {
             createMutation = {
                 kind: "create",
                 event,
-                create: createEditableTimeEntryPayload(event.createEntry)
+                create: createEditableTimeEntry(event.createEntry)
             };
         } else {
             createMutation = {
                 kind: "create",
                 event,
-                create: createEditableTimeEntryPayload(event.timeEntry)
+                create: createEditableTimeEntrySuggestion(event.timeEntry)
             };
         }
 

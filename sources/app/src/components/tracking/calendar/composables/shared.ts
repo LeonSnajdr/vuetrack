@@ -1,6 +1,6 @@
 import type { Interaction, TimeEntryEvent } from "@/components/tracking/calendar/types";
-import type { ActivityId } from "@/contracts/ActivityContract";
-import type { ProjectId } from "@/contracts/ProjectContract";
+import type { TimeEntryContract, TimeEntryCreateContract, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
+import type { TimeEntrySuggestionContract, TimeEntrySuggestionUpdateContract } from "@/contracts/TimeEntrySuggestion";
 
 type RoundTimeOptions = {
     down?: boolean;
@@ -56,22 +56,25 @@ export const cancelPendingUpdateForEvent = (
     }
 };
 
-type EditableTimeEntrySource = {
-    taskId: string;
-    projectId: ProjectId;
-    activityId: ActivityId;
-    comment: string;
-    startTime: Date;
-    endTime: Date;
-};
+export const createEditableTimeEntry = (source: TimeEntryContract | TimeEntryCreateContract): TimeEntryUpdateContract => {
+    const projectId = "project" in source ? source.project.id : source.projectId;
+    const activityId = "activity" in source ? source.activity.id : source.activityId;
 
-type EditableTimeEntryPayload<T extends EditableTimeEntrySource> = Pick<T, "taskId" | "projectId" | "activityId" | "comment" | "startTime" | "endTime">;
-
-export const createEditableTimeEntryPayload = <T extends EditableTimeEntrySource>(source: T): EditableTimeEntryPayload<T> => {
     return withProxy({
         taskId: source.taskId,
-        projectId: source.projectId,
-        activityId: source.activityId,
+        projectId,
+        activityId,
+        comment: source.comment
+    })
+        .from(source, "startTime", "endTime")
+        .build();
+};
+
+export const createEditableTimeEntrySuggestion = (source: TimeEntrySuggestionContract): TimeEntrySuggestionUpdateContract => {
+    return withProxy({
+        taskId: source.taskId,
+        projectId: source.project.id,
+        activityId: source.activity.id,
         comment: source.comment
     })
         .from(source, "startTime", "endTime")
