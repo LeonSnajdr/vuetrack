@@ -15,6 +15,8 @@ declare module 'vue' {
     AppNotificationView: typeof import('./../src/components/app/NotificationView.vue')['default']
     BaseBtnExpand: typeof import('./../src/components/base/btn/Expand.vue')['default']
     BaseDateTimeInput: typeof import('./../src/components/base/DateTimeInput.vue')['default']
+    BaseExpandColumContent: typeof import('./../src/components/base/ExpandColumContent.vue')['default']
+    BaseExpandColumnContent: typeof import('./../src/components/base/ExpandColumnContent.vue')['default']
     BaseOverlayProvider: typeof import('./../src/components/base/OverlayProvider.vue')['default']
     BaseValidationDynamicRulesSupport: typeof import('./../src/components/base/validation/DynamicRulesSupport.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']

@@ -164,12 +164,10 @@ export default createVuetify({
             }
         },
         VDataTable: {
-            density: "comfortable",
-            hover: true
+            density: "comfortable"
         },
         VDataTableServer: {
-            density: "comfortable",
-            hover: true
+            density: "comfortable"
         },
         VChip: {
             color: "primary",

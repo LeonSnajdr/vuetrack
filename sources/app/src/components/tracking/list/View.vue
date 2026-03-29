@@ -4,7 +4,7 @@
             {{ $t("action.create") }}
         </VBtn>
     </Teleport>
-    <VDataTable :headers="headers" :items="timeEntries" v-bind="$attrs" :itemsPerPage="-1" class="overflow-hidden" itemValue="id" hideDefaultFooter>
+    <VDataTable :headers="headers" :items="timeEntries" v-bind="$attrs" :itemsPerPage="-1" class="overflow-hidden" itemValue="id" fixedHeader hideDefaultFooter>
         <template #item="{ item, props }">
             <VDataTableRow v-bind="props">
                 <template #item.date>
@@ -18,6 +18,9 @@
                 </template>
                 <template #item.duration>
                     {{ formatDuration(item.startTime, item.endTime) }}
+                </template>
+                <template #item.comment>
+                    <div class="text-truncate" style="max-width: 200px" v-tooltip="item.comment">{{ item.comment }}</div>
                 </template>
                 <template #item.actions>
                     <VIconBtn :id="'time-entry-edit-' + item.id" @click="timeEntryEdit = item" :icon="mdiPencil" variant="text" />
@@ -37,7 +40,7 @@
 
 <script setup lang="ts">
 import type { TimeEntryContract, TimeEntryCreateContract } from "@/contracts/TimeEntryContract";
-import { VDataTableRow } from "vuetify/components/VDataTable";
+import type { DataTableHeader } from "vuetify";
 
 const dateFormatter = useDate();
 const { t } = useI18n();
@@ -51,17 +54,17 @@ const timeEntryCreate = ref<TimeEntryCreateContract>();
 const timeEntryEdit = ref<TimeEntryContract>();
 const timeEntryDelete = ref<TimeEntryContract>();
 
-const headers = computed(() => [
-    { title: t("list.table.date"), key: "date", sortable: true },
-    { title: t("list.table.start"), key: "startTime", sortable: true },
-    { title: t("list.table.end"), key: "endTime", sortable: true },
-    { title: t("list.table.duration"), key: "duration", sortable: false },
-    { title: t("list.table.task"), key: "taskId", sortable: true },
-    { title: t("list.table.project"), key: "project.name", sortable: true },
-    { title: t("list.table.activity"), key: "activity.name", sortable: true },
-    { title: t("list.table.comment"), key: "comment", sortable: true },
-    { title: t("list.table.actions"), key: "actions", sortable: false, align: "end" as const }
-]);
+const headers: DataTableHeader[] = [
+    { title: t("list.table.date"), key: "date", sortable: true, nowrap: true },
+    { title: t("list.table.start"), key: "startTime", sortable: true, nowrap: true },
+    { title: t("list.table.end"), key: "endTime", sortable: true, nowrap: true },
+    { title: t("list.table.duration"), key: "duration", sortable: false, nowrap: true },
+    { title: t("list.table.task"), key: "taskId", sortable: true, nowrap: true },
+    { title: t("list.table.project"), key: "project.name", sortable: true, nowrap: true },
+    { title: t("list.table.activity"), key: "activity.name", sortable: true, nowrap: true },
+    { title: t("list.table.comment"), key: "comment", sortable: true, nowrap: true },
+    { title: t("list.table.actions"), key: "actions", sortable: false, align: "end", fixed: "end", width: 100, nowrap: true }
+];
 
 const formatDuration = (start: Date, end: Date) => {
     const ms = end.getTime() - start.getTime();
@@ -109,8 +112,8 @@ const startCreate = () => {
 useHotkey("#", startCreate);
 </script>
 
-<style>
-.v-table-break-row {
+<style scoped>
+:deep(.v-table-break-row) {
     --v-table-row-height: 25px;
 }
 </style>

@@ -1,6 +1,7 @@
 ﻿{
   "$vuetify.rules.dateAfter": "Der Wert muss nach dem Referenzdatum liegen",
   "action.cancel": "Abbrechen",
+  "action.collapse": "Zuklappen",
   "action.create": "Erstellen",
   "action.create.error": "{type} konnte nicht erstellt werden",
   "action.create.success": "{type} erfolgreich erstellt",
@@ -9,6 +10,7 @@
   "action.delete.error": "{type} konnte nicht gelöscht werden",
   "action.delete.info": "Diese Aktion kann nicht rückgängig gemacht werden.",
   "action.delete.title": "{type} wirklich löschen?",
+  "action.expand": "Erweitern",
   "action.save": "Speichern",
   "action.save.error": "{type} konnte nicht gespeichert werden",
   "action.save.title": "{type} speichern",
