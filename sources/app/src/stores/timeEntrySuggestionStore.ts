@@ -1,4 +1,4 @@
-﻿import type { TimeEntrySuggestionContract, TimeEntrySuggestionId, TimeEntrySuggestionUpdateContract } from "@/contracts/TimeEntrySuggestion";
+﻿import type { TimeEntrySuggestionId, TimeEntrySuggestionUpdateContract } from "@/contracts/TimeEntrySuggestion";
 import type { ActionResult } from "@/util/ActionResult";
 
 export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", () => {
@@ -19,12 +19,11 @@ export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", ()
         key: (x) => x.args[0]
     });
 
-    const update = async (id: TimeEntrySuggestionId, updateContract: TimeEntrySuggestionUpdateContract): Promise<ActionResult<TimeEntrySuggestionContract>> => {
+    const update = async (id: TimeEntrySuggestionId, updateContract: TimeEntrySuggestionUpdateContract): Promise<ActionResult> => {
         const updateResult = await executeUpdate(id, updateContract);
 
         if (updateResult.status === "success") {
-            const cur = timeEntrySuggestions.value.find((x) => x.id === id);
-            Object.assign(cur!, updateResult.data);
+            await executeLoad();
         }
 
         return updateResult;
@@ -34,7 +33,7 @@ export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", ()
         const dismissResult = await executeDismiss(id);
 
         if (dismissResult.status === "success") {
-            timeEntrySuggestions.value = timeEntrySuggestions.value.filter((x) => x.id !== id);
+            await executeLoad();
         }
 
         return dismissResult;

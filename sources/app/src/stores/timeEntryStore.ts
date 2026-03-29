@@ -1,4 +1,4 @@
-﻿import type { TimeEntryContract, TimeEntryCreateContract, TimeEntryId, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
+﻿import type { TimeEntryCreateContract, TimeEntryId, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
 import type { ActionResult } from "@/util/ActionResult";
 
 export const useTimeEntryStore = defineStore("timeEntry", () => {
@@ -26,22 +26,21 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
 
     watch([startTime, endTime], executeLoadWithFilters);
 
-    const create = async (createContract: TimeEntryCreateContract): Promise<ActionResult<TimeEntryContract>> => {
+    const create = async (createContract: TimeEntryCreateContract): Promise<ActionResult> => {
         const createResult = await executeCreate(createContract);
 
         if (createResult.status === "success") {
-            timeEntries.value.push(createResult.data);
+            await executeLoadWithFilters();
         }
 
         return createResult;
     };
 
-    const update = async (id: TimeEntryId, updateContract: TimeEntryUpdateContract): Promise<ActionResult<TimeEntryContract>> => {
+    const update = async (id: TimeEntryId, updateContract: TimeEntryUpdateContract): Promise<ActionResult> => {
         const updateResult = await executeUpdate(id, updateContract);
 
         if (updateResult.status === "success") {
-            const cur = timeEntries.value.find((x) => x.id === id);
-            Object.assign(cur!, updateResult.data);
+            await executeLoadWithFilters();
         }
 
         return updateResult;
@@ -51,7 +50,7 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
         const deleteResult = await executeDelete(id);
 
         if (deleteResult.status === "success") {
-            timeEntries.value = timeEntries.value.filter((x) => x.id !== id);
+            await executeLoadWithFilters();
         }
 
         return deleteResult;

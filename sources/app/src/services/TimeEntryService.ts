@@ -52,22 +52,12 @@ class TimeEntryService {
         return contracts;
     };
 
-    public create = async (createContract: TimeEntryCreateContract): Promise<TimeEntryContract> => {
-        const result = await axios.api.post<TimeEntryDTO>("timeEntry/upsert", this.mapContractToDto(createContract));
-        const contract = this.mapDtoToContract(result.data);
-
-        this.storeDtos([result.data]);
-
-        return contract;
+    public create = async (createContract: TimeEntryCreateContract): Promise<void> => {
+        await axios.api.post<void>("timeEntry/upsert", this.mapContractToDto(createContract));
     };
 
-    public update = async (id: TimeEntryId, updateContract: TimeEntryUpdateContract, signal?: AbortSignal): Promise<TimeEntryContract> => {
-        const result = await axios.api.post<TimeEntryDTO>("timeEntry/upsert", this.mapContractToDto(updateContract, id), { signal });
-        const contract = this.mapDtoToContract(result.data);
-
-        this.storeDtos([result.data]);
-
-        return contract;
+    public update = async (id: TimeEntryId, updateContract: TimeEntryUpdateContract, signal?: AbortSignal): Promise<void> => {
+        await axios.api.post<void>("timeEntry/upsert", this.mapContractToDto(updateContract, id), { signal });
     };
 
     public delete = async (id: TimeEntryId): Promise<void> => {

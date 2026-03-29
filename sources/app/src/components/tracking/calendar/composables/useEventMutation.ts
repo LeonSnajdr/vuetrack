@@ -58,7 +58,7 @@ export function useEventMutation() {
     };
 
     const executeUpdate = async (mutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation): Promise<void> => {
-        let result: ActionResult<unknown>;
+        let result: ActionResult;
         if (mutation.event.kind === "existing") {
             result = await timeEntryStore.update(mutation.event.timeEntry.id, mutation.update);
         } else {
