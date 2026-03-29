@@ -4,7 +4,7 @@ import type { ActionResult } from "@/util/ActionResult";
 export const useTimeEntryStore = defineStore("timeEntry", () => {
     const trackingStore = useTrackingStore();
 
-    const { startTime, endTime } = storeToRefs(trackingStore);
+    const { from, to } = storeToRefs(trackingStore);
 
     const { data: timeEntries, execute: executeLoad, isLoading } = useAsyncState(TimeEntryService.load, { initialValue: [], shallow: false });
     const { execute: executeCreate, isLoading: isCreating } = useAsyncTask(TimeEntryService.create);
@@ -21,10 +21,10 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
     });
 
     const executeLoadWithFilters = async () => {
-        await executeLoad({ from: startTime.value, to: endTime.value });
+        await executeLoad({ from: from.value, to: to.value });
     };
 
-    watch([startTime, endTime], executeLoadWithFilters);
+    watch([from, to], executeLoadWithFilters);
 
     const create = async (createContract: TimeEntryCreateContract): Promise<ActionResult> => {
         const createResult = await executeCreate(createContract);

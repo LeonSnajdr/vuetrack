@@ -20,8 +20,8 @@ function endOfWorkWeek(date: Date, weekStartsOn: 0 | 1 = 1) {
 export const useTrackingStore = defineStore("tracking", () => {
     const now = new Date();
 
-    const startTime = ref<Date>(startOfWeek(now, 1)); // 1 = Monday
-    const endTime = ref<Date>(endOfWorkWeek(now, 1));
+    const from = ref<Date>(startOfWeek(now, 1)); // 1 = Monday
+    const to = ref<Date>(endOfWorkWeek(now, 1));
 
-    return { startTime, endTime };
+    return { from, to };
 });

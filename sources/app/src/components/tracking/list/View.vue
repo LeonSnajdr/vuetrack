@@ -48,7 +48,7 @@ const { t } = useI18n();
 const store = useTimeEntryStore();
 const trackingStore = useTrackingStore();
 const { timeEntries } = storeToRefs(store);
-const { startTime, endTime } = storeToRefs(trackingStore);
+const { from, to } = storeToRefs(trackingStore);
 
 const timeEntryCreate = ref<TimeEntryCreateContract>();
 const timeEntryEdit = ref<TimeEntryContract>();
@@ -91,8 +91,8 @@ const formatBreakDuration = (durationMillis: number) => {
 
 const createDefaultTimeEntry = (): TimeEntryCreateContract => {
     const hourMs = 60 * 60 * 1000;
-    const rangeStart = startTime.value.getTime();
-    const rangeEnd = endTime.value.getTime();
+    const rangeStart = from.value.getTime();
+    const rangeEnd = to.value.getTime();
     const defaultStartMs = Math.max(rangeStart, Math.min(Date.now(), rangeEnd - hourMs));
 
     return {

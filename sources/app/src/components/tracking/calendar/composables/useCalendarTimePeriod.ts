@@ -1,15 +1,15 @@
 export function useCalendarTimePeriod() {
     const trackingStore = useTrackingStore();
-    const { startTime, endTime } = storeToRefs(trackingStore);
+    const { from, to } = storeToRefs(trackingStore);
 
     const start = computed(() => {
-        const nextDate = new Date(startTime.value);
+        const nextDate = new Date(from.value);
         nextDate.setHours(0, 0, 0, 0);
         return nextDate;
     });
 
     const end = computed(() => {
-        const nextDate = new Date(endTime.value);
+        const nextDate = new Date(to.value);
         nextDate.setHours(23, 59, 59, 999);
         return nextDate;
     });
