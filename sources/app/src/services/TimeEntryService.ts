@@ -17,12 +17,12 @@ type BreakDTO = {
 };
 
 type TimeEntryDTO = {
-    timeEntryId?: number;
+    timeEntryId: number | null;
     userId: number;
-    createdByUserId?: number;
+    createdByUserId: number | null;
     project: ProjectDTO;
     activity: ActivityDTO;
-    breakDetails?: BreakDTO;
+    breakDetails: BreakDTO | null;
     taskId: string;
     startDate: string;
     startTime: string;
@@ -91,6 +91,7 @@ class TimeEntryService {
             taskId: dto.taskId,
             projectId: dto.project.id as ProjectId,
             activityId: dto.activity.id as ActivityId,
+            breakDetails: dto.breakDetails,
             startTime: this.combineDateAndTime(dto.startDate, dto.startTime),
             endTime: this.combineDateAndTime(dto.endDate, dto.endTime),
             comment: dto.comment
@@ -103,12 +104,12 @@ class TimeEntryService {
         const endParts = this.splitDateAndTime(contract.endTime);
 
         return {
-            timeEntryId: id ? id : currentDto?.timeEntryId,
+            timeEntryId: id ? id : (currentDto?.timeEntryId ?? null),
             userId: currentDto?.userId ?? 3,
-            createdByUserId: currentDto?.createdByUserId,
+            createdByUserId: currentDto?.createdByUserId ?? null,
             project: { id: contract.projectId! },
             activity: { id: contract.activityId! },
-            breakDetails: currentDto?.breakDetails,
+            breakDetails: currentDto?.breakDetails ?? null,
             taskId: contract.taskId,
             startDate: startParts.date,
             startTime: startParts.time,

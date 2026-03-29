@@ -4,19 +4,27 @@
             {{ $t("action.create") }}
         </VBtn>
     </Teleport>
-    <VDataTable :headers="headers" :items="timeEntries" v-bind="$attrs" :itemsPerPage="-1" class="overflow-hidden" itemValue="id" hideDefaultFooter hover>
-        <template #item.startTime="{ value }">
-            {{ dateFormatter.format(value, "fullDateTime24h") }}
-        </template>
-        <template #item.endTime="{ value }">
-            {{ dateFormatter.format(value, "fullDateTime24h") }}
-        </template>
-        <template #item.duration="{ item }">
-            {{ formatDuration(item.startTime, item.endTime) }}
-        </template>
-        <template #item.actions="{ item }">
-            <VIconBtn :id="'time-entry-edit-' + item.id" @click="timeEntryEdit = item" :icon="mdiPencil" variant="text" />
-            <VIconBtn :id="'time-entry-delete-' + item.id" @click="timeEntryDelete = item" :icon="mdiDelete" iconColor="error" variant="text" />
+    <VDataTable :headers="headers" :items="timeEntries" v-bind="$attrs" :itemsPerPage="-1" class="overflow-hidden" itemValue="id" hideDefaultFooter>
+        <template #item="{ item, props }">
+            <VDataTableRow v-bind="props">
+                <template #item.startTime>
+                    {{ dateFormatter.format(item.startTime, "fullDateTime24h") }}
+                </template>
+                <template #item.endTime>
+                    {{ dateFormatter.format(item.endTime, "fullDateTime24h") }}
+                </template>
+                <template #item.duration>
+                    {{ formatDuration(item.startTime, item.endTime) }}
+                </template>
+                <template #item.actions>
+                    <VIconBtn :id="'time-entry-edit-' + item.id" @click="timeEntryEdit = item" :icon="mdiPencil" variant="text" />
+                    <VIconBtn :id="'time-entry-delete-' + item.id" @click="timeEntryDelete = item" :icon="mdiDelete" iconColor="error" variant="text" />
+                </template>
+            </VDataTableRow>
+            <tr v-if="item.breakDetails" class="bg-secondary-lighten-2 v-table-break-row">
+                <td colspan="3" />
+                <td colspan="2">{{ formatBreakDuration(item.breakDetails.durationMillis) }}</td>
+            </tr>
         </template>
     </VDataTable>
     <TrackingListFeaturesCreateOverlay v-if="timeEntryCreate" @closed="timeEntryCreate = undefined" :timeEntryCreate="timeEntryCreate" />
@@ -26,6 +34,7 @@
 
 <script setup lang="ts">
 import type { TimeEntryContract, TimeEntryCreateContract } from "@/contracts/TimeEntryContract";
+import { VDataTableRow } from "vuetify/components/VDataTable";
 
 const dateFormatter = useDate();
 
@@ -53,6 +62,22 @@ const formatDuration = (start: Date, end: Date) => {
     return `${hours}h ${minutes}m`;
 };
 
+const formatBreakDuration = (durationMillis: number) => {
+    const totalMinutes = Math.max(0, Math.floor(durationMillis / (1000 * 60)));
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+
+    if (hours && minutes) {
+        return `${hours}h ${minutes}m`;
+    }
+
+    if (hours) {
+        return `${hours}h`;
+    }
+
+    return `${minutes}m`;
+};
+
 const createDefaultTimeEntry = (): TimeEntryCreateContract => {
     const hourMs = 60 * 60 * 1000;
     const rangeStart = startTime.value.getTime();
@@ -75,3 +100,9 @@ const startCreate = () => {
 
 useHotkey("#", startCreate);
 </script>
+
+<style>
+.v-table-break-row {
+    --v-table-row-height: 25px;
+}
+</style>
