@@ -39,8 +39,8 @@ watch(
             taskId: props.timeEntry.taskId,
             endTime: props.timeEntry.endTime,
             startTime: props.timeEntry.startTime,
-            projectId: props.timeEntry.projectId,
-            activityId: props.timeEntry.activityId,
+            projectId: props.timeEntry.project.id,
+            activityId: props.timeEntry.activity.id,
             comment: props.timeEntry.comment
         };
     },

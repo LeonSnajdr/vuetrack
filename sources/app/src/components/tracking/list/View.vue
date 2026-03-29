@@ -7,11 +7,14 @@
     <VDataTable :headers="headers" :items="timeEntries" v-bind="$attrs" :itemsPerPage="-1" class="overflow-hidden" itemValue="id" hideDefaultFooter>
         <template #item="{ item, props }">
             <VDataTableRow v-bind="props">
+                <template #item.date>
+                    {{ dateFormatter.format(item.startTime, "keyboardDate") }}
+                </template>
                 <template #item.startTime>
-                    {{ dateFormatter.format(item.startTime, "fullDateTime24h") }}
+                    {{ dateFormatter.format(item.startTime, "fullTime24h") }}
                 </template>
                 <template #item.endTime>
-                    {{ dateFormatter.format(item.endTime, "fullDateTime24h") }}
+                    {{ dateFormatter.format(item.endTime, "fullTime24h") }}
                 </template>
                 <template #item.duration>
                     {{ formatDuration(item.startTime, item.endTime) }}
@@ -23,7 +26,7 @@
             </VDataTableRow>
             <tr v-if="item.breakDetails" class="bg-secondary-lighten-2 v-table-break-row">
                 <td colspan="3" />
-                <td colspan="2">{{ formatBreakDuration(item.breakDetails.durationMillis) }}</td>
+                <td colspan="6">{{ formatBreakDuration(item.breakDetails.durationMillis) }}</td>
             </tr>
         </template>
     </VDataTable>
@@ -37,6 +40,7 @@ import type { TimeEntryContract, TimeEntryCreateContract } from "@/contracts/Tim
 import { VDataTableRow } from "vuetify/components/VDataTable";
 
 const dateFormatter = useDate();
+const { t } = useI18n();
 
 const store = useTimeEntryStore();
 const trackingStore = useTrackingStore();
@@ -47,13 +51,17 @@ const timeEntryCreate = ref<TimeEntryCreateContract>();
 const timeEntryEdit = ref<TimeEntryContract>();
 const timeEntryDelete = ref<TimeEntryContract>();
 
-const headers = [
-    { title: "Task", key: "taskId", sortable: true },
-    { title: "Start", key: "startTime", sortable: true },
-    { title: "End", key: "endTime", sortable: true },
-    { title: "Duration", key: "duration", sortable: false },
-    { title: "Actions", key: "actions", sortable: false, align: "end" as const }
-];
+const headers = computed(() => [
+    { title: t("list.table.date"), key: "date", sortable: true },
+    { title: t("list.table.start"), key: "startTime", sortable: true },
+    { title: t("list.table.end"), key: "endTime", sortable: true },
+    { title: t("list.table.duration"), key: "duration", sortable: false },
+    { title: t("list.table.task"), key: "taskId", sortable: true },
+    { title: t("list.table.project"), key: "project.name", sortable: true },
+    { title: t("list.table.activity"), key: "activity.name", sortable: true },
+    { title: t("list.table.comment"), key: "comment", sortable: true },
+    { title: t("list.table.actions"), key: "actions", sortable: false, align: "end" as const }
+]);
 
 const formatDuration = (start: Date, end: Date) => {
     const ms = end.getTime() - start.getTime();

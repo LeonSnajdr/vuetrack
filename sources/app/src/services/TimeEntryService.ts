@@ -5,10 +5,12 @@ import axios from "@/plugins/axios";
 
 type ActivityDTO = {
     id: number;
+    name: string;
 };
 
 type ProjectDTO = {
     id: number;
+    name: string;
 };
 
 type BreakDTO = {
@@ -79,8 +81,14 @@ class TimeEntryService {
             id: dto.timeEntryId as TimeEntryId,
             userId: dto.userId,
             taskId: dto.taskId,
-            projectId: dto.project.id as ProjectId,
-            activityId: dto.activity.id as ActivityId,
+            project: {
+                id: dto.project.id as ProjectId,
+                name: dto.project.name
+            },
+            activity: {
+                id: dto.activity.id as ActivityId,
+                name: dto.activity.name
+            },
             breakDetails: dto.breakDetails,
             startTime: this.combineDateAndTime(dto.startDate, dto.startTime),
             endTime: this.combineDateAndTime(dto.endDate, dto.endTime),
@@ -97,8 +105,8 @@ class TimeEntryService {
             timeEntryId: id ? id : (currentDto?.timeEntryId ?? null),
             userId: currentDto?.userId ?? 3,
             createdByUserId: currentDto?.createdByUserId ?? null,
-            project: { id: contract.projectId! },
-            activity: { id: contract.activityId! },
+            project: { id: contract.projectId!, name: "" },
+            activity: { id: contract.activityId!, name: "" },
             breakDetails: currentDto?.breakDetails ?? null,
             taskId: contract.taskId,
             startDate: startParts.date,
