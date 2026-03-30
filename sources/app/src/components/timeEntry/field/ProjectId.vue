@@ -29,6 +29,8 @@ const { projects } = storeToRefs(projectStore);
 const { execute: findProjectIdByTaskId, isLoading } = useAsyncTask(ProjectService.findProjectIdByTaskId);
 
 const updateProjectId = useDebounceFn(async () => {
+    if (!props.taskId) return;
+
     const findResult = await findProjectIdByTaskId(props.taskId);
     if (findResult.status === "success" && findResult.data) {
         projectId.value = findResult.data;
