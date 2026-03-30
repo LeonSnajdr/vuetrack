@@ -1,6 +1,6 @@
 <template>
     <Teleport to="#tracking-toolbar-append" defer>
-        <VBtn id="time-entry-create" @click="startCreate" :prependIcon="mdiPlus" color="primary" variant="flat">
+        <VBtn id="time-entry-create" @click="timeEntryCreate = true" :prependIcon="mdiPlus" color="primary" variant="flat">
             {{ $t("action.create") }}
         </VBtn>
     </Teleport>
@@ -33,24 +33,22 @@
             </tr>
         </template>
     </VDataTable>
-    <TrackingListFeaturesCreateOverlay v-if="timeEntryCreate" @closed="timeEntryCreate = undefined" :timeEntryCreate="timeEntryCreate" />
+    <TrackingListFeaturesCreateOverlay v-if="timeEntryCreate" @closed="timeEntryCreate = false" />
     <TrackingListFeaturesEditOverlay v-if="timeEntryEdit" @closed="timeEntryEdit = undefined" :timeEntry="timeEntryEdit" />
     <TrackingListFeaturesDeleteOverlay v-if="timeEntryDelete" @closed="timeEntryDelete = undefined" :timeEntry="timeEntryDelete" />
 </template>
 
 <script setup lang="ts">
-import type { TimeEntryContract, TimeEntryCreateContract } from "@/contracts/TimeEntryContract";
+import type { TimeEntryContract } from "@/contracts/TimeEntryContract";
 import type { DataTableHeader } from "vuetify";
 
 const dateFormatter = useDate();
 const { t } = useI18n();
 
 const store = useTimeEntryStore();
-const trackingStore = useTrackingStore();
 const { timeEntries } = storeToRefs(store);
-const { from, to } = storeToRefs(trackingStore);
 
-const timeEntryCreate = ref<TimeEntryCreateContract>();
+const timeEntryCreate = ref(false);
 const timeEntryEdit = ref<TimeEntryContract>();
 const timeEntryDelete = ref<TimeEntryContract>();
 
@@ -65,6 +63,27 @@ const headers: DataTableHeader[] = [
     { title: t("list.table.comment"), key: "comment", sortable: true, nowrap: true },
     { title: t("list.table.actions"), key: "actions", sortable: false, align: "end", fixed: "end", width: 100, nowrap: true }
 ];
+
+whenever(timeEntryCreate, () => {
+    timeEntryEdit.value = undefined;
+    timeEntryDelete.value = undefined;
+});
+
+whenever(
+    () => timeEntryEdit.value !== undefined,
+    () => {
+        timeEntryCreate.value = false;
+        timeEntryDelete.value = undefined;
+    }
+);
+
+whenever(
+    () => timeEntryDelete.value !== undefined,
+    () => {
+        timeEntryCreate.value = false;
+        timeEntryEdit.value = undefined;
+    }
+);
 
 const formatDuration = (start: Date, end: Date) => {
     const ms = end.getTime() - start.getTime();
@@ -89,27 +108,7 @@ const formatBreakDuration = (durationMillis: number) => {
     return `${minutes}m`;
 };
 
-const createDefaultTimeEntry = (): TimeEntryCreateContract => {
-    const hourMs = 60 * 60 * 1000;
-    const rangeStart = from.value.getTime();
-    const rangeEnd = to.value.getTime();
-    const defaultStartMs = Math.max(rangeStart, Math.min(Date.now(), rangeEnd - hourMs));
-
-    return {
-        taskId: "",
-        startTime: new Date(defaultStartMs),
-        endTime: new Date(defaultStartMs + hourMs),
-        activityId: null,
-        projectId: null,
-        comment: ""
-    };
-};
-
-const startCreate = () => {
-    timeEntryCreate.value = createDefaultTimeEntry();
-};
-
-useHotkey("#", startCreate);
+useHotkey("#", () => (timeEntryCreate.value = true));
 </script>
 
 <style scoped>

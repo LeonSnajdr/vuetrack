@@ -47,7 +47,7 @@
             width="500"
             disableResizeWatcher
         >
-            <VCard elevation="0">
+            <VCard class="h-100" elevation="0">
                 <VCardTitle>
                     <slot name="title" />
                 </VCardTitle>
@@ -55,6 +55,7 @@
                     <slot name="content" />
                 </VCardText>
                 <VCardActions>
+                    <slot name="actionPrepend" />
                     <VSpacer />
                     <VBtn @click="overlayOpen = false" :disabled="loading" variant="flat">{{ $t("action.cancel") }}</VBtn>
                     <slot :valid="valid" name="actions" />

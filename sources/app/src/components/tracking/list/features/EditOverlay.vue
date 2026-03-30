@@ -32,20 +32,23 @@ const timeEntryUpdate = ref<TimeEntryUpdateContract>({} as TimeEntryUpdateContra
 const targetSelector = computed(() => "#time-entry-edit-" + props.timeEntry.id);
 const valid = ref(false);
 
+onBeforeMount(() => createTimeEntryUpdate());
+
 watch(
     () => props.timeEntry,
-    () => {
-        timeEntryUpdate.value = {
-            taskId: props.timeEntry.taskId,
-            endTime: props.timeEntry.endTime,
-            startTime: props.timeEntry.startTime,
-            projectId: props.timeEntry.project.id,
-            activityId: props.timeEntry.activity.id,
-            comment: props.timeEntry.comment
-        };
-    },
-    { immediate: true }
+    () => createTimeEntryUpdate()
 );
+
+const createTimeEntryUpdate = () => {
+    timeEntryUpdate.value = {
+        taskId: props.timeEntry.taskId,
+        endTime: props.timeEntry.endTime,
+        startTime: props.timeEntry.startTime,
+        projectId: props.timeEntry.project.id,
+        activityId: props.timeEntry.activity.id,
+        comment: props.timeEntry.comment
+    };
+};
 
 const finish = async () => {
     const result = await timeEntryStore.update(props.timeEntry.id, timeEntryUpdate.value);

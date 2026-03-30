@@ -154,6 +154,9 @@ export default createVuetify({
             hideDetails: "auto",
             persistentPlaceholder: true
         },
+        VCheckbox: {
+            hideDetails: "auto"
+        },
         VField: {
             variant: "outlined"
         },
