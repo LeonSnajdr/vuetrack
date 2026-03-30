@@ -1,11 +1,11 @@
-import { defineConfig } from "vite";
+﻿import { defineConfig } from "vite";
 import Vue from "@vitejs/plugin-vue";
 import { fileURLToPath, URL } from "node:url";
 import AutoImport from "unplugin-auto-import/vite";
 import Fonts from "unplugin-fonts/vite";
 import Components from "unplugin-vue-components/vite";
-import { VueRouterAutoImports } from "unplugin-vue-router";
-import VueRouter from "unplugin-vue-router/vite";
+import { VueRouterAutoImports } from "vue-router/unplugin";
+import VueRouter from "vue-router/vite";
 import Layouts from "vite-plugin-vue-layouts-next";
 import Vuetify, { transformAssetUrls } from "vite-plugin-vuetify";
 
@@ -26,7 +26,8 @@ export default defineConfig({
                 {
                     "@mdi/js": Object.keys(await import("@mdi/js")).filter((x) => x.startsWith("mdi")),
                     uuid: [["v4", "uuidv4"]],
-                    vuetify: ["useDate"]
+                    vuetify: ["useDate", "useHotkey"],
+                    "vuetify/labs/rules": ["useRules"]
                 }
             ],
             dirs: ["src/contracts/**", "src/stores/**", "src/services/**", "src/composables/**", "src/util/**"],
@@ -64,7 +65,7 @@ export default defineConfig({
         })
     ],
     optimizeDeps: {
-        exclude: ["vuetify", "vue-router", "unplugin-vue-router/runtime", "unplugin-vue-router/data-loaders", "unplugin-vue-router/data-loaders/basic"]
+        exclude: ["vuetify", "vue-router"]
     },
     define: { "process.env": {} },
     resolve: {

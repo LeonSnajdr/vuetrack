@@ -1,8 +1,16 @@
-<template>
+﻿<template>
     <TrackingCalendarSidebar />
-    <VContainer class="h-100">
-        <TrackingCalendarView />
-    </VContainer>
+    <RouterView />
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+const projectStore = useProjectStore();
+const timeEntryStore = useTimeEntryStore();
+const timeEntrySuggestionStore = useTimeEntrySuggestionStore();
+
+onMounted(() => {
+    projectStore.executeLoad();
+    timeEntryStore.executeLoadWithFilters();
+    timeEntrySuggestionStore.executeLoad();
+});
+</script>

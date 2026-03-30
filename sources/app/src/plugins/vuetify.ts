@@ -12,10 +12,12 @@ import i18n from "./i18n";
 import dateFns from "./dateFns";
 
 import { VIconBtn } from "vuetify/labs/VIconBtn";
+import { VDateInput } from "vuetify/labs/VDateInput";
 
 export default createVuetify({
     components: {
-        VIconBtn
+        VIconBtn,
+        VDateInput
     },
     date: {
         adapter: dateFns
@@ -83,8 +85,9 @@ export default createVuetify({
                     "tertiary-lighten-1": "#45786D",
                     "tertiary-lighten-2": "#31564F",
                     "tertiary-lighten-3": "#1E3332",
-                    background: "#0A1014",
-                    surface: "#212D34",
+                    background: "#121212",
+                    surface: "#1b1b1b",
+                    "surface-light": "#1b1b1b",
                     "on-surface": "#FFFFFF",
                     error: "#E52727",
                     "error-lighten-1": "#DCBABA",
@@ -120,6 +123,13 @@ export default createVuetify({
             persistentPlaceholder: true,
             VIcon: { size: "small" }
         },
+        VDateInput: {
+            variant: "outlined",
+            hideDetails: "auto",
+            prependIcon: "",
+            persistentPlaceholder: true,
+            VIcon: { size: "small" }
+        },
         VSelect: {
             variant: "outlined",
             hideDetails: "auto",
@@ -144,6 +154,9 @@ export default createVuetify({
             hideDetails: "auto",
             persistentPlaceholder: true
         },
+        VCheckbox: {
+            hideDetails: "auto"
+        },
         VField: {
             variant: "outlined"
         },
@@ -154,12 +167,10 @@ export default createVuetify({
             }
         },
         VDataTable: {
-            density: "comfortable",
-            hover: true
+            density: "comfortable"
         },
         VDataTableServer: {
-            density: "comfortable",
-            hover: true
+            density: "comfortable"
         },
         VChip: {
             color: "primary",
@@ -181,7 +192,7 @@ export default createVuetify({
             railWidth: "72",
             width: "210",
             rounded: true,
-
+            retainFocus: true,
             VListItem: {
                 rounded: true,
                 class: "mx-3 px-3 my-1",
@@ -212,9 +223,14 @@ export default createVuetify({
         },
         VDialog: {
             transition: false,
+            retainFocus: true,
             VCardActions: {
                 class: "mx-4"
             }
+        },
+        VMenu: {
+            transition: false,
+            retainFocus: true
         },
         VTooltip: {
             openDelay: 400

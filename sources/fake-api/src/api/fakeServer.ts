@@ -63,43 +63,51 @@ let timeEntrySuggestions: TimeEntrySuggestionContract[] = [
     {
         id: "suggestion-1" as TimeEntrySuggestionId,
         taskId: "PROJ-101",
-        startTime: createSuggestionDate(0, 9),  // Monday 9am
-        endTime: createSuggestionDate(0, 11),   // Monday 11am
+        startTime: createSuggestionDate(0, 9), // Monday 9am
+        endTime: createSuggestionDate(0, 11), // Monday 11am
     },
     {
         id: "suggestion-2" as TimeEntrySuggestionId,
         taskId: "PROJ-102",
         startTime: createSuggestionDate(1, 14), // Tuesday 2pm
-        endTime: createSuggestionDate(1, 16),   // Tuesday 4pm
+        endTime: createSuggestionDate(1, 16), // Tuesday 4pm
     },
     {
         id: "suggestion-3" as TimeEntrySuggestionId,
         taskId: "PROJ-103",
         startTime: createSuggestionDate(2, 10), // Wednesday 10am
-        endTime: createSuggestionDate(2, 12),   // Wednesday 12pm
+        endTime: createSuggestionDate(2, 12), // Wednesday 12pm
     },
     {
         id: "suggestion-4" as TimeEntrySuggestionId,
         taskId: "PROJ-101",
         startTime: createSuggestionDate(3, 13), // Thursday 1pm
-        endTime: createSuggestionDate(3, 15),   // Thursday 3pm
+        endTime: createSuggestionDate(3, 15), // Thursday 3pm
     },
 ];
 
 // Config
 const DELAY_MIN_MS = 100;
 const DELAY_MAX_MS = 400;
-const FAILURE_RATE = 0.05; // 0-1, probability of request failing (0.1 = 10%)
+const FAILURE_RATE = 0.0; // 0-1, probability of request failing (0.1 = 10%)
 
 // Utils
 const generateId = (): string => crypto.randomUUID();
-const delay = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, DELAY_MIN_MS + Math.random() * (DELAY_MAX_MS - DELAY_MIN_MS)));
+const delay = (): Promise<void> =>
+    new Promise((resolve) =>
+        setTimeout(
+            resolve,
+            DELAY_MIN_MS + Math.random() * (DELAY_MAX_MS - DELAY_MIN_MS),
+        ),
+    );
 const shouldFail = (): boolean => Math.random() < FAILURE_RATE;
 
 const toISOResponse = <T extends Record<string, unknown>>(obj: T): T => {
     const result = { ...obj } as Record<string, unknown>;
-    if (result.startTime instanceof Date) result.startTime = result.startTime.toISOString();
-    if (result.endTime instanceof Date) result.endTime = result.endTime.toISOString();
+    if (result.startTime instanceof Date)
+        result.startTime = result.startTime.toISOString();
+    if (result.endTime instanceof Date)
+        result.endTime = result.endTime.toISOString();
     return result as T;
 };
 

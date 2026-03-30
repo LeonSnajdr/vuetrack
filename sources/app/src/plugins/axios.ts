@@ -1,7 +1,7 @@
 import axios from "axios";
 import qs from "qs";
 import type { AxiosInstance } from "axios";
-import { transformResponse } from "@/util/axiosTransform";
+import { AxiosAuthInterceptor } from "@samhammer/authentication-vue";
 
 class Axios {
     public api: AxiosInstance;
@@ -17,6 +17,9 @@ class Axios {
         client.defaults.paramsSerializer = (params) => {
             return qs.stringify(params, { arrayFormat: "repeat" });
         };
+
+        AxiosAuthInterceptor.addAuthTokenInterceptor(client);
+        AxiosAuthInterceptor.addAuthErrorInterceptor(client);
 
         return client;
     }
