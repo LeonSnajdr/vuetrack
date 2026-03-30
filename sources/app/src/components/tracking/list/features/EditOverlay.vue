@@ -1,13 +1,13 @@
 <template>
-    <BaseOverlayProvider @closed="emit('closed')" :loading="isUpdating(timeEntry.id)" :target="targetSelector">
+    <BaseOverlayProvider @closed="edit.cancel" :loading="isUpdatingEntry" :target="targetSelector">
         <template #title>
             {{ $t("action.save.title", { type: $t("timeEntry.singular") }) }}
         </template>
         <template #content>
-            <TimeEntryFieldContainer v-model="timeEntryUpdate" v-model:valid="valid" />
+            <TimeEntryFieldContainer v-model="interaction.update" v-model:valid="valid" />
         </template>
         <template #actions>
-            <VBtn @click="finish" :disabled="!valid" :loading="isUpdating(timeEntry.id)" color="primary" variant="flat">
+            <VBtn @click="edit.finish" :disabled="!valid" :loading="isUpdatingEntry" color="primary" variant="flat">
                 {{ $t("action.save") }}
             </VBtn>
         </template>
@@ -15,48 +15,14 @@
 </template>
 
 <script setup lang="ts">
-import type { TimeEntryContract, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
+import type { Interaction } from "@/components/tracking/list/types";
+import { useEdit } from "@/components/tracking/list/composables/useEdit";
 
-const emit = defineEmits(["closed"]);
+const interaction = defineModel<Extract<Interaction, { kind: "edit" }>>("interaction", { required: true });
 
-const props = defineProps<{
-    timeEntry: TimeEntryContract;
-}>();
-
-const notify = useNotify();
-const { t } = useI18n();
-const timeEntryStore = useTimeEntryStore();
-
-const { isUpdating } = storeToRefs(timeEntryStore);
-const timeEntryUpdate = ref<TimeEntryUpdateContract>({} as TimeEntryUpdateContract);
-const targetSelector = computed(() => "#time-entry-edit-" + props.timeEntry.id);
+const edit = useEdit();
+const listStore = useTrackingListStore();
+const { isUpdatingEntry } = storeToRefs(listStore);
+const targetSelector = computed(() => "#time-entry-edit-" + interaction.value.timeEntryId);
 const valid = ref(false);
-
-onBeforeMount(() => createTimeEntryUpdate());
-
-watch(
-    () => props.timeEntry,
-    () => createTimeEntryUpdate()
-);
-
-const createTimeEntryUpdate = () => {
-    timeEntryUpdate.value = {
-        taskId: props.timeEntry.taskId,
-        endTime: props.timeEntry.endTime,
-        startTime: props.timeEntry.startTime,
-        projectId: props.timeEntry.project.id,
-        activityId: props.timeEntry.activity.id,
-        comment: props.timeEntry.comment
-    };
-};
-
-const finish = async () => {
-    const result = await timeEntryStore.update(props.timeEntry.id, timeEntryUpdate.value);
-
-    if (result.status === "error") {
-        notify.error(t("action.save.error", { type: t("timeEntry.singular") }), { timeout: 5000 });
-    }
-
-    emit("closed");
-};
 </script>

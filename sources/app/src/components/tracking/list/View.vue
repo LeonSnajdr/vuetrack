@@ -1,6 +1,6 @@
 <template>
     <Teleport to="#tracking-toolbar-append" defer>
-        <VBtn id="time-entry-create" @click="timeEntryCreate = true" :prependIcon="mdiPlus" color="primary" variant="flat">
+        <VBtn id="time-entry-create" @click="create.start" :prependIcon="mdiPlus" color="primary" variant="flat">
             {{ $t("action.create") }}
         </VBtn>
     </Teleport>
@@ -23,8 +23,8 @@
                     <div class="text-truncate" style="max-width: 200px" v-tooltip="item.comment">{{ item.comment }}</div>
                 </template>
                 <template #item.actions>
-                    <VIconBtn :id="'time-entry-edit-' + item.id" @click="timeEntryEdit = item" :icon="mdiPencil" variant="text" />
-                    <VIconBtn :id="'time-entry-delete-' + item.id" @click="timeEntryDelete = item" :icon="mdiDelete" iconColor="error" variant="text" />
+                    <VIconBtn :id="'time-entry-edit-' + item.id" @click="edit.start(item)" :icon="mdiPencil" variant="text" />
+                    <VIconBtn :id="'time-entry-delete-' + item.id" @click="remove.start(item.id)" :icon="mdiDelete" iconColor="error" variant="text" />
                 </template>
             </VDataTableRow>
             <tr v-if="item.breakDetails" class="bg-secondary-lighten-2 v-table-break-row">
@@ -33,24 +33,29 @@
             </tr>
         </template>
     </VDataTable>
-    <TrackingListFeaturesCreateOverlay v-if="timeEntryCreate" @closed="timeEntryCreate = false" />
-    <TrackingListFeaturesEditOverlay v-if="timeEntryEdit" @closed="timeEntryEdit = undefined" :timeEntry="timeEntryEdit" />
-    <TrackingListFeaturesDeleteOverlay v-if="timeEntryDelete" @closed="timeEntryDelete = undefined" :timeEntry="timeEntryDelete" />
+    <TrackingListFeaturesCreateOverlay v-if="interaction.kind === 'create'" v-model:interaction="interaction" />
+    <TrackingListFeaturesEditOverlay v-if="interaction.kind === 'edit'" v-model:interaction="interaction" />
+    <TrackingListFeaturesDeleteOverlay v-if="interaction.kind === 'delete'" v-model:interaction="interaction" />
 </template>
 
 <script setup lang="ts">
-import type { TimeEntryContract } from "@/contracts/TimeEntryContract";
 import type { DataTableHeader } from "vuetify";
+import { useCreate } from "@/components/tracking/list/composables/useCreate";
+import { useEdit } from "@/components/tracking/list/composables/useEdit";
+import { useDelete } from "@/components/tracking/list/composables/useDelete";
 
 const dateFormatter = useDate();
 const { t } = useI18n();
 
-const store = useTimeEntryStore();
-const { timeEntries } = storeToRefs(store);
+const timeEntryStore = useTimeEntryStore();
+const listStore = useTrackingListStore();
 
-const timeEntryCreate = ref(false);
-const timeEntryEdit = ref<TimeEntryContract>();
-const timeEntryDelete = ref<TimeEntryContract>();
+const { timeEntries } = storeToRefs(timeEntryStore);
+const { interaction } = storeToRefs(listStore);
+
+const create = useCreate();
+const edit = useEdit();
+const remove = useDelete();
 
 const headers: DataTableHeader[] = [
     { title: t("list.table.date"), key: "date", sortable: true, nowrap: true },
@@ -58,32 +63,11 @@ const headers: DataTableHeader[] = [
     { title: t("list.table.end"), key: "endTime", sortable: true, nowrap: true },
     { title: t("list.table.duration"), key: "duration", sortable: false, nowrap: true },
     { title: t("list.table.task"), key: "taskId", sortable: true, nowrap: true },
-    { title: t("list.table.project"), key: "project.name", sortable: true, nowrap: true },
-    { title: t("list.table.activity"), key: "activity.name", sortable: true, nowrap: true },
+    { title: t("list.table.project"), key: "project.kind", sortable: true, nowrap: true },
+    { title: t("list.table.activity"), key: "activity.kind", sortable: true, nowrap: true },
     { title: t("list.table.comment"), key: "comment", sortable: true, nowrap: true },
     { title: t("list.table.actions"), key: "actions", sortable: false, align: "end", fixed: "end", width: 100, nowrap: true }
 ];
-
-whenever(timeEntryCreate, () => {
-    timeEntryEdit.value = undefined;
-    timeEntryDelete.value = undefined;
-});
-
-whenever(
-    () => timeEntryEdit.value !== undefined,
-    () => {
-        timeEntryCreate.value = false;
-        timeEntryDelete.value = undefined;
-    }
-);
-
-whenever(
-    () => timeEntryDelete.value !== undefined,
-    () => {
-        timeEntryCreate.value = false;
-        timeEntryEdit.value = undefined;
-    }
-);
 
 const formatDuration = (start: Date, end: Date) => {
     const ms = end.getTime() - start.getTime();
@@ -108,7 +92,13 @@ const formatBreakDuration = (durationMillis: number) => {
     return `${minutes}m`;
 };
 
-useHotkey("#", () => (timeEntryCreate.value = true));
+useHotkey("#", create.start);
+
+onBeforeUnmount(() => {
+    create.cancel();
+    edit.cancel();
+    remove.cancel();
+});
 </script>
 
 <style scoped>
