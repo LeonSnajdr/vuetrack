@@ -1,15 +1,15 @@
-import { createDefaultTimeEntry } from "./shared";
-
 export function useCreate() {
     const listStore = useTrackingListStore();
     const timeEntryStore = useTimeEntryStore();
+
     const notify = useNotify();
+    const timeEntryHelper = useTimeEntry();
     const { t } = useI18n();
 
     const { interaction } = storeToRefs(listStore);
 
     const start = () => {
-        interaction.value = { kind: "create", create: createDefaultTimeEntry() };
+        interaction.value = { kind: "create", create: timeEntryHelper.createDefaultTimeEntry() };
     };
 
     const finish = async (createAnother: boolean) => {
@@ -22,7 +22,7 @@ export function useCreate() {
         }
 
         if (result.status === "success" && createAnother) {
-            interaction.value.create = createDefaultTimeEntry();
+            interaction.value.create = timeEntryHelper.createDefaultTimeEntry({ startTime: interaction.value.create.endTime });
             return;
         }
 

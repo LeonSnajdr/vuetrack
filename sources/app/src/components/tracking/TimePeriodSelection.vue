@@ -45,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import type { TrackingPeriodPreset } from "@/composables/useTrackingTimePeriod";
+import type { TrackingPeriodPreset } from "@/composables/tracking/useTrackingTimePeriod";
 
 const { t, locale } = useI18n();
 const {

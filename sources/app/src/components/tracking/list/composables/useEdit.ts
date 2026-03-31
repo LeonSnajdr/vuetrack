@@ -1,5 +1,4 @@
 import type { TimeEntryContract } from "@/contracts/TimeEntryContract";
-import { createEditableTimeEntry } from "./shared";
 
 export function useEdit() {
     const listStore = useTrackingListStore();
@@ -11,6 +10,17 @@ export function useEdit() {
 
     const start = (timeEntry: TimeEntryContract) => {
         interaction.value = { kind: "edit", timeEntryId: timeEntry.id, update: createEditableTimeEntry(timeEntry) };
+    };
+
+    const createEditableTimeEntry = (source: TimeEntryContract): TimeEntryUpdateContract => {
+        return {
+            taskId: source.taskId,
+            startTime: source.startTime,
+            endTime: source.endTime,
+            projectId: source.project.id,
+            activityId: source.activity.id,
+            comment: source.comment
+        };
     };
 
     const finish = async () => {
