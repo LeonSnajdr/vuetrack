@@ -2,7 +2,7 @@ import type { Branded } from "typings/brand";
 import type { ActivityContract, ActivityId } from "@/contracts/ActivityContract";
 import type { ProjectContract, ProjectId } from "@/contracts/ProjectContract";
 
-export type TimeEntrySuggestionId = Branded<string, "timeEntrySuggestionId">;
+export type TimeEntrySuggestionId = Branded<number, "timeEntrySuggestionId">;
 
 export type TimeEntrySuggestionContract = {
     id: TimeEntrySuggestionId;
