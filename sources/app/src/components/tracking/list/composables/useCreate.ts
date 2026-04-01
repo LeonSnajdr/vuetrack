@@ -2,9 +2,7 @@ export function useCreate() {
     const listStore = useTrackingListStore();
     const timeEntryStore = useTimeEntryStore();
 
-    const notify = useNotify();
     const timeEntryHelper = useTimeEntry();
-    const { t } = useI18n();
 
     const { interaction } = storeToRefs(listStore);
 
@@ -16,10 +14,6 @@ export function useCreate() {
         if (interaction.value.kind !== "create") return;
 
         const result = await timeEntryStore.create(interaction.value.create);
-
-        if (result.status === "error") {
-            notify.error(t("action.create.error", { type: t("timeEntry.singular") }), { timeout: 5000 });
-        }
 
         if (result.status === "success" && createAnother) {
             interaction.value.create = timeEntryHelper.createDefaultTimeEntry({ startTime: interaction.value.create.endTime });

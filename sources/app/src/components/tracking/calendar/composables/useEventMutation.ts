@@ -13,8 +13,6 @@ export function useEventMutation() {
     const calendarStore = useCalendarStore();
     const timeEntryStore = useTimeEntryStore();
     const suggestionStore = useTimeEntrySuggestionStore();
-    const notify = useNotify();
-    const { t } = useI18n();
 
     const { draftEvents } = storeToRefs(calendarStore);
 
@@ -43,16 +41,12 @@ export function useEventMutation() {
             if (result.status === "success") {
                 const idx = draftEvents.value.indexOf(mutation.event);
                 if (idx !== -1) draftEvents.value.splice(idx, 1);
-            } else if (result.status === "error") {
-                notify.error(t("action.create.error", { type: t("timeEntry.singular") }), { timeout: 5000 });
             }
         } else {
             const result = await timeEntryStore.create(mutation.create);
 
             if (result.status === "success") {
                 await suggestionStore.dismiss(mutation.event.timeEntry.id);
-            } else if (result.status === "error") {
-                notify.error(t("action.create.error", { type: t("timeEntry.singular") }), { timeout: 5000 });
             }
         }
     };
@@ -68,26 +62,19 @@ export function useEventMutation() {
         if (result.status === "error") {
             mutation.event.start = mutation.originalPosition.start;
             mutation.event.end = mutation.originalPosition.end;
-            notify.error(t("action.save.error", { type: t("timeEntry.singular") }), { timeout: 5000 });
         }
     };
 
     const executeDelete = async (
         mutation: DraftTimeEntryDeleteMutation | ExistingTimeEntryDeleteMutation | SuggestionTimeEntryDeleteMutation
     ): Promise<void> => {
-        let result: ActionResult = success();
-
         if (mutation.event.kind === "draft") {
             const idx = draftEvents.value.indexOf(mutation.event);
             if (idx !== -1) draftEvents.value.splice(idx, 1);
         } else if (mutation.event.kind === "existing") {
-            result = await timeEntryStore.remove(mutation.event.timeEntry.id);
+            await timeEntryStore.remove(mutation.event.timeEntry.id);
         } else {
-            result = await suggestionStore.dismiss(mutation.event.timeEntry.id);
-        }
-
-        if (result.status === "error") {
-            notify.error(t("action.delete.error", { type: t("timeEntry.singular") }), { timeout: 5000 });
+            await suggestionStore.dismiss(mutation.event.timeEntry.id);
         }
     };
 

@@ -3,8 +3,6 @@ import type { TimeEntryContract } from "@/contracts/TimeEntryContract";
 export function useEdit() {
     const listStore = useTrackingListStore();
     const timeEntryStore = useTimeEntryStore();
-    const notify = useNotify();
-    const { t } = useI18n();
 
     const { interaction } = storeToRefs(listStore);
 
@@ -26,11 +24,7 @@ export function useEdit() {
     const finish = async () => {
         if (interaction.value.kind !== "edit") return;
 
-        const result = await timeEntryStore.update(interaction.value.timeEntryId, interaction.value.update);
-
-        if (result.status === "error") {
-            notify.error(t("action.save.error", { type: t("timeEntry.singular") }), { timeout: 5000 });
-        }
+        await timeEntryStore.update(interaction.value.timeEntryId, interaction.value.update);
 
         interaction.value = { kind: "idle" };
     };
