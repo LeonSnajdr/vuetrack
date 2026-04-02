@@ -1,6 +1,8 @@
 <template>
-    <VBtn :appendIcon="mdiChevronDown" :prependIcon="mdiCalendarRange">
-        {{ periodLabel }}
+    <div class="d-flex align-center ga-1">
+        <VIcon :icon="mdiCalendarRange" class="opacity-70" size="small" />
+        <p>{{ periodLabel }}</p>
+        <VIcon :icon="mdiMenuDown" class="opacity-70" size="small" />
         <VMenu v-model="menuOpen" :closeOnContentClick="false" activator="parent" location="bottom start">
             <VCard minWidth="500">
                 <VCardText class="d-flex">
@@ -41,7 +43,7 @@
                 </VCardText>
             </VCard>
         </VMenu>
-    </VBtn>
+    </div>
 </template>
 
 <script setup lang="ts">
