@@ -1,14 +1,25 @@
 <template>
     <Teleport to="#tracking-toolbar-append" defer>
+        <VSwitch v-model="groupByDate" label="Group by date" />
         <VBtn id="time-entry-create" @click="create.start" :prependIcon="mdiPlus" color="primary" variant="flat">
             {{ $t("action.create") }}
         </VBtn>
     </Teleport>
-    <VDataTable :headers="headers" :items="timeEntries" v-bind="$attrs" :itemsPerPage="-1" class="overflow-hidden" itemValue="id" fixedHeader hideDefaultFooter>
+    <VDataTable
+        v-bind="$attrs"
+        :groupBy="groupByDate ? [{ key: 'date' }] : undefined"
+        :headers="headers"
+        :items="tableItems"
+        :itemsPerPage="-1"
+        class="overflow-hidden"
+        itemValue="id"
+        fixedHeader
+        hideDefaultFooter
+    >
         <template #item="{ item, props }">
             <VDataTableRow v-bind="props">
-                <template #item.date>
-                    {{ dateFormatter.format(item.startTime, "keyboardDate") }}
+                <template #item.data-table-group>
+                    {{ item.date }}
                 </template>
                 <template #item.startTime>
                     {{ dateFormatter.format(item.startTime, "fullTime24h") }}
@@ -58,16 +69,25 @@ const edit = useEdit();
 const remove = useDelete();
 
 const headers: DataTableHeader[] = [
-    { title: t("list.table.date"), key: "date", sortable: true, nowrap: true },
-    { title: t("list.table.start"), key: "startTime", sortable: true, nowrap: true },
-    { title: t("list.table.end"), key: "endTime", sortable: true, nowrap: true },
-    { title: t("list.table.duration"), key: "duration", sortable: false, nowrap: true },
-    { title: t("list.table.task"), key: "taskId", sortable: true, nowrap: true },
-    { title: t("list.table.project"), key: "project.kind", sortable: true, nowrap: true },
-    { title: t("list.table.activity"), key: "activity.kind", sortable: true, nowrap: true },
-    { title: t("list.table.comment"), key: "comment", sortable: true, nowrap: true },
+    { title: t("list.table.date"), key: "data-table-group", sortable: true, nowrap: true, width: 200 },
+    { title: t("list.table.start"), key: "startTime", sortable: false, nowrap: true, width: 100 },
+    { title: t("list.table.end"), key: "endTime", sortable: false, nowrap: true, width: 100 },
+    { title: t("list.table.duration"), key: "duration", sortable: false, nowrap: true, width: 100 },
+    { title: t("list.table.task"), key: "taskId", sortable: false, nowrap: true },
+    { title: t("list.table.project"), key: "project.kind", sortable: false, nowrap: true },
+    { title: t("list.table.activity"), key: "activity.kind", sortable: false, nowrap: true },
+    { title: t("list.table.comment"), key: "comment", sortable: false, nowrap: true },
     { title: t("list.table.actions"), key: "actions", sortable: false, align: "end", fixed: "end", width: 100, nowrap: true }
 ];
+
+const groupByDate = ref(false);
+
+const tableItems = computed(() => {
+    return timeEntries.value.map((x) => ({
+        ...x,
+        date: dateFormatter.format(x.startTime, "keyboardDate")
+    }));
+});
 
 const formatDuration = (start: Date, end: Date) => {
     const ms = end.getTime() - start.getTime();
