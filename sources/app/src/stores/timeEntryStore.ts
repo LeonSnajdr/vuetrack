@@ -1,13 +1,11 @@
-﻿import type { TimeEntryCreateContract, TimeEntryId, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
+import type { TimeEntryCreateContract, TimeEntryId, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
 import type { ActionResult } from "@/util/ActionResult";
 
 export const useTimeEntryStore = defineStore("timeEntry", () => {
-    const trackingStore = useTrackingStore();
+    const { filter } = useTrackingFilter();
 
     const notify = useNotify();
     const { t } = useI18n();
-
-    const { from, to } = storeToRefs(trackingStore);
 
     const { data: timeEntries, execute: executeLoad, isLoading } = useAsyncState(TimeEntryService.load, { initialValue: [], shallow: false });
     const { execute: executeCreate, isLoading: isCreating } = useAsyncTask(TimeEntryService.create);
@@ -24,10 +22,10 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
     });
 
     const executeLoadWithFilters = async () => {
-        await executeLoad({ from: from.value, to: to.value });
+        await executeLoad(filter.value);
     };
 
-    watch([from, to], executeLoadWithFilters);
+    watch(filter, executeLoadWithFilters, { deep: true });
 
     const create = async (createContract: TimeEntryCreateContract): Promise<ActionResult> => {
         const createResult = await executeCreate(createContract);

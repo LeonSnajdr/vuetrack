@@ -1,8 +1,7 @@
 export type TrackingPeriodPreset = "custom" | "last7Days" | "lastMonth" | "thisMonth" | "today" | "workweek" | "yesterday";
 
 export function useTrackingTimePeriod() {
-    const trackingStore = useTrackingStore();
-    const { from, to } = storeToRefs(trackingStore);
+    const { updateFilter } = useTrackingFilter();
 
     const startOfDay = (date: Date) => {
         const nextDate = new Date(date);
@@ -55,8 +54,10 @@ export function useTrackingTimePeriod() {
         const nextStart = start <= end ? start : end;
         const nextEnd = start <= end ? end : start;
 
-        from.value = startOfDay(nextStart);
-        to.value = endOfDay(nextEnd);
+        void updateFilter({
+            from: startOfDay(nextStart),
+            to: endOfDay(nextEnd)
+        });
     };
 
     const jumpToDay = (date: Date) => {
@@ -97,8 +98,6 @@ export function useTrackingTimePeriod() {
         setPreset,
         jumpToDay,
         applyPeriod,
-        from,
-        to,
         startOfDay,
         endOfDay,
         startOfWeek,

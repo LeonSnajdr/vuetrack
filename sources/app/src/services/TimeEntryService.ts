@@ -1,7 +1,8 @@
-﻿import type { TimeEntryContract, TimeEntryCreateContract, TimeEntryFilter, TimeEntryId, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
+﻿import type { TimeEntryContract, TimeEntryCreateContract, TimeEntryId, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
 import type { ActivityId } from "@/contracts/ActivityContract";
 import type { ProjectId } from "@/contracts/ProjectContract";
 import axios from "@/plugins/axios";
+import type { TrackingFilter } from "@/models/TrackingFilter";
 
 type ActivityDTO = {
     id: number;
@@ -37,7 +38,7 @@ type TimeEntryDTO = {
 class TimeEntryService {
     private readonly dtoById = new Map<TimeEntryId, TimeEntryDTO>();
 
-    public load = async (filter: TimeEntryFilter): Promise<TimeEntryContract[]> => {
+    public load = async (filter: TrackingFilter): Promise<TimeEntryContract[]> => {
         const result = await axios.api.get<TimeEntryDTO[]>("timeEntry", {
             params: {
                 from: this.formatFilterDate(filter.from),

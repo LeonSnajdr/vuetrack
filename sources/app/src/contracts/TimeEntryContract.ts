@@ -2,11 +2,6 @@
 import type { ActivityContract, ActivityId } from "@/contracts/ActivityContract";
 import type { ProjectContract, ProjectId } from "@/contracts/ProjectContract";
 
-export type TimeEntryFilter = {
-    from: Date;
-    to: Date;
-};
-
 export type TimeEntryCreateContract = {
     taskId: string;
     startTime: Date;

@@ -50,9 +50,8 @@
 import type { TrackingPeriodPreset } from "@/composables/tracking/useTrackingTimePeriod";
 
 const { t, locale } = useI18n();
+const { filter } = useTrackingFilter();
 const {
-    from,
-    to,
     setPreset: applyPreset,
     applyPeriod,
     startOfDay,
@@ -70,7 +69,7 @@ const menuOpen = ref(false);
 const pickerRange = ref<Date[]>([]);
 
 const syncPickerRange = () => {
-    pickerRange.value = [startOfDay(from.value), startOfDay(to.value)];
+    pickerRange.value = [startOfDay(filter.value.from), startOfDay(filter.value.to)];
 };
 
 const setPreset = (preset: Exclude<TrackingPeriodPreset, "custom">) => {
@@ -79,11 +78,11 @@ const setPreset = (preset: Exclude<TrackingPeriodPreset, "custom">) => {
 };
 
 watch(
-    [from, to],
+    filter,
     () => {
         syncPickerRange();
     },
-    { immediate: true }
+    { deep: true, immediate: true }
 );
 
 watch(menuOpen, (isOpen) => {
@@ -129,8 +128,8 @@ const getDayButtonProps = (props: Record<string, unknown>) => {
 
 const detectedPreset = computed<TrackingPeriodPreset>(() => {
     const today = new Date();
-    const normalizedStart = startOfDay(from.value);
-    const normalizedEnd = endOfDay(to.value);
+    const normalizedStart = startOfDay(filter.value.from);
+    const normalizedEnd = endOfDay(filter.value.to);
 
     const yesterday = addDays(today, -1);
 
@@ -155,9 +154,9 @@ const periodLabel = computed(() => {
         thisMonth: t("tracking.period.thisMonth"),
         lastMonth: t("tracking.period.lastMonth")
     };
-    const rangeLabel = sameDay(from.value, to.value)
-        ? dateFormatter.value.format(from.value)
-        : `${dateFormatter.value.format(from.value)} - ${dateFormatter.value.format(to.value)}`;
+    const rangeLabel = sameDay(filter.value.from, filter.value.to)
+        ? dateFormatter.value.format(filter.value.from)
+        : `${dateFormatter.value.format(filter.value.from)} - ${dateFormatter.value.format(filter.value.to)}`;
 
     if (detectedPreset.value === "custom") return rangeLabel;
 
