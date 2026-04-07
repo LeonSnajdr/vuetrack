@@ -61,7 +61,7 @@ router.beforeEach((to, _from, next) => {
     }
 
     if (!AuthPlugin.authenticated) {
-        return next({ name: "authLogin", query: { returnPath: to.fullPath } });
+        return next({ name: "authLogin", query: { returnPath: encodeURIComponent(to.fullPath) } });
     }
 
     return next();
