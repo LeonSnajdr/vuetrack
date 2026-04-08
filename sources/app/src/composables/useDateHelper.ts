@@ -1,4 +1,19 @@
 export function useDateHelper() {
+    const durationBetween = (start: Date, end: Date) => end.getTime() - start.getTime();
+
+    const toHoursAndMinutes = (durationMillis: number) => {
+        const totalMinutes = Math.max(0, Math.floor(durationMillis / (1000 * 60)));
+        return {
+            hours: Math.floor(totalMinutes / 60),
+            minutes: totalMinutes % 60
+        };
+    };
+
+    const formatDurationMillis = (durationMillis: number) => {
+        const { hours, minutes } = toHoursAndMinutes(durationMillis);
+        return `${hours}h ${minutes}m`;
+    };
+
     const startOfDay = (date: Date) => {
         const nextDate = new Date(date);
         nextDate.setHours(0, 0, 0, 0);
@@ -56,5 +71,17 @@ export function useDateHelper() {
         end: start <= end ? end : start
     });
 
-    return { startOfDay, endOfDay, startOfWeek, endOfWorkWeek, addDays, startOfMonth, endOfMonth, sameDay, normalizeRange };
+    return {
+        durationBetween,
+        formatDurationMillis,
+        startOfDay,
+        endOfDay,
+        startOfWeek,
+        endOfWorkWeek,
+        addDays,
+        startOfMonth,
+        endOfMonth,
+        sameDay,
+        normalizeRange
+    };
 }

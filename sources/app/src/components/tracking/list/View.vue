@@ -16,6 +16,21 @@
         fixedHeader
         hideDefaultFooter
     >
+        <template #group-header="{ item, toggleGroup, isGroupOpen }">
+            <tr>
+                <td colspan="3">
+                    <div class="d-flex align-center ga-2">
+                        <VBtn @click="toggleGroup(item)" :icon="isGroupOpen(item) ? mdiChevronDown : mdiChevronRight" size="small" variant="text" />
+                        <span>{{ item.value }}</span>
+                        <span class="text-medium-emphasis">({{ item.items!.length }})</span>
+                    </div>
+                </td>
+                <td>
+                    {{ dateHelper.formatDurationMillis(dayDurationByDate[item.value] ?? 0) }}
+                </td>
+                <td colspan="5" />
+            </tr>
+        </template>
         <template #item="{ item, props }">
             <VDataTableRow v-bind="props">
                 <template #item.data-table-group>
@@ -28,7 +43,7 @@
                     {{ dateFormatter.format(item.endTime, "fullTime24h") }}
                 </template>
                 <template #item.duration>
-                    {{ formatDuration(item.startTime, item.endTime) }}
+                    {{ dateHelper.formatDurationMillis(dateHelper.durationBetween(item.startTime, item.endTime)) }}
                 </template>
                 <template #item.comment>
                     <div class="text-truncate" style="max-width: 200px" v-tooltip="item.comment">{{ item.comment }}</div>
@@ -40,7 +55,7 @@
             </VDataTableRow>
             <tr v-if="item.breakDetails" class="bg-secondary-lighten-2 v-table-break-row">
                 <td colspan="3" />
-                <td colspan="6">{{ formatBreakDuration(item.breakDetails.durationMillis) }}</td>
+                <td colspan="6">{{ dateHelper.formatDurationMillis(item.breakDetails.durationMillis) }}</td>
             </tr>
         </template>
     </VDataTable>
@@ -54,8 +69,12 @@ import type { DataTableHeader } from "vuetify";
 import { useCreate } from "@/components/tracking/list/composables/useCreate";
 import { useEdit } from "@/components/tracking/list/composables/useEdit";
 import { useDelete } from "@/components/tracking/list/composables/useDelete";
+import type { TimeEntryContract } from "@/contracts/TimeEntryContract";
+
+type TimeEntryListContract = TimeEntryContract & { date: string };
 
 const dateFormatter = useDate();
+const dateHelper = useDateHelper();
 const { t } = useI18n();
 
 const timeEntryStore = useTimeEntryStore();
@@ -69,48 +88,32 @@ const edit = useEdit();
 const remove = useDelete();
 
 const headers: DataTableHeader[] = [
-    { title: t("list.table.date"), key: "data-table-group", sortable: true, nowrap: true, width: 200 },
-    { title: t("list.table.start"), key: "startTime", sortable: false, nowrap: true, width: 100 },
-    { title: t("list.table.end"), key: "endTime", sortable: false, nowrap: true, width: 100 },
-    { title: t("list.table.duration"), key: "duration", sortable: false, nowrap: true, width: 100 },
-    { title: t("list.table.task"), key: "taskId", sortable: false, nowrap: true },
-    { title: t("list.table.project"), key: "project.kind", sortable: false, nowrap: true },
-    { title: t("list.table.activity"), key: "activity.kind", sortable: false, nowrap: true },
+    { title: t("list.table.date"), key: "data-table-group", sortable: false, nowrap: true, width: 200 },
+    { title: t("list.table.start"), key: "startTime", sortable: false, nowrap: true, width: 120 },
+    { title: t("list.table.end"), key: "endTime", sortable: false, nowrap: true, width: 120 },
+    { title: t("list.table.duration"), key: "duration", sortable: false, nowrap: true, width: 120 },
+    { title: t("list.table.task"), key: "taskId", sortable: false, nowrap: true, width: 120 },
+    { title: t("list.table.project"), key: "project.name", sortable: false, nowrap: true, width: 120 },
+    { title: t("list.table.activity"), key: "activity.name", sortable: false, nowrap: true, width: 120 },
     { title: t("list.table.comment"), key: "comment", sortable: false, nowrap: true },
     { title: t("list.table.actions"), key: "actions", sortable: false, align: "end", fixed: "end", width: 100, nowrap: true }
 ];
 
 const groupByDate = ref(false);
 
-const tableItems = computed(() => {
+const tableItems = computed((): TimeEntryListContract[] => {
     return timeEntries.value.map((x) => ({
         ...x,
         date: dateFormatter.format(x.startTime, "keyboardDate")
     }));
 });
 
-const formatDuration = (start: Date, end: Date) => {
-    const ms = end.getTime() - start.getTime();
-    const hours = Math.floor(ms / (1000 * 60 * 60));
-    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
-    return `${hours}h ${minutes}m`;
-};
-
-const formatBreakDuration = (durationMillis: number) => {
-    const totalMinutes = Math.max(0, Math.floor(durationMillis / (1000 * 60)));
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-
-    if (hours && minutes) {
-        return `${hours}h ${minutes}m`;
-    }
-
-    if (hours) {
-        return `${hours}h`;
-    }
-
-    return `${minutes}m`;
-};
+const dayDurationByDate = computed(() => {
+    return tableItems.value.reduce<Record<string, number>>((acc, item) => {
+        acc[item.date] = (acc[item.date] ?? 0) + dateHelper.durationBetween(item.startTime, item.endTime);
+        return acc;
+    }, {});
+});
 
 useHotkey("#", create.start);
 
