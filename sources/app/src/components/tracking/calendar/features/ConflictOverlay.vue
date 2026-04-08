@@ -59,6 +59,7 @@ const { existingEvents } = storeToRefs(calendarStore);
 const notify = useNotify();
 
 const { t } = useI18n();
+const { startOfDay, addDays } = useDateHelper();
 
 const conflictLoadingId = ref<string | null>(null);
 
@@ -179,9 +180,9 @@ const executeStrategy = async (strategy: ConflictResolutionStrategy) => {
 };
 
 const getSearchWindow = (event: TimeEntryEvent) => {
-    const windowStart = new Date(event.start).setHours(0, 0, 0, 0);
+    const windowStart = startOfDay(new Date(event.start)).getTime();
     const lastOccupiedMs = Math.max(event.start, event.end - 1);
-    const windowEndExclusive = new Date(lastOccupiedMs).setHours(24, 0, 0, 0);
+    const windowEndExclusive = addDays(startOfDay(new Date(lastOccupiedMs)), 1).getTime();
 
     return { windowStart, windowEndExclusive };
 };
