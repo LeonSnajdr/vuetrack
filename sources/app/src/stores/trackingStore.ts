@@ -1,3 +1,5 @@
 ﻿export const useTrackingStore = defineStore("tracking", () => {
-    return {};
+    const preselectedTaskId = ref<string | null>(null);
+
+    return { preselectedTaskId };
 });

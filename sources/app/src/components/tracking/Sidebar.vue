@@ -14,6 +14,6 @@
 </template>
 
 <script setup lang="ts">
-const calendarStore = useCalendarStore();
-const { preselectedTaskId } = storeToRefs(calendarStore);
+const trackingStore = useTrackingStore();
+const { preselectedTaskId } = storeToRefs(trackingStore);
 </script>

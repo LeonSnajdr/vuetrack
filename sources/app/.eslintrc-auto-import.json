@@ -7770,7 +7770,7 @@
     "useThrottledRefHistory": true,
     "useTimeAgo": true,
     "useTimeAgoIntl": true,
-    "useTimeEntry": true,
+    "useTimeEntryHelper": true,
     "useTimeEntryStore": true,
     "useTimeEntrySuggestionStore": true,
     "useTimeout": true,

@@ -2,7 +2,7 @@ export function useCreate() {
     const listStore = useTrackingListStore();
     const timeEntryStore = useTimeEntryStore();
 
-    const timeEntryHelper = useTimeEntry();
+    const timeEntryHelper = useTimeEntryHelper();
 
     const { interaction } = storeToRefs(listStore);
 

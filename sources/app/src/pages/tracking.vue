@@ -1,5 +1,5 @@
 ﻿<template>
-    <TrackingCalendarSidebar />
+    <TrackingSidebar />
     <RouterView />
 </template>
 

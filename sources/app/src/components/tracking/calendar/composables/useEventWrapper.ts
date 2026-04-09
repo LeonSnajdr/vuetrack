@@ -7,6 +7,8 @@ const existingWrapperCache = new WeakMap<TimeEntryContract, ExistingTimeEntryEve
 const suggestionWrapperCache = new WeakMap<TimeEntrySuggestionContract, SuggestionTimeEntryEvent>();
 
 export function useEventWrapper() {
+    const timeEntryHelper = useTimeEntryHelper();
+
     const createExistingEvent = (contract: TimeEntryContract, color = "#7da6c9"): ExistingTimeEntryEvent => {
         const cached = existingWrapperCache.get(contract);
         if (cached) return cached;
@@ -61,15 +63,11 @@ export function useEventWrapper() {
         return wrapper;
     };
 
-    const createDraftEvent = (anchorStartMs: number, taskId = ""): DraftTimeEntryEvent => {
-        const createEntry: Nullable<TimeEntryCreateContract> = {
+    const createDraftEvent = (anchorStartMs: number): DraftTimeEntryEvent => {
+        const createEntry = timeEntryHelper.createDefaultTimeEntry({
             startTime: new Date(anchorStartMs),
-            endTime: new Date(anchorStartMs),
-            taskId,
-            activityId: null,
-            projectId: null,
-            comment: ""
-        };
+            endTime: new Date(anchorStartMs)
+        });
 
         return {
             kind: "draft",

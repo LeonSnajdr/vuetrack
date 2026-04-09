@@ -6,12 +6,12 @@ export function useDraft() {
     const calendarStore = useCalendarStore();
     const mutation = useEventMutation();
     const { createDraftEvent } = useEventWrapper();
-    const { interaction, draftEvents, existingEvents, preselectedTaskId } = storeToRefs(calendarStore);
+    const { interaction, draftEvents, existingEvents } = storeToRefs(calendarStore);
 
     const start = (anchorMs: number) => {
         const snapPoints = existingEvents.value.flatMap((event) => [event.start, event.end]);
         const anchorStartMs = roundTime(anchorMs, { snapPoints });
-        const newEvent = createDraftEvent(anchorStartMs, preselectedTaskId.value.trim());
+        const newEvent = createDraftEvent(anchorStartMs);
         draftEvents.value.push(newEvent);
 
         interaction.value = {

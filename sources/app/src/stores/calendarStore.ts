@@ -13,7 +13,6 @@ export const useCalendarStore = defineStore("calendar", () => {
 
     const interaction = ref<Interaction>({ kind: "idle" });
     const intervalMinutes = ref<number>(30);
-    const preselectedTaskId = ref("");
 
     const isDeletingEvent = computed(() => {
         return timeEntryStore.isDeleting() || suggestionStore.isDismissing();
@@ -34,7 +33,6 @@ export const useCalendarStore = defineStore("calendar", () => {
         events,
         interaction,
         intervalMinutes,
-        preselectedTaskId,
         isDeletingEvent,
         isCreatingEvent,
         isUpdatingEvent

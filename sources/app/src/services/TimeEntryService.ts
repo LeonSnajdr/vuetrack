@@ -1,9 +1,4 @@
-import type {
-    TimeEntryContract,
-    TimeEntryCreateContract,
-    TimeEntryId,
-    TimeEntryUpdateContract
-} from "@/contracts/TimeEntryContract";
+import type { TimeEntryContract, TimeEntryCreateContract, TimeEntryId, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
 import type { ActivityId } from "@/contracts/ActivityContract";
 import type { ProjectId } from "@/contracts/ProjectContract";
 import axios from "@/plugins/axios";
@@ -54,8 +49,6 @@ class TimeEntryService {
         const contracts = result.data.map((dto) => this.mapDtoToContract(dto));
 
         this.storeDtos(result.data);
-
-        console.log(contracts);
 
         return contracts;
     };
