@@ -57,7 +57,7 @@ export const cancelPendingUpdateForEvent = (
     }
 };
 
-export const createEditableTimeEntry = (source: Nullable<TimeEntryCreateContract>): Nullable<TimeEntryCreateContract> => {
+export const buildTimeEntryCreate = (source: Nullable<TimeEntryCreateContract>): Nullable<TimeEntryCreateContract> => {
     return withProxy({
         taskId: source.taskId,
         projectId: source.projectId,
@@ -68,7 +68,7 @@ export const createEditableTimeEntry = (source: Nullable<TimeEntryCreateContract
         .build();
 };
 
-export const createEditableTimeEntryUpdate = (source: TimeEntryContract): TimeEntryUpdateContract => {
+export const buildTimeEntryUpdate = (source: TimeEntryContract): TimeEntryUpdateContract => {
     return withProxy({
         taskId: source.taskId,
         projectId: source.project.id,
@@ -79,7 +79,7 @@ export const createEditableTimeEntryUpdate = (source: TimeEntryContract): TimeEn
         .build();
 };
 
-export const createEditableTimeEntrySuggestion = (source: TimeEntrySuggestionContract): TimeEntrySuggestionUpdateContract => {
+export const buildTimeEntrySuggestionUpdate = (source: TimeEntrySuggestionContract): TimeEntrySuggestionUpdateContract => {
     return withProxy({
         taskId: source.taskId,
         projectId: source.project.id,
