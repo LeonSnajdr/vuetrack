@@ -1,5 +1,6 @@
 import type { TimeEntryCreateContract, TimeEntryContract, TimeEntryUpdateContract, TimeEntryId } from "@/contracts/TimeEntryContract";
 import type { TimeEntrySuggestionContract, TimeEntrySuggestionUpdateContract, TimeEntrySuggestionId } from "@/contracts/TimeEntrySuggestion";
+import type { Nullable } from "@/util/Nullable";
 import type { CalendarEvent } from "vuetify/lib/components/VCalendar/types.mjs";
 
 export type EventPosition = {
@@ -15,7 +16,7 @@ export type BaseCalendarEvent = {
 
 export type DraftTimeEntryEvent = {
     kind: "draft";
-    createEntry: TimeEntryCreateContract;
+    createEntry: Nullable<TimeEntryCreateContract>;
 } & BaseCalendarEvent;
 
 export type ExistingTimeEntryEvent = {
@@ -51,7 +52,7 @@ export type SuggestionTimeEntryUpdateMutation = {
 export type SuggestionTimeEntryCreateMutation = {
     kind: "create";
     event: SuggestionTimeEntryEvent;
-    create: TimeEntryCreateContract;
+    create: Nullable<TimeEntryCreateContract>;
 };
 
 export type SuggestionTimeEntryDeleteMutation = {
@@ -68,7 +69,7 @@ export type DraftTimeEntryDeleteMutation = {
 export type DraftTimeEntryCreateMutation = {
     kind: "create";
     event: DraftTimeEntryEvent;
-    create: TimeEntryCreateContract;
+    create: Nullable<TimeEntryCreateContract>;
 };
 
 export type TimeEntryEvent = DraftTimeEntryEvent | ExistingTimeEntryEvent | SuggestionTimeEntryEvent;

@@ -5,7 +5,7 @@
 </template>
 
 <script setup lang="ts">
-const startTime = defineModel<Date>({ required: true });
+const startTime = defineModel<Date | null>({ required: true });
 
 const rules = useRules();
 </script>

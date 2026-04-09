@@ -1,4 +1,9 @@
-﻿import type { TimeEntryContract, TimeEntryCreateContract, TimeEntryId, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
+import type {
+    TimeEntryContract,
+    TimeEntryCreateContract,
+    TimeEntryId,
+    TimeEntryUpdateContract
+} from "@/contracts/TimeEntryContract";
 import type { ActivityId } from "@/contracts/ActivityContract";
 import type { ProjectId } from "@/contracts/ProjectContract";
 import axios from "@/plugins/axios";
@@ -106,15 +111,15 @@ class TimeEntryService {
             timeEntryId: id ? id : (currentDto?.timeEntryId ?? null),
             userId: currentDto?.userId ?? 3,
             createdByUserId: currentDto?.createdByUserId ?? null,
-            project: { id: contract.projectId!, name: "" },
-            activity: { id: contract.activityId!, name: "" },
+            project: { id: contract.projectId, name: "" },
+            activity: { id: contract.activityId, name: "" },
             breakDetails: currentDto?.breakDetails ?? null,
             taskId: contract.taskId,
             startDate: startParts.date,
             startTime: startParts.time,
             endDate: endParts.date,
             endTime: endParts.time,
-            comment: contract.comment ?? "",
+            comment: contract.comment,
             approved: currentDto?.approved ?? false
         };
     }

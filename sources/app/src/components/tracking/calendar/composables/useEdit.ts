@@ -5,7 +5,7 @@ import type {
     SuggestionTimeEntryUpdateMutation
 } from "@/components/tracking/calendar/types";
 import { useEventMutation } from "./useEventMutation";
-import { createEditableTimeEntry, createEditableTimeEntrySuggestion, getOriginalPositon, getOverlappingEvents } from "./shared";
+import { createEditableTimeEntryUpdate, createEditableTimeEntrySuggestion, getOriginalPositon, getOverlappingEvents } from "./shared";
 
 export function useEdit() {
     const calendarStore = useCalendarStore();
@@ -21,7 +21,7 @@ export function useEdit() {
             editMutation = {
                 kind: "update",
                 event,
-                update: createEditableTimeEntry(event.timeEntry),
+                update: createEditableTimeEntryUpdate(event.timeEntry),
                 originalPosition
             };
         } else {

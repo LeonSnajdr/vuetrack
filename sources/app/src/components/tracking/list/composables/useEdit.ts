@@ -1,4 +1,4 @@
-import type { TimeEntryContract } from "@/contracts/TimeEntryContract";
+import type { TimeEntryContract, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
 
 export function useEdit() {
     const listStore = useTrackingListStore();

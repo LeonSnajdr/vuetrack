@@ -44,7 +44,7 @@ defineProps<{
     rules?: ValidationRule[];
 }>();
 
-const dateTime = defineModel<Date>({ required: true });
+const dateTime = defineModel<Date | null>({ required: true });
 const dateInputRef = useTemplateRef("dateInputRef");
 const timeInputRef = useTemplateRef("timeInputRef");
 const timeMenuRef = useTemplateRef("timeMenuRef");
@@ -56,9 +56,16 @@ let skipTimeMenuCloseOnBlur = false;
 
 const selectedDate = computed({
     get: () => dateTime.value,
-    set: (value: Date) => {
+    set: (value: Date | null) => {
+        if (value === null) {
+            dateTime.value = null;
+            timeInput.value = "";
+            return;
+        }
+
+        const timeSource = dateTime.value ?? new Date();
         const nextDateTime = new Date(value);
-        nextDateTime.setHours(dateTime.value.getHours(), dateTime.value.getMinutes(), dateTime.value.getSeconds(), dateTime.value.getMilliseconds());
+        nextDateTime.setHours(timeSource.getHours(), timeSource.getMinutes(), timeSource.getSeconds(), timeSource.getMilliseconds());
         dateTime.value = nextDateTime;
     }
 });
@@ -79,7 +86,7 @@ const selectedTime = computed({
 });
 
 watch(
-    () => dateTime.value.getTime(),
+    () => dateTime.value?.getTime() ?? null,
     () => {
         timeInput.value = formatTime(dateTime.value);
     },
@@ -226,8 +233,8 @@ function toTimeParts(hoursText: string, minutesText: string): { hours: number; m
 }
 
 function updateDateTime(hours: number, minutes: number): void {
-    const nextDateTime = new Date(dateTime.value);
-    nextDateTime.setHours(hours, minutes, dateTime.value.getSeconds(), dateTime.value.getMilliseconds());
+    const nextDateTime = dateTime.value ? new Date(dateTime.value) : new Date();
+    nextDateTime.setHours(hours, minutes, nextDateTime.getSeconds(), nextDateTime.getMilliseconds());
 
     dateTime.value = nextDateTime;
     timeInput.value = formatTime(nextDateTime);
@@ -239,7 +246,11 @@ function isElementInsideDateInput(element: HTMLElement): boolean {
     return dateInputElement instanceof Element ? dateInputElement.contains(element) : false;
 }
 
-function formatTime(value: Date): string {
+function formatTime(value: Date | null): string {
+    if (value === null) {
+        return "";
+    }
+
     return `${padTimePart(value.getHours())}:${padTimePart(value.getMinutes())}`;
 }
 

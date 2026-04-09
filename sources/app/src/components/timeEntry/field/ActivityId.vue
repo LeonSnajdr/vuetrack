@@ -19,10 +19,10 @@ import type { ProjectId } from "@/contracts/ProjectContract";
 import type { ActivityId } from "@/contracts/ActivityContract";
 
 const props = defineProps<{
-    projectId: ProjectId;
+    projectId: ProjectId | null;
 }>();
 
-const activityId = defineModel<ActivityId>({ required: true });
+const activityId = defineModel<ActivityId | null>({ required: true });
 
 const rules = useRules();
 const { data: activities, execute: loadActivities, isLoading } = useAsyncState(ProjectService.loadActivities, { initialValue: [] });

@@ -1,4 +1,5 @@
 import type { TimeEntryContract, TimeEntryCreateContract } from "@/contracts/TimeEntryContract";
+import type { Nullable } from "@/util/Nullable";
 import type { TimeEntrySuggestionContract } from "@/contracts/TimeEntrySuggestion";
 import type { DraftTimeEntryEvent, ExistingTimeEntryEvent, SuggestionTimeEntryEvent } from "./types";
 
@@ -60,7 +61,7 @@ export function createSuggestionEventWrapper(contract: TimeEntrySuggestionContra
 }
 
 export function createDraftEvent(anchorStartMs: number, taskId = ""): DraftTimeEntryEvent {
-    const createEntry: TimeEntryCreateContract = {
+    const createEntry: Nullable<TimeEntryCreateContract> = {
         startTime: new Date(anchorStartMs),
         endTime: new Date(anchorStartMs),
         taskId,

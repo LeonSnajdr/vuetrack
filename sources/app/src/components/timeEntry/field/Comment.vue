@@ -5,5 +5,5 @@
 </template>
 
 <script setup lang="ts">
-const comment = defineModel<string>({ required: true });
+const comment = defineModel<string | null>({ required: true });
 </script>

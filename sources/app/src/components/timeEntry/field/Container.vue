@@ -14,12 +14,12 @@ import type { ActivityId } from "@/contracts/ActivityContract";
 import type { ProjectId } from "@/contracts/ProjectContract";
 
 const timeEntry = defineModel<{
-    taskId: string;
-    startTime: Date;
-    endTime: Date;
-    projectId: ProjectId;
-    activityId: ActivityId;
-    comment: string;
+    taskId: string | null;
+    startTime: Date | null;
+    endTime: Date | null;
+    projectId: ProjectId | null;
+    activityId: ActivityId | null;
+    comment: string | null;
 }>({ required: true });
 
 const valid = defineModel<boolean>("valid", { default: false });

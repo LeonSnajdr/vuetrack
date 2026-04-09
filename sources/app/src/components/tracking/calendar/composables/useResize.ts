@@ -5,7 +5,7 @@ import {
     cancelPendingUpdateForEvent,
     getOriginalPositon,
     getEventBoundaries,
-    createEditableTimeEntry,
+    createEditableTimeEntryUpdate,
     createEditableTimeEntrySuggestion
 } from "./shared";
 import { useEventMutation } from "./useEventMutation";
@@ -29,7 +29,7 @@ export function useResize() {
             resizeMutation = {
                 kind: "update",
                 event,
-                update: createEditableTimeEntry(event.timeEntry),
+                update: createEditableTimeEntryUpdate(event.timeEntry),
                 originalPosition
             };
         } else {

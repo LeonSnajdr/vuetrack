@@ -18,10 +18,10 @@
 import type { ProjectId } from "@/contracts/ProjectContract";
 
 const props = defineProps<{
-    taskId: string;
+    taskId: string | null;
 }>();
 
-const projectId = defineModel<ProjectId>({ required: true });
+const projectId = defineModel<ProjectId | null>({ required: true });
 
 const rules = useRules();
 const projectStore = useProjectStore();

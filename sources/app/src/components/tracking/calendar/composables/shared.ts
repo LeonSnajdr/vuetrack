@@ -1,6 +1,7 @@
 import type { Interaction, TimeEntryEvent } from "@/components/tracking/calendar/types";
 import type { TimeEntryContract, TimeEntryCreateContract, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
 import type { TimeEntrySuggestionContract, TimeEntrySuggestionUpdateContract } from "@/contracts/TimeEntrySuggestion";
+import type { Nullable } from "@/util/Nullable";
 
 type RoundTimeOptions = {
     down?: boolean;
@@ -56,14 +57,22 @@ export const cancelPendingUpdateForEvent = (
     }
 };
 
-export const createEditableTimeEntry = (source: TimeEntryContract | TimeEntryCreateContract): TimeEntryUpdateContract => {
-    const projectId = "project" in source ? source.project.id : source.projectId;
-    const activityId = "activity" in source ? source.activity.id : source.activityId;
-
+export const createEditableTimeEntry = (source: Nullable<TimeEntryCreateContract>): Nullable<TimeEntryCreateContract> => {
     return withProxy({
         taskId: source.taskId,
-        projectId,
-        activityId,
+        projectId: source.projectId,
+        activityId: source.activityId,
+        comment: source.comment
+    })
+        .from(source, "startTime", "endTime")
+        .build();
+};
+
+export const createEditableTimeEntryUpdate = (source: TimeEntryContract): TimeEntryUpdateContract => {
+    return withProxy({
+        taskId: source.taskId,
+        projectId: source.project.id,
+        activityId: source.activity.id,
         comment: source.comment
     })
         .from(source, "startTime", "endTime")

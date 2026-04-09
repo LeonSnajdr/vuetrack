@@ -5,7 +5,7 @@
 </template>
 
 <script setup lang="ts">
-const taskId = defineModel<string>({ required: true });
+const taskId = defineModel<string | null>({ required: true });
 
 const rules = useRules();
 </script>
