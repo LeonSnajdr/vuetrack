@@ -1,12 +1,13 @@
 import type { Interaction, DraftTimeEntryEvent, TimeEntryEvent } from "@/components/tracking/calendar/types";
-import { createExistingEventWrapper, createSuggestionEventWrapper } from "@/components/tracking/calendar/createEventWrapper";
+import { useEventWrapper } from "@/components/tracking/calendar/composables/useEventWrapper";
 
 export const useCalendarStore = defineStore("calendar", () => {
     const timeEntryStore = useTimeEntryStore();
     const suggestionStore = useTimeEntrySuggestionStore();
+    const { createExistingEvent, createSuggestionEvent } = useEventWrapper();
 
-    const existingEvents = computed(() => timeEntryStore.timeEntries.map((c) => createExistingEventWrapper(c)));
-    const suggestionEvents = computed(() => suggestionStore.timeEntrySuggestions.map((c) => createSuggestionEventWrapper(c)));
+    const existingEvents = computed(() => timeEntryStore.timeEntries.map((c) => createExistingEvent(c)));
+    const suggestionEvents = computed(() => suggestionStore.timeEntrySuggestions.map((c) => createSuggestionEvent(c)));
     const draftEvents = ref<DraftTimeEntryEvent[]>([]);
     const events = computed<TimeEntryEvent[]>(() => [...existingEvents.value, ...suggestionEvents.value, ...draftEvents.value]);
 

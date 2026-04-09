@@ -1,10 +1,11 @@
-import { createDraftEvent } from "@/components/tracking/calendar/createEventWrapper";
 import { buildTimeEntryCreate, roundTime } from "./shared";
 import { useEventMutation } from "./useEventMutation";
+import { useEventWrapper } from "./useEventWrapper";
 
 export function useDraft() {
     const calendarStore = useCalendarStore();
     const mutation = useEventMutation();
+    const { createDraftEvent } = useEventWrapper();
     const { interaction, draftEvents, existingEvents, preselectedTaskId } = storeToRefs(calendarStore);
 
     const start = (anchorMs: number) => {
