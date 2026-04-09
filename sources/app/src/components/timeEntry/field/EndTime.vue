@@ -1,6 +1,6 @@
 <template>
     <VRowSingle>
-        <BaseDateTimeInput v-model="endTime" :label="$t('timeEntry.field.endTime')" :rules="endTimeRules" />
+        <BaseDateTimeInput v-model="endTime" v-bind="$attrs" :label="$t('timeEntry.field.endTime')" :rules="endTimeRules" />
     </VRowSingle>
 </template>
 

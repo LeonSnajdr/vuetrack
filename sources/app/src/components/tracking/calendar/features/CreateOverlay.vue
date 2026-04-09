@@ -4,7 +4,7 @@
             {{ $t("action.create.title", { type: $t("timeEntry.singular") }) }}
         </template>
         <template #content>
-            <TimeEntryFieldContainer v-model="interaction.mutation.create" v-model:valid="valid" />
+            <TimeEntryFieldContainer v-model="interaction.mutation.create" v-model:valid="valid" skipTimeFields />
         </template>
         <template #actions>
             <VBtn @click="create.finish" :disabled="!valid" :loading="isCreatingEvent" color="primary" variant="flat">

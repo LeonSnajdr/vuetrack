@@ -17,6 +17,7 @@
                     @blur="onTimeInputBlur"
                     @keydown.enter.prevent="commitTimeInput"
                     :error="!(isValid.value ?? true)"
+                    :tabindex="timeInputTabindex"
                 >
                     <VMenu ref="timeMenuRef" v-model="isTimeMenuOpen" :closeOnContentClick="false" activator="parent" minWidth="0">
                         <VTimePicker
@@ -53,6 +54,8 @@ const isTimeMenuOpen = ref(false);
 const timePickerViewMode = ref<"hour" | "minute">("hour");
 const timeInput = ref("");
 let skipTimeMenuCloseOnBlur = false;
+const attrs = useAttrs();
+const timeInputTabindex = computed(() => attrs.tabindex ?? attrs.tabIndex);
 
 const selectedDate = computed({
     get: () => dateTime.value,
@@ -143,6 +146,10 @@ async function onDateInputKeydown(event: KeyboardEvent): Promise<void> {
         return;
     }
 
+    if (isTabIndexMinusOne()) {
+        return;
+    }
+
     event.preventDefault();
     event.stopPropagation();
 
@@ -150,6 +157,12 @@ async function onDateInputKeydown(event: KeyboardEvent): Promise<void> {
 
     await nextTick();
     focusTimeInputAndSelectAll();
+}
+
+function isTabIndexMinusOne(): boolean {
+    const tabIndexAttr = attrs.tabindex ?? attrs.tabIndex;
+
+    return `${tabIndexAttr ?? ""}`.trim() === "-1";
 }
 
 function focusTimeInputAndSelectAll(): void {

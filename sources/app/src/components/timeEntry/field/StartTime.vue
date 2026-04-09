@@ -1,6 +1,6 @@
 <template>
     <VRowSingle>
-        <BaseDateTimeInput v-model="startTime" :label="$t('timeEntry.field.startTime')" :rules="[rules.required()]" />
+        <BaseDateTimeInput v-model="startTime" v-bind="$attrs" :label="$t('timeEntry.field.startTime')" :rules="[rules.required()]" />
     </VRowSingle>
 </template>
 
