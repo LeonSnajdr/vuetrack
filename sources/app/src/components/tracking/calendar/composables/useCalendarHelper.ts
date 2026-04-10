@@ -2,34 +2,63 @@ import type { Interaction, TimeEntryEvent } from "@/components/tracking/calendar
 import type { TimeEntryContract, TimeEntryCreateContract, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
 import type { TimeEntrySuggestionContract, TimeEntrySuggestionUpdateContract } from "@/contracts/TimeEntrySuggestion";
 import type { Nullable } from "@/util/Nullable";
+import type { CalendarInterval } from "./useCalendarInterval";
 
 type RoundTimeOptions = {
     down?: boolean;
-    roundTo?: number;
     snapPoints?: number[];
 };
 
 export const useCalendarHelper = () => {
     const timeEntryStore = useTimeEntryStore();
     const suggestionStore = useTimeEntrySuggestionStore();
+    const calendarStore = useCalendarStore();
+    const { intervalMinutes } = storeToRefs(calendarStore);
 
-    const roundTime = (time: number, options: RoundTimeOptions = {}): number => {
-        const { down = true, roundTo = 15, snapPoints = [] } = options;
-        const step = roundTo * 60 * 1000;
-        const offset = time % step;
-        const rounded = down ? time - offset : time + (step - offset);
-        const roundedDistance = Math.abs(rounded - time);
-        const snapped = snapPoints
-            .filter((snapPoint) => (down ? snapPoint <= time : snapPoint >= time))
-            .reduce<number | undefined>((closest, snapPoint) => {
-                const snapDistance = Math.abs(snapPoint - time);
-                if (snapDistance > step || snapDistance >= roundedDistance) return closest;
-                if (closest === undefined) return snapPoint;
+    const roundTime = (timeMs: number, options: RoundTimeOptions = {}): number => {
+        const { down = true, snapPoints = [] } = options;
 
-                return snapDistance < Math.abs(closest - time) ? snapPoint : closest;
-            }, undefined);
+        const getStepSizeMs = (): number => {
+            const stepSizeMap: Record<CalendarInterval, number> = {
+                60: 15,
+                30: 10,
+                10: 5,
+                15: 5,
+                5: 5
+            };
 
-        return snapped ?? rounded;
+            return stepSizeMap[intervalMinutes.value] * 60 * 1000;
+        };
+
+        const getRoundedTime = (stepSizeMs: number): number => {
+            const offset = timeMs % stepSizeMs;
+            if (offset === 0) return timeMs;
+            return down ? timeMs - offset : timeMs + (stepSizeMs - offset);
+        };
+
+        const getSnappedTime = (stepSizeMs: number, roundedTime: number): number | undefined => {
+            const roundedDistance = Math.abs(roundedTime - timeMs);
+            let closestSnapPoint: number | undefined;
+
+            for (const snapPoint of snapPoints) {
+                if (down ? snapPoint > timeMs : snapPoint < timeMs) continue;
+
+                const snapDistance = Math.abs(snapPoint - timeMs);
+                if (snapDistance > stepSizeMs || snapDistance >= roundedDistance) continue;
+
+                if (closestSnapPoint === undefined || snapDistance < Math.abs(closestSnapPoint - timeMs)) {
+                    closestSnapPoint = snapPoint;
+                }
+            }
+
+            return closestSnapPoint;
+        };
+
+        const stepSizeMs = getStepSizeMs();
+        const roundedTime = getRoundedTime(stepSizeMs);
+        const snappedTime = getSnappedTime(stepSizeMs, roundedTime);
+
+        return snappedTime ?? roundedTime;
     };
 
     const getEventBoundaries = (subject: TimeEntryEvent, candidates: TimeEntryEvent[]): number[] => {

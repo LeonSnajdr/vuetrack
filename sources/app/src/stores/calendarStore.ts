@@ -1,5 +1,6 @@
 import type { Interaction, DraftTimeEntryEvent, TimeEntryEvent } from "@/components/tracking/calendar/types";
 import { useEventWrapper } from "@/components/tracking/calendar/composables/useEventWrapper";
+import type { CalendarInterval } from "@/components/tracking/calendar/composables/useCalendarInterval";
 
 export const useCalendarStore = defineStore("calendar", () => {
     const timeEntryStore = useTimeEntryStore();
@@ -12,7 +13,7 @@ export const useCalendarStore = defineStore("calendar", () => {
     const events = computed<TimeEntryEvent[]>(() => [...existingEvents.value, ...suggestionEvents.value, ...draftEvents.value]);
 
     const interaction = ref<Interaction>({ kind: "idle" });
-    const intervalMinutes = ref<number>(30);
+    const intervalMinutes = ref<CalendarInterval>(30);
 
     const isDeletingEvent = computed(() => {
         return timeEntryStore.isDeleting() || suggestionStore.isDismissing();
