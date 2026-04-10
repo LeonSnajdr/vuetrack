@@ -1,10 +1,11 @@
-import { buildTimeEntryCreate, roundTime } from "./shared";
+import { useCalendarHelper } from "./useCalendarHelper";
 import { useEventMutation } from "./useEventMutation";
 import { useEventWrapper } from "./useEventWrapper";
 
 export function useDraft() {
     const calendarStore = useCalendarStore();
     const mutation = useEventMutation();
+    const { buildTimeEntryCreate, roundTime } = useCalendarHelper();
     const { createDraftEvent } = useEventWrapper();
     const { interaction, draftEvents, existingEvents } = storeToRefs(calendarStore);
 

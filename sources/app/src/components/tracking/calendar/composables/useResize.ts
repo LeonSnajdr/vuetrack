@@ -1,26 +1,25 @@
 import type { ExistingTimeEntryUpdateMutation, SuggestionTimeEntryUpdateMutation, TimeEntryEvent } from "@/components/tracking/calendar/types";
-import {
-    roundTime,
-    getOverlappingEvents,
-    cancelPendingUpdateForEvent,
-    getOriginalPositon,
-    getEventBoundaries,
-    buildTimeEntryUpdate,
-    buildTimeEntrySuggestionUpdate
-} from "./shared";
+import { useCalendarHelper } from "./useCalendarHelper";
 import { useEventMutation } from "./useEventMutation";
 
 export function useResize() {
     const calendarStore = useCalendarStore();
-    const timeEntryStore = useTimeEntryStore();
-    const suggestionStore = useTimeEntrySuggestionStore();
     const { interaction, existingEvents } = storeToRefs(calendarStore);
     const mutation = useEventMutation();
+    const {
+        roundTime,
+        getOverlappingEvents,
+        cancelPendingUpdateForEvent,
+        getOriginalPositon,
+        getEventBoundaries,
+        buildTimeEntryUpdate,
+        buildTimeEntrySuggestionUpdate
+    } = useCalendarHelper();
 
     const start = (event: TimeEntryEvent) => {
         if (event.kind !== "existing" && event.kind !== "suggestion") return;
 
-        cancelPendingUpdateForEvent(event, timeEntryStore, suggestionStore);
+        cancelPendingUpdateForEvent(event);
 
         const originalPosition = getOriginalPositon(event, interaction.value);
 

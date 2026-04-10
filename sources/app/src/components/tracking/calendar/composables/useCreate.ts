@@ -4,12 +4,13 @@ import type {
     SuggestionTimeEntryEvent,
     SuggestionTimeEntryCreateMutation
 } from "@/components/tracking/calendar/types";
-import { buildTimeEntryCreate, buildTimeEntrySuggestionUpdate, getOverlappingEvents } from "./shared";
+import { useCalendarHelper } from "./useCalendarHelper";
 import { useEventMutation } from "./useEventMutation";
 
 export function useCreate() {
     const calendarStore = useCalendarStore();
     const mutation = useEventMutation();
+    const { buildTimeEntryCreate, buildTimeEntrySuggestionUpdate, getOverlappingEvents } = useCalendarHelper();
 
     const { interaction, existingEvents } = storeToRefs(calendarStore);
 
