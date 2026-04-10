@@ -9,6 +9,11 @@ type RoundTimeOptions = {
     snapPoints?: number[];
 };
 
+type UpdateEventPositionPatch = {
+    start?: number;
+    end?: number;
+};
+
 export const useCalendarHelper = () => {
     const timeEntryStore = useTimeEntryStore();
     const suggestionStore = useTimeEntrySuggestionStore();
@@ -119,6 +124,27 @@ export const useCalendarHelper = () => {
             .build();
     };
 
+    const minimumEventDurationMs = 60 * 1000;
+
+    const updateEventPosition = (event: TimeEntryEvent, patch: UpdateEventPositionPatch, lock: "start" | "end" = "start"): void => {
+        const nextStart = patch.start ?? event.start;
+        const nextEnd = patch.end ?? event.end;
+
+        let normalizedStart = nextStart;
+        let normalizedEnd = nextEnd;
+
+        if (normalizedEnd - normalizedStart < minimumEventDurationMs) {
+            if (lock === "end") {
+                normalizedStart = normalizedEnd - minimumEventDurationMs;
+            } else {
+                normalizedEnd = normalizedStart + minimumEventDurationMs;
+            }
+        }
+
+        event.start = normalizedStart;
+        event.end = normalizedEnd;
+    };
+
     return {
         roundTime,
         getEventBoundaries,
@@ -127,6 +153,8 @@ export const useCalendarHelper = () => {
         cancelPendingUpdateForEvent,
         buildTimeEntryCreate,
         buildTimeEntryUpdate,
-        buildTimeEntrySuggestionUpdate
+        buildTimeEntrySuggestionUpdate,
+        minimumEventDurationMs,
+        updateEventPosition
     };
 };

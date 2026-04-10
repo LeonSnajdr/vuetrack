@@ -13,7 +13,9 @@ export function useMove() {
         getOriginalPositon,
         getEventBoundaries,
         buildTimeEntryUpdate,
-        buildTimeEntrySuggestionUpdate
+        buildTimeEntrySuggestionUpdate,
+        minimumEventDurationMs,
+        updateEventPosition
     } = useCalendarHelper();
 
     const start = (event: TimeEntryEvent) => {
@@ -59,12 +61,11 @@ export function useMove() {
         const { event, pointerOffsetMs } = interaction.value;
         if (pointerOffsetMs === undefined) return;
 
-        const duration = event.end - event.start;
+        const duration = Math.max(event.end - event.start, minimumEventDurationMs);
         const snapPoints = getEventBoundaries(event, existingEvents.value).flatMap((boundary) => [boundary, boundary - duration]);
         const newStart = roundTime(mouseMs - pointerOffsetMs, { snapPoints });
 
-        event.start = newStart;
-        event.end = newStart + duration;
+        updateEventPosition(event, { start: newStart, end: newStart + duration }, "start");
     };
 
     const finish = async () => {

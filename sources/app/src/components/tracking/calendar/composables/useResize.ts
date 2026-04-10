@@ -13,7 +13,8 @@ export function useResize() {
         getOriginalPositon,
         getEventBoundaries,
         buildTimeEntryUpdate,
-        buildTimeEntrySuggestionUpdate
+        buildTimeEntrySuggestionUpdate,
+        updateEventPosition
     } = useCalendarHelper();
 
     const start = (event: TimeEntryEvent) => {
@@ -54,7 +55,7 @@ export function useResize() {
         const snapPoints = getEventBoundaries(event, existingEvents.value);
         const mouseRounded = roundTime(mouseMs, { down: false, snapPoints });
 
-        event.end = Math.max(mouseRounded, event.start);
+        updateEventPosition(event, { end: mouseRounded }, "start");
     };
 
     const finish = async () => {

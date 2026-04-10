@@ -5,7 +5,7 @@ import { useEventWrapper } from "./useEventWrapper";
 export function useDraft() {
     const calendarStore = useCalendarStore();
     const mutation = useEventMutation();
-    const { buildTimeEntryCreate, roundTime } = useCalendarHelper();
+    const { buildTimeEntryCreate, roundTime, updateEventPosition } = useCalendarHelper();
     const { createDraftEvent } = useEventWrapper();
     const { interaction, draftEvents, existingEvents } = storeToRefs(calendarStore);
 
@@ -29,8 +29,7 @@ export function useDraft() {
         const snapPoints = existingEvents.value.flatMap((existingEvent) => [existingEvent.start, existingEvent.end]);
         const mouseRounded = roundTime(mouseMs, { down, snapPoints });
 
-        event.start = Math.min(mouseRounded, anchorStartMs);
-        event.end = Math.max(mouseRounded, anchorStartMs);
+        updateEventPosition(event, { start: Math.min(mouseRounded, anchorStartMs), end: Math.max(mouseRounded, anchorStartMs) }, down ? "end" : "start");
     };
 
     const finish = () => {

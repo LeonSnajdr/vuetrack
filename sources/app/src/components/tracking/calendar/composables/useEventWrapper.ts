@@ -1,12 +1,13 @@
-import type { TimeEntryContract, TimeEntryCreateContract } from "@/contracts/TimeEntryContract";
+import type { TimeEntryContract } from "@/contracts/TimeEntryContract";
 import type { TimeEntrySuggestionContract } from "@/contracts/TimeEntrySuggestion";
-import type { Nullable } from "@/util/Nullable";
 import type { DraftTimeEntryEvent, ExistingTimeEntryEvent, SuggestionTimeEntryEvent } from "@/components/tracking/calendar/types";
+import { useCalendarHelper } from "./useCalendarHelper";
 
 const existingWrapperCache = new WeakMap<TimeEntryContract, ExistingTimeEntryEvent>();
 const suggestionWrapperCache = new WeakMap<TimeEntrySuggestionContract, SuggestionTimeEntryEvent>();
 
 export function useEventWrapper() {
+    const { minimumEventDurationMs } = useCalendarHelper();
     const timeEntryHelper = useTimeEntryHelper();
 
     const createExistingEvent = (contract: TimeEntryContract, color = "#7da6c9"): ExistingTimeEntryEvent => {
@@ -66,7 +67,7 @@ export function useEventWrapper() {
     const createDraftEvent = (anchorStartMs: number): DraftTimeEntryEvent => {
         const createEntry = timeEntryHelper.createDefaultTimeEntry({
             startTime: new Date(anchorStartMs),
-            endTime: new Date(anchorStartMs)
+            endTime: new Date(anchorStartMs + minimumEventDurationMs)
         });
 
         return {
