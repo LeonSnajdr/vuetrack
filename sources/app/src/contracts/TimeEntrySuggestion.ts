@@ -11,7 +11,7 @@ export type TimeEntrySuggestionContract = {
     endTime: Date;
     project: ProjectContract;
     activity: ActivityContract;
-    comment: string;
+    comment: string | null;
 };
 
 export type TimeEntrySuggestionUpdateContract = {
@@ -20,5 +20,5 @@ export type TimeEntrySuggestionUpdateContract = {
     endTime: Date;
     projectId: ProjectId;
     activityId: ActivityId;
-    comment: string;
+    comment: string | null;
 };

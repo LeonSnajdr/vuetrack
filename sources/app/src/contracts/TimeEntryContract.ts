@@ -8,7 +8,7 @@ export type TimeEntryCreateContract = {
     endTime: Date;
     projectId: ProjectId;
     activityId: ActivityId;
-    comment: string;
+    comment: string | null;
 };
 
 export type TimeEntryId = Branded<number, "timeEntryId"> | null;
@@ -22,7 +22,7 @@ export type TimeEntryContract = {
     breakDetails: TimeEntryBreakContract | null;
     startTime: Date;
     endTime: Date;
-    comment: string;
+    comment: string | null;
 };
 
 export type TimeEntryBreakContract = {
@@ -36,5 +36,5 @@ export type TimeEntryUpdateContract = {
     activityId: ActivityId;
     startTime: Date;
     endTime: Date;
-    comment: string;
+    comment: string | null;
 };

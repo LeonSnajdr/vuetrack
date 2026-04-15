@@ -112,7 +112,7 @@ class TimeEntryService {
             startTime: startParts.time,
             endDate: endParts.date,
             endTime: endParts.time,
-            comment: contract.comment,
+            comment: contract.comment ?? "",
             approved: currentDto?.approved ?? false
         };
     }

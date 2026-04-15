@@ -1,6 +1,6 @@
 import type { TimeEntryCreateContract, TimeEntryId, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
-import { error, type ActionResult } from "@/util/ActionResult";
-import { isNonNullable, type Nullable } from "@/util/Nullable";
+import { type ActionResult } from "@/util/ActionResult";
+import { type Nullable } from "@/util/Nullable";
 
 export const useTimeEntryStore = defineStore("timeEntry", () => {
     const { filter } = useTrackingFilter();
@@ -29,11 +29,12 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
     watch(filter, executeLoadWithFilters, { deep: true });
 
     const create = async (createContract: Nullable<TimeEntryCreateContract>): Promise<ActionResult> => {
-        if (!isNonNullable(createContract)) {
+        // TODO
+        /*if (!isNonNullable(createContract)) {
             return error();
-        }
+        }*/
 
-        const createResult = await executeCreate(createContract);
+        const createResult = await executeCreate(createContract as TimeEntryCreateContract);
 
         if (createResult.status === "error") {
             notify.error(t("action.create.error", { type: t("timeEntry.singular") }), { timeout: 5000 });

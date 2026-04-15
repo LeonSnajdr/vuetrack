@@ -58,17 +58,16 @@
                             variant="flat"
                         />
                     </VSheet>
-                    <template v-if="event.kind === 'existing'">
-                        <VProgressLinear :indeterminate="isUpdating(event.timeEntry.id)" />
-                    </template>
-                    <div class="h-100 px-2 d-flex flex-column ga-2 text-truncate">
-                        <div>
+                    <div class="h-100 pa-1 d-flex flex-column ga-2 text-truncate">
+                        <div class="d-flex flex-col justify-space-between">
                             <template v-if="event.kind === 'existing' || event.kind === 'suggestion'">
                                 {{ event.timeEntry.taskId }}
                             </template>
                             <template v-else>{{ $t("calendar.event.draft") }}</template>
+                            <VChip class="text-label-small" color="" density="compact" variant="tonal">
+                                {{ dateFormatter.format(event.start, "fullTime24h") }} - {{ dateFormatter.format(event.end, "fullTime24h") }}
+                            </VChip>
                         </div>
-                        <div>{{ dateFormatter.format(event.start, "fullTime24h") }} - {{ dateFormatter.format(event.end, "fullTime24h") }}</div>
                     </div>
                 </div>
                 <div v-if="!isReadonly" @mousedown.stop="beginResizeEvent(event)" class="v-event-drag-bottom" />
@@ -78,7 +77,6 @@
     <TrackingCalendarFeaturesCreateOverlay v-if="interaction.kind === 'create'" v-model:interaction="interaction" />
     <TrackingCalendarFeaturesEditOverlay v-if="interaction.kind === 'edit'" v-model:interaction="interaction" />
     <TrackingCalendarFeaturesConflictOverlay v-if="interaction.kind === 'conflict'" v-model:interaction="interaction" />
-    <TrackingCalendarFeaturesDeleteOverlay v-if="interaction.kind === 'delete'" v-model:interaction="interaction" />
 </template>
 
 <script setup lang="ts">
@@ -96,10 +94,8 @@ import { useCalendarTimePeriod } from "./composables/useCalendarTimePeriod";
 import { useCalendarInterval } from "./composables/useCalendarInterval";
 
 const calendarStore = useCalendarStore();
-const timeEntryStore = useTimeEntryStore();
 
 const { events, interaction } = storeToRefs(calendarStore);
-const { isUpdating } = storeToRefs(timeEntryStore);
 
 const move = useMove();
 const resize = useResize();
@@ -204,6 +200,7 @@ const toTime = (tms: CalendarDayBodySlotScope) => {
 <style scoped>
 :deep(.v-event-timed) {
     user-select: none;
+    min-height: 30px;
 }
 
 .v-event-drag-bottom {
