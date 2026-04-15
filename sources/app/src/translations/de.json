@@ -44,6 +44,8 @@
   "timeEntry.field.activityId": "Tätigkeit",
   "timeEntry.field.comment": "Kommentar",
   "timeEntry.field.endTime": "Endzeit",
+  "timeEntry.field.endTime.duration": "Dauer (Minuten)",
+  "timeEntry.field.endTime.duration.option": "{minutes} Min.",
   "timeEntry.field.projectId": "Projekt",
   "timeEntry.field.startTime": "Startzeit",
   "timeEntry.field.taskId": "TaskId",

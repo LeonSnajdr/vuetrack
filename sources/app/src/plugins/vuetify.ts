@@ -120,6 +120,7 @@ export default createVuetify({
         VTextField: {
             variant: "outlined",
             hideDetails: "auto",
+            autocomplete: "off",
             persistentPlaceholder: true,
             VIcon: { size: "small" }
         },
@@ -127,18 +128,21 @@ export default createVuetify({
             variant: "outlined",
             hideDetails: "auto",
             prependIcon: "",
+            autocomplete: "off",
             persistentPlaceholder: true,
             VIcon: { size: "small" }
         },
         VSelect: {
             variant: "outlined",
             hideDetails: "auto",
+            autocomplete: "off",
             persistentPlaceholder: true,
             VIcon: { size: "small" }
         },
         VCombobox: {
             variant: "outlined",
             hideDetails: "auto",
+            autocomplete: "off",
             persistentPlaceholder: true,
             VIcon: { size: "small" }
         },
@@ -146,12 +150,20 @@ export default createVuetify({
             variant: "outlined",
             autoSelectFirst: true,
             hideDetails: "auto",
+            autocomplete: "off",
             persistentPlaceholder: true,
             VIcon: { size: "small" }
+        },
+        VNumberInput: {
+            variant: "outlined",
+            persistentPlaceholder: true,
+            hideDetails: "auto",
+            autocomplete: "off"
         },
         VTextarea: {
             variant: "outlined",
             hideDetails: "auto",
+            autocomplete: "off",
             persistentPlaceholder: true
         },
         VCheckbox: {

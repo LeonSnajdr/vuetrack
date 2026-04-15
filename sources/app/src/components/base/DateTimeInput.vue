@@ -16,6 +16,7 @@
                     v-model="timeInput"
                     @blur="onTimeInputBlur"
                     @keydown.enter.prevent="commitTimeInput"
+                    :disabled="timeInputDisabled"
                     :error="!(isValid.value ?? true)"
                     :tabindex="timeInputTabindex"
                 >
@@ -29,6 +30,9 @@
                             hideHeader
                         />
                     </VMenu>
+                    <template #append-inner>
+                        <slot name="time-append-inner" />
+                    </template>
                 </VTextField>
             </div>
             <div v-if="!(isValid.value ?? true)" class="ml-4">
@@ -56,6 +60,7 @@ const timeInput = ref("");
 let skipTimeMenuCloseOnBlur = false;
 const attrs = useAttrs();
 const timeInputTabindex = computed(() => attrs.tabindex ?? attrs.tabIndex);
+const timeInputDisabled = computed(() => (attrs.disabled ? (attrs.disabled as boolean) : false));
 
 const selectedDate = computed({
     get: () => dateTime.value,
