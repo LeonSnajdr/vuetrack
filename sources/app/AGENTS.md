@@ -1,4 +1,4 @@
-﻿# CLAUDE.md
+﻿# AGENTS.md for Vuetrack
 
 ## Architecture Overview
 
