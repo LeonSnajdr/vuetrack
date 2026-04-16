@@ -15,6 +15,8 @@ export function useCreate() {
 
         const result = await timeEntryStore.create(interaction.value.create);
 
+        if (result.status === "error") return;
+
         if (result.status === "success" && createAnother) {
             interaction.value.create = timeEntryHelper.createDefaultTimeEntry({ startTime: interaction.value.create.endTime });
             return;
