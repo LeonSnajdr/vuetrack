@@ -1,6 +1,28 @@
 # AGENTS.md for AI Plans
 
-In this folder, we only keep Markdown files for AI plans. Each file has a four-digit prefix which corresponds to the GitHub issue number.
+In this folder, we keep one folder per planned feature. Each feature folder uses an incrementing four-digit prefix followed by a short slug, for example `0001-rework-start`.
+
+## Folder Structure
+
+Create a dedicated folder for each feature:
+
+```text
+0001-rework-start/
+|_ v1_prompt.md
+|_ v1_plan.md
+|_ v2_prompt.md
+|_ v2_plan.md
+|_ _results.md
+```
+
+Rules:
+
+1. The feature folder name must start with a four-digit prefix which is incrementing across `ai_plans`.
+2. Keep iterative prompt and plan files together in the same feature folder.
+3. Name prompt files `v<number>_prompt.md`.
+4. Name plan files `v<number>_plan.md`.
+5. Each prompt version should have a matching plan version.
+6. When the work is finished, add `_results.md` to capture relevant notes such as what was implemented, follow-up improvements, and token usage if it is useful.
 
 ## How to Write Plans
 

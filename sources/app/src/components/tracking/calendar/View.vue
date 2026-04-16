@@ -26,57 +26,57 @@
             <TrackingCalendarCurrentTimeLine :day="day" />
         </template>
         <template #event="{ event }">
-            <VHover v-if="isTimeEntryEvent(event)" v-slot="{ isHovering, props }">
-                <div :id="event.uiId" v-bind="props" class="h-100 position-relative">
-                    <VSheet
-                        v-show="!isReadonly && isHovering && interaction.kind === 'idle'"
-                        class="position-absolute d-flex ga-2 rounded"
-                        style="top: 5px; right: 5px"
-                    >
-                        <VIconBtn
-                            v-if="event.kind === 'existing' || event.kind === 'suggestion'"
-                            @click.stop="remove.start(event)"
-                            @mousedown.stop
-                            :icon="mdiDelete"
-                            iconColor="error"
-                            variant="flat"
-                        />
-                        <VIconBtn
-                            v-if="event.kind === 'suggestion'"
-                            @click.stop="acceptSuggestion(event)"
-                            @mousedown.stop
-                            :icon="mdiCheck"
-                            iconColor="success"
-                            variant="flat"
-                        />
-                        <VIconBtn
-                            v-if="event.kind === 'existing' || event.kind === 'suggestion'"
-                            @click.stop="edit.start(event)"
-                            @mousedown.stop
-                            :icon="mdiPencil"
-                            iconColor="white"
-                            variant="flat"
-                        />
-                    </VSheet>
+            <template v-if="isTimeEntryEvent(event)">
+                <div :id="event.uiId" class="h-100 position-relative">
                     <div class="h-100 pa-1 d-flex flex-column ga-2 text-truncate">
                         <div class="d-flex flex-col justify-space-between">
-                            <template v-if="event.kind === 'existing' || event.kind === 'suggestion'">
-                                {{ event.timeEntry.taskId }}
-                            </template>
-                            <template v-else>{{ $t("calendar.event.draft") }}</template>
-                            <VChip class="text-label-small" color="" density="compact" variant="tonal">
+                            <div class="text-truncate">
+                                <template v-if="event.kind === 'existing' || event.kind === 'suggestion'">
+                                    {{ event.timeEntry.taskId }}
+                                </template>
+                                <template v-else>{{ $t("calendar.event.draft") }}</template>
+                            </div>
+                            <VChip class="text-label-small flex-shrink-0" color="" density="compact" variant="tonal">
                                 {{ dateFormatter.format(event.start, "fullTime24h") }} - {{ dateFormatter.format(event.end, "fullTime24h") }}
+                                <VIcon :icon="mdiClockEditOutline" class="ml-1" />
+                                <VMenu :closeDelay="0" :disabled="!(interaction.kind === 'idle')" :openDelay="0" activator="parent" location="end" openOnHover>
+                                    <VSheet class="d-flex ga-2 pa-1">
+                                        <VSpacer />
+                                        <VIconBtn
+                                            v-if="event.kind === 'suggestion'"
+                                            @click="acceptSuggestion(event)"
+                                            :icon="mdiCheck"
+                                            iconColor="success"
+                                            variant="flat"
+                                        />
+                                        <VIconBtn
+                                            v-if="event.kind === 'existing' || event.kind === 'suggestion'"
+                                            @click="edit.start(event)"
+                                            :icon="mdiPencil"
+                                            iconColor="white"
+                                            variant="flat"
+                                        />
+                                        <VIconBtn
+                                            v-if="event.kind === 'existing' || event.kind === 'suggestion'"
+                                            @click="remove.start(event)"
+                                            :icon="mdiDelete"
+                                            iconColor="error"
+                                            variant="flat"
+                                        />
+                                    </VSheet>
+                                </VMenu>
                             </VChip>
                         </div>
                     </div>
                 </div>
                 <div v-if="!isReadonly" @mousedown.stop="beginResizeEvent(event)" class="v-event-drag-bottom" />
-            </VHover>
+            </template>
         </template>
     </VCalendar>
     <TrackingCalendarFeaturesCreateOverlay v-if="interaction.kind === 'create'" v-model:interaction="interaction" />
     <TrackingCalendarFeaturesEditOverlay v-if="interaction.kind === 'edit'" v-model:interaction="interaction" />
     <TrackingCalendarFeaturesConflictOverlay v-if="interaction.kind === 'conflict'" v-model:interaction="interaction" />
+    <TrackingCalendarFeaturesDeleteOverlay v-if="interaction.kind === 'delete'" v-model:interaction="interaction" />
 </template>
 
 <script setup lang="ts">

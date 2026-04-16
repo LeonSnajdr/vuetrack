@@ -12,6 +12,8 @@ export function useDelete() {
     const { interaction } = storeToRefs(calendarStore);
 
     const start = (event: TimeEntryEvent) => {
+        console.log("remove start");
+
         let deleteMutation: DraftTimeEntryDeleteMutation | ExistingTimeEntryDeleteMutation | SuggestionTimeEntryDeleteMutation;
         if (event.kind === "draft") {
             deleteMutation = { kind: "delete", event };
