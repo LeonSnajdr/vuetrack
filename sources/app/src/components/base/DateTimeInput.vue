@@ -16,7 +16,7 @@
                     v-model="timeInput"
                     @blur="onTimeInputBlur"
                     @keydown.enter.prevent="commitTimeInput"
-                    :disabled="timeInputDisabled"
+                    :disabled="timeInputDisabled || !selectedDate"
                     :error="!(isValid.value ?? true)"
                     :tabindex="timeInputTabindex"
                 >
@@ -26,6 +26,7 @@
                             v-model:viewMode="timePickerViewMode"
                             @pointerdown="onTimePickerPointerDown"
                             @update:minute="closeTimeMenu"
+                            :min="timeInputMin"
                             format="24hr"
                             hideHeader
                         />
@@ -61,6 +62,19 @@ let skipTimeMenuCloseOnBlur = false;
 const attrs = useAttrs();
 const timeInputTabindex = computed(() => attrs.tabindex ?? attrs.tabIndex);
 const timeInputDisabled = computed(() => (attrs.disabled ? (attrs.disabled as boolean) : false));
+const timeInputMin = computed(() => {
+    const min = attrs.min;
+
+    if (typeof min === "string") {
+        return min;
+    }
+
+    if (min instanceof Date) {
+        return isSameOrBeforeDate(dateTime.value, min) ? formatTime(min) : undefined;
+    }
+
+    return undefined;
+});
 
 const selectedDate = computed({
     get: () => dateTime.value,
@@ -262,6 +276,18 @@ function isElementInsideDateInput(element: HTMLElement): boolean {
     const dateInputElement = dateInputRef.value?.$el;
 
     return dateInputElement instanceof Element ? dateInputElement.contains(element) : false;
+}
+
+function isSameOrBeforeDate(value: Date | null, comparison: Date): boolean {
+    if (value === null) {
+        return false;
+    }
+
+    return getDateOnlyTime(value) <= getDateOnlyTime(comparison);
+}
+
+function getDateOnlyTime(value: Date): number {
+    return new Date(value.getFullYear(), value.getMonth(), value.getDate()).getTime();
 }
 
 function formatTime(value: Date | null): string {

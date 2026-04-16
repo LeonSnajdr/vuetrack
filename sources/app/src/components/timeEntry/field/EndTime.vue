@@ -6,6 +6,7 @@
             v-bind="$attrs"
             :disabled="!startTime"
             :label="$t('timeEntry.field.endTime')"
+            :min="startTime"
             :rules="granularEndTimeRules"
         >
             <template #time-append-inner>
@@ -23,7 +24,6 @@
             :min="1"
             :precision="0"
             :rules="[rules.required()]"
-            controlVariant="hidden"
         >
             <VMenu v-model="durationMenu" activator="parent">
                 <VSheet class="pa-4 d-flex ga-2">
@@ -76,7 +76,8 @@ const durationMinutes = computed<number | null>({
 watch(
     () => props.startTime,
     () => {
-        if (props.startTime === null) {
+        if (endTime.value === null) return;
+        if (props.startTime === null || props.startTime >= endTime.value) {
             endTime.value = null;
         }
     }
