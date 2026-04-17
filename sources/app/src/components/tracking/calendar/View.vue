@@ -27,7 +27,7 @@
         </template>
         <template #event="{ event }">
             <template v-if="isTimeEntryEvent(event)">
-                <div :id="event.uiId" class="h-100 position-relative">
+                <div :id="event.uiId" @dblclick="onEventDoubleClicked(event)" class="h-100 position-relative">
                     <div class="h-100 pa-1 d-flex flex-column ga-2 text-truncate">
                         <div class="d-flex flex-col justify-space-between">
                             <div class="text-truncate">
@@ -44,7 +44,7 @@
                                         <VSpacer />
                                         <VIconBtn
                                             v-if="event.kind === 'suggestion'"
-                                            @click="acceptSuggestion(event)"
+                                            @click="create.start(event)"
                                             :icon="mdiCheck"
                                             iconColor="success"
                                             variant="flat"
@@ -69,7 +69,8 @@
                         </div>
                     </div>
                 </div>
-                <div v-if="!isReadonly" @mousedown.stop="beginResizeEvent(event)" class="v-event-drag-bottom" />
+                <!-- TODO Might be allowed during conflict-->
+                <div v-if="!isReadonly && interaction.kind === 'idle'" @mousedown.stop="beginResizeEvent(event)" class="v-event-drag-bottom" />
             </template>
         </template>
     </VCalendar>
@@ -82,7 +83,7 @@
 <script setup lang="ts">
 import type { EventSlotScope } from "vuetify/lib/components/VCalendar/VCalendar.mjs";
 import type { CalendarDayBodySlotScope, CalendarEvent } from "vuetify/lib/components/VCalendar/types.mjs";
-import { isTimeEntryEvent, type SuggestionTimeEntryEvent, type TimeEntryEvent } from "./types";
+import { isTimeEntryEvent, type TimeEntryEvent } from "./types";
 import { useMove } from "./composables/useMove";
 import { useResize } from "./composables/useResize";
 import { useDraft } from "./composables/useDraft";
@@ -111,6 +112,10 @@ const { intervalMinutes, intervalCount } = useCalendarInterval();
 const dateFormatter = useDate();
 
 onBeforeUnmount(() => {
+    cancelAll();
+});
+
+const cancelAll = () => {
     move.cancel();
     resize.cancel();
     draft.cancel();
@@ -118,10 +123,6 @@ onBeforeUnmount(() => {
     edit.cancel();
     remove.cancel();
     conflict.cancel();
-});
-
-const acceptSuggestion = (event: SuggestionTimeEntryEvent) => {
-    create.start(event);
 };
 
 const jumpToDate = (_nativeEvent: Event, day: { year: number; month: number; day: number }) => {
@@ -194,6 +195,12 @@ const cancelInteractionOnLeave = () => {
 
 const toTime = (tms: CalendarDayBodySlotScope) => {
     return new Date(tms.year, tms.month - 1, tms.day, tms.hour, tms.minute).getTime();
+};
+
+const onEventDoubleClicked = (event: TimeEntryEvent) => {
+    if (event.kind !== "existing" && event.kind !== "suggestion") return;
+    cancelAll();
+    edit.start(event);
 };
 </script>
 
