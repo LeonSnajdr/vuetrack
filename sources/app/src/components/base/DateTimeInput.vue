@@ -1,22 +1,24 @@
 <template>
-    <VValidation v-slot="{ errorMessages, isValid, validate }" v-model="dateTime" :rules="rules">
-        <BaseValidationDynamicRulesSupport @rulesChanged="validate" :rules="rules" />
+    <VValidation v-slot="{ errorMessages, isValid, validate }" v-model="dateTime" :rules="props.rules">
+        <BaseValidationDynamicRulesSupport @rulesChanged="validate" :rules="props.rules" />
         <div class="d-flex flex-column ga-2">
             <div class="d-flex ga-2">
                 <VDateInput
+                    v-if="isFullMode"
                     ref="dateInputRef"
                     v-model="selectedDate"
                     v-model:menu="isDateMenuOpen"
-                    v-bind="$attrs"
+                    v-bind="dateInputAttrs"
                     @keydown.capture="onDateInputKeydown"
                     :error="!(isValid.value ?? true)"
                 />
                 <VTextField
                     ref="timeInputRef"
                     v-model="timeInput"
+                    v-bind="timeInputAttrs"
                     @blur="onTimeInputBlur"
                     @keydown.enter.prevent="commitTimeInput"
-                    :disabled="timeInputDisabled || !selectedDate"
+                    :disabled="timeInputDisabled"
                     :error="!(isValid.value ?? true)"
                     :tabindex="timeInputTabindex"
                 >
@@ -46,11 +48,27 @@
 <script setup lang="ts">
 import type { ValidationRule } from "vuetify";
 
-defineProps<{
-    rules?: ValidationRule[];
-}>();
+const props = withDefaults(
+    defineProps<{
+        mode?: "full" | "time";
+        referenceDate?: Date | null;
+        rules?: ValidationRule[];
+    }>(),
+    {
+        mode: "full",
+        referenceDate: null,
+        rules: undefined
+    }
+);
 
 const dateTime = defineModel<Date | null>({ required: true });
+
+defineOptions({
+    inheritAttrs: false
+});
+
+const isFullMode = computed(() => props.mode === "full");
+const effectiveDateSource = computed(() => (isFullMode.value ? dateTime.value : (dateTime.value ?? props.referenceDate)));
 const dateInputRef = useTemplateRef("dateInputRef");
 const timeInputRef = useTemplateRef("timeInputRef");
 const timeMenuRef = useTemplateRef("timeMenuRef");
@@ -60,8 +78,16 @@ const timePickerViewMode = ref<"hour" | "minute">("hour");
 const timeInput = ref("");
 let skipTimeMenuCloseOnBlur = false;
 const attrs = useAttrs();
+const dateInputAttrs = computed(() => (isFullMode.value ? attrs : {}));
+const timeInputAttrs = computed(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { label, min, tabindex, tabIndex, ...otherAttrs } = attrs;
+
+    return isFullMode.value ? otherAttrs : { label, ...otherAttrs };
+});
 const timeInputTabindex = computed(() => attrs.tabindex ?? attrs.tabIndex);
-const timeInputDisabled = computed(() => (attrs.disabled ? (attrs.disabled as boolean) : false));
+const isAttrsDisabled = computed(() => attrs.disabled === "" || attrs.disabled === true || attrs.disabled === "true");
+const timeInputDisabled = computed(() => isAttrsDisabled.value || !effectiveDateSource.value);
 const timeInputMin = computed(() => {
     const min = attrs.min;
 
@@ -70,7 +96,7 @@ const timeInputMin = computed(() => {
     }
 
     if (min instanceof Date) {
-        return isSameOrBeforeDate(dateTime.value, min) ? formatTime(min) : undefined;
+        return isSameOrBeforeDate(effectiveDateSource.value, min) ? formatTime(min) : undefined;
     }
 
     return undefined;
@@ -115,6 +141,17 @@ watch(
     { immediate: true }
 );
 
+watch(
+    () => props.referenceDate?.getTime() ?? null,
+    () => {
+        if (isFullMode.value || dateTime.value === null || props.referenceDate === null) {
+            return;
+        }
+
+        dateTime.value = mergeDateWithExistingTime(props.referenceDate, dateTime.value);
+    }
+);
+
 watch(isTimeMenuOpen, (isOpen: boolean) => {
     if (isOpen) {
         timePickerViewMode.value = "hour";
@@ -155,7 +192,7 @@ function onTimePickerPointerDown(): void {
 }
 
 async function onDateInputKeydown(event: KeyboardEvent): Promise<void> {
-    if (event.key !== "Tab" || event.shiftKey) {
+    if (!isFullMode.value || event.key !== "Tab" || event.shiftKey) {
         return;
     }
 
@@ -265,11 +302,33 @@ function toTimeParts(hoursText: string, minutesText: string): { hours: number; m
 }
 
 function updateDateTime(hours: number, minutes: number): void {
-    const nextDateTime = dateTime.value ? new Date(dateTime.value) : new Date();
+    const baseDateTime = getTimeUpdateBaseDate();
+
+    if (baseDateTime === null) {
+        timeInput.value = formatTime(dateTime.value);
+        return;
+    }
+
+    const nextDateTime = new Date(baseDateTime);
     nextDateTime.setHours(hours, minutes, nextDateTime.getSeconds(), nextDateTime.getMilliseconds());
 
     dateTime.value = nextDateTime;
     timeInput.value = formatTime(nextDateTime);
+}
+
+function getTimeUpdateBaseDate(): Date | null {
+    if (isFullMode.value) {
+        return dateTime.value ? new Date(dateTime.value) : new Date();
+    }
+
+    return effectiveDateSource.value ? new Date(effectiveDateSource.value) : null;
+}
+
+function mergeDateWithExistingTime(nextDate: Date, currentDateTime: Date): Date {
+    const mergedDateTime = new Date(nextDate);
+    mergedDateTime.setHours(currentDateTime.getHours(), currentDateTime.getMinutes(), currentDateTime.getSeconds(), currentDateTime.getMilliseconds());
+
+    return mergedDateTime;
 }
 
 function isElementInsideDateInput(element: HTMLElement): boolean {

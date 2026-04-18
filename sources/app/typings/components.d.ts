@@ -24,6 +24,7 @@ declare module 'vue' {
     TimeEntryFieldComment: typeof import('./../src/components/timeEntry/field/Comment.vue')['default']
     TimeEntryFieldContainer: typeof import('./../src/components/timeEntry/field/Container.vue')['default']
     TimeEntryFieldEndTime: typeof import('./../src/components/timeEntry/field/EndTime.vue')['default']
+    TimeEntryFieldEndTimeMinuteMode: typeof import('./../src/components/timeEntry/field/EndTimeMinuteMode.vue')['default']
     TimeEntryFieldProjectId: typeof import('./../src/components/timeEntry/field/ProjectId.vue')['default']
     TimeEntryFieldStartTime: typeof import('./../src/components/timeEntry/field/StartTime.vue')['default']
     TimeEntryFieldTaskId: typeof import('./../src/components/timeEntry/field/TaskId.vue')['default']
