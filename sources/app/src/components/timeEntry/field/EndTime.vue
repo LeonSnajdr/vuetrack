@@ -8,7 +8,7 @@
             :min="startTime"
             :referenceDate="startTime"
             :rules="granularEndTimeRules"
-            mode="full"
+            mode="time"
         />
     </VRowSingle>
 </template>

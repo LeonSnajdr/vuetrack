@@ -46,6 +46,7 @@
 </template>
 
 <script setup lang="ts">
+import { isSameDay } from "date-fns";
 import type { ValidationRule } from "vuetify";
 
 const props = withDefaults(
@@ -67,7 +68,28 @@ defineOptions({
     inheritAttrs: false
 });
 
-const isFullMode = computed(() => props.mode === "full");
+const isSameDateAsReferenceDate = ref(false);
+const setSameDay = () => {
+    if (props.mode !== "time") return false;
+    if (props.referenceDate === null || dateTime.value === null) return false;
+
+    const same = isSameDay(props.referenceDate, dateTime.value);
+
+    isSameDateAsReferenceDate.value = same;
+};
+
+watch(
+    [dateTime, () => props.referenceDate],
+    () => {
+        nextTick(() => {
+            setSameDay();
+        });
+    },
+    { immediate: true }
+);
+
+const isFullMode = computed(() => props.mode === "full" || !isSameDateAsReferenceDate.value);
+
 const effectiveDateSource = computed(() => (isFullMode.value ? dateTime.value : (dateTime.value ?? props.referenceDate)));
 const dateInputRef = useTemplateRef("dateInputRef");
 const timeInputRef = useTemplateRef("timeInputRef");
