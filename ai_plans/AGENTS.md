@@ -24,7 +24,11 @@ Rules:
 5. Each prompt version should have a matching plan version.
 6. When the work is finished, add `_results.md` to capture relevant notes such as what was implemented, follow-up improvements, and token usage if it is useful.
 
-## How to Write Plans
+## How to Write the Prompt.md
+
+1. Make sure you paste the command prompt exactly as the user has typed it, and do not make any changes to it.
+
+## How to Write the Plan.md
 
 1. Each plan consists of exactly the three following elements: a rationale, acceptance criteria, and technical details.
 2. A rationale describes the overarching goal of the plan. Keep this concise, only elaborate when special circumstances require it. Use free text in this section of the plan.

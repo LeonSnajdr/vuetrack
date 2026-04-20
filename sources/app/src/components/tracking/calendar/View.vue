@@ -199,6 +199,7 @@ const toTime = (tms: CalendarDayBodySlotScope) => {
 
 const onEventDoubleClicked = (event: TimeEntryEvent) => {
     if (event.kind !== "existing" && event.kind !== "suggestion") return;
+    // TODO: this seems to break reactivity -> fix
     cancelAll();
     edit.start(event);
 };
