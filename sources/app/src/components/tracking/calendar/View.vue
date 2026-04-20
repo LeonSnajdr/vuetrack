@@ -27,7 +27,7 @@
         </template>
         <template #event="{ event }">
             <template v-if="isTimeEntryEvent(event)">
-                <div :id="event.uiId" @dblclick="onEventDoubleClicked(event)" class="h-100 position-relative">
+                <div :id="event.uiId" class="h-100">
                     <div class="h-100 pa-1 d-flex flex-column ga-2 text-truncate">
                         <div class="d-flex flex-col justify-space-between">
                             <div class="text-truncate">
@@ -202,13 +202,6 @@ const cancelInteractionOnLeave = () => {
 
 const toTime = (tms: CalendarDayBodySlotScope) => {
     return new Date(tms.year, tms.month - 1, tms.day, tms.hour, tms.minute).getTime();
-};
-
-const onEventDoubleClicked = (event: TimeEntryEvent) => {
-    if (event.kind !== "existing" && event.kind !== "suggestion") return;
-    // TODO: this seems to break reactivity -> fix
-    cancelAll();
-    edit.start(event);
 };
 </script>
 
