@@ -13,7 +13,7 @@ export function useTimeEntryHelper() {
 
         return {
             taskId: preselectedTaskId.value ?? null,
-            startTime: defaultValues?.startTime ?? newestTimeEntry?.endTime ?? null,
+            startTime: defaultValues?.startTime ?? newestTimeEntry?.endTime ?? new Date(new Date().setHours(8)),
             endTime: defaultValues?.endTime ?? null,
             activityId: null,
             projectId: null,

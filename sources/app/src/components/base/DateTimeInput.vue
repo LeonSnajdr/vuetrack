@@ -63,15 +63,16 @@ const props = withDefaults(
 );
 
 const dateTime = defineModel<Date | null>({ required: true });
+const fullMode = defineModel<boolean>("fullMode", { default: false });
 
 defineOptions({
     inheritAttrs: false
 });
 
-const isSameDateAsReferenceDate = ref(false);
+const isSameDateAsReferenceDate = ref(true);
 const setSameDay = () => {
     if (props.mode !== "time") return false;
-    if (props.referenceDate === null || dateTime.value === null) return false;
+    if (props.referenceDate === null || dateTime.value === null) return true;
 
     const same = isSameDay(props.referenceDate, dateTime.value);
 
@@ -89,6 +90,14 @@ watch(
 );
 
 const isFullMode = computed(() => props.mode === "full" || !isSameDateAsReferenceDate.value);
+
+watch(
+    isFullMode,
+    (value) => {
+        fullMode.value = value;
+    },
+    { immediate: true }
+);
 
 const effectiveDateSource = computed(() => (isFullMode.value ? dateTime.value : (dateTime.value ?? props.referenceDate)));
 const dateInputRef = useTemplateRef("dateInputRef");

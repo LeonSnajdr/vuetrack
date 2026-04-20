@@ -1,13 +1,24 @@
 <template>
     <VForm :key="reFocusKey" v-model="valid">
         <TimeEntryFieldTaskId v-model="timeEntry.taskId" :autofocus="firstEmptyField === 'taskId'" />
-        <TimeEntryFieldStartTime v-model="timeEntry.startTime" :autofocus="firstEmptyField === 'startTime'" :tabindex="skipTimeFields ? -1 : undefined" />
-        <TimeEntryFieldEndTime
-            v-model="timeEntry.endTime"
-            :autofocus="firstEmptyField === 'endTime'"
-            :startTime="timeEntry.startTime"
-            :tabindex="skipTimeFields ? -1 : undefined"
-        />
+        <VRow :class="isEndTimeFullMode ? 'ga-4' : 'ga-2'">
+            <VCol :cols="isEndTimeFullMode ? undefined : 8">
+                <TimeEntryFieldStartTime
+                    v-model="timeEntry.startTime"
+                    :autofocus="firstEmptyField === 'startTime'"
+                    :tabindex="skipTimeFields ? -1 : undefined"
+                />
+            </VCol>
+            <VCol :cols="isEndTimeFullMode ? 12 : undefined">
+                <TimeEntryFieldEndTime
+                    v-model="timeEntry.endTime"
+                    v-model:fullMode="isEndTimeFullMode"
+                    :autofocus="firstEmptyField === 'endTime'"
+                    :startTime="timeEntry.startTime"
+                    :tabindex="skipTimeFields ? -1 : undefined"
+                />
+            </VCol>
+        </VRow>
         <TimeEntryFieldProjectId v-model="timeEntry.projectId" :autofocus="firstEmptyField === 'projectId'" :taskId="timeEntry.taskId" />
         <TimeEntryFieldActivityId v-model="timeEntry.activityId" :autofocus="firstEmptyField === 'activityId'" :projectId="timeEntry.projectId" />
         <TimeEntryFieldComment v-model="timeEntry.comment" :autofocus="firstEmptyField === 'comment'" />
@@ -32,6 +43,7 @@ const timeEntry = defineModel<{
 }>({ required: true });
 
 const valid = defineModel<boolean>("valid", { default: false });
+const isEndTimeFullMode = ref(false);
 
 const firstEmptyField = computed(() => {
     if (!timeEntry.value.taskId) return "taskId";
