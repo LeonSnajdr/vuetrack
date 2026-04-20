@@ -39,7 +39,14 @@
                             <VChip class="text-label-small flex-shrink-0" color="" density="compact" variant="tonal">
                                 {{ dateFormatter.format(event.start, "fullTime24h") }} - {{ dateFormatter.format(event.end, "fullTime24h") }}
                                 <VIcon :icon="mdiClockEditOutline" class="ml-1" />
-                                <VMenu :closeDelay="0" :disabled="!(interaction.kind === 'idle')" :openDelay="0" activator="parent" location="end" openOnHover>
+                                <VMenu
+                                    :closeDelay="0"
+                                    :disabled="interaction.kind !== 'idle' || isReadonly"
+                                    :openDelay="0"
+                                    activator="parent"
+                                    location="end"
+                                    openOnHover
+                                >
                                     <VSheet class="d-flex ga-2 pa-1">
                                         <VSpacer />
                                         <VIconBtn
