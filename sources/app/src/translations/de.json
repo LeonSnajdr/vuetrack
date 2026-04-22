@@ -40,7 +40,7 @@
   "list.table.project": "Projekt",
   "list.table.start": "Start",
   "list.table.task": "Task",
-  "preset.empty": "Lege ein Preset an, um neue Zeiteinträge schneller vorzufüllen.",
+  "preset.empty": "Lege Presets an, um neue Zeiteinträge schneller zu befüllen.",
   "preset.field.durationMinutes": "Dauer (Minuten)",
   "preset.field.name": "Preset-Name",
   "preset.plural": "Presets",

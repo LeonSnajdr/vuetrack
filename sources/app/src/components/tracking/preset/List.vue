@@ -7,7 +7,7 @@
                 <TrackingPresetCreateDialog />
             </VIconBtn>
         </div>
-        <VAlert v-if="!presets.length" density="compact" type="info" variant="tonal">
+        <VAlert v-if="!presets.length" class="text-body-small text-medium-emphasis" density="compact" variant="tonal">
             {{ $t("preset.empty") }}
         </VAlert>
         <template v-else>
