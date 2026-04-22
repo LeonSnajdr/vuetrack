@@ -6,6 +6,7 @@
   "action.create.error": "{type} could not be created",
   "action.create.success": "{type} created successfully",
   "action.create.title": "Create {type}",
+  "action.createAnother": "Create another",
   "action.delete": "Delete",
   "action.delete.error": "{type} could not be deleted",
   "action.delete.info": "This action cannot be undone.",

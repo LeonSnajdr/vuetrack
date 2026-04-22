@@ -32,6 +32,17 @@ export const usePresetStore = defineStore(
             };
         };
 
+        const deletePreset = (id: TimeEntryPresetId): void => {
+            const index = presets.value.findIndex((preset) => preset.id === id);
+            if (index < 0) return;
+
+            presets.value.splice(index, 1);
+
+            if (activePresetId.value === id) {
+                activePresetId.value = null;
+            }
+        };
+
         const setActivePreset = (id: TimeEntryPresetId | null): void => {
             activePresetId.value = id;
         };
@@ -46,6 +57,7 @@ export const usePresetStore = defineStore(
             activePreset,
             createPreset,
             updatePreset,
+            deletePreset,
             setActivePreset,
             toggleActivePreset
         };

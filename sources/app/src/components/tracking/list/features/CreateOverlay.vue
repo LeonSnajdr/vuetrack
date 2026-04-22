@@ -7,7 +7,7 @@
             <TimeEntryFieldContainer v-model="interaction.create" v-model:valid="valid" />
         </template>
         <template #actionPrepend>
-            <VCheckbox v-model="createAnother" label="Weiteres erstellen" />
+            <VCheckbox v-model="createAnother" :label="$t('action.createAnother')" />
         </template>
         <template #actions>
             <VBtn @click="create.finish(createAnother)" :disabled="!valid" :loading="isCreatingEntry" color="primary" variant="flat">

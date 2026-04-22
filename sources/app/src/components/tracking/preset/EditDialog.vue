@@ -10,6 +10,10 @@
                 </VForm>
             </VCardText>
             <VCardActions>
+                <VBtn :prependIcon="mdiDelete" variant="plain">
+                    <BaseConfirmationDialog @confirm="remove" :type="$t('preset.singular')" activator="parent" />
+                    {{ $t("action.delete") }}
+                </VBtn>
                 <VSpacer />
                 <VBtn @click="dialogOpen = false" variant="text">
                     {{ $t("action.cancel") }}
@@ -49,6 +53,11 @@ const { cloned: draftPreset } = useClonedMapped(
 const submit = (): void => {
     if (!valid.value) return;
     presetStore.updatePreset(props.preset.id, draftPreset.value);
+    dialogOpen.value = false;
+};
+
+const remove = (): void => {
+    presetStore.deletePreset(props.preset.id);
     dialogOpen.value = false;
 };
 </script>

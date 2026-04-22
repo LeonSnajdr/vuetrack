@@ -14,6 +14,7 @@ declare module 'vue' {
     AppHeader: typeof import('./../src/components/app/Header.vue')['default']
     AppNotificationView: typeof import('./../src/components/app/NotificationView.vue')['default']
     BaseBtnExpand: typeof import('./../src/components/base/btn/Expand.vue')['default']
+    BaseConfirmationDialog: typeof import('./../src/components/base/ConfirmationDialog.vue')['default']
     BaseDateTimeInput: typeof import('./../src/components/base/DateTimeInput.vue')['default']
     BaseExpandColumnContent: typeof import('./../src/components/base/ExpandColumnContent.vue')['default']
     BaseOverlayProvider: typeof import('./../src/components/base/OverlayProvider.vue')['default']
