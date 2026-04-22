@@ -8,30 +8,23 @@ export function useTimeEntryHelper() {
     const { timeEntries } = storeToRefs(timeEntryStore);
     const { activePreset } = storeToRefs(presetStore);
 
-    const hasDefaultValue = <TKey extends keyof Nullable<TimeEntryCreateContract>>(
-        defaultValues: Partial<Nullable<TimeEntryCreateContract>> | undefined,
-        key: TKey
-    ): defaultValues is Partial<Nullable<TimeEntryCreateContract>> & Pick<Nullable<TimeEntryCreateContract>, TKey> => {
-        return defaultValues !== undefined && Object.hasOwn(defaultValues, key);
-    };
-
     const createDefaultTimeEntry = (defaultValues?: Partial<Nullable<TimeEntryCreateContract>>): Nullable<TimeEntryCreateContract> => {
         const newestTimeEntry = maxBy(timeEntries.value, (x) => x.endTime);
-        const resolvedStartTime =
-            hasDefaultValue(defaultValues, "startTime") ? defaultValues.startTime : newestTimeEntry?.endTime ?? new Date(new Date().setHours(8));
-        const resolvedEndTime = hasDefaultValue(defaultValues, "endTime")
-            ? defaultValues.endTime
-            : activePreset.value?.durationMinutes != null && resolvedStartTime instanceof Date
-              ? new Date(resolvedStartTime.getTime() + activePreset.value.durationMinutes * 60 * 1000)
-              : null;
+        const resolvedStartTime = defaultValues?.startTime ?? newestTimeEntry?.endTime ?? new Date(new Date().setHours(8));
+        const presetDurationMinutes = activePreset.value?.durationMinutes;
+        const resolvedEndTime =
+            defaultValues?.endTime ??
+            (resolvedStartTime instanceof Date && presetDurationMinutes != null
+                ? new Date(resolvedStartTime.getTime() + presetDurationMinutes * 60 * 1000)
+                : null);
 
         return {
-            taskId: hasDefaultValue(defaultValues, "taskId") ? defaultValues.taskId : activePreset.value?.taskId ?? null,
+            taskId: defaultValues?.taskId ?? activePreset.value?.taskId ?? null,
             startTime: resolvedStartTime,
             endTime: resolvedEndTime,
-            activityId: hasDefaultValue(defaultValues, "activityId") ? defaultValues.activityId : activePreset.value?.activityId ?? null,
-            projectId: hasDefaultValue(defaultValues, "projectId") ? defaultValues.projectId : activePreset.value?.projectId ?? null,
-            comment: hasDefaultValue(defaultValues, "comment") ? defaultValues.comment : null
+            activityId: defaultValues?.activityId ?? activePreset.value?.activityId ?? null,
+            projectId: defaultValues?.projectId ?? activePreset.value?.projectId ?? null,
+            comment: defaultValues?.comment ?? null
         };
     };
 
