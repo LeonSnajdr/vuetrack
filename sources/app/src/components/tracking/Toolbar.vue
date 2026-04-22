@@ -1,5 +1,5 @@
 ﻿<template>
-    <VToolbar class="px-2" flat>
+    <VToolbar class="px-4" flat>
         <TrackingTimePeriodSelection />
         <div id="tracking-toolbar-prepend" class="d-inline-flex align-center ga-2 ml-2" />
         <template #append>

@@ -32,7 +32,7 @@
                         <div class="d-flex flex-col justify-space-between">
                             <div class="text-truncate">
                                 <template v-if="event.kind === 'existing' || event.kind === 'suggestion'">
-                                    {{ event.timeEntry.taskId }}
+                                    {{ event.timeEntry.taskId ?? event.timeEntry.project.name }}
                                 </template>
                                 <template v-else>{{ $t("calendar.event.draft") }}</template>
                             </div>
