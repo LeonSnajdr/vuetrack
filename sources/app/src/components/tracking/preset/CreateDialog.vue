@@ -2,17 +2,19 @@
     <VDialog v-model="dialogOpen" activator="parent" maxWidth="600">
         <VCard>
             <VCardTitle>
-                {{ $t("sidebar.preset.form.create") }}
+                {{ $t("action.create.title", { type: $t("preset.singular") }) }}
             </VCardTitle>
             <VCardText>
-                <TrackingPresetContainer v-model="draftPreset" />
+                <VForm v-model="valid">
+                    <TrackingPresetContainer v-model="draftPreset" />
+                </VForm>
             </VCardText>
             <VCardActions>
                 <VSpacer />
                 <VBtn @click="dialogOpen = false" variant="text">
                     {{ $t("action.cancel") }}
                 </VBtn>
-                <VBtn @click="submit" :disabled="!canSavePreset" color="primary" variant="flat">
+                <VBtn @click="submit" :disabled="!valid" color="primary" variant="flat">
                     {{ $t("action.create") }}
                 </VBtn>
             </VCardActions>
@@ -24,39 +26,27 @@
 import type { TimeEntryPresetCreate } from "@/models/TimeEntryPreset";
 
 const presetStore = usePresetStore();
-const { createPreset } = presetStore;
 
 const dialogOpen = ref(false);
+const valid = ref(false);
 
-const emptyPreset = (): TimeEntryPresetCreate => ({
-    name: "",
+const emptyPreset = (): Nullable<TimeEntryPresetCreate> => ({
+    name: null,
     taskId: null,
     durationMinutes: null,
     projectId: null,
     activityId: null
 });
 
-const draftPreset = ref<TimeEntryPresetCreate>(emptyPreset());
-
-const canSavePreset = computed(() => draftPreset.value.name.trim().length > 0);
+const draftPreset = ref<Nullable<TimeEntryPresetCreate>>(emptyPreset());
 
 const submit = (): void => {
-    if (!canSavePreset.value) return;
-
-    createPreset({
-        name: draftPreset.value.name.trim(),
-        taskId: draftPreset.value.taskId?.trim() || null,
-        durationMinutes: draftPreset.value.durationMinutes,
-        projectId: draftPreset.value.projectId,
-        activityId: draftPreset.value.activityId
-    });
-
+    if (!valid.value) return;
+    presetStore.createPreset(draftPreset.value);
     dialogOpen.value = false;
 };
 
-watch(dialogOpen, (isOpen) => {
-    if (!isOpen) {
-        draftPreset.value = emptyPreset();
-    }
+whenever(dialogOpen, () => {
+    draftPreset.value = emptyPreset();
 });
 </script>

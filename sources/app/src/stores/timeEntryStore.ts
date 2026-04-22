@@ -29,10 +29,7 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
     watch(filter, executeLoadWithFilters, { deep: true });
 
     const create = async (createContract: Nullable<TimeEntryCreateContract>): Promise<ActionResult> => {
-        // TODO
-        /*if (!isNonNullable(createContract)) {
-            return error();
-        }*/
+        if (!isNonNullable(createContract)) return error();
 
         const createResult = await executeCreate(createContract as TimeEntryCreateContract);
 

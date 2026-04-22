@@ -1,14 +1,14 @@
 <template>
     <div class="d-flex flex-column ga-4">
         <div class="d-flex align-center justify-space-between ga-2">
-            <div>{{ $t("sidebar.preset.title") }}</div>
+            <div>{{ $t("preset.plural") }}</div>
             <VIconBtn v-tooltip="$t('action.create')">
                 <VIcon :icon="mdiPlus" size="small" />
                 <TrackingPresetCreateDialog />
             </VIconBtn>
         </div>
         <VAlert v-if="!presets.length" density="compact" type="info" variant="tonal">
-            {{ $t("sidebar.preset.empty") }}
+            {{ $t("preset.empty") }}
         </VAlert>
         <template v-else>
             <VChipGroup :modelValue="activePresetId ?? undefined" column>

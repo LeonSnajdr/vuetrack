@@ -2,7 +2,7 @@
     <VRowSingle>
         <VAutocomplete
             v-bind="$attrs"
-            v-model="activityId"
+            v-model.trim="activityId"
             :autoSelectFirst="autoSelectFirstEnabled"
             :items="activities"
             :label="$t('timeEntry.field.activityId')"

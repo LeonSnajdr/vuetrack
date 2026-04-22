@@ -14,3 +14,5 @@ export type TimeEntryPreset = {
 };
 
 export type TimeEntryPresetCreate = Omit<TimeEntryPreset, "id">;
+
+export type TimeEntryPresetUpdate = Omit<TimeEntryPreset, "id">;
