@@ -3037,6 +3037,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"defu@npm:^6.1.4":
+  version: 6.1.7
+  resolution: "defu@npm:6.1.7"
+  checksum: 10c0/e6635388103c8be3c574ac31302f6930e5e6eeedba32cb1b30cf993c7d9fb571aec2485446dfa23bfa63e55e66156fe109027a9695db82a50f931e91e8d4bedb
+  languageName: node
+  linkType: hard
+
 "delayed-stream@npm:~1.0.0":
   version: 1.0.0
   resolution: "delayed-stream@npm:1.0.0"
@@ -5449,6 +5456,26 @@ __metadata:
   languageName: node
   linkType: hard
 
+"pinia-plugin-persistedstate@npm:^4.7.1":
+  version: 4.7.1
+  resolution: "pinia-plugin-persistedstate@npm:4.7.1"
+  dependencies:
+    defu: "npm:^6.1.4"
+  peerDependencies:
+    "@nuxt/kit": ">=3.0.0"
+    "@pinia/nuxt": ">=0.10.0"
+    pinia: ">=3.0.0"
+  peerDependenciesMeta:
+    "@nuxt/kit":
+      optional: true
+    "@pinia/nuxt":
+      optional: true
+    pinia:
+      optional: true
+  checksum: 10c0/1d1d0dae9bfa256f0fa0b89286af35b1320198626882b6774b7d37a065f6a256844665c1b30e37a7b6af689f6858a501828020a6b3edfa8dedd9484df85c4fdd
+  languageName: node
+  linkType: hard
+
 "pinia@npm:^3.0.4":
   version: 3.0.4
   resolution: "pinia@npm:3.0.4"
@@ -7317,6 +7344,7 @@ __metadata:
     lodash: "npm:^4.17.23"
     npm-run-all2: "npm:^8.0.4"
     pinia: "npm:^3.0.4"
+    pinia-plugin-persistedstate: "npm:^4.7.1"
     postcss-html: "npm:^1.8.1"
     qs: "npm:^6.15.0"
     sass-embedded: "npm:^1.98.0"
