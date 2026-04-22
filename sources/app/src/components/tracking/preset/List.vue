@@ -21,7 +21,7 @@
                 >
                     <span class="text-truncate mr-2">{{ preset.name }}</span>
                     <template #append>
-                        <VIconBtn size="x-small" variant="text">
+                        <VIconBtn class="mx-n1" size="x-small" variant="text">
                             <VIcon :icon="mdiPencil" size="small" />
                             <TrackingPresetEditDialog :preset="preset" />
                         </VIconBtn>
