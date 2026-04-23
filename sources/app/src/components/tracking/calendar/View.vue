@@ -211,6 +211,11 @@ const toTime = (tms: CalendarDayBodySlotScope) => {
     min-height: 30px;
 }
 
+:deep(.v-event) {
+    user-select: none;
+    min-height: 30px;
+}
+
 .v-event-drag-bottom {
     position: absolute;
     left: 0;

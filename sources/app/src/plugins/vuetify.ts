@@ -192,11 +192,7 @@ export default createVuetify({
             class: "d-flex flex-column",
 
             VCardTitle: {
-                class: "text-medium-emphasis font-weight-light d-flex align-center"
-            },
-
-            VCardSubtitle: {
-                class: "text-uppercase"
+                class: "text-title-large d-flex align-center"
             }
         },
         VNavigationDrawer: {
