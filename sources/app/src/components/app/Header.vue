@@ -1,5 +1,5 @@
 <template>
-    <VAppBar class="v-app-bar px-1" density="compact">
+    <VAppBar class="v-app-bar px-1 rounded-b" density="compact">
         <template #prepend>
             <VIconBtn @click="sidebarOpen = !sidebarOpen" :icon="mdiDockLeft" />
             <p class="ml-2">Vuetrack</p>

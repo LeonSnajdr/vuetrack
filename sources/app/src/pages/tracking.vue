@@ -1,6 +1,11 @@
 ﻿<template>
     <TrackingSidebar />
-    <RouterView />
+    <VContainer class="h-100 d-flex flex-column">
+        <VCard class="h-100">
+            <TrackingToolbar />
+            <RouterView />
+        </VCard>
+    </VContainer>
 </template>
 
 <script setup lang="ts">

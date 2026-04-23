@@ -19,6 +19,7 @@
         :start="start"
         :type="calendarType"
         :weekdays="weekdays"
+        class="border-s-0"
         color="primary"
         eventOverlapMode="column"
     >
@@ -60,7 +61,6 @@
                                             v-if="event.kind === 'existing' || event.kind === 'suggestion'"
                                             @click="edit.start(event)"
                                             :icon="mdiPencil"
-                                            iconColor="white"
                                             variant="flat"
                                         />
                                         <VIconBtn

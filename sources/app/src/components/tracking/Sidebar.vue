@@ -1,5 +1,5 @@
 <template>
-    <VNavigationDrawer v-if="sidebarOpen" location="left" width="280" permanent>
+    <VNavigationDrawer v-if="sidebarOpen" class="border-0" location="left" width="280" permanent>
         <TrackingPresetList />
     </VNavigationDrawer>
 </template>
