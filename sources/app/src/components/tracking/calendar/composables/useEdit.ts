@@ -56,19 +56,21 @@ export function useEdit() {
             }
         }
 
-        await mutation.execute(editMutation);
+        const editResult = await mutation.execute(editMutation);
 
-        interaction.value = { kind: "idle" };
+        if (editResult.status === "success") {
+            interaction.value = { kind: "idle" };
+        }
     };
 
     const cancel = () => {
         if (interaction.value.kind !== "edit") return;
 
-        const { event, mutation: conflictMutation } = interaction.value;
+        const { event, mutation: editMutation } = interaction.value;
 
-        if ("originalPosition" in conflictMutation) {
-            event.start = conflictMutation.originalPosition.start;
-            event.end = conflictMutation.originalPosition.end;
+        if ("originalPosition" in editMutation) {
+            event.start = editMutation.originalPosition.start;
+            event.end = editMutation.originalPosition.end;
         }
 
         interaction.value = { kind: "idle" };

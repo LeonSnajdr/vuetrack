@@ -29,6 +29,7 @@
     "ShallowRef": true,
     "Slot": true,
     "Slots": true,
+    "TError": true,
     "TimeEntryBreakContract": true,
     "TimeEntryContract": true,
     "TimeEntryCreateContract": true,

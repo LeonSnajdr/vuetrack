@@ -76,8 +76,18 @@ export function useResize() {
             }
         }
 
+        const resizeResult = await mutation.execute(cur.mutation);
+
+        if (resizeResult.status === "error") {
+            interaction.value = {
+                kind: "edit",
+                event: cur.event,
+                mutation: cur.mutation
+            };
+            return;
+        }
+
         interaction.value = { kind: "idle" };
-        await mutation.execute(cur.mutation);
     };
 
     const cancel = () => {

@@ -16,17 +16,14 @@ export function useEventMutation() {
 
     const { draftEvents } = storeToRefs(calendarStore);
 
-    const execute = async (mutation: TimeEntryMutation): Promise<void> => {
+    const execute = async (mutation: TimeEntryMutation) => {
         switch (mutation.kind) {
             case "create":
-                await executeCreate(mutation);
-                break;
+                return await executeCreate(mutation);
             case "update":
-                await executeUpdate(mutation);
-                break;
+                return await executeUpdate(mutation);
             case "delete":
-                await executeDelete(mutation);
-                break;
+                return await executeDelete(mutation);
         }
     };
 
@@ -34,7 +31,7 @@ export function useEventMutation() {
         await Promise.all(mutations.map((m) => execute(m)));
     };
 
-    const executeCreate = async (mutation: DraftTimeEntryCreateMutation | SuggestionTimeEntryCreateMutation): Promise<void> => {
+    const executeCreate = async (mutation: DraftTimeEntryCreateMutation | SuggestionTimeEntryCreateMutation) => {
         if (mutation.event.kind === "draft") {
             const result = await timeEntryStore.create(mutation.create);
 
@@ -42,16 +39,20 @@ export function useEventMutation() {
                 const idx = draftEvents.value.indexOf(mutation.event);
                 if (idx !== -1) draftEvents.value.splice(idx, 1);
             }
+
+            return result;
         } else {
             const result = await timeEntryStore.create(mutation.create);
 
             if (result.status === "success") {
                 await suggestionStore.dismiss(mutation.event.timeEntry.id);
             }
+
+            return result;
         }
     };
 
-    const executeUpdate = async (mutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation): Promise<void> => {
+    const executeUpdate = async (mutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation) => {
         let result: ActionResult;
         if (mutation.event.kind === "existing") {
             result = await timeEntryStore.update(mutation.event.timeEntry.id, mutation.update);
@@ -59,22 +60,24 @@ export function useEventMutation() {
             result = await suggestionStore.update(mutation.event.timeEntry.id, mutation.update);
         }
 
-        if (result.status === "error") {
+        // TODO check for edge cases -> When transition into edit does not work.
+        if (result.status === "error" && !result.error) {
             mutation.event.start = mutation.originalPosition.start;
             mutation.event.end = mutation.originalPosition.end;
         }
+
+        return result;
     };
 
-    const executeDelete = async (
-        mutation: DraftTimeEntryDeleteMutation | ExistingTimeEntryDeleteMutation | SuggestionTimeEntryDeleteMutation
-    ): Promise<void> => {
+    const executeDelete = async (mutation: DraftTimeEntryDeleteMutation | ExistingTimeEntryDeleteMutation | SuggestionTimeEntryDeleteMutation) => {
         if (mutation.event.kind === "draft") {
             const idx = draftEvents.value.indexOf(mutation.event);
             if (idx !== -1) draftEvents.value.splice(idx, 1);
+            return success();
         } else if (mutation.event.kind === "existing") {
-            await timeEntryStore.remove(mutation.event.timeEntry.id);
+            return await timeEntryStore.remove(mutation.event.timeEntry.id);
         } else {
-            await suggestionStore.dismiss(mutation.event.timeEntry.id);
+            return await suggestionStore.dismiss(mutation.event.timeEntry.id);
         }
     };
 
