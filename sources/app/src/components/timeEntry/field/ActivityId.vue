@@ -3,11 +3,11 @@
         <VAutocomplete
             v-bind="$attrs"
             v-model.trim="activityId"
-            :autoSelectFirst="autoSelectFirstEnabled"
+            :autoSelectFirst="!disableAutoSelectFirst"
             :items="activities"
             :label="$t('timeEntry.field.activityId')"
             :loading="isLoading"
-            :rules="required ? [rules.required()] : undefined"
+            :rules="disableRequired ? undefined : [rules.required()]"
             itemTitle="name"
             itemValue="id"
         />
@@ -18,38 +18,33 @@
 import type { ProjectId } from "@/contracts/ProjectContract";
 import type { ActivityId } from "@/contracts/ActivityContract";
 
-const {
-    projectId,
-    required = true,
-    autoSelectFirst = true
-} = defineProps<{
+const props = defineProps<{
     projectId: ProjectId | null;
-    required?: boolean;
-    autoSelectFirst?: boolean;
+    disableRequired?: boolean;
+    disableAutoSelectFirst?: boolean;
 }>();
 
 const activityId = defineModel<ActivityId | null>({ required: true });
 
 const rules = useRules();
 const { data: activities, execute: loadActivities, isLoading } = useAsyncState(ProjectService.loadActivities, { initialValue: [] });
-const autoSelectFirstEnabled = computed(() => autoSelectFirst);
 
 watch(
-    () => projectId,
+    () => props.projectId,
     () => {
-        if (!projectId) return;
-        loadActivities(projectId);
+        if (!props.projectId) return;
+        loadActivities(props.projectId);
     },
     { immediate: true }
 );
 
 watch(
-    () => projectId,
+    () => props.projectId,
     () => (activityId.value = null)
 );
 
 whenever(
-    () => autoSelectFirst && activities.value.length === 1,
+    () => !props.disableAutoSelectFirst && activities.value.length === 1,
     () => {
         activityId.value = activities.value[0]!.id;
     },

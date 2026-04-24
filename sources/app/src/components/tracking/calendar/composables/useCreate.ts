@@ -52,6 +52,8 @@ export function useCreate() {
 
         await mutation.execute(createMutation);
 
+        // TODO: don't go back to idle in case of error
+
         interaction.value = { kind: "idle" };
     };
 
