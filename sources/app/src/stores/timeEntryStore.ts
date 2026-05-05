@@ -33,10 +33,6 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
 
         const createResult = await executeCreate(createContract as TimeEntryCreateContract);
 
-        if (createResult.status === "error") {
-            notify.error(t("action.create.error", { type: t("timeEntry.singular") }), { timeout: 5000 });
-        }
-
         if (createResult.status === "success") {
             await executeLoadWithFilters();
         }
@@ -46,10 +42,6 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
 
     const update = async (id: TimeEntryId, updateContract: TimeEntryUpdateContract): Promise<ActionResult> => {
         const updateResult = await executeUpdate(id, updateContract);
-
-        if (updateResult.status === "error") {
-            notify.error(t("action.save.error", { type: t("timeEntry.singular") }), { timeout: 5000 });
-        }
 
         if (updateResult.status === "success") {
             await executeLoadWithFilters();

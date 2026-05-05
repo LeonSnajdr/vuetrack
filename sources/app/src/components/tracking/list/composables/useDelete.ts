@@ -5,8 +5,6 @@ import { cancelled } from "@/util/ActionResult";
 export function useDelete() {
     const listStore = useTrackingListStore();
     const timeEntryStore = useTimeEntryStore();
-    const notify = useNotify();
-    const { t } = useI18n();
 
     const { interaction } = storeToRefs(listStore);
 
@@ -19,10 +17,7 @@ export function useDelete() {
 
         const result = await timeEntryStore.remove(interaction.value.timeEntryId);
 
-        if (result.status === "error") {
-            notify.error(t("action.delete.error", { type: t("timeEntry.singular") }), { timeout: 5000 });
-            return result;
-        }
+        if (result.status === "error") return result;
 
         interaction.value = { kind: "idle" };
         return result;

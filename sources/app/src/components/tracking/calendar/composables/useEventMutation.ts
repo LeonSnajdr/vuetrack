@@ -1,3 +1,5 @@
+import type { ActionResult } from "@/util/ActionResult";
+import { success } from "@/util/ActionResult";
 import type {
     DraftTimeEntryCreateMutation,
     DraftTimeEntryDeleteMutation,
@@ -58,12 +60,6 @@ export function useEventMutation() {
             result = await timeEntryStore.update(mutation.event.timeEntry.id, mutation.update);
         } else {
             result = await suggestionStore.update(mutation.event.timeEntry.id, mutation.update);
-        }
-
-        // TODO check for edge cases -> When transition into edit does not work.
-        if (result.status === "error" && !result.error) {
-            mutation.event.start = mutation.originalPosition.start;
-            mutation.event.end = mutation.originalPosition.end;
         }
 
         return result;

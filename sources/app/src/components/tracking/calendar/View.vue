@@ -74,6 +74,9 @@
                                 </VMenu>
                             </VChip>
                         </div>
+                        <div v-if="event.kind === 'existing' || event.kind === 'suggestion'" class="text-medium-emphasis text-truncate">
+                            {{ event.timeEntry.comment }}
+                        </div>
                     </div>
                 </div>
                 <!-- TODO Might be allowed during conflict-->

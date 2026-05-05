@@ -1,4 +1,5 @@
 import type { TimeEntryContract, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
+import { ApiValidationException } from "@/util/ApiValidationError";
 
 export function useEdit() {
     const listStore = useTrackingListStore();
@@ -24,9 +25,16 @@ export function useEdit() {
     const finish = async () => {
         if (interaction.value.kind !== "edit") return;
 
-        await timeEntryStore.update(interaction.value.timeEntryId, interaction.value.update);
+        const result = await timeEntryStore.update(interaction.value.timeEntryId, interaction.value.update);
 
-        interaction.value = { kind: "idle" };
+        if (result.status === "success") {
+            interaction.value = { kind: "idle" };
+            return;
+        }
+
+        if (result.status === "error" && result.error instanceof ApiValidationException) {
+            interaction.value.errors = result.error.errors;
+        }
     };
 
     const cancel = () => {

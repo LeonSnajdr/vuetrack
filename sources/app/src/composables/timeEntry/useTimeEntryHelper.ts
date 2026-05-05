@@ -10,7 +10,7 @@ export function useTimeEntryHelper() {
 
     const createDefaultTimeEntry = (defaultValues?: Partial<Nullable<TimeEntryCreateContract>>): Nullable<TimeEntryCreateContract> => {
         const newestTimeEntry = maxBy(timeEntries.value, (x) => x.endTime);
-        const resolvedStartTime = defaultValues?.startTime ?? newestTimeEntry?.endTime ?? new Date(new Date().setHours(8));
+        const resolvedStartTime = defaultValues?.startTime ?? newestTimeEntry?.endTime ?? new Date(new Date().setHours(8, 0, 0, 0));
         const presetDurationMinutes = activePreset.value?.durationMinutes;
         const resolvedEndTime =
             defaultValues?.endTime ??

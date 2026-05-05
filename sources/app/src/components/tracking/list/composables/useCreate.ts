@@ -1,3 +1,5 @@
+import { ApiValidationException } from "@/util/ApiValidationError";
+
 export function useCreate() {
     const listStore = useTrackingListStore();
     const timeEntryStore = useTimeEntryStore();
@@ -15,7 +17,10 @@ export function useCreate() {
 
         const result = await timeEntryStore.create(interaction.value.create);
 
-        if (result.status === "error") return;
+        if (result.status === "error") {
+            if (result.error instanceof ApiValidationException) interaction.value.errors = result.error.errors;
+            return;
+        }
 
         if (result.status === "success" && createAnother) {
             interaction.value.create = timeEntryHelper.createDefaultTimeEntry({ startTime: interaction.value.create.endTime });

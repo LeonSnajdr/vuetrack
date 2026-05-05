@@ -4,6 +4,7 @@ import type {
     SuggestionTimeEntryEvent,
     SuggestionTimeEntryCreateMutation
 } from "@/components/tracking/calendar/types";
+import { ApiValidationException } from "@/util/ApiValidationError";
 import { useCalendarHelper } from "./useCalendarHelper";
 import { useEventMutation } from "./useEventMutation";
 
@@ -50,11 +51,16 @@ export function useCreate() {
             return;
         }
 
-        await mutation.execute(createMutation);
+        const createResult = await mutation.execute(createMutation);
 
-        // TODO: don't go back to idle in case of error
+        if (createResult.status === "success") {
+            interaction.value = { kind: "idle" };
+            return;
+        }
 
-        interaction.value = { kind: "idle" };
+        if (createResult.status === "error" && createResult.error instanceof ApiValidationException) {
+            interaction.value.errors = createResult.error.errors;
+        }
     };
 
     const cancel = () => {

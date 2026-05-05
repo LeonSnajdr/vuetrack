@@ -3,6 +3,16 @@ import type { ActivityId } from "@/contracts/ActivityContract";
 import type { ProjectId } from "@/contracts/ProjectContract";
 import axios from "@/plugins/axios";
 import type { TrackingFilter } from "@/models/TrackingFilter";
+import { ApiValidationException, type ApiValidationError, tryGetApiValidationError } from "@/util/ApiValidationError";
+
+const validationFieldKeyMappings: ReadonlyArray<readonly [string, readonly string[]]> = [
+    ["taskId", ["taskId"]],
+    ["startTime", ["startDate", "startTime"]],
+    ["endTime", ["endDate", "endTime"]],
+    ["projectId", ["projectId", "project.id"]],
+    ["activityId", ["activityId", "activity.id"]],
+    ["comment", ["comment"]]
+];
 
 type ActivityDTO = {
     id: number;
@@ -54,11 +64,11 @@ class TimeEntryService {
     };
 
     public create = async (createContract: TimeEntryCreateContract): Promise<void> => {
-        await axios.api.post<void>("timeEntry/upsert", this.mapContractToDto(createContract));
+        await this.invokeWithValidationMapping(() => axios.api.post<void>("timeEntry/upsert", this.mapContractToDto(createContract)));
     };
 
     public update = async (id: TimeEntryId, updateContract: TimeEntryUpdateContract, signal?: AbortSignal): Promise<void> => {
-        await axios.api.post<void>("timeEntry/upsert", this.mapContractToDto(updateContract, id), { signal });
+        await this.invokeWithValidationMapping(() => axios.api.post<void>("timeEntry/upsert", this.mapContractToDto(updateContract, id), { signal }));
     };
 
     public delete = async (id: TimeEntryId): Promise<void> => {
@@ -68,6 +78,29 @@ class TimeEntryService {
             }
         });
     };
+
+    private async invokeWithValidationMapping<T>(fn: () => Promise<T>): Promise<T> {
+        try {
+            return await fn();
+        } catch (error) {
+            const validationError = this.tryMapValidationError(error);
+            if (validationError) throw new ApiValidationException(validationError);
+            throw error;
+        }
+    }
+
+    private tryMapValidationError(error: unknown): ApiValidationError | null {
+        const raw = tryGetApiValidationError(error);
+        if (!raw) return null;
+
+        const mapped: ApiValidationError = {};
+        for (const [fieldKey, sourceKeys] of validationFieldKeyMappings) {
+            const messages = [...new Set(sourceKeys.flatMap((sourceKey) => raw[sourceKey] ?? []))];
+            if (messages.length > 0) mapped[fieldKey] = messages;
+        }
+
+        return Object.keys(mapped).length > 0 ? mapped : null;
+    }
 
     private storeDtos(dtos: TimeEntryDTO[]): void {
         for (const dto of dtos) {

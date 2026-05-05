@@ -4,7 +4,7 @@
             {{ $t("action.create.title", { type: $t("timeEntry.singular") }) }}
         </template>
         <template #content>
-            <TimeEntryFieldContainer v-model="interaction.create" v-model:valid="valid" />
+            <TimeEntryFieldContainer v-model="interaction.create" v-model:errors="interaction.errors" v-model:valid="valid" />
         </template>
         <template #actionPrepend>
             <VCheckbox v-model="createAnother" :label="$t('action.createAnother')" />

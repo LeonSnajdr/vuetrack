@@ -4,6 +4,7 @@ import type {
     SuggestionTimeEntryEvent,
     SuggestionTimeEntryUpdateMutation
 } from "@/components/tracking/calendar/types";
+import { ApiValidationException } from "@/util/ApiValidationError";
 import { useEventMutation } from "./useEventMutation";
 import { useCalendarHelper } from "./useCalendarHelper";
 
@@ -60,6 +61,11 @@ export function useEdit() {
 
         if (editResult.status === "success") {
             interaction.value = { kind: "idle" };
+            return;
+        }
+
+        if (editResult.status === "error" && editResult.error instanceof ApiValidationException) {
+            interaction.value.errors = editResult.error.errors;
         }
     };
 

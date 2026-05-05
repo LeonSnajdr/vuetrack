@@ -1,4 +1,5 @@
 import type { ExistingTimeEntryUpdateMutation, SuggestionTimeEntryUpdateMutation, TimeEntryEvent } from "@/components/tracking/calendar/types";
+import { ApiValidationException } from "@/util/ApiValidationError";
 import { useCalendarHelper } from "./useCalendarHelper";
 import { useEventMutation } from "./useEventMutation";
 
@@ -86,8 +87,26 @@ export function useMove() {
             }
         }
 
+        const moveResult = await mutation.execute(cur.mutation);
+
+        if (moveResult.status === "success") {
+            interaction.value = { kind: "idle" };
+            return;
+        }
+
+        if (moveResult.status === "error" && moveResult.error instanceof ApiValidationException) {
+            interaction.value = {
+                kind: "edit",
+                event: cur.event,
+                mutation: cur.mutation,
+                errors: moveResult.error.errors
+            };
+            return;
+        }
+
+        cur.event.start = cur.mutation.originalPosition.start;
+        cur.event.end = cur.mutation.originalPosition.end;
         interaction.value = { kind: "idle" };
-        await mutation.execute(cur.mutation);
     };
 
     const cancel = () => {

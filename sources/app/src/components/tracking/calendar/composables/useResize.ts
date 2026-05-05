@@ -1,4 +1,5 @@
 import type { ExistingTimeEntryUpdateMutation, SuggestionTimeEntryUpdateMutation, TimeEntryEvent } from "@/components/tracking/calendar/types";
+import { ApiValidationException } from "@/util/ApiValidationError";
 import { useCalendarHelper } from "./useCalendarHelper";
 import { useEventMutation } from "./useEventMutation";
 
@@ -78,12 +79,20 @@ export function useResize() {
 
         const resizeResult = await mutation.execute(cur.mutation);
 
-        if (resizeResult.status === "error") {
+        if (resizeResult.status === "error" && resizeResult.error instanceof ApiValidationException) {
             interaction.value = {
                 kind: "edit",
                 event: cur.event,
-                mutation: cur.mutation
+                mutation: cur.mutation,
+                errors: resizeResult.error.errors
             };
+            return;
+        }
+
+        if (resizeResult.status === "error") {
+            cur.event.start = cur.mutation.originalPosition.start;
+            cur.event.end = cur.mutation.originalPosition.end;
+            interaction.value = { kind: "idle" };
             return;
         }
 

@@ -36,6 +36,9 @@
                 <template #item.data-table-group>
                     {{ item.date }}
                 </template>
+                <template #item.taskId>
+                    <div class="text-truncate" style="max-width: 200px" v-tooltip="item.taskId">{{ item.taskId }}</div>
+                </template>
                 <template #item.startTime>
                     {{ dateFormatter.format(item.startTime, "fullTime24h") }}
                 </template>
