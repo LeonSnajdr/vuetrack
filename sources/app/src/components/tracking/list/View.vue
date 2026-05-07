@@ -1,13 +1,13 @@
 <template>
     <Teleport to="#tracking-toolbar-append" defer>
-        <VSwitch v-model="listConfig.groupByDate" label="Group by date" />
+        <VSwitch v-model="listSettings.groupByDate" label="Group by date" />
         <VBtn id="time-entry-create" @click="create.start" :prependIcon="mdiPlus" color="primary" variant="flat">
             {{ $t("action.create") }}
         </VBtn>
     </Teleport>
     <VDataTable
         v-bind="$attrs"
-        :groupBy="listConfig.groupByDate ? [{ key: 'date' }] : undefined"
+        :groupBy="listSettings.groupByDate ? [{ key: 'date' }] : undefined"
         :headers="headers"
         :items="tableItems"
         :itemsPerPage="-1"
@@ -86,11 +86,11 @@ const { t } = useI18n();
 
 const timeEntryStore = useTimeEntryStore();
 const listStore = useTrackingListStore();
-const configStore = useConfigStore();
+const settingsStore = useSettingsStore();
 
 const { timeEntries } = storeToRefs(timeEntryStore);
 const { interaction, isLoadingEntry } = storeToRefs(listStore);
-const { listConfig } = storeToRefs(configStore);
+const { listSettings } = storeToRefs(settingsStore);
 
 const create = useCreate();
 const edit = useEdit();

@@ -1,13 +1,13 @@
 import type { CalendarInterval } from "@/components/tracking/calendar/composables/useCalendarInterval";
 
-export type CalendarSettingsContract = {
+export type CalendarSettings = {
     intervalMinutes: CalendarInterval;
 };
 
-export type ListSettingsContract = {
+export type ListSettings = {
     groupByDate: boolean;
 };
 
-export type GeneralSettingsContract = {
+export type GeneralSettings = {
     // Reserved for future general settings
 };
