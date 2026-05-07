@@ -49,6 +49,7 @@ class TimeEntryService {
     private readonly dtoById = new Map<TimeEntryId, TimeEntryDTO>();
 
     public load = async (filter: TrackingFilter): Promise<TimeEntryContract[]> => {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
         const result = await axios.api.get<TimeEntryDTO[]>("timeEntry", {
             params: {
                 from: this.formatFilterDate(filter.from),
@@ -64,10 +65,12 @@ class TimeEntryService {
     };
 
     public create = async (createContract: TimeEntryCreateContract): Promise<void> => {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
         await this.invokeWithValidationMapping(() => axios.api.post<void>("timeEntry/upsert", this.mapContractToDto(createContract)));
     };
 
     public update = async (id: TimeEntryId, updateContract: TimeEntryUpdateContract, signal?: AbortSignal): Promise<void> => {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
         await this.invokeWithValidationMapping(() => axios.api.post<void>("timeEntry/upsert", this.mapContractToDto(updateContract, id), { signal }));
     };
 

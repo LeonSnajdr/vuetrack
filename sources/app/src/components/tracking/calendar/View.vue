@@ -2,6 +2,7 @@
     <Teleport to="#tracking-toolbar-prepend" defer>
         <TrackingCalendarIntervalSelection />
     </Teleport>
+    <VProgressLinear :indeterminate="isLoadingEvents" style="margin-bottom: -2px" />
     <VCalendar
         @click:date="jumpToDate"
         @click:more="jumpToMoreDay"
@@ -106,7 +107,7 @@ import { useCalendarInterval } from "./composables/useCalendarInterval";
 
 const calendarStore = useCalendarStore();
 
-const { events, interaction } = storeToRefs(calendarStore);
+const { events, interaction, isLoadingEvents } = storeToRefs(calendarStore);
 
 const move = useMove();
 const resize = useResize();

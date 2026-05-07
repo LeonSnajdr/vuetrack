@@ -11,6 +11,7 @@
         :headers="headers"
         :items="tableItems"
         :itemsPerPage="-1"
+        :loading="isLoadingEntry"
         class="overflow-hidden"
         itemValue="id"
         fixedHeader
@@ -61,6 +62,9 @@
                 <td colspan="6">{{ dateHelper.formatDurationMillis(item.breakDetails.durationMillis) }}</td>
             </tr>
         </template>
+        <template #loading>
+            <VSkeletonLoader type="table-row" />
+        </template>
     </VDataTable>
     <TrackingListFeaturesCreateOverlay v-if="interaction.kind === 'create'" v-model:interaction="interaction" />
     <TrackingListFeaturesEditOverlay v-if="interaction.kind === 'edit'" v-model:interaction="interaction" />
@@ -84,7 +88,7 @@ const timeEntryStore = useTimeEntryStore();
 const listStore = useTrackingListStore();
 
 const { timeEntries } = storeToRefs(timeEntryStore);
-const { interaction } = storeToRefs(listStore);
+const { interaction, isLoadingEntry } = storeToRefs(listStore);
 
 const create = useCreate();
 const edit = useEdit();
