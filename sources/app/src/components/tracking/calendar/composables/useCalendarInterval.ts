@@ -3,8 +3,13 @@ export type CalendarInterval = (typeof availableIntervalMinutes)[number];
 
 export function useCalendarInterval() {
     const { t } = useI18n();
-    const calendarStore = useCalendarStore();
-    const { intervalMinutes } = storeToRefs(calendarStore);
+    const configStore = useConfigStore();
+    const { calendarConfig } = storeToRefs(configStore);
+
+    const intervalMinutes = computed({
+        get: () => calendarConfig.value.intervalMinutes,
+        set: (value) => (calendarConfig.value.intervalMinutes = value)
+    });
 
     const intervalCount = computed(() => (60 * 24) / intervalMinutes.value);
     const intervalMinuteOptions = computed(() =>
