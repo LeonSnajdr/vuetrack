@@ -6,9 +6,9 @@ export const useTrackingListStore = defineStore("trackingList", () => {
     const interaction = ref<Interaction>({ kind: "idle" });
 
     const isLoadingEntry = computed(() => timeEntryStore.isLoading);
-    const isCreatingEntry = computed(() => timeEntryStore.isCreating());
-    const isUpdatingEntry = computed(() => timeEntryStore.isUpdating());
-    const isDeletingEntry = computed(() => timeEntryStore.isDeleting());
+    const isCreatingEntry = computed(() => timeEntryStore.isCreating);
+    const isUpdatingEntry = computed(() => timeEntryStore.isUpdating);
+    const isDeletingEntry = computed(() => timeEntryStore.isDeleting);
 
     return {
         interaction,

@@ -44,13 +44,9 @@ export function useAsyncTask<TArgs extends unknown[], TResult, TKey = symbol>(fn
         loadingCounts.set(key, current - 1);
     };
 
-    const isLoading = computed(() => (key?: TKey | symbol): boolean => {
-        if (key !== undefined) {
-            return (loadingCounts.get(key) ?? 0) > 0;
-        }
+    const isLoading = computed(() => Array.from(loadingCounts.values()).some((count) => count > 0));
 
-        return Array.from(loadingCounts.values()).some((count) => count > 0);
-    });
+    const isLoadingByKey = (key: TKey | symbol): boolean => (loadingCounts.get(key) ?? 0) > 0;
 
     const execute = async (...args: TArgs): Promise<ActionResult<TResult>> => {
         const key = getKey(args);
@@ -100,6 +96,7 @@ export function useAsyncTask<TArgs extends unknown[], TResult, TKey = symbol>(fn
         execute,
         cancel,
         isLoading,
+        isLoadingByKey,
         isCancelledError
     };
 }

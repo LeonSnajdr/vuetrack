@@ -6,7 +6,7 @@
             :autoSelectFirst="!disableAutoSelectFirst"
             :items="projects"
             :label="$t('timeEntry.field.projectId')"
-            :loading="isLoading()"
+            :loading="isLoading"
             :rules="disableRequired ? undefined : [rules.required()]"
             itemTitle="name"
             itemValue="id"

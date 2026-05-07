@@ -20,15 +20,15 @@ export const useCalendarStore = defineStore("calendar", () => {
     });
 
     const isDeletingEvent = computed(() => {
-        return timeEntryStore.isDeleting() || suggestionStore.isDismissing();
+        return timeEntryStore.isDeleting || suggestionStore.isDismissing;
     });
 
     const isCreatingEvent = computed(() => {
-        return timeEntryStore.isCreating();
+        return timeEntryStore.isCreating;
     });
 
     const isUpdatingEvent = computed(() => {
-        return timeEntryStore.isUpdating() || suggestionStore.isUpdating();
+        return timeEntryStore.isUpdating || suggestionStore.isUpdating;
     });
 
     return {
