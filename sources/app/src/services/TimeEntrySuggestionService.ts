@@ -26,8 +26,9 @@ class TimeEntrySuggestionService {
         ];
     }
 
-    public async update(id: TimeEntrySuggestionId, updateContract: TimeEntrySuggestionUpdateContract, signal?: AbortSignal): Promise<void> {
-        await axios.api.put<TimeEntrySuggestionContract>(`timeEntrySuggestions/${id}`, updateContract, { signal });
+    public async update(id: TimeEntrySuggestionId, updateContract: TimeEntrySuggestionUpdateContract, signal?: AbortSignal): Promise<TimeEntrySuggestionContract> {
+        const result = await axios.api.put<TimeEntrySuggestionContract>(`timeEntrySuggestions/${id}`, updateContract, { signal });
+        return result.data;
     }
 
     public async dismiss(id: TimeEntrySuggestionId): Promise<void> {

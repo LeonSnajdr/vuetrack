@@ -63,12 +63,26 @@ class TimeEntryService {
         return contracts;
     };
 
-    public create = async (createContract: TimeEntryCreateContract): Promise<void> => {
+    public create = async (createContract: TimeEntryCreateContract): Promise<TimeEntryContract> => {
+        const knownIds = new Set(this.dtoById.keys());
+
         await this.invokeWithValidationMapping(() => axios.api.post<void>("timeEntry/upsert", this.mapContractToDto(createContract)));
+
+        const contracts = await this.load({ from: createContract.startTime, to: createContract.endTime });
+        const created = contracts.find((c) => !knownIds.has(c.id));
+        if (!created) throw new Error("Created time entry not found after upsert");
+        return created;
     };
 
-    public update = async (id: TimeEntryId, updateContract: TimeEntryUpdateContract, signal?: AbortSignal): Promise<void> => {
-        await this.invokeWithValidationMapping(() => axios.api.post<void>("timeEntry/upsert", this.mapContractToDto(updateContract, id), { signal }));
+    public update = async (id: TimeEntryId, updateContract: TimeEntryUpdateContract, signal?: AbortSignal): Promise<TimeEntryContract> => {
+        await this.invokeWithValidationMapping(() =>
+            axios.api.post<void>("timeEntry/upsert", this.mapContractToDto(updateContract, id), { signal })
+        );
+
+        const contracts = await this.load({ from: updateContract.startTime, to: updateContract.endTime });
+        const updated = contracts.find((c) => c.id === id);
+        if (!updated) throw new Error(`Updated time entry ${id} not found after upsert`);
+        return updated;
     };
 
     public delete = async (id: TimeEntryId): Promise<void> => {

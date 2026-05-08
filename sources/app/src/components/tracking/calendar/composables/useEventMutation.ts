@@ -1,4 +1,3 @@
-import type { ActionResult } from "@/util/ActionResult";
 import { success } from "@/util/ActionResult";
 import type {
     DraftTimeEntryCreateMutation,
@@ -57,14 +56,11 @@ export function useEventMutation() {
     };
 
     const executeUpdate = async (mutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation) => {
-        let result: ActionResult;
         if (mutation.event.kind === "existing") {
-            result = await timeEntryStore.update(mutation.event.timeEntry.id, mutation.update);
+            return await timeEntryStore.update(mutation.event.timeEntry.id, mutation.update);
         } else {
-            result = await suggestionStore.update(mutation.event.timeEntry.id, mutation.update);
+            return await suggestionStore.update(mutation.event.timeEntry.id, mutation.update);
         }
-
-        return result;
     };
 
     const executeDelete = async (mutation: DraftTimeEntryDeleteMutation | ExistingTimeEntryDeleteMutation | SuggestionTimeEntryDeleteMutation) => {
