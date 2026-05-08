@@ -8,7 +8,20 @@
     </VApp>
 </template>
 
-<script lang="ts" setup></script>
+<script lang="ts" setup>
+import { useTheme } from "vuetify";
+
+const settingsStore = useSettingsStore();
+const { generalSettings } = storeToRefs(settingsStore);
+
+const theme = useTheme();
+
+watch(
+    () => generalSettings.value.theme,
+    (value) => theme.change(value),
+    { immediate: true }
+);
+</script>
 
 <style lang="scss">
 @use "@/styles/settings";

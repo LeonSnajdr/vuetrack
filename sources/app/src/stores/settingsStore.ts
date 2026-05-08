@@ -1,4 +1,5 @@
 import type { CalendarSettings, GeneralSettings, ListSettings } from "@/models/Settings";
+import { OverlayType } from "@/models/DisplaySettings";
 
 export const useSettingsStore = defineStore(
     "settings",
@@ -8,10 +9,14 @@ export const useSettingsStore = defineStore(
         });
 
         const listSettings = ref<ListSettings>({
-            groupByDate: false
+            groupByDate: false,
+            striped: null
         });
 
-        const generalSettings = ref<GeneralSettings>({});
+        const generalSettings = ref<GeneralSettings>({
+            overlayType: OverlayType.Drawer,
+            theme: "system"
+        });
 
         return {
             calendarSettings,

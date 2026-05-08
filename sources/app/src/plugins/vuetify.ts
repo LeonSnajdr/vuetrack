@@ -192,7 +192,8 @@ export default createVuetify({
             class: "d-flex flex-column",
 
             VCardTitle: {
-                class: "text-title-large d-flex align-center"
+                class: "text-title-large d-flex ga-2 align-center",
+                VIcon: { size: "small" }
             }
         },
         VNavigationDrawer: {
@@ -242,6 +243,10 @@ export default createVuetify({
         },
         VTooltip: {
             openDelay: 400
+        },
+        VBtnToggle: {
+            variant: "outlined",
+            density: "compact"
         },
         VIconBtn: {
             rounded: "lg",

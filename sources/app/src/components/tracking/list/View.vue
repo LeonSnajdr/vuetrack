@@ -1,6 +1,5 @@
 <template>
     <Teleport to="#tracking-toolbar-append" defer>
-        <VSwitch v-model="listSettings.groupByDate" label="Group by date" />
         <VBtn id="time-entry-create" @click="create.start" :prependIcon="mdiPlus" color="primary" variant="flat">
             {{ $t("action.create") }}
         </VBtn>
@@ -12,6 +11,7 @@
         :items="tableItems"
         :itemsPerPage="-1"
         :loading="isLoadingEntry"
+        :striped="listSettings.striped"
         class="overflow-hidden"
         itemValue="id"
         fixedHeader

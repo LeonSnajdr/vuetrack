@@ -17,8 +17,8 @@ type UpdateEventPositionPatch = {
 export const useCalendarHelper = () => {
     const timeEntryStore = useTimeEntryStore();
     const suggestionStore = useTimeEntrySuggestionStore();
-    const calendarStore = useCalendarStore();
-    const { intervalMinutes } = storeToRefs(calendarStore);
+    const settingsStore = useSettingsStore();
+    const { calendarSettings } = storeToRefs(settingsStore);
 
     const roundTime = (timeMs: number, options: RoundTimeOptions = {}): number => {
         const { down = true, snapPoints = [] } = options;
@@ -32,7 +32,7 @@ export const useCalendarHelper = () => {
                 5: 5
             };
 
-            return stepSizeMap[intervalMinutes.value] * 60 * 1000;
+            return stepSizeMap[calendarSettings.value.intervalMinutes] * 60 * 1000;
         };
 
         const getRoundedTime = (stepSizeMs: number): number => {
