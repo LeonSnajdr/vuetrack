@@ -124,8 +124,8 @@ const createUpdateMutation = (event: TimeEntryEvent, newStart: number, newEnd: n
                 startTime: new Date(newStart),
                 endTime: new Date(newEnd),
                 taskId: event.timeEntry.taskId,
-                projectId: event.timeEntry.project,
-                activityId: event.timeEntry.activity,
+                projectId: event.timeEntry.project.id,
+                activityId: event.timeEntry.activity.id,
                 comment: event.timeEntry.comment
             },
             originalPosition: { start: event.start, end: event.end }
