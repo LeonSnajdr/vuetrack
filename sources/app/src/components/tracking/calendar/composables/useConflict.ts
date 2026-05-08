@@ -1,4 +1,5 @@
 ﻿import type { TimeEntryMutation } from "@/components/tracking/calendar/types";
+import { ApiValidationException } from "@/util/ApiValidationError";
 import { useEventMutation } from "./useEventMutation";
 
 export function useConflict() {
@@ -8,10 +9,32 @@ export function useConflict() {
 
     const finish = async (mutations: TimeEntryMutation[]) => {
         if (interaction.value.kind !== "conflict") return;
+        const { mutation: conflictMutation } = interaction.value;
 
-        await mutation.executeAll(mutations);
+        const result = await mutation.executeAll(mutations);
 
-        interaction.value = { kind: "idle" };
+        if (result.status === "success") {
+            interaction.value = { kind: "idle" };
+            return;
+        }
+
+        if (result.status === "error" && result.error instanceof ApiValidationException) {
+            if (conflictMutation.kind === "update") {
+                interaction.value = {
+                    kind: "edit",
+                    event: conflictMutation.event,
+                    mutation: conflictMutation,
+                    errors: result.error.errors
+                };
+            } else {
+                interaction.value = {
+                    kind: "create",
+                    event: conflictMutation.event,
+                    mutation: conflictMutation,
+                    errors: result.error.errors
+                };
+            }
+        }
     };
 
     const cancel = async () => {

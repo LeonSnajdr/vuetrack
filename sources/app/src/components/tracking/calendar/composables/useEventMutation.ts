@@ -28,10 +28,12 @@ export function useEventMutation() {
         }
     };
 
-    const executeAll = async (mutations: TimeEntryMutation[]): Promise<void> => {
+    const executeAll = async (mutations: TimeEntryMutation[]) => {
         for (const m of mutations) {
-            await execute(m);
+            const result = await execute(m);
+            if (result.status !== "success") return result;
         }
+        return success();
     };
 
     const executeCreate = async (mutation: DraftTimeEntryCreateMutation | SuggestionTimeEntryCreateMutation) => {
