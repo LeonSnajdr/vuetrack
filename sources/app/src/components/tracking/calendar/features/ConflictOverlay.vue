@@ -279,24 +279,14 @@ const resolveForce = (): TimeEntryMutation[] | null => {
     const event = interaction.value.event;
     const overlaps = interaction.value.overlaps;
     const mutation = interaction.value.mutation;
-    const mutations: TimeEntryMutation[] = [mutation];
+    const deletes: TimeEntryMutation[] = [];
+    const updates: TimeEntryMutation[] = [];
 
     for (const ov of overlaps) {
         // Completely overlapped - delete it
         if (event.start <= ov.start && event.end >= ov.end) {
-            mutations.push(createDeleteMutation(ov));
+            deletes.push(createDeleteMutation(ov));
             continue;
-        }
-
-        // Partially overlapped - truncate it
-        if (event.start > ov.start && event.start < ov.end) {
-            const updateMutation = createUpdateMutation(ov, ov.start, event.start);
-            if (updateMutation) mutations.push(updateMutation);
-        }
-
-        if (event.end > ov.start && event.end < ov.end) {
-            const updateMutation = createUpdateMutation(ov, event.end, ov.end);
-            if (updateMutation) mutations.push(updateMutation);
         }
 
         // Event is fully contained within overlap - keep larger portion
@@ -306,10 +296,24 @@ const resolveForce = (): TimeEntryMutation[] | null => {
             const newStart = headSize > tailSize ? ov.start : event.end;
             const newEnd = headSize > tailSize ? event.start : ov.end;
             const updateMutation = createUpdateMutation(ov, newStart, newEnd);
-            if (updateMutation) mutations.push(updateMutation);
+            if (updateMutation) updates.push(updateMutation);
+            continue;
+        }
+
+        // Partially overlapped - truncate it
+        if (event.start > ov.start && event.start < ov.end) {
+            const updateMutation = createUpdateMutation(ov, ov.start, event.start);
+            if (updateMutation) updates.push(updateMutation);
+        }
+
+        if (event.end > ov.start && event.end < ov.end) {
+            const updateMutation = createUpdateMutation(ov, event.end, ov.end);
+            if (updateMutation) updates.push(updateMutation);
         }
     }
 
-    return mutations;
+    // Cleanups (deletes first, then shrinks) must run before the primary
+    // mutation so the backend doesn't see overlapping ranges mid-operation.
+    return [...deletes, ...updates, mutation];
 };
 </script>
