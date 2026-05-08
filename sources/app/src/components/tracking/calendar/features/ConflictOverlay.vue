@@ -65,6 +65,13 @@ const conflictLoadingId = ref<string | null>(null);
 
 const targetSelector = computed(() => "#" + interaction.value.event.uiId);
 
+// Helper to apply a new position to an event so the calendar reflects the
+// resolution immediately, before the API round-trip finishes.
+const applyEventPosition = (event: TimeEntryEvent, start: number, end: number) => {
+    event.start = start;
+    event.end = end;
+};
+
 // Helper to create a mutation with updated position
 const updateMutationPosition = (mutation: TimeEntryMutation, start: number, end: number): TimeEntryMutation => {
     if (mutation.kind === "update") {
@@ -220,6 +227,7 @@ const resolveShiftUp = (): TimeEntryMutation[] | null => {
             searchTime = overlap.start - duration;
         } else {
             const updatedMutation = updateMutationPosition(mutation, potentialStart, potentialEnd);
+            applyEventPosition(event, potentialStart, potentialEnd);
             return [updatedMutation];
         }
     }
@@ -242,6 +250,7 @@ const resolveShiftDown = (): TimeEntryMutation[] | null => {
         } else {
             const foundEnd = searchTime + duration;
             const updatedMutation = updateMutationPosition(mutation, searchTime, foundEnd);
+            applyEventPosition(event, searchTime, foundEnd);
             return [updatedMutation];
         }
     }
@@ -272,6 +281,7 @@ const resolveTruncate = (): TimeEntryMutation[] | null => {
     if (allowedEnd <= allowedStart) return null;
 
     const updatedMutation = updateMutationPosition(mutation, allowedStart, allowedEnd);
+    applyEventPosition(event, allowedStart, allowedEnd);
     return [updatedMutation];
 };
 
@@ -296,19 +306,32 @@ const resolveForce = (): TimeEntryMutation[] | null => {
             const newStart = headSize > tailSize ? ov.start : event.end;
             const newEnd = headSize > tailSize ? event.start : ov.end;
             const updateMutation = createUpdateMutation(ov, newStart, newEnd);
-            if (updateMutation) updates.push(updateMutation);
+            if (updateMutation) {
+                updates.push(updateMutation);
+                applyEventPosition(ov, newStart, newEnd);
+            }
             continue;
         }
 
         // Partially overlapped - truncate it
         if (event.start > ov.start && event.start < ov.end) {
-            const updateMutation = createUpdateMutation(ov, ov.start, event.start);
-            if (updateMutation) updates.push(updateMutation);
+            const newStart = ov.start;
+            const newEnd = event.start;
+            const updateMutation = createUpdateMutation(ov, newStart, newEnd);
+            if (updateMutation) {
+                updates.push(updateMutation);
+                applyEventPosition(ov, newStart, newEnd);
+            }
         }
 
         if (event.end > ov.start && event.end < ov.end) {
-            const updateMutation = createUpdateMutation(ov, event.end, ov.end);
-            if (updateMutation) updates.push(updateMutation);
+            const newStart = event.end;
+            const newEnd = ov.end;
+            const updateMutation = createUpdateMutation(ov, newStart, newEnd);
+            if (updateMutation) {
+                updates.push(updateMutation);
+                applyEventPosition(ov, newStart, newEnd);
+            }
         }
     }
 

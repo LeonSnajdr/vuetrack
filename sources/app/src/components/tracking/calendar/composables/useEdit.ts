@@ -5,7 +5,7 @@ import type {
     SuggestionTimeEntryUpdateMutation
 } from "@/components/tracking/calendar/types";
 import { ApiValidationException } from "@/util/ApiValidationError";
-import { useEventMutation } from "./useEventMutation";
+import { buildHandoffInteraction, useEventMutation } from "./useEventMutation";
 import { useCalendarHelper } from "./useCalendarHelper";
 
 export function useEdit() {
@@ -41,9 +41,9 @@ export function useEdit() {
     const finish = async () => {
         if (interaction.value.kind !== "edit") return;
 
-        const { event, mutation: editMutation } = interaction.value;
+        const { event, mutation: editMutation, pendingMutations } = interaction.value;
 
-        if (event.kind === "existing") {
+        if (event.kind === "existing" && !pendingMutations) {
             const overlaps = getOverlappingEvents(event, existingEvents.value);
 
             if (overlaps.length > 0) {
@@ -59,25 +59,39 @@ export function useEdit() {
 
         const editResult = await mutation.execute(editMutation);
 
-        if (editResult.status === "success") {
-            interaction.value = { kind: "idle" };
+        if (editResult.status === "error" && editResult.error instanceof ApiValidationException) {
+            interaction.value.errors = editResult.error.errors;
             return;
         }
 
-        if (editResult.status === "error" && editResult.error instanceof ApiValidationException) {
-            interaction.value.errors = editResult.error.errors;
+        if (editResult.status !== "success") return;
+
+        if (pendingMutations && pendingMutations.length > 0) {
+            const drainResult = await mutation.executeAll(pendingMutations);
+
+            if (drainResult.status === "error" && drainResult.error instanceof ApiValidationException) {
+                const handoff = buildHandoffInteraction(drainResult.failedMutation, drainResult.remaining, drainResult.error.errors);
+                if (handoff) {
+                    interaction.value = handoff;
+                    return;
+                }
+            }
         }
+
+        interaction.value = { kind: "idle" };
     };
 
     const cancel = () => {
         if (interaction.value.kind !== "edit") return;
 
-        const { event, mutation: editMutation } = interaction.value;
+        const { event, mutation: editMutation, pendingMutations } = interaction.value;
 
         if ("originalPosition" in editMutation) {
             event.start = editMutation.originalPosition.start;
             event.end = editMutation.originalPosition.end;
         }
+
+        mutation.cancelPending(pendingMutations);
 
         interaction.value = { kind: "idle" };
     };

@@ -1,6 +1,6 @@
 ﻿import type { TimeEntryMutation } from "@/components/tracking/calendar/types";
 import { ApiValidationException } from "@/util/ApiValidationError";
-import { useEventMutation } from "./useEventMutation";
+import { buildHandoffInteraction, useEventMutation } from "./useEventMutation";
 
 export function useConflict() {
     const calendarStore = useCalendarStore();
@@ -9,7 +9,6 @@ export function useConflict() {
 
     const finish = async (mutations: TimeEntryMutation[]) => {
         if (interaction.value.kind !== "conflict") return;
-        const { mutation: conflictMutation } = interaction.value;
 
         const result = await mutation.executeAll(mutations);
 
@@ -18,23 +17,19 @@ export function useConflict() {
             return;
         }
 
-        if (result.status === "error" && result.error instanceof ApiValidationException) {
-            if (conflictMutation.kind === "update") {
-                interaction.value = {
-                    kind: "edit",
-                    event: conflictMutation.event,
-                    mutation: conflictMutation,
-                    errors: result.error.errors
-                };
-            } else {
-                interaction.value = {
-                    kind: "create",
-                    event: conflictMutation.event,
-                    mutation: conflictMutation,
-                    errors: result.error.errors
-                };
+        if (result.error instanceof ApiValidationException) {
+            const handoff = buildHandoffInteraction(result.failedMutation, result.remaining, result.error.errors);
+            if (handoff) {
+                interaction.value = handoff;
+                return;
             }
         }
+
+        // Failure with no recoverable handoff (delete validation, network etc.):
+        // roll back optimistic UI changes from mutations that never ran.
+        mutation.cancelPending([result.failedMutation, ...result.remaining]);
+
+        interaction.value = { kind: "idle" };
     };
 
     const cancel = async () => {

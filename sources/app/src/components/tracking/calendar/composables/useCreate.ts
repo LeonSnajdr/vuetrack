@@ -6,7 +6,7 @@ import type {
 } from "@/components/tracking/calendar/types";
 import { ApiValidationException } from "@/util/ApiValidationError";
 import { useCalendarHelper } from "./useCalendarHelper";
-import { useEventMutation } from "./useEventMutation";
+import { buildHandoffInteraction, useEventMutation } from "./useEventMutation";
 
 export function useCreate() {
     const calendarStore = useCalendarStore();
@@ -37,39 +37,55 @@ export function useCreate() {
     const finish = async () => {
         if (interaction.value.kind !== "create") return;
 
-        const { event, mutation: createMutation } = interaction.value;
+        const { event, mutation: createMutation, pendingMutations } = interaction.value;
 
-        const overlaps = getOverlappingEvents(event, existingEvents.value);
+        if (!pendingMutations) {
+            const overlaps = getOverlappingEvents(event, existingEvents.value);
 
-        if (overlaps.length > 0) {
-            interaction.value = {
-                kind: "conflict",
-                event,
-                overlaps,
-                mutation: createMutation
-            };
-            return;
+            if (overlaps.length > 0) {
+                interaction.value = {
+                    kind: "conflict",
+                    event,
+                    overlaps,
+                    mutation: createMutation
+                };
+                return;
+            }
         }
 
         const createResult = await mutation.execute(createMutation);
 
-        if (createResult.status === "success") {
-            interaction.value = { kind: "idle" };
+        if (createResult.status === "error" && createResult.error instanceof ApiValidationException) {
+            interaction.value.errors = createResult.error.errors;
             return;
         }
 
-        if (createResult.status === "error" && createResult.error instanceof ApiValidationException) {
-            interaction.value.errors = createResult.error.errors;
+        if (createResult.status !== "success") return;
+
+        if (pendingMutations && pendingMutations.length > 0) {
+            const drainResult = await mutation.executeAll(pendingMutations);
+
+            if (drainResult.status === "error" && drainResult.error instanceof ApiValidationException) {
+                const handoff = buildHandoffInteraction(drainResult.failedMutation, drainResult.remaining, drainResult.error.errors);
+                if (handoff) {
+                    interaction.value = handoff;
+                    return;
+                }
+            }
         }
+
+        interaction.value = { kind: "idle" };
     };
 
     const cancel = () => {
         if (interaction.value.kind !== "create") return;
-        const ev = interaction.value.event;
+        const { event: ev, pendingMutations } = interaction.value;
 
         if (ev.kind === "draft") {
             mutation.execute({ kind: "delete", event: ev });
         }
+
+        mutation.cancelPending(pendingMutations);
 
         interaction.value = { kind: "idle" };
     };

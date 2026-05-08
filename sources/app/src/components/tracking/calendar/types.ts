@@ -106,12 +106,14 @@ export type Interaction =
           event: DraftTimeEntryEvent | SuggestionTimeEntryEvent;
           mutation: DraftTimeEntryCreateMutation | SuggestionTimeEntryCreateMutation;
           errors?: ApiValidationError;
+          pendingMutations?: TimeEntryMutation[];
       }
     | {
           kind: "edit";
           event: ExistingTimeEntryEvent | SuggestionTimeEntryEvent;
           mutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation;
           errors?: ApiValidationError;
+          pendingMutations?: TimeEntryMutation[];
       }
     | {
           kind: "conflict";
