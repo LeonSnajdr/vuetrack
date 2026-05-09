@@ -6,22 +6,22 @@ export function useConflict() {
     const calendarStore = useCalendarStore();
     const { interaction } = storeToRefs(calendarStore);
     const mutation = useEventMutation();
-    const { buildDeleteMutation, restoreOriginalPosition } = useCalendarHelper();
+    const { restoreOriginalPosition } = useCalendarHelper();
 
     const finish = async (mutations: TimeEntryMutation[]) => {
         if (interaction.value.kind !== "conflict") return;
+
         const shouldIdle = await mutation.drainPending(mutations);
-        if (shouldIdle) interaction.value = { kind: "idle" };
+        if (shouldIdle) {
+            interaction.value = { kind: "idle" };
+        }
     };
 
     const cancel = async () => {
         if (interaction.value.kind !== "conflict") return;
         const { event, mutation: conflictMutation } = interaction.value;
 
-        if (event.kind === "draft") {
-            mutation.execute(buildDeleteMutation(event));
-        }
-
+        mutation.deleteIfDraft(event);
         restoreOriginalPosition(conflictMutation);
 
         interaction.value = { kind: "idle" };

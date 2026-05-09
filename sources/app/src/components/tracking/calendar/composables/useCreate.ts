@@ -6,7 +6,7 @@ import { useEventMutation } from "./useEventMutation";
 export function useCreate() {
     const calendarStore = useCalendarStore();
     const mutation = useEventMutation();
-    const { buildCreateMutation, buildDeleteMutation } = useCalendarHelper();
+    const { buildCreateMutation } = useCalendarHelper();
 
     const { interaction } = storeToRefs(calendarStore);
 
@@ -43,10 +43,7 @@ export function useCreate() {
         if (interaction.value.kind !== "create") return;
         const { event, pendingMutations } = interaction.value;
 
-        if (event.kind === "draft") {
-            mutation.execute(buildDeleteMutation(event));
-        }
-
+        mutation.deleteIfDraft(event);
         mutation.cancelPending(pendingMutations);
 
         interaction.value = { kind: "idle" };

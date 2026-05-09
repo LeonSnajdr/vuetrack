@@ -33,7 +33,9 @@ export const useCalendarHelper = () => {
     const timeEntryStore = useTimeEntryStore();
     const suggestionStore = useTimeEntrySuggestionStore();
     const settingsStore = useSettingsStore();
+    const calendarStore = useCalendarStore();
     const { calendarSettings } = storeToRefs(settingsStore);
+    const { interaction } = storeToRefs(calendarStore);
 
     const roundTime = (timeMs: number, options: RoundTimeOptions = {}): number => {
         const { down = true, snapPoints = [] } = options;
@@ -81,8 +83,12 @@ export const useCalendarHelper = () => {
         return snappedTime ?? roundedTime;
     };
 
+    const getAllBoundaries = (events: TimeEntryEvent[]): number[] => {
+        return events.flatMap((e) => [e.start, e.end]);
+    };
+
     const getEventBoundaries = (subject: TimeEntryEvent, candidates: TimeEntryEvent[]): number[] => {
-        return candidates.filter((other) => other.uiId !== subject.uiId).flatMap((other) => [other.start, other.end]);
+        return getAllBoundaries(candidates.filter((other) => other.uiId !== subject.uiId));
     };
 
     const getOverlappingEvents = (subject: TimeEntryEvent, candidates: TimeEntryEvent[]): TimeEntryEvent[] => {
@@ -160,6 +166,18 @@ export const useCalendarHelper = () => {
         return { kind: "update", event, update: buildTimeEntrySuggestionUpdate(event.timeEntry), originalPosition };
     };
 
+    // Shared start-of-interaction prelude for move/resize/edit: filters out
+    // unsupported event kinds, cancels any pending background update, snapshots
+    // the original position, and returns a ready-to-use update mutation.
+    const prepareUpdateMutation = (
+        event: TimeEntryEvent
+    ): ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation | null => {
+        if (event.kind !== "existing" && event.kind !== "suggestion") return null;
+        cancelPendingUpdateForEvent(event);
+        const originalPosition = getOriginalPosition(event, interaction.value);
+        return buildUpdateMutation(event, originalPosition);
+    };
+
     const buildCreateMutation = (
         event: DraftTimeEntryEvent | SuggestionTimeEntryEvent
     ): DraftTimeEntryCreateMutation | SuggestionTimeEntryCreateMutation => {
@@ -227,6 +245,7 @@ export const useCalendarHelper = () => {
 
     return {
         roundTime,
+        getAllBoundaries,
         getEventBoundaries,
         getOverlappingEvents,
         getOriginalPosition,
@@ -238,6 +257,7 @@ export const useCalendarHelper = () => {
         buildUpdateMutation,
         buildCreateMutation,
         buildDeleteMutation,
+        prepareUpdateMutation,
         withMutationPosition,
         applyEventPosition,
         restoreOriginalPosition,

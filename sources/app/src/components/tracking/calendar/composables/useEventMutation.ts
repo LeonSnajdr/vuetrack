@@ -4,10 +4,12 @@ import type {
     DraftTimeEntryCreateMutation,
     DraftTimeEntryDeleteMutation,
     ExistingTimeEntryDeleteMutation,
+    ExistingTimeEntryEvent,
     ExistingTimeEntryUpdateMutation,
     Interaction,
     SuggestionTimeEntryCreateMutation,
     SuggestionTimeEntryDeleteMutation,
+    SuggestionTimeEntryEvent,
     SuggestionTimeEntryUpdateMutation,
     TimeEntryEvent,
     TimeEntryMutation
@@ -129,6 +131,40 @@ export function useEventMutation() {
         return true;
     };
 
+    // Drives the post-drag commit shared by move/resize: enters conflict if
+    // overlapping, runs the API call, escalates validation errors to "edit",
+    // and rolls back optimistic UI on other failures. Returns true when the
+    // caller should set the interaction to idle; false when this function has
+    // already taken over the interaction state (conflict / edit handoff).
+    const commitUpdate = async (cur: {
+        event: ExistingTimeEntryEvent | SuggestionTimeEntryEvent;
+        mutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation;
+    }): Promise<boolean> => {
+        if (cur.event.kind === "existing" && tryEnterConflict(cur.event, cur.mutation)) return false;
+
+        const result = await execute(cur.mutation);
+
+        if (result.status === "error" && result.error instanceof ApiValidationException) {
+            interaction.value = {
+                kind: "edit",
+                event: cur.event,
+                mutation: cur.mutation,
+                errors: result.error.errors
+            };
+            return false;
+        }
+
+        if (result.status !== "success") {
+            restoreOriginalPosition(cur.mutation);
+        }
+
+        return true;
+    };
+
+    const deleteIfDraft = (event: TimeEntryEvent) => {
+        if (event.kind === "draft") execute(buildDeleteMutation(event));
+    };
+
     // Drains the pending-mutation queue. Returns true when the caller should
     // proceed (set interaction to idle); returns false when this function has
     // already taken over the interaction state via a handoff.
@@ -164,5 +200,5 @@ export function useEventMutation() {
         }
     };
 
-    return { execute, executeAll, tryEnterConflict, drainPending, cancelPending };
+    return { execute, executeAll, tryEnterConflict, commitUpdate, deleteIfDraft, drainPending, cancelPending };
 }
