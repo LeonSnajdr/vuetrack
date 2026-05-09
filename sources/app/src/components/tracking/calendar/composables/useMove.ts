@@ -11,12 +11,13 @@ export function useMove() {
         roundTime,
         getOverlappingEvents,
         cancelPendingUpdateForEvent,
-        getOriginalPositon,
+        getOriginalPosition,
         getEventBoundaries,
         buildTimeEntryUpdate,
         buildTimeEntrySuggestionUpdate,
         minimumEventDurationMs,
-        updateEventPosition
+        updateEventPosition,
+        restoreOriginalPosition
     } = useCalendarHelper();
 
     const start = (event: TimeEntryEvent) => {
@@ -24,7 +25,7 @@ export function useMove() {
 
         cancelPendingUpdateForEvent(event);
 
-        const originalPosition = getOriginalPositon(event, interaction.value);
+        const originalPosition = getOriginalPosition(event, interaction.value);
 
         let moveMutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation;
         if (event.kind === "existing") {
@@ -89,11 +90,6 @@ export function useMove() {
 
         const moveResult = await mutation.execute(cur.mutation);
 
-        if (moveResult.status === "success") {
-            interaction.value = { kind: "idle" };
-            return;
-        }
-
         if (moveResult.status === "error" && moveResult.error instanceof ApiValidationException) {
             interaction.value = {
                 kind: "edit",
@@ -104,18 +100,17 @@ export function useMove() {
             return;
         }
 
-        cur.event.start = cur.mutation.originalPosition.start;
-        cur.event.end = cur.mutation.originalPosition.end;
+        if (moveResult.status !== "success") {
+            restoreOriginalPosition(cur.mutation);
+        }
+
         interaction.value = { kind: "idle" };
     };
 
     const cancel = () => {
         if (interaction.value.kind !== "move") return;
 
-        const cur = interaction.value;
-
-        cur.event.start = cur.mutation.originalPosition.start;
-        cur.event.end = cur.mutation.originalPosition.end;
+        restoreOriginalPosition(interaction.value.mutation);
 
         interaction.value = { kind: "idle" };
     };

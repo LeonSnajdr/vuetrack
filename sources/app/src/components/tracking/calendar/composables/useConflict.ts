@@ -1,35 +1,17 @@
-﻿import type { TimeEntryMutation } from "@/components/tracking/calendar/types";
-import { ApiValidationException } from "@/util/ApiValidationError";
-import { buildHandoffInteraction, useEventMutation } from "./useEventMutation";
+import type { TimeEntryMutation } from "@/components/tracking/calendar/types";
+import { useCalendarHelper } from "./useCalendarHelper";
+import { useEventMutation } from "./useEventMutation";
 
 export function useConflict() {
     const calendarStore = useCalendarStore();
     const { interaction } = storeToRefs(calendarStore);
     const mutation = useEventMutation();
+    const { buildDeleteMutation, restoreOriginalPosition } = useCalendarHelper();
 
     const finish = async (mutations: TimeEntryMutation[]) => {
         if (interaction.value.kind !== "conflict") return;
-
-        const result = await mutation.executeAll(mutations);
-
-        if (result.status === "success") {
-            interaction.value = { kind: "idle" };
-            return;
-        }
-
-        if (result.error instanceof ApiValidationException) {
-            const handoff = buildHandoffInteraction(result.failedMutation, result.remaining, result.error.errors);
-            if (handoff) {
-                interaction.value = handoff;
-                return;
-            }
-        }
-
-        // Failure with no recoverable handoff (delete validation, network etc.):
-        // roll back optimistic UI changes from mutations that never ran.
-        mutation.cancelPending([result.failedMutation, ...result.remaining]);
-
-        interaction.value = { kind: "idle" };
+        const shouldIdle = await mutation.drainPending(mutations);
+        if (shouldIdle) interaction.value = { kind: "idle" };
     };
 
     const cancel = async () => {
@@ -37,13 +19,10 @@ export function useConflict() {
         const { event, mutation: conflictMutation } = interaction.value;
 
         if (event.kind === "draft") {
-            mutation.execute({ kind: "delete", event });
+            mutation.execute(buildDeleteMutation(event));
         }
 
-        if ("originalPosition" in conflictMutation) {
-            event.start = conflictMutation.originalPosition.start;
-            event.end = conflictMutation.originalPosition.end;
-        }
+        restoreOriginalPosition(conflictMutation);
 
         interaction.value = { kind: "idle" };
     };

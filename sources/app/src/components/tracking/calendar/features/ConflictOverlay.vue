@@ -30,16 +30,8 @@
 </template>
 
 <script setup lang="ts">
-import type {
-    Interaction,
-    TimeEntryEvent,
-    TimeEntryMutation,
-    ExistingTimeEntryDeleteMutation,
-    ExistingTimeEntryUpdateMutation,
-    SuggestionTimeEntryDeleteMutation,
-    SuggestionTimeEntryUpdateMutation,
-    DraftTimeEntryDeleteMutation
-} from "@/components/tracking/calendar/types";
+import type { Interaction, TimeEntryEvent, TimeEntryMutation } from "@/components/tracking/calendar/types";
+import { useCalendarHelper } from "@/components/tracking/calendar/composables/useCalendarHelper";
 import { useConflict } from "@/components/tracking/calendar/composables/useConflict";
 
 export interface ConflictResolutionStrategy {
@@ -60,85 +52,16 @@ const notify = useNotify();
 
 const { t } = useI18n();
 const { startOfDay, addDays } = useDateHelper();
+const { applyEventPosition, buildDeleteMutation, buildUpdateMutation, withMutationPosition } = useCalendarHelper();
 
 const conflictLoadingId = ref<string | null>(null);
 
 const targetSelector = computed(() => "#" + interaction.value.event.uiId);
 
-// Helper to apply a new position to an event so the calendar reflects the
-// resolution immediately, before the API round-trip finishes.
-const applyEventPosition = (event: TimeEntryEvent, start: number, end: number) => {
-    event.start = start;
-    event.end = end;
-};
-
-// Helper to create a mutation with updated position
-const updateMutationPosition = (mutation: TimeEntryMutation, start: number, end: number): TimeEntryMutation => {
-    if (mutation.kind === "update") {
-        return {
-            ...mutation,
-            update: {
-                ...mutation.update,
-                startTime: new Date(start),
-                endTime: new Date(end)
-            }
-        };
-    } else if (mutation.kind === "create") {
-        return {
-            ...mutation,
-            create: {
-                ...mutation.create,
-                startTime: new Date(start),
-                endTime: new Date(end)
-            }
-        };
-    }
-    return mutation;
-};
-
-// Helper to create delete mutation for an event
-const createDeleteMutation = (event: TimeEntryEvent): TimeEntryMutation => {
-    if (event.kind === "draft") {
-        return { kind: "delete", event } as DraftTimeEntryDeleteMutation;
-    } else if (event.kind === "existing") {
-        return { kind: "delete", event, id: event.timeEntry.id } as ExistingTimeEntryDeleteMutation;
-    } else {
-        return { kind: "delete", event, id: event.timeEntry.id } as SuggestionTimeEntryDeleteMutation;
-    }
-};
-
-// Helper to create update mutation for an event
-const createUpdateMutation = (event: TimeEntryEvent, newStart: number, newEnd: number): TimeEntryMutation | null => {
-    if (event.kind === "existing") {
-        return {
-            kind: "update",
-            event,
-            update: {
-                startTime: new Date(newStart),
-                endTime: new Date(newEnd),
-                taskId: event.timeEntry.taskId,
-                projectId: event.timeEntry.project.id,
-                activityId: event.timeEntry.activity.id,
-                comment: event.timeEntry.comment
-            },
-            originalPosition: { start: event.start, end: event.end }
-        } as ExistingTimeEntryUpdateMutation;
-    } else if (event.kind === "suggestion") {
-        return {
-            kind: "update",
-            event,
-            update: {
-                startTime: new Date(newStart),
-                endTime: new Date(newEnd),
-                taskId: event.timeEntry.taskId,
-                projectId: event.timeEntry.project.id,
-                activityId: event.timeEntry.activity.id,
-                comment: event.timeEntry.comment
-            },
-            originalPosition: { start: event.start, end: event.end }
-        } as SuggestionTimeEntryUpdateMutation;
-    }
-    return null;
+const buildOverlapUpdateMutation = (event: TimeEntryEvent, newStart: number, newEnd: number): TimeEntryMutation | null => {
+    if (event.kind !== "existing" && event.kind !== "suggestion") return null;
+    const base = buildUpdateMutation(event, { start: event.start, end: event.end });
+    return withMutationPosition(base, newStart, newEnd);
 };
 
 const defaultStrategies = computed<ConflictResolutionStrategy[]>(() => [
@@ -226,7 +149,7 @@ const resolveShiftUp = (): TimeEntryMutation[] | null => {
         if (overlap) {
             searchTime = overlap.start - duration;
         } else {
-            const updatedMutation = updateMutationPosition(mutation, potentialStart, potentialEnd);
+            const updatedMutation = withMutationPosition(mutation, potentialStart, potentialEnd);
             applyEventPosition(event, potentialStart, potentialEnd);
             return [updatedMutation];
         }
@@ -249,7 +172,7 @@ const resolveShiftDown = (): TimeEntryMutation[] | null => {
             searchTime = overlap.end;
         } else {
             const foundEnd = searchTime + duration;
-            const updatedMutation = updateMutationPosition(mutation, searchTime, foundEnd);
+            const updatedMutation = withMutationPosition(mutation, searchTime, foundEnd);
             applyEventPosition(event, searchTime, foundEnd);
             return [updatedMutation];
         }
@@ -280,7 +203,7 @@ const resolveTruncate = (): TimeEntryMutation[] | null => {
 
     if (allowedEnd <= allowedStart) return null;
 
-    const updatedMutation = updateMutationPosition(mutation, allowedStart, allowedEnd);
+    const updatedMutation = withMutationPosition(mutation, allowedStart, allowedEnd);
     applyEventPosition(event, allowedStart, allowedEnd);
     return [updatedMutation];
 };
@@ -292,10 +215,17 @@ const resolveForce = (): TimeEntryMutation[] | null => {
     const deletes: TimeEntryMutation[] = [];
     const updates: TimeEntryMutation[] = [];
 
+    const pushOverlapUpdate = (ov: TimeEntryEvent, newStart: number, newEnd: number) => {
+        const updateMutation = buildOverlapUpdateMutation(ov, newStart, newEnd);
+        if (!updateMutation) return;
+        updates.push(updateMutation);
+        applyEventPosition(ov, newStart, newEnd);
+    };
+
     for (const ov of overlaps) {
         // Completely overlapped - delete it
         if (event.start <= ov.start && event.end >= ov.end) {
-            deletes.push(createDeleteMutation(ov));
+            deletes.push(buildDeleteMutation(ov));
             continue;
         }
 
@@ -305,33 +235,17 @@ const resolveForce = (): TimeEntryMutation[] | null => {
             const tailSize = ov.end - event.end;
             const newStart = headSize > tailSize ? ov.start : event.end;
             const newEnd = headSize > tailSize ? event.start : ov.end;
-            const updateMutation = createUpdateMutation(ov, newStart, newEnd);
-            if (updateMutation) {
-                updates.push(updateMutation);
-                applyEventPosition(ov, newStart, newEnd);
-            }
+            pushOverlapUpdate(ov, newStart, newEnd);
             continue;
         }
 
         // Partially overlapped - truncate it
         if (event.start > ov.start && event.start < ov.end) {
-            const newStart = ov.start;
-            const newEnd = event.start;
-            const updateMutation = createUpdateMutation(ov, newStart, newEnd);
-            if (updateMutation) {
-                updates.push(updateMutation);
-                applyEventPosition(ov, newStart, newEnd);
-            }
+            pushOverlapUpdate(ov, ov.start, event.start);
         }
 
         if (event.end > ov.start && event.end < ov.end) {
-            const newStart = event.end;
-            const newEnd = ov.end;
-            const updateMutation = createUpdateMutation(ov, newStart, newEnd);
-            if (updateMutation) {
-                updates.push(updateMutation);
-                applyEventPosition(ov, newStart, newEnd);
-            }
+            pushOverlapUpdate(ov, event.end, ov.end);
         }
     }
 

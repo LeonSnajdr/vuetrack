@@ -1,5 +1,5 @@
 import { success } from "@/util/ActionResult";
-import type { ApiValidationError } from "@/util/ApiValidationError";
+import { ApiValidationException, type ApiValidationError } from "@/util/ApiValidationError";
 import type {
     DraftTimeEntryCreateMutation,
     DraftTimeEntryDeleteMutation,
@@ -9,8 +9,16 @@ import type {
     SuggestionTimeEntryCreateMutation,
     SuggestionTimeEntryDeleteMutation,
     SuggestionTimeEntryUpdateMutation,
+    TimeEntryEvent,
     TimeEntryMutation
 } from "@/components/tracking/calendar/types";
+import { useCalendarHelper } from "./useCalendarHelper";
+
+type ConflictMutation =
+    | ExistingTimeEntryUpdateMutation
+    | SuggestionTimeEntryUpdateMutation
+    | DraftTimeEntryCreateMutation
+    | SuggestionTimeEntryCreateMutation;
 
 export type ExecuteAllResult =
     | { status: "success" }
@@ -47,8 +55,9 @@ export function useEventMutation() {
     const calendarStore = useCalendarStore();
     const timeEntryStore = useTimeEntryStore();
     const suggestionStore = useTimeEntrySuggestionStore();
+    const { getOverlappingEvents, buildDeleteMutation, restoreOriginalPosition } = useCalendarHelper();
 
-    const { draftEvents } = storeToRefs(calendarStore);
+    const { draftEvents, existingEvents, interaction } = storeToRefs(calendarStore);
 
     const execute = async (mutation: TimeEntryMutation) => {
         switch (mutation.kind) {
@@ -77,24 +86,18 @@ export function useEventMutation() {
     };
 
     const executeCreate = async (mutation: DraftTimeEntryCreateMutation | SuggestionTimeEntryCreateMutation) => {
-        if (mutation.event.kind === "draft") {
-            const result = await timeEntryStore.create(mutation.create);
+        const result = await timeEntryStore.create(mutation.create);
 
-            if (result.status === "success") {
+        if (result.status === "success") {
+            if (mutation.event.kind === "draft") {
                 const idx = draftEvents.value.indexOf(mutation.event);
                 if (idx !== -1) draftEvents.value.splice(idx, 1);
-            }
-
-            return result;
-        } else {
-            const result = await timeEntryStore.create(mutation.create);
-
-            if (result.status === "success") {
+            } else {
                 await suggestionStore.dismiss(mutation.event.timeEntry.id);
             }
-
-            return result;
         }
+
+        return result;
     };
 
     const executeUpdate = async (mutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation) => {
@@ -117,6 +120,36 @@ export function useEventMutation() {
         }
     };
 
+    // If `event` overlaps any existing event, switch the interaction to
+    // "conflict" and return true so the caller can short-circuit.
+    const tryEnterConflict = (event: TimeEntryEvent, mut: ConflictMutation): boolean => {
+        const overlaps = getOverlappingEvents(event, existingEvents.value);
+        if (overlaps.length === 0) return false;
+        interaction.value = { kind: "conflict", event, overlaps, mutation: mut };
+        return true;
+    };
+
+    // Drains the pending-mutation queue. Returns true when the caller should
+    // proceed (set interaction to idle); returns false when this function has
+    // already taken over the interaction state via a handoff.
+    const drainPending = async (pendingMutations: TimeEntryMutation[]): Promise<boolean> => {
+        const result = await executeAll(pendingMutations);
+        if (result.status === "success") return true;
+
+        if (result.error instanceof ApiValidationException) {
+            const handoff = buildHandoffInteraction(result.failedMutation, result.remaining, result.error.errors);
+            if (handoff) {
+                interaction.value = handoff;
+                return false;
+            }
+        }
+
+        // Failure with no recoverable handoff (delete validation, network etc.):
+        // roll back optimistic UI changes from mutations that never ran.
+        cancelPending([result.failedMutation, ...result.remaining]);
+        return true;
+    };
+
     // Roll back optimistic UI changes from queued conflict-resolution mutations
     // that never ran (because of cancel or an upstream failure). Restores
     // repositioned events and removes any draft events that were going to be
@@ -124,15 +157,12 @@ export function useEventMutation() {
     const cancelPending = (pendingMutations: TimeEntryMutation[] | undefined) => {
         if (!pendingMutations) return;
         for (const m of pendingMutations) {
-            if ("originalPosition" in m) {
-                m.event.start = m.originalPosition.start;
-                m.event.end = m.originalPosition.end;
-            }
+            restoreOriginalPosition(m);
             if (m.kind === "create" && m.event.kind === "draft") {
-                execute({ kind: "delete", event: m.event });
+                execute(buildDeleteMutation(m.event));
             }
         }
     };
 
-    return { execute, executeAll, cancelPending };
+    return { execute, executeAll, tryEnterConflict, drainPending, cancelPending };
 }

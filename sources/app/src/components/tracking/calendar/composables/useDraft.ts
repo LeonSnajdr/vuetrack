@@ -5,7 +5,7 @@ import { useEventWrapper } from "./useEventWrapper";
 export function useDraft() {
     const calendarStore = useCalendarStore();
     const mutation = useEventMutation();
-    const { buildTimeEntryCreate, roundTime, updateEventPosition } = useCalendarHelper();
+    const { buildCreateMutation, buildDeleteMutation, roundTime, updateEventPosition } = useCalendarHelper();
     const { createDraftEvent } = useEventWrapper();
     const { interaction, draftEvents, existingEvents } = storeToRefs(calendarStore);
 
@@ -34,22 +34,17 @@ export function useDraft() {
 
     const finish = () => {
         if (interaction.value.kind !== "draft") return;
-        const cur = interaction.value;
+        const { event } = interaction.value;
         interaction.value = {
             kind: "create",
-            event: cur.event,
-            mutation: {
-                kind: "create",
-                event: cur.event,
-                create: buildTimeEntryCreate(cur.event.createEntry)
-            }
+            event,
+            mutation: buildCreateMutation(event)
         };
     };
 
     const cancel = () => {
         if (interaction.value.kind !== "draft") return;
-        const cur = interaction.value;
-        mutation.execute({ kind: "delete", event: cur.event });
+        mutation.execute(buildDeleteMutation(interaction.value.event));
         interaction.value = { kind: "idle" };
     };
 

@@ -11,11 +11,12 @@ export function useResize() {
         roundTime,
         getOverlappingEvents,
         cancelPendingUpdateForEvent,
-        getOriginalPositon,
+        getOriginalPosition,
         getEventBoundaries,
         buildTimeEntryUpdate,
         buildTimeEntrySuggestionUpdate,
-        updateEventPosition
+        updateEventPosition,
+        restoreOriginalPosition
     } = useCalendarHelper();
 
     const start = (event: TimeEntryEvent) => {
@@ -23,7 +24,7 @@ export function useResize() {
 
         cancelPendingUpdateForEvent(event);
 
-        const originalPosition = getOriginalPositon(event, interaction.value);
+        const originalPosition = getOriginalPosition(event, interaction.value);
 
         let resizeMutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation;
         if (event.kind === "existing") {
@@ -89,11 +90,8 @@ export function useResize() {
             return;
         }
 
-        if (resizeResult.status === "error") {
-            cur.event.start = cur.mutation.originalPosition.start;
-            cur.event.end = cur.mutation.originalPosition.end;
-            interaction.value = { kind: "idle" };
-            return;
+        if (resizeResult.status !== "success") {
+            restoreOriginalPosition(cur.mutation);
         }
 
         interaction.value = { kind: "idle" };
@@ -102,9 +100,7 @@ export function useResize() {
     const cancel = () => {
         if (interaction.value.kind !== "resize") return;
 
-        const cur = interaction.value;
-        cur.event.start = cur.mutation.originalPosition.start;
-        cur.event.end = cur.mutation.originalPosition.end;
+        restoreOriginalPosition(interaction.value.mutation);
 
         interaction.value = { kind: "idle" };
     };
