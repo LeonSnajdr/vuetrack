@@ -1,4 +1,4 @@
-import type { ExistingTimeEntryUpdateMutation, SuggestionTimeEntryUpdateMutation, TimeEntryEvent } from "@/components/tracking/calendar/types";
+import type { TimeEntryEvent } from "@/components/tracking/calendar/types";
 import { ApiValidationException } from "@/util/ApiValidationError";
 import { useCalendarHelper } from "./useCalendarHelper";
 import { useEventMutation } from "./useEventMutation";
@@ -9,12 +9,10 @@ export function useResize() {
     const mutation = useEventMutation();
     const {
         roundTime,
-        getOverlappingEvents,
         cancelPendingUpdateForEvent,
         getOriginalPosition,
         getEventBoundaries,
-        buildTimeEntryUpdate,
-        buildTimeEntrySuggestionUpdate,
+        buildUpdateMutation,
         updateEventPosition,
         restoreOriginalPosition
     } = useCalendarHelper();
@@ -25,23 +23,7 @@ export function useResize() {
         cancelPendingUpdateForEvent(event);
 
         const originalPosition = getOriginalPosition(event, interaction.value);
-
-        let resizeMutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation;
-        if (event.kind === "existing") {
-            resizeMutation = {
-                kind: "update",
-                event,
-                update: buildTimeEntryUpdate(event.timeEntry),
-                originalPosition
-            };
-        } else {
-            resizeMutation = {
-                kind: "update",
-                event,
-                update: buildTimeEntrySuggestionUpdate(event.timeEntry),
-                originalPosition
-            };
-        }
+        const resizeMutation = buildUpdateMutation(event, originalPosition);
 
         interaction.value = {
             kind: "resize",
@@ -64,19 +46,7 @@ export function useResize() {
         if (interaction.value.kind !== "resize") return;
         const cur = interaction.value;
 
-        if (cur.event.kind === "existing") {
-            const overlaps = getOverlappingEvents(cur.event, existingEvents.value);
-
-            if (overlaps.length > 0) {
-                interaction.value = {
-                    kind: "conflict",
-                    event: cur.event,
-                    overlaps,
-                    mutation: cur.mutation
-                };
-                return;
-            }
-        }
+        if (cur.event.kind === "existing" && mutation.tryEnterConflict(cur.event, cur.mutation)) return;
 
         const resizeResult = await mutation.execute(cur.mutation);
 

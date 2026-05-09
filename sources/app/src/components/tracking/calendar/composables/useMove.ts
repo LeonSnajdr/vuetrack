@@ -1,4 +1,4 @@
-import type { ExistingTimeEntryUpdateMutation, SuggestionTimeEntryUpdateMutation, TimeEntryEvent } from "@/components/tracking/calendar/types";
+import type { TimeEntryEvent } from "@/components/tracking/calendar/types";
 import { ApiValidationException } from "@/util/ApiValidationError";
 import { useCalendarHelper } from "./useCalendarHelper";
 import { useEventMutation } from "./useEventMutation";
@@ -9,12 +9,10 @@ export function useMove() {
     const mutation = useEventMutation();
     const {
         roundTime,
-        getOverlappingEvents,
         cancelPendingUpdateForEvent,
         getOriginalPosition,
         getEventBoundaries,
-        buildTimeEntryUpdate,
-        buildTimeEntrySuggestionUpdate,
+        buildUpdateMutation,
         minimumEventDurationMs,
         updateEventPosition,
         restoreOriginalPosition
@@ -26,23 +24,7 @@ export function useMove() {
         cancelPendingUpdateForEvent(event);
 
         const originalPosition = getOriginalPosition(event, interaction.value);
-
-        let moveMutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation;
-        if (event.kind === "existing") {
-            moveMutation = {
-                kind: "update",
-                event,
-                update: buildTimeEntryUpdate(event.timeEntry),
-                originalPosition
-            };
-        } else {
-            moveMutation = {
-                kind: "update",
-                event,
-                update: buildTimeEntrySuggestionUpdate(event.timeEntry),
-                originalPosition
-            };
-        }
+        const moveMutation = buildUpdateMutation(event, originalPosition);
 
         interaction.value = {
             kind: "move",
@@ -74,19 +56,7 @@ export function useMove() {
         if (interaction.value.kind !== "move") return;
         const cur = interaction.value;
 
-        if (cur.event.kind === "existing") {
-            const overlaps = getOverlappingEvents(cur.event, existingEvents.value);
-
-            if (overlaps.length > 0) {
-                interaction.value = {
-                    kind: "conflict",
-                    event: cur.event,
-                    overlaps,
-                    mutation: cur.mutation
-                };
-                return;
-            }
-        }
+        if (cur.event.kind === "existing" && mutation.tryEnterConflict(cur.event, cur.mutation)) return;
 
         const moveResult = await mutation.execute(cur.mutation);
 
