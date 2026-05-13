@@ -33,6 +33,7 @@
 import type { Interaction, TimeEntryEvent, TimeEntryMutation } from "@/components/tracking/calendar/types";
 import { useCalendarHelper } from "@/components/tracking/calendar/composables/useCalendarHelper";
 import { useConflict } from "@/components/tracking/calendar/composables/useConflict";
+import { useEventWrapper } from "@/components/tracking/calendar/composables/useEventWrapper";
 
 export interface ConflictResolutionStrategy {
     id: string;
@@ -47,12 +48,13 @@ const interaction = defineModel<Extract<Interaction, { kind: "conflict" }>>("int
 
 const conflict = useConflict();
 const calendarStore = useCalendarStore();
-const { existingEvents } = storeToRefs(calendarStore);
+const { draftEvents, existingEvents } = storeToRefs(calendarStore);
 const notify = useNotify();
 
 const { t } = useI18n();
 const { startOfDay, addDays } = useDateHelper();
-const { applyEventPosition, buildDeleteMutation, buildUpdateMutation, withMutationPosition } = useCalendarHelper();
+const { applyEventPosition, buildCreateMutation, buildDeleteMutation, buildUpdateMutation, withMutationPosition } = useCalendarHelper();
+const { cloneEventAsDraft } = useEventWrapper();
 
 const conflictLoadingId = ref<string | null>(null);
 
@@ -214,12 +216,23 @@ const resolveForce = (): TimeEntryMutation[] | null => {
     const mutation = interaction.value.mutation;
     const deletes: TimeEntryMutation[] = [];
     const updates: TimeEntryMutation[] = [];
+    const creates: TimeEntryMutation[] = [];
 
     const pushOverlapUpdate = (ov: TimeEntryEvent, newStart: number, newEnd: number) => {
         const updateMutation = buildOverlapUpdateMutation(ov, newStart, newEnd);
         if (!updateMutation) return;
         updates.push(updateMutation);
         applyEventPosition(ov, newStart, newEnd);
+    };
+
+    const pushOverlapSplit = (ov: TimeEntryEvent, headEnd: number, tailStart: number): boolean => {
+        if (ov.kind !== "existing" && ov.kind !== "suggestion") return false;
+        const tailEnd = ov.end;
+        pushOverlapUpdate(ov, ov.start, headEnd);
+        const tailEvent = cloneEventAsDraft(ov, tailStart, tailEnd);
+        draftEvents.value.push(tailEvent);
+        creates.push(buildCreateMutation(tailEvent));
+        return true;
     };
 
     for (const ov of overlaps) {
@@ -229,14 +242,10 @@ const resolveForce = (): TimeEntryMutation[] | null => {
             continue;
         }
 
-        // Event is fully contained within overlap - keep larger portion
+        // Event is fully contained within overlap - split it so the new
+        // event fits in the middle (head update + tail create).
         if (event.start > ov.start && event.end < ov.end) {
-            const headSize = event.start - ov.start;
-            const tailSize = ov.end - event.end;
-            const newStart = headSize > tailSize ? ov.start : event.end;
-            const newEnd = headSize > tailSize ? event.start : ov.end;
-            pushOverlapUpdate(ov, newStart, newEnd);
-            continue;
+            if (pushOverlapSplit(ov, event.start, event.end)) continue;
         }
 
         // Partially overlapped - truncate it
@@ -249,8 +258,9 @@ const resolveForce = (): TimeEntryMutation[] | null => {
         }
     }
 
-    // Cleanups (deletes first, then shrinks) must run before the primary
-    // mutation so the backend doesn't see overlapping ranges mid-operation.
-    return [...deletes, ...updates, mutation];
+    // Order matters: deletes free space, head shrinks make room for the
+    // primary, then tail creates fill in below — so the backend never sees
+    // overlapping ranges mid-operation.
+    return [...deletes, ...updates, mutation, ...creates];
 };
 </script>
