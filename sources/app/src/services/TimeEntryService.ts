@@ -48,8 +48,9 @@ type TimeEntryDTO = {
 class TimeEntryService {
     private readonly dtoById = new Map<TimeEntryId, TimeEntryDTO>();
 
-    public load = async (filter: TrackingFilter): Promise<TimeEntryContract[]> => {
+    public load = async (filter: TrackingFilter, signal?: AbortSignal): Promise<TimeEntryContract[]> => {
         const result = await axios.api.get<TimeEntryDTO[]>("timeEntry", {
+            signal,
             params: {
                 from: this.formatFilterDate(filter.from),
                 to: this.formatFilterDate(filter.to)
@@ -75,11 +76,9 @@ class TimeEntryService {
     };
 
     public update = async (id: TimeEntryId, updateContract: TimeEntryUpdateContract, signal?: AbortSignal): Promise<TimeEntryContract> => {
-        await this.invokeWithValidationMapping(() =>
-            axios.api.post<void>("timeEntry/upsert", this.mapContractToDto(updateContract, id), { signal })
-        );
+        await this.invokeWithValidationMapping(() => axios.api.post<void>("timeEntry/upsert", this.mapContractToDto(updateContract, id), { signal }));
 
-        const contracts = await this.load({ from: updateContract.startTime, to: updateContract.endTime });
+        const contracts = await this.load({ from: updateContract.startTime, to: updateContract.endTime }, signal);
         const updated = contracts.find((c) => c.id === id);
         if (!updated) throw new Error(`Updated time entry ${id} not found after upsert`);
         return updated;
