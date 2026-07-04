@@ -11,13 +11,11 @@ import { de, en } from "vuetify/locale";
 import i18n from "./i18n";
 import dateFns from "./dateFns";
 
-import { VIconBtn } from "vuetify/labs/VIconBtn";
-import { VDateInput } from "vuetify/labs/VDateInput";
+import { VDateRangePicker } from "vuetify/labs/VDateRangePicker";
 
 export default createVuetify({
     components: {
-        VIconBtn,
-        VDateInput
+        VDateRangePicker
     },
     date: {
         adapter: dateFns
