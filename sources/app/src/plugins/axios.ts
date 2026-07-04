@@ -2,6 +2,7 @@ import axios from "axios";
 import qs from "qs";
 import type { AxiosInstance } from "axios";
 import { AxiosAuthInterceptor } from "@samhammer/authentication-vue";
+import { assPiAdapter } from "@/plugins/asspi";
 
 class Axios {
     public api: AxiosInstance;
@@ -20,6 +21,11 @@ class Axios {
 
         AxiosAuthInterceptor.addAuthTokenInterceptor(client);
         AxiosAuthInterceptor.addAuthErrorInterceptor(client);
+
+        // AssPI: swap the network layer for the HTML-scraping fake backend.
+        if (import.meta.env.VITE_USE_ASSPI === "true") {
+            client.defaults.adapter = assPiAdapter;
+        }
 
         return client;
     }
