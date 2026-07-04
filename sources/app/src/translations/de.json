@@ -81,6 +81,8 @@
   "tracking.period.customRange": "Benutzerdefinierter Zeitraum",
   "tracking.period.last7Days": "Letzte 7 Tage",
   "tracking.period.lastMonth": "Letzter Monat",
+  "tracking.period.next": "Nächster Zeitraum",
+  "tracking.period.previous": "Vorheriger Zeitraum",
   "tracking.period.thisMonth": "Dieser Monat",
   "tracking.period.today": "Heute",
   "tracking.period.workweek": "Diese Arbeitswoche",

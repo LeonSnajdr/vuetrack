@@ -47,10 +47,28 @@ export function useTrackingTimePeriod() {
         applyPeriod(start, end);
     };
 
+    const shiftPeriod = (preset: TrackingPeriodPreset, from: Date, to: Date, direction: 1 | -1) => {
+        if (preset === "thisMonth" || preset === "lastMonth") {
+            const anchor = new Date(from.getFullYear(), from.getMonth() + direction, 1);
+            applyPeriod(startOfMonth(anchor), endOfMonth(anchor));
+            return;
+        }
+
+        if (preset === "workweek") {
+            const anchor = addDays(from, direction * 7);
+            applyPeriod(startOfWeek(anchor, 1), endOfWorkWeek(anchor, 1));
+            return;
+        }
+
+        const spanDays = Math.round((startOfDay(to).getTime() - startOfDay(from).getTime()) / 86_400_000) + 1;
+        applyPeriod(addDays(from, direction * spanDays), addDays(to, direction * spanDays));
+    };
+
     return {
         setPreset,
         jumpToDay,
         applyPeriod,
+        shiftPeriod,
         startOfDay,
         endOfDay,
         startOfWeek,

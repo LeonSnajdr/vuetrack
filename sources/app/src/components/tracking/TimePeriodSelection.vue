@@ -1,36 +1,43 @@
 <template>
     <div class="d-flex align-center ga-1">
-        <VIcon :icon="mdiCalendarRange" class="opacity-70" size="small" />
-        <p>{{ periodLabel }}</p>
-        <VIcon :icon="mdiMenuDown" class="opacity-70" size="small" />
-        <VMenu v-model="menuOpen" :closeOnContentClick="false" activator="parent" location="bottom start">
-            <VCard minWidth="800">
-                <VCardText>
-                    <VRow>
-                        <VCol cols="3">
-                            <VList nav>
-                                <VListItem
-                                    v-for="preset in presets"
-                                    :key="preset.value"
-                                    @click="setPreset(preset.value)"
-                                    :active="detectedPreset === preset.value"
-                                    :title="preset.title"
+        <VIconBtn
+            @click="shiftPeriod(detectedPreset, filter.from, filter.to, -1)"
+            :icon="mdiChevronLeft"
+            :title="t('tracking.period.previous')"
+            variant="text"
+        />
+        <div class="d-flex align-center justify-center ga-1" style="cursor: pointer; width: 130px">
+            {{ periodLabel }}
+            <VMenu v-model="menuOpen" :closeOnContentClick="false" activator="parent" location="bottom start">
+                <VCard minWidth="800">
+                    <VCardText>
+                        <VRow>
+                            <VCol cols="3">
+                                <VList nav>
+                                    <VListItem
+                                        v-for="preset in presets"
+                                        :key="preset.value"
+                                        @click="setPreset(preset.value)"
+                                        :active="detectedPreset === preset.value"
+                                        :title="preset.title"
+                                    />
+                                </VList>
+                            </VCol>
+                            <VCol cols="9">
+                                <VDateRangePicker
+                                    @update:modelValue="onPickerRangeUpdate"
+                                    :modelValue="pickerRange"
+                                    class="w-100 mt-n2"
+                                    hideHeader
+                                    showAdjacentMonths
                                 />
-                            </VList>
-                        </VCol>
-                        <VCol>
-                            <VDateRangePicker
-                                @update:modelValue="onPickerRangeUpdate"
-                                :modelValue="pickerRange"
-                                class="w-100 mt-n2"
-                                hideHeader
-                                showAdjacentMonths
-                            />
-                        </VCol>
-                    </VRow>
-                </VCardText>
-            </VCard>
-        </VMenu>
+                            </VCol>
+                        </VRow>
+                    </VCardText>
+                </VCard>
+            </VMenu>
+        </div>
+        <VIconBtn @click="shiftPeriod(detectedPreset, filter.from, filter.to, 1)" :icon="mdiChevronRight" :title="t('tracking.period.next')" variant="text" />
     </div>
 </template>
 
@@ -42,6 +49,7 @@ const { filter } = useTrackingFilter();
 const {
     setPreset: applyPreset,
     applyPeriod,
+    shiftPeriod,
     startOfDay,
     endOfDay,
     startOfWeek,

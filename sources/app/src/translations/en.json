@@ -80,6 +80,8 @@
   "tracking.period.customRange": "Custom range",
   "tracking.period.last7Days": "Last 7 days",
   "tracking.period.lastMonth": "Last month",
+  "tracking.period.next": "Next period",
+  "tracking.period.previous": "Previous period",
   "tracking.period.thisMonth": "This month",
   "tracking.period.today": "Today",
   "tracking.period.workweek": "This work week",
