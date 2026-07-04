@@ -29,6 +29,7 @@
   "calendar.conflict.strategy.movePrevious.subtitle": "Shift up to next free gap",
   "calendar.conflict.subtitle": "This event overlaps with one other. | This event overlaps with {count} others.",
   "calendar.conflict.title": "Overlap Detected",
+  "calendar.dayRange": "Calendar range",
   "calendar.event.draft": "Draft",
   "calendar.intervalMinutes": "Calendar interval",
   "calendar.intervalMinutes.option": "{minutes} min",

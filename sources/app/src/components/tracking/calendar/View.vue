@@ -15,6 +15,7 @@
         :end="end"
         :eventRipple="false"
         :events="events"
+        :firstInterval="firstInterval"
         :intervalCount="intervalCount"
         :intervalMinutes="intervalMinutes"
         :start="start"
@@ -118,7 +119,7 @@ const remove = useDelete();
 const conflict = useConflict();
 const { jumpToDay } = useTrackingTimePeriod();
 const { start, end, weekdays, isReadonly, calendarType } = useCalendarTimePeriod();
-const { intervalMinutes, intervalCount } = useCalendarInterval();
+const { intervalMinutes, intervalCount, firstInterval } = useCalendarInterval();
 
 const dateFormatter = useDate();
 

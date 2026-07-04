@@ -5,7 +5,8 @@ export const useSettingsStore = defineStore(
     "settings",
     () => {
         const calendarSettings = ref<CalendarSettings>({
-            intervalMinutes: 30
+            intervalMinutes: 30,
+            dayRange: { startHour: 6, endHour: 18 }
         });
 
         const listSettings = ref<ListSettings>({

@@ -29,6 +29,7 @@
   "calendar.conflict.strategy.movePrevious.subtitle": "Nach oben zur nächsten Lücke verschieben",
   "calendar.conflict.subtitle": "Dieses Ereignis überlappt mit einem anderen. | Dieses Ereignis überlappt mit {count} anderen.",
   "calendar.conflict.title": "Überlappung erkannt",
+  "calendar.dayRange": "Kalenderbereich",
   "calendar.event.draft": "Entwurf",
   "calendar.intervalMinutes": "Kalenderintervall",
   "calendar.intervalMinutes.option": "{minutes} Min.",
