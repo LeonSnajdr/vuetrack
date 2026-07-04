@@ -9,6 +9,8 @@
 </template>
 
 <script setup lang="ts">
+definePage({ redirect: "/tracking/calendar" });
+
 const projectStore = useProjectStore();
 const timeEntryStore = useTimeEntryStore();
 const timeEntrySuggestionStore = useTimeEntrySuggestionStore();

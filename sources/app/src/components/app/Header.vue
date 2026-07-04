@@ -21,6 +21,6 @@ const router = useRouter();
 const settingsOpen = ref(false);
 
 const logout = () => {
-    router.push({ name: "authLogout" });
+    router.push({ name: "/auth/logout" });
 };
 </script>

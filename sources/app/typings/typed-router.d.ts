@@ -14,10 +14,15 @@ import type {
   ParamValueZeroOrMore,
   ParamValueZeroOrOne,
 } from 'vue-router'
+import type {
+  _ExtractParamParserType,
+} from 'vue-router/experimental'
 
 declare module 'vue-router' {
   interface TypesConfig {
-    ParamParsers: never
+    _ParamParsers: {}
+    RouteNamedMap: import('vue-router/auto-routes').RouteNamedMap
+    _RouteFileInfoMap: import('vue-router/auto-routes')._RouteFileInfoMap
   }
 }
 
@@ -80,11 +85,15 @@ declare module 'vue-router/auto-routes' {
         | '/auth/login'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/auth/logout.vue': {
       routes:
         | '/auth/logout'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/tracking.vue': {
@@ -94,17 +103,23 @@ declare module 'vue-router/auto-routes' {
         | '/tracking/list'
       views:
         | 'default'
+      pathParamNames:
+        | never
     }
     'src/pages/tracking/calendar.vue': {
       routes:
         | '/tracking/calendar'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/tracking/list.vue': {
       routes:
         | '/tracking/list'
       views:
+        | never
+      pathParamNames:
         | never
     }
   }

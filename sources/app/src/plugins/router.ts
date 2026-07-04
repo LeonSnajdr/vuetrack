@@ -1,70 +1,30 @@
-import Login from "@/pages/auth/login.vue";
-import Logout from "@/pages/auth/logout.vue";
-import Tracking from "@/pages/tracking.vue";
-import Calendar from "@/pages/tracking/calendar.vue";
-import List from "@/pages/tracking/list.vue";
 import AuthPlugin from "@samhammer/authentication-vue";
 import { createRouter, createWebHashHistory } from "vue-router";
+import { routes } from "vue-router/auto-routes";
 
 const router = createRouter({
     history: createWebHashHistory(import.meta.env.BASE_URL),
-    routes: [
-        { path: "/", redirect: { name: "trackingCalendar" } },
-        {
-            path: "/auth",
-            name: "auth",
-            children: [
-                {
-                    path: "login",
-                    name: "authLogin",
-                    component: Login
-                },
-                {
-                    path: "logout",
-                    name: "authLogout",
-                    component: Logout
-                }
-            ]
-        },
-        {
-            path: "/tracking",
-            name: "tracking",
-            redirect: { name: "trackingCalendar" },
-            component: Tracking,
-            children: [
-                {
-                    path: "calendar",
-                    name: "trackingCalendar",
-                    component: Calendar
-                },
-                {
-                    path: "list",
-                    name: "trackingList",
-                    component: List
-                }
-            ]
-        }
-    ]
+    routes: [{ path: "/", redirect: "/tracking/calendar" }, ...routes]
 });
 
-router.beforeEach((to, _from, next) => {
-    if (to.name === "authLogin") {
+router.beforeEach((to) => {
+    if (to.name === "/auth/login") {
         if (AuthPlugin.authenticated) {
-            return next({ name: "tracking" });
+            return { name: "/tracking" };
         }
 
-        return next();
+        return true;
     }
 
-    if (to.name === "authLogout") {
-        return next();
+    if (to.name === "/auth/logout") {
+        return true;
     }
 
     if (!AuthPlugin.authenticated) {
-        return next({ name: "authLogin", query: { returnPath: encodeURIComponent(to.fullPath) } });
+        return { name: "/auth/login", query: { returnPath: encodeURIComponent(to.fullPath) } };
     }
 
-    return next();
+    return true;
 });
 
 export default router;
