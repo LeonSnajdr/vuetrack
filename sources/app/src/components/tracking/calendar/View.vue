@@ -1,4 +1,4 @@
-﻿<template>
+<template>
     <Teleport to="#tracking-toolbar-prepend" defer>
         <TrackingCalendarIntervalSelection />
     </Teleport>
@@ -6,6 +6,7 @@
     <VCalendar
         @click:date="jumpToDate"
         @click:more="jumpToMoreDay"
+        @contextmenu:event="openContextMenu"
         @mousedown:event="beginMoveEvent"
         @mousedown:time="beginGridInteraction"
         @mouseleave="cancelInteractionOnLeave"
@@ -29,67 +30,11 @@
             <TrackingCalendarCurrentTimeLine :day="day" />
         </template>
         <template #event="{ event }">
-            <template v-if="isTimeEntryEvent(event)">
-                <div :id="event.uiId" class="h-100">
-                    <div class="h-100 pa-1 d-flex flex-column ga-2 text-truncate">
-                        <div class="d-flex flex-col justify-space-between">
-                            <div class="text-truncate">
-                                <template v-if="event.kind === 'existing' || event.kind === 'suggestion'">
-                                    {{ event.timeEntry.taskId ?? event.timeEntry.project.name }}
-                                </template>
-                                <template v-else>{{ $t("calendar.event.draft") }}</template>
-                            </div>
-                            <VChip class="text-label-small flex-shrink-0" color="" density="compact" variant="tonal">
-                                {{ dateFormatter.format(event.start, "fullTime24h") }} - {{ dateFormatter.format(event.end, "fullTime24h") }}
-                                <VIcon :icon="mdiClockEditOutline" class="ml-1" />
-                                <VMenu
-                                    :closeDelay="0"
-                                    :disabled="interaction.kind !== 'idle' || isReadonly"
-                                    :openDelay="0"
-                                    activator="parent"
-                                    location="end"
-                                    openOnHover
-                                >
-                                    <VSheet class="d-flex ga-2 pa-1">
-                                        <VSpacer />
-                                        <VIconBtn
-                                            v-if="event.kind === 'suggestion'"
-                                            @click="create.start(event)"
-                                            :icon="mdiCheck"
-                                            iconColor="success"
-                                            variant="flat"
-                                        />
-                                        <VIconBtn
-                                            v-if="event.kind === 'existing' || event.kind === 'suggestion'"
-                                            @click="edit.start(event)"
-                                            :icon="mdiPencil"
-                                            variant="flat"
-                                        />
-                                        <VIconBtn
-                                            v-if="event.kind === 'existing' || event.kind === 'suggestion'"
-                                            @click="remove.start(event)"
-                                            :icon="mdiDelete"
-                                            iconColor="error"
-                                            variant="flat"
-                                        />
-                                    </VSheet>
-                                </VMenu>
-                            </VChip>
-                        </div>
-                        <div v-if="event.kind === 'existing' || event.kind === 'suggestion'" class="text-medium-emphasis text-truncate">
-                            {{ event.timeEntry.comment }}
-                        </div>
-                    </div>
-                </div>
-                <!-- TODO Might be allowed during conflict-->
-                <div v-if="!isReadonly && interaction.kind === 'idle'" @mousedown.stop="beginResizeEvent(event)" class="v-event-drag-bottom" />
-            </template>
+            <TrackingCalendarEvent v-if="isTimeEntryEvent(event)" @resize="beginResizeEvent(event)" :event="event" />
         </template>
     </VCalendar>
-    <TrackingCalendarFeaturesCreateOverlay v-if="interaction.kind === 'create'" :key="interaction.event.uiId" v-model:interaction="interaction" />
-    <TrackingCalendarFeaturesEditOverlay v-if="interaction.kind === 'edit'" :key="interaction.event.uiId" v-model:interaction="interaction" />
-    <TrackingCalendarFeaturesConflictOverlay v-if="interaction.kind === 'conflict'" :key="interaction.event.uiId" v-model:interaction="interaction" />
-    <TrackingCalendarFeaturesDeleteOverlay v-if="interaction.kind === 'delete'" :key="interaction.event.uiId" v-model:interaction="interaction" />
+    <TrackingCalendarContextMenu ref="contextMenuRef" />
+    <TrackingCalendarOverlays />
 </template>
 
 <script setup lang="ts">
@@ -121,7 +66,7 @@ const { jumpToDay } = useTrackingTimePeriod();
 const { start, end, weekdays, isReadonly, calendarType } = useCalendarTimePeriod();
 const { intervalMinutes, intervalCount, firstInterval } = useCalendarInterval();
 
-const dateFormatter = useDate();
+const contextMenuRef = useTemplateRef("contextMenuRef");
 
 onBeforeUnmount(() => {
     cancelAll();
@@ -156,11 +101,20 @@ const canAdjustEvent = (event: CalendarEvent): boolean => {
     return event.uiId === interaction.value.event.uiId;
 };
 
-const beginMoveEvent = (_nativeEvent: Event, { event, timed }: EventSlotScope) => {
+const isLeftClick = (nativeEvent: Event): boolean => {
+    return (nativeEvent as MouseEvent).button === 0;
+};
+
+const beginMoveEvent = (nativeEvent: Event, { event, timed }: EventSlotScope) => {
     if (isReadonly.value) return;
+    if (!isLeftClick(nativeEvent)) return;
     if (!event || !timed) return;
     if (!canAdjustEvent(event)) return;
     move.start(event as TimeEntryEvent);
+};
+
+const openContextMenu = (nativeEvent: Event, { event }: EventSlotScope) => {
+    contextMenuRef.value?.open(nativeEvent, event);
 };
 
 const beginResizeEvent = (event: CalendarEvent) => {
@@ -169,8 +123,9 @@ const beginResizeEvent = (event: CalendarEvent) => {
     resize.start(event as TimeEntryEvent);
 };
 
-const beginGridInteraction = (_nativeEvent: Event, tms: CalendarDayBodySlotScope) => {
+const beginGridInteraction = (nativeEvent: Event, tms: CalendarDayBodySlotScope) => {
     if (isReadonly.value) return;
+    if (!isLeftClick(nativeEvent)) return;
     if (!canStartInteraction(interaction.value.kind)) return;
 
     const mouseMs = toTime(tms);
@@ -219,31 +174,5 @@ const toTime = (tms: CalendarDayBodySlotScope) => {
 :deep(.v-event) {
     user-select: none;
     min-height: 30px;
-}
-
-.v-event-drag-bottom {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 4px;
-    height: 4px;
-    cursor: ns-resize;
-
-    &::after {
-        display: none;
-        position: absolute;
-        left: 50%;
-        height: 4px;
-        border-top: 1px solid white;
-        border-bottom: 1px solid white;
-        width: 16px;
-        margin-left: -8px;
-        opacity: 0.8;
-        content: "";
-    }
-
-    &:hover::after {
-        display: block;
-    }
 }
 </style>

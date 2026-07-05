@@ -1,5 +1,6 @@
 ﻿{
   "$vuetify.rules.dateAfter": "Value must be after the reference date",
+  "action.accept": "Accept",
   "action.cancel": "Cancel",
   "action.close": "Close",
   "action.collapse": "Collapse",
@@ -12,6 +13,7 @@
   "action.delete.error": "{type} could not be deleted",
   "action.delete.info": "This action cannot be undone.",
   "action.delete.title": "Delete {type}?",
+  "action.edit": "Edit",
   "action.expand": "Expand",
   "action.save": "Save",
   "action.save.error": "{type} could not be saved",
