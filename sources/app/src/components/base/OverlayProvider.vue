@@ -76,7 +76,9 @@ const props = defineProps<{
 
 const overlayOpen = defineModel<boolean>({ default: true });
 
-const overlayType = ref<OverlayType>(OverlayType.Drawer);
+const settingsStore = useSettingsStore();
+const { generalSettings } = storeToRefs(settingsStore);
+const overlayType = computed<OverlayType>(() => generalSettings.value.overlayType);
 
 const valid = ref(false);
 

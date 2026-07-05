@@ -1,4 +1,4 @@
-﻿import type { TimeEntrySuggestionId, TimeEntrySuggestionUpdateContract } from "@/contracts/TimeEntrySuggestion";
+﻿import type { TimeEntrySuggestionContract, TimeEntrySuggestionId, TimeEntrySuggestionUpdateContract } from "@/contracts/TimeEntrySuggestion";
 import type { ActionResult } from "@/util/ActionResult";
 
 export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", () => {
@@ -19,11 +19,12 @@ export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", ()
         key: (x) => x.args[0]
     });
 
-    const update = async (id: TimeEntrySuggestionId, updateContract: TimeEntrySuggestionUpdateContract): Promise<ActionResult> => {
+    const update = async (id: TimeEntrySuggestionId, updateContract: TimeEntrySuggestionUpdateContract): Promise<ActionResult<TimeEntrySuggestionContract>> => {
         const updateResult = await executeUpdate(id, updateContract);
 
         if (updateResult.status === "success") {
-            await executeLoad();
+            const existing = timeEntrySuggestions.value.find((x) => x.id === id);
+            if (existing) Object.assign(existing, updateResult.data);
         }
 
         return updateResult;
@@ -33,7 +34,7 @@ export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", ()
         const dismissResult = await executeDismiss(id);
 
         if (dismissResult.status === "success") {
-            await executeLoad();
+            timeEntrySuggestions.value = timeEntrySuggestions.value.filter((x) => x.id !== id);
         }
 
         return dismissResult;

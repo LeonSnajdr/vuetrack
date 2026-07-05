@@ -1,75 +1,51 @@
-import type {
-    ExistingTimeEntryEvent,
-    ExistingTimeEntryUpdateMutation,
-    SuggestionTimeEntryEvent,
-    SuggestionTimeEntryUpdateMutation
-} from "@/components/tracking/calendar/types";
-import { useEventMutation } from "./useEventMutation";
+import type { ExistingTimeEntryEvent, SuggestionTimeEntryEvent } from "@/components/tracking/calendar/types";
+import { ApiValidationException } from "@/util/ApiValidationError";
 import { useCalendarHelper } from "./useCalendarHelper";
+import { useEventMutation } from "./useEventMutation";
 
 export function useEdit() {
     const calendarStore = useCalendarStore();
     const mutation = useEventMutation();
-    const { buildTimeEntryUpdate, buildTimeEntrySuggestionUpdate, getOriginalPositon, getOverlappingEvents } = useCalendarHelper();
+    const { buildUpdateMutation, getOriginalPosition, restoreOriginalPosition } = useCalendarHelper();
 
-    const { interaction, existingEvents } = storeToRefs(calendarStore);
+    const { interaction } = storeToRefs(calendarStore);
 
     const start = (event: ExistingTimeEntryEvent | SuggestionTimeEntryEvent) => {
-        const originalPosition = getOriginalPositon(event, interaction.value);
-
-        let editMutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation;
-        if (event.kind === "existing") {
-            editMutation = {
-                kind: "update",
-                event,
-                update: buildTimeEntryUpdate(event.timeEntry),
-                originalPosition
-            };
-        } else {
-            editMutation = {
-                kind: "update",
-                event,
-                update: buildTimeEntrySuggestionUpdate(event.timeEntry),
-                originalPosition
-            };
-        }
-
+        const originalPosition = getOriginalPosition(event, interaction.value);
+        const editMutation = buildUpdateMutation(event, originalPosition);
         interaction.value = { kind: "edit", event, mutation: editMutation };
     };
 
     const finish = async () => {
         if (interaction.value.kind !== "edit") return;
 
-        const { event, mutation: editMutation } = interaction.value;
+        const { event, mutation: editMutation, pendingMutations } = interaction.value;
 
-        if (event.kind === "existing") {
-            const overlaps = getOverlappingEvents(event, existingEvents.value);
+        if (!pendingMutations && event.kind === "existing" && mutation.tryEnterConflict(event, editMutation)) return;
 
-            if (overlaps.length > 0) {
-                interaction.value = {
-                    kind: "conflict",
-                    event,
-                    overlaps,
-                    mutation: editMutation
-                };
-                return;
+        const editResult = await mutation.execute(editMutation);
+
+        if (editResult.status === "error") {
+            if (editResult.error instanceof ApiValidationException) {
+                interaction.value.errors = editResult.error.errors;
             }
+            return;
         }
 
-        await mutation.execute(editMutation);
+        if (pendingMutations?.length) {
+            const shouldIdle = await mutation.drainPending(pendingMutations);
+            if (!shouldIdle) return;
+        }
 
         interaction.value = { kind: "idle" };
     };
 
     const cancel = () => {
         if (interaction.value.kind !== "edit") return;
+        const { mutation: editMutation, pendingMutations } = interaction.value;
 
-        const { event, mutation: conflictMutation } = interaction.value;
-
-        if ("originalPosition" in conflictMutation) {
-            event.start = conflictMutation.originalPosition.start;
-            event.end = conflictMutation.originalPosition.end;
-        }
+        restoreOriginalPosition(editMutation);
+        mutation.cancelPending(pendingMutations);
 
         interaction.value = { kind: "idle" };
     };

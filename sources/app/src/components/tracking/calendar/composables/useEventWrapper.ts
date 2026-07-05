@@ -91,9 +91,42 @@ export function useEventWrapper() {
         };
     };
 
+    const cloneEventAsDraft = (source: ExistingTimeEntryEvent | SuggestionTimeEntryEvent, start: number, end: number): DraftTimeEntryEvent => {
+        const sourceEntry = source.timeEntry;
+        const createEntry = {
+            taskId: sourceEntry.taskId,
+            projectId: sourceEntry.project.id,
+            activityId: sourceEntry.activity.id,
+            comment: sourceEntry.comment,
+            startTime: new Date(start),
+            endTime: new Date(end)
+        };
+
+        return {
+            kind: "draft",
+            color: source.color,
+            timed: true,
+            uiId: `event-uiId-${uuidv4()}`,
+            createEntry,
+            get start() {
+                return this.createEntry.startTime.getTime();
+            },
+            set start(ms: number) {
+                this.createEntry.startTime = new Date(ms);
+            },
+            get end() {
+                return this.createEntry.endTime.getTime();
+            },
+            set end(ms: number) {
+                this.createEntry.endTime = new Date(ms);
+            }
+        };
+    };
+
     return {
         createExistingEvent,
         createSuggestionEvent,
-        createDraftEvent
+        createDraftEvent,
+        cloneEventAsDraft
     };
 }

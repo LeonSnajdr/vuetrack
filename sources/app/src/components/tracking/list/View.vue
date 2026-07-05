@@ -1,16 +1,17 @@
 <template>
     <Teleport to="#tracking-toolbar-append" defer>
-        <VSwitch v-model="groupByDate" label="Group by date" />
         <VBtn id="time-entry-create" @click="create.start" :prependIcon="mdiPlus" color="primary" variant="flat">
             {{ $t("action.create") }}
         </VBtn>
     </Teleport>
     <VDataTable
         v-bind="$attrs"
-        :groupBy="groupByDate ? [{ key: 'date' }] : undefined"
+        :groupBy="listSettings.groupByDate ? [{ key: 'date' }] : undefined"
         :headers="headers"
         :items="tableItems"
         :itemsPerPage="-1"
+        :loading="isLoadingEntry"
+        :striped="listSettings.striped"
         class="overflow-hidden"
         itemValue="id"
         fixedHeader
@@ -36,6 +37,9 @@
                 <template #item.data-table-group>
                     {{ item.date }}
                 </template>
+                <template #item.taskId>
+                    <div class="text-truncate" style="max-width: 200px" v-tooltip="item.taskId">{{ item.taskId }}</div>
+                </template>
                 <template #item.startTime>
                     {{ dateFormatter.format(item.startTime, "fullTime24h") }}
                 </template>
@@ -58,6 +62,9 @@
                 <td colspan="6">{{ dateHelper.formatDurationMillis(item.breakDetails.durationMillis) }}</td>
             </tr>
         </template>
+        <template #loading>
+            <VSkeletonLoader type="table-row" />
+        </template>
     </VDataTable>
     <TrackingListFeaturesCreateOverlay v-if="interaction.kind === 'create'" v-model:interaction="interaction" />
     <TrackingListFeaturesEditOverlay v-if="interaction.kind === 'edit'" v-model:interaction="interaction" />
@@ -79,9 +86,11 @@ const { t } = useI18n();
 
 const timeEntryStore = useTimeEntryStore();
 const listStore = useTrackingListStore();
+const settingsStore = useSettingsStore();
 
 const { timeEntries } = storeToRefs(timeEntryStore);
-const { interaction } = storeToRefs(listStore);
+const { interaction, isLoadingEntry } = storeToRefs(listStore);
+const { listSettings } = storeToRefs(settingsStore);
 
 const create = useCreate();
 const edit = useEdit();
@@ -98,8 +107,6 @@ const headers: DataTableHeader[] = [
     { title: t("list.table.comment"), key: "comment", sortable: false, nowrap: true },
     { title: t("list.table.actions"), key: "actions", sortable: false, align: "end", fixed: "end", width: 100, nowrap: true }
 ];
-
-const groupByDate = ref(false);
 
 const tableItems = computed((): TimeEntryListContract[] => {
     return timeEntries.value.map((x) => ({

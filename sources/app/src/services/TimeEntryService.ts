@@ -3,6 +3,16 @@ import type { ActivityId } from "@/contracts/ActivityContract";
 import type { ProjectId } from "@/contracts/ProjectContract";
 import axios from "@/plugins/axios";
 import type { TrackingFilter } from "@/models/TrackingFilter";
+import { ApiValidationException, type ApiValidationError, tryGetApiValidationError } from "@/util/ApiValidationError";
+
+const validationFieldKeyMappings: ReadonlyArray<readonly [string, readonly string[]]> = [
+    ["taskId", ["taskId"]],
+    ["startTime", ["startDate", "startTime"]],
+    ["endTime", ["endDate", "endTime"]],
+    ["projectId", ["projectId", "project.id"]],
+    ["activityId", ["activityId", "activity.id"]],
+    ["comment", ["comment"]]
+];
 
 type ActivityDTO = {
     id: number;
@@ -38,8 +48,9 @@ type TimeEntryDTO = {
 class TimeEntryService {
     private readonly dtoById = new Map<TimeEntryId, TimeEntryDTO>();
 
-    public load = async (filter: TrackingFilter): Promise<TimeEntryContract[]> => {
+    public load = async (filter: TrackingFilter, signal?: AbortSignal): Promise<TimeEntryContract[]> => {
         const result = await axios.api.get<TimeEntryDTO[]>("timeEntry", {
+            signal,
             params: {
                 from: this.formatFilterDate(filter.from),
                 to: this.formatFilterDate(filter.to)
@@ -53,12 +64,24 @@ class TimeEntryService {
         return contracts;
     };
 
-    public create = async (createContract: TimeEntryCreateContract): Promise<void> => {
-        await axios.api.post<void>("timeEntry/upsert", this.mapContractToDto(createContract));
+    public create = async (createContract: TimeEntryCreateContract): Promise<TimeEntryContract> => {
+        const knownIds = new Set(this.dtoById.keys());
+
+        await this.invokeWithValidationMapping(() => axios.api.post<void>("timeEntry/upsert", this.mapContractToDto(createContract)));
+
+        const contracts = await this.load({ from: createContract.startTime, to: createContract.endTime });
+        const created = contracts.find((c) => !knownIds.has(c.id));
+        if (!created) throw new Error("Created time entry not found after upsert");
+        return created;
     };
 
-    public update = async (id: TimeEntryId, updateContract: TimeEntryUpdateContract, signal?: AbortSignal): Promise<void> => {
-        await axios.api.post<void>("timeEntry/upsert", this.mapContractToDto(updateContract, id), { signal });
+    public update = async (id: TimeEntryId, updateContract: TimeEntryUpdateContract, signal?: AbortSignal): Promise<TimeEntryContract> => {
+        await this.invokeWithValidationMapping(() => axios.api.post<void>("timeEntry/upsert", this.mapContractToDto(updateContract, id), { signal }));
+
+        const contracts = await this.load({ from: updateContract.startTime, to: updateContract.endTime }, signal);
+        const updated = contracts.find((c) => c.id === id);
+        if (!updated) throw new Error(`Updated time entry ${id} not found after upsert`);
+        return updated;
     };
 
     public delete = async (id: TimeEntryId): Promise<void> => {
@@ -68,6 +91,29 @@ class TimeEntryService {
             }
         });
     };
+
+    private async invokeWithValidationMapping<T>(fn: () => Promise<T>): Promise<T> {
+        try {
+            return await fn();
+        } catch (error) {
+            const validationError = this.tryMapValidationError(error);
+            if (validationError) throw new ApiValidationException(validationError);
+            throw error;
+        }
+    }
+
+    private tryMapValidationError(error: unknown): ApiValidationError | null {
+        const raw = tryGetApiValidationError(error);
+        if (!raw) return null;
+
+        const mapped: ApiValidationError = {};
+        for (const [fieldKey, sourceKeys] of validationFieldKeyMappings) {
+            const messages = [...new Set(sourceKeys.flatMap((sourceKey) => raw[sourceKey] ?? []))];
+            if (messages.length > 0) mapped[fieldKey] = messages;
+        }
+
+        return Object.keys(mapped).length > 0 ? mapped : null;
+    }
 
     private storeDtos(dtos: TimeEntryDTO[]): void {
         for (const dto of dtos) {

@@ -1,6 +1,5 @@
 import type { Interaction, DraftTimeEntryEvent, TimeEntryEvent } from "@/components/tracking/calendar/types";
 import { useEventWrapper } from "@/components/tracking/calendar/composables/useEventWrapper";
-import type { CalendarInterval } from "@/components/tracking/calendar/composables/useCalendarInterval";
 
 export const useCalendarStore = defineStore("calendar", () => {
     const timeEntryStore = useTimeEntryStore();
@@ -13,18 +12,21 @@ export const useCalendarStore = defineStore("calendar", () => {
     const events = computed<TimeEntryEvent[]>(() => [...existingEvents.value, ...suggestionEvents.value, ...draftEvents.value]);
 
     const interaction = ref<Interaction>({ kind: "idle" });
-    const intervalMinutes = ref<CalendarInterval>(30);
+
+    const isLoadingEvents = computed(() => {
+        return timeEntryStore.isLoading || suggestionStore.isLoading;
+    });
 
     const isDeletingEvent = computed(() => {
-        return timeEntryStore.isDeleting() || suggestionStore.isDismissing();
+        return timeEntryStore.isDeleting || suggestionStore.isDismissing;
     });
 
     const isCreatingEvent = computed(() => {
-        return timeEntryStore.isCreating();
+        return timeEntryStore.isCreating;
     });
 
     const isUpdatingEvent = computed(() => {
-        return timeEntryStore.isUpdating() || suggestionStore.isUpdating();
+        return timeEntryStore.isUpdating || suggestionStore.isUpdating;
     });
 
     return {
@@ -33,7 +35,7 @@ export const useCalendarStore = defineStore("calendar", () => {
         draftEvents,
         events,
         interaction,
-        intervalMinutes,
+        isLoadingEvents,
         isDeletingEvent,
         isCreatingEvent,
         isUpdatingEvent

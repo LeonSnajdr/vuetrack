@@ -20,14 +20,19 @@ class TimeEntrySuggestionService {
                 },
                 id: 1 as TimeEntrySuggestionId,
                 comment: "",
-                endTime: new Date("2026-03-31T02:00:00"),
-                startTime: new Date("2026-03-31T01:00:00")
+                startTime: new Date("2026-07-04T10:00:00"),
+                endTime: new Date("2026-07-04T12:00:00")
             }
         ];
     }
 
-    public async update(id: TimeEntrySuggestionId, updateContract: TimeEntrySuggestionUpdateContract, signal?: AbortSignal): Promise<void> {
-        await axios.api.put<TimeEntrySuggestionContract>(`timeEntrySuggestions/${id}`, updateContract, { signal });
+    public async update(
+        id: TimeEntrySuggestionId,
+        updateContract: TimeEntrySuggestionUpdateContract,
+        signal?: AbortSignal
+    ): Promise<TimeEntrySuggestionContract> {
+        const result = await axios.api.put<TimeEntrySuggestionContract>(`timeEntrySuggestions/${id}`, updateContract, { signal });
+        return result.data;
     }
 
     public async dismiss(id: TimeEntrySuggestionId): Promise<void> {

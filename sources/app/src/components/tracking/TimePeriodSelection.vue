@@ -1,48 +1,43 @@
 <template>
     <div class="d-flex align-center ga-1">
-        <VIcon :icon="mdiCalendarRange" class="opacity-70" size="small" />
-        <p>{{ periodLabel }}</p>
-        <VIcon :icon="mdiMenuDown" class="opacity-70" size="small" />
-        <VMenu v-model="menuOpen" :closeOnContentClick="false" activator="parent" location="bottom start">
-            <VCard minWidth="500">
-                <VCardText class="d-flex">
-                    <div class="d-flex flex-column ga-2 mr-4">
-                        <VBtn @click="setPreset('today')" :variant="getPresetVariant('today')" justify="start">{{ $t("tracking.period.today") }}</VBtn>
-                        <VBtn @click="setPreset('yesterday')" :variant="getPresetVariant('yesterday')" justify="start">
-                            {{ $t("tracking.period.yesterday") }}
-                        </VBtn>
-                        <VBtn @click="setPreset('last7Days')" :variant="getPresetVariant('last7Days')" justify="start">
-                            {{ $t("tracking.period.last7Days") }}
-                        </VBtn>
-                        <VBtn @click="setPreset('workweek')" :variant="getPresetVariant('workweek')" justify="start">
-                            {{ $t("tracking.period.workweek") }}
-                        </VBtn>
-                        <VBtn @click="setPreset('thisMonth')" :variant="getPresetVariant('thisMonth')" justify="start">
-                            {{ $t("tracking.period.thisMonth") }}
-                        </VBtn>
-                        <VBtn @click="setPreset('lastMonth')" :variant="getPresetVariant('lastMonth')" justify="start">
-                            {{ $t("tracking.period.lastMonth") }}
-                        </VBtn>
-                    </div>
-                    <VDivider vertical />
-                    <VDatePicker
-                        @update:modelValue="onPickerRangeUpdate"
-                        :header="$t('tracking.period.customRange')"
-                        :modelValue="pickerRange"
-                        class="w-100 mt-n2"
-                        multiple="range"
-                        hideHeader
-                        showAdjacentMonths
-                    >
-                        <template #day="{ props, item }">
-                            <VBtn @click="onPickerDayClick(item.date, props.onClick)" v-bind="getDayButtonProps(props)">
-                                {{ item.localized }}
-                            </VBtn>
-                        </template>
-                    </VDatePicker>
-                </VCardText>
-            </VCard>
-        </VMenu>
+        <VIconBtn
+            @click="shiftPeriod(detectedPreset, filter.from, filter.to, -1)"
+            :icon="mdiChevronLeft"
+            :title="t('tracking.period.previous')"
+            variant="text"
+        />
+        <div class="d-flex align-center justify-center ga-1" style="cursor: pointer; width: 130px">
+            {{ periodLabel }}
+            <VMenu v-model="menuOpen" :closeOnContentClick="false" activator="parent" location="bottom start">
+                <VCard minWidth="800">
+                    <VCardText>
+                        <VRow>
+                            <VCol cols="3">
+                                <VList nav>
+                                    <VListItem
+                                        v-for="preset in presets"
+                                        :key="preset.value"
+                                        @click="setPreset(preset.value)"
+                                        :active="detectedPreset === preset.value"
+                                        :title="preset.title"
+                                    />
+                                </VList>
+                            </VCol>
+                            <VCol cols="9">
+                                <VDateRangePicker
+                                    @update:modelValue="onPickerRangeUpdate"
+                                    :modelValue="pickerRange"
+                                    class="w-100 mt-n2"
+                                    hideHeader
+                                    showAdjacentMonths
+                                />
+                            </VCol>
+                        </VRow>
+                    </VCardText>
+                </VCard>
+            </VMenu>
+        </div>
+        <VIconBtn @click="shiftPeriod(detectedPreset, filter.from, filter.to, 1)" :icon="mdiChevronRight" :title="t('tracking.period.next')" variant="text" />
     </div>
 </template>
 
@@ -54,6 +49,7 @@ const { filter } = useTrackingFilter();
 const {
     setPreset: applyPreset,
     applyPeriod,
+    shiftPeriod,
     startOfDay,
     endOfDay,
     startOfWeek,
@@ -67,6 +63,15 @@ const {
 const dateFormatter = computed(() => new Intl.DateTimeFormat(locale.value, { month: "short", day: "numeric" }));
 const menuOpen = ref(false);
 const pickerRange = ref<Date[]>([]);
+
+const presets = computed<{ title: string; value: Exclude<TrackingPeriodPreset, "custom"> }[]>(() => [
+    { title: t("tracking.period.today"), value: "today" },
+    { title: t("tracking.period.yesterday"), value: "yesterday" },
+    { title: t("tracking.period.last7Days"), value: "last7Days" },
+    { title: t("tracking.period.workweek"), value: "workweek" },
+    { title: t("tracking.period.thisMonth"), value: "thisMonth" },
+    { title: t("tracking.period.lastMonth"), value: "lastMonth" }
+]);
 
 const syncPickerRange = () => {
     pickerRange.value = [startOfDay(filter.value.from), startOfDay(filter.value.to)];
@@ -106,26 +111,6 @@ const onPickerRangeUpdate = (value: unknown) => {
     menuOpen.value = false;
 };
 
-const onPickerDayClick = (value: unknown, defaultClick?: () => void) => {
-    const nextDay = value instanceof Date && !Number.isNaN(value.getTime()) ? startOfDay(value) : null;
-    const repeatedSingleDayClick = nextDay !== null && pickerRange.value.length === 1 && sameDay(pickerRange.value[0], nextDay);
-
-    defaultClick?.();
-
-    if (!repeatedSingleDayClick || nextDay === null) return;
-
-    pickerRange.value = [nextDay, nextDay];
-    applyPeriod(nextDay, nextDay);
-    menuOpen.value = false;
-};
-
-const getDayButtonProps = (props: Record<string, unknown>) => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { onClick: _onClick, ...buttonProps } = props;
-
-    return buttonProps;
-};
-
 const detectedPreset = computed<TrackingPeriodPreset>(() => {
     const today = new Date();
     const normalizedStart = startOfDay(filter.value.from);
@@ -146,24 +131,12 @@ const detectedPreset = computed<TrackingPeriodPreset>(() => {
 });
 
 const periodLabel = computed(() => {
-    const presetLabels: Record<Exclude<TrackingPeriodPreset, "custom">, string> = {
-        today: t("tracking.period.today"),
-        yesterday: t("tracking.period.yesterday"),
-        last7Days: t("tracking.period.last7Days"),
-        workweek: t("tracking.period.workweek"),
-        thisMonth: t("tracking.period.thisMonth"),
-        lastMonth: t("tracking.period.lastMonth")
-    };
     const rangeLabel = sameDay(filter.value.from, filter.value.to)
         ? dateFormatter.value.format(filter.value.from)
         : `${dateFormatter.value.format(filter.value.from)} - ${dateFormatter.value.format(filter.value.to)}`;
 
     if (detectedPreset.value === "custom") return rangeLabel;
 
-    return presetLabels[detectedPreset.value];
-});
-
-const getPresetVariant = computed(() => (preset: Exclude<TrackingPeriodPreset, "custom">) => {
-    return detectedPreset.value === preset ? "tonal" : "flat";
+    return presets.value.find((preset) => preset.value === detectedPreset.value)?.title ?? rangeLabel;
 });
 </script>

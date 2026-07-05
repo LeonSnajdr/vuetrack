@@ -1,4 +1,4 @@
-import type { ExistingTimeEntryUpdateMutation, SuggestionTimeEntryUpdateMutation, TimeEntryEvent } from "@/components/tracking/calendar/types";
+import type { TimeEntryEvent } from "@/components/tracking/calendar/types";
 import { useCalendarHelper } from "./useCalendarHelper";
 import { useEventMutation } from "./useEventMutation";
 
@@ -6,49 +6,23 @@ export function useResize() {
     const calendarStore = useCalendarStore();
     const { interaction, existingEvents } = storeToRefs(calendarStore);
     const mutation = useEventMutation();
-    const {
-        roundTime,
-        getOverlappingEvents,
-        cancelPendingUpdateForEvent,
-        getOriginalPositon,
-        getEventBoundaries,
-        buildTimeEntryUpdate,
-        buildTimeEntrySuggestionUpdate,
-        updateEventPosition
-    } = useCalendarHelper();
+    const { roundTime, getEventBoundaries, prepareUpdateMutation, updateEventPosition, restoreOriginalPosition } = useCalendarHelper();
+
+    const isCommitting = ref(false);
 
     const start = (event: TimeEntryEvent) => {
-        if (event.kind !== "existing" && event.kind !== "suggestion") return;
-
-        cancelPendingUpdateForEvent(event);
-
-        const originalPosition = getOriginalPositon(event, interaction.value);
-
-        let resizeMutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation;
-        if (event.kind === "existing") {
-            resizeMutation = {
-                kind: "update",
-                event,
-                update: buildTimeEntryUpdate(event.timeEntry),
-                originalPosition
-            };
-        } else {
-            resizeMutation = {
-                kind: "update",
-                event,
-                update: buildTimeEntrySuggestionUpdate(event.timeEntry),
-                originalPosition
-            };
-        }
+        const resizeMutation = prepareUpdateMutation(event);
+        if (!resizeMutation) return;
 
         interaction.value = {
             kind: "resize",
-            event,
+            event: resizeMutation.event,
             mutation: resizeMutation
         };
     };
 
     const update = (mouseMs: number) => {
+        if (isCommitting.value) return;
         if (interaction.value.kind !== "resize") return;
 
         const { event } = interaction.value;
@@ -60,33 +34,18 @@ export function useResize() {
 
     const finish = async () => {
         if (interaction.value.kind !== "resize") return;
-        const cur = interaction.value;
 
-        if (cur.event.kind === "existing") {
-            const overlaps = getOverlappingEvents(cur.event, existingEvents.value);
-
-            if (overlaps.length > 0) {
-                interaction.value = {
-                    kind: "conflict",
-                    event: cur.event,
-                    overlaps,
-                    mutation: cur.mutation
-                };
-                return;
-            }
+        isCommitting.value = true;
+        const shouldIdle = await mutation.commitUpdate(interaction.value);
+        isCommitting.value = false;
+        if (shouldIdle) {
+            interaction.value = { kind: "idle" };
         }
-
-        interaction.value = { kind: "idle" };
-        await mutation.execute(cur.mutation);
     };
 
     const cancel = () => {
         if (interaction.value.kind !== "resize") return;
-
-        const cur = interaction.value;
-        cur.event.start = cur.mutation.originalPosition.start;
-        cur.event.end = cur.mutation.originalPosition.end;
-
+        restoreOriginalPosition(interaction.value.mutation);
         interaction.value = { kind: "idle" };
     };
 

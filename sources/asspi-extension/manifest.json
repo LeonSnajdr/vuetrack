@@ -1,0 +1,17 @@
+{
+    "manifest_version": 3,
+    "name": "AssPI Bridge",
+    "version": "1.0.0",
+    "description": "Authenticated fetch bridge to the legacy timetracking site for vuetrack (AssPI). Reuses your logged-in browser session.",
+    "host_permissions": ["http://localhost:9000/*", "https://timetracking.cloud.samhammer.de/*"],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "content_scripts": [
+        {
+            "matches": ["http://localhost:9100/*", "http://127.0.0.1:9100/*"],
+            "js": ["content.js"],
+            "run_at": "document_start"
+        }
+    ]
+}

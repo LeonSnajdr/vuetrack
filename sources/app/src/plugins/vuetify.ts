@@ -11,13 +11,11 @@ import { de, en } from "vuetify/locale";
 import i18n from "./i18n";
 import dateFns from "./dateFns";
 
-import { VIconBtn } from "vuetify/labs/VIconBtn";
-import { VDateInput } from "vuetify/labs/VDateInput";
+import { VDateRangePicker } from "vuetify/labs/VDateRangePicker";
 
 export default createVuetify({
     components: {
-        VIconBtn,
-        VDateInput
+        VDateRangePicker
     },
     date: {
         adapter: dateFns
@@ -192,11 +190,8 @@ export default createVuetify({
             class: "d-flex flex-column",
 
             VCardTitle: {
-                class: "text-medium-emphasis font-weight-light d-flex align-center"
-            },
-
-            VCardSubtitle: {
-                class: "text-uppercase"
+                class: "text-title-large d-flex ga-2 align-center",
+                VIcon: { size: "small" }
             }
         },
         VNavigationDrawer: {
@@ -246,6 +241,10 @@ export default createVuetify({
         },
         VTooltip: {
             openDelay: 400
+        },
+        VBtnToggle: {
+            variant: "outlined",
+            density: "compact"
         },
         VIconBtn: {
             rounded: "lg",

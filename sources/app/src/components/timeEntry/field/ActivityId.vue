@@ -2,14 +2,14 @@
     <VRowSingle>
         <VAutocomplete
             v-bind="$attrs"
-            v-model="activityId"
+            v-model.trim="activityId"
+            :autoSelectFirst="!disableAutoSelectFirst"
             :items="activities"
             :label="$t('timeEntry.field.activityId')"
             :loading="isLoading"
-            :rules="[rules.required()]"
+            :rules="disableRequired ? undefined : [rules.required()]"
             itemTitle="name"
             itemValue="id"
-            autoSelectFirst
         />
     </VRowSingle>
 </template>
@@ -20,6 +20,8 @@ import type { ActivityId } from "@/contracts/ActivityContract";
 
 const props = defineProps<{
     projectId: ProjectId | null;
+    disableRequired?: boolean;
+    disableAutoSelectFirst?: boolean;
 }>();
 
 const activityId = defineModel<ActivityId | null>({ required: true });
@@ -42,7 +44,7 @@ watch(
 );
 
 whenever(
-    () => activities.value.length === 1,
+    () => !props.disableAutoSelectFirst && activities.value.length === 1,
     () => {
         activityId.value = activities.value[0]!.id;
     },

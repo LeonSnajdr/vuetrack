@@ -5,12 +5,12 @@ import { useEventWrapper } from "./useEventWrapper";
 export function useDraft() {
     const calendarStore = useCalendarStore();
     const mutation = useEventMutation();
-    const { buildTimeEntryCreate, roundTime, updateEventPosition } = useCalendarHelper();
+    const { buildCreateMutation, getAllBoundaries, roundTime, updateEventPosition } = useCalendarHelper();
     const { createDraftEvent } = useEventWrapper();
     const { interaction, draftEvents, existingEvents } = storeToRefs(calendarStore);
 
     const start = (anchorMs: number) => {
-        const snapPoints = existingEvents.value.flatMap((event) => [event.start, event.end]);
+        const snapPoints = getAllBoundaries(existingEvents.value);
         const anchorStartMs = roundTime(anchorMs, { snapPoints });
         const newEvent = createDraftEvent(anchorStartMs);
         draftEvents.value.push(newEvent);
@@ -26,7 +26,7 @@ export function useDraft() {
         if (interaction.value.kind !== "draft") return;
         const { event, anchorStartMs } = interaction.value;
         const down = mouseMs < anchorStartMs;
-        const snapPoints = existingEvents.value.flatMap((existingEvent) => [existingEvent.start, existingEvent.end]);
+        const snapPoints = getAllBoundaries(existingEvents.value);
         const mouseRounded = roundTime(mouseMs, { down, snapPoints });
 
         updateEventPosition(event, { start: Math.min(mouseRounded, anchorStartMs), end: Math.max(mouseRounded, anchorStartMs) }, down ? "end" : "start");
@@ -34,22 +34,17 @@ export function useDraft() {
 
     const finish = () => {
         if (interaction.value.kind !== "draft") return;
-        const cur = interaction.value;
+        const { event } = interaction.value;
         interaction.value = {
             kind: "create",
-            event: cur.event,
-            mutation: {
-                kind: "create",
-                event: cur.event,
-                create: buildTimeEntryCreate(cur.event.createEntry)
-            }
+            event,
+            mutation: buildCreateMutation(event)
         };
     };
 
     const cancel = () => {
         if (interaction.value.kind !== "draft") return;
-        const cur = interaction.value;
-        mutation.execute({ kind: "delete", event: cur.event });
+        mutation.deleteIfDraft(interaction.value.event);
         interaction.value = { kind: "idle" };
     };
 

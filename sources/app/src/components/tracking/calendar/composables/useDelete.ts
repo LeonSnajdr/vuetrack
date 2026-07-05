@@ -1,28 +1,15 @@
-import type {
-    DraftTimeEntryDeleteMutation,
-    ExistingTimeEntryDeleteMutation,
-    SuggestionTimeEntryDeleteMutation,
-    TimeEntryEvent
-} from "@/components/tracking/calendar/types";
+import type { TimeEntryEvent } from "@/components/tracking/calendar/types";
+import { useCalendarHelper } from "./useCalendarHelper";
 import { useEventMutation } from "./useEventMutation";
 
 export function useDelete() {
     const calendarStore = useCalendarStore();
     const mutation = useEventMutation();
+    const { buildDeleteMutation } = useCalendarHelper();
     const { interaction } = storeToRefs(calendarStore);
 
     const start = (event: TimeEntryEvent) => {
-        console.log("remove start");
-
-        let deleteMutation: DraftTimeEntryDeleteMutation | ExistingTimeEntryDeleteMutation | SuggestionTimeEntryDeleteMutation;
-        if (event.kind === "draft") {
-            deleteMutation = { kind: "delete", event };
-        } else if (event.kind === "existing") {
-            deleteMutation = { kind: "delete", event, id: event.timeEntry.id };
-        } else {
-            deleteMutation = { kind: "delete", event, id: event.timeEntry.id };
-        }
-
+        const deleteMutation = buildDeleteMutation(event);
         interaction.value = { kind: "delete", event, mutation: deleteMutation };
     };
 

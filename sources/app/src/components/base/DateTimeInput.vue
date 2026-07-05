@@ -10,7 +10,7 @@
                     v-model:menu="isDateMenuOpen"
                     v-bind="dateInputAttrs"
                     @keydown.capture="onDateInputKeydown"
-                    :error="!(isValid.value ?? true)"
+                    :error="hasExternalErrors || !(isValid.value ?? true)"
                 />
                 <VTextField
                     ref="timeInputRef"
@@ -19,7 +19,7 @@
                     @blur="onTimeInputBlur"
                     @keydown.enter.prevent="commitTimeInput"
                     :disabled="timeInputDisabled"
-                    :error="!(isValid.value ?? true)"
+                    :error="hasExternalErrors || !(isValid.value ?? true)"
                     :tabindex="timeInputTabindex"
                 >
                     <VMenu ref="timeMenuRef" v-model="isTimeMenuOpen" :closeOnContentClick="false" activator="parent" minWidth="0">
@@ -38,8 +38,13 @@
                     </template>
                 </VTextField>
             </div>
-            <div v-if="!(isValid.value ?? true)" class="ml-4">
-                <VMessages :active="errorMessages.value.length > 0" :messages="errorMessages.value" color="error" style="opacity: 1" />
+            <div v-if="hasExternalErrors || !(isValid.value ?? true)" class="ml-4">
+                <VMessages
+                    :active="externalErrorMessages.length + errorMessages.value.length > 0"
+                    :messages="[...externalErrorMessages, ...errorMessages.value]"
+                    color="error"
+                    style="opacity: 1"
+                />
             </div>
         </div>
     </VValidation>
@@ -109,13 +114,33 @@ const timePickerViewMode = ref<"hour" | "minute">("hour");
 const timeInput = ref("");
 let skipTimeMenuCloseOnBlur = false;
 const attrs = useAttrs();
-const dateInputAttrs = computed(() => (isFullMode.value ? attrs : {}));
+const externalErrorMessages = computed(() => {
+    const value = attrs["error-messages"] ?? attrs.errorMessages;
+
+    if (typeof value === "string") {
+        return [value];
+    }
+
+    if (Array.isArray(value)) {
+        return value.filter((message): message is string => typeof message === "string");
+    }
+
+    return [];
+});
+const attrsWithoutErrorMessages = computed(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { errorMessages, "error-messages": errorMessagesKebabCase, ...otherAttrs } = attrs;
+
+    return otherAttrs;
+});
+const dateInputAttrs = computed(() => (isFullMode.value ? attrsWithoutErrorMessages.value : {}));
 const timeInputAttrs = computed(() => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { label, min, tabindex, tabIndex, ...otherAttrs } = attrs;
+    const { label, min, tabindex, tabIndex, errorMessages, "error-messages": errorMessagesKebabCase, ...otherAttrs } = attrs;
 
     return isFullMode.value ? otherAttrs : { label, ...otherAttrs };
 });
+const hasExternalErrors = computed(() => externalErrorMessages.value.length > 0);
 const timeInputTabindex = computed(() => attrs.tabindex ?? attrs.tabIndex);
 const isAttrsDisabled = computed(() => attrs.disabled === "" || attrs.disabled === true || attrs.disabled === "true");
 const timeInputDisabled = computed(() => isAttrsDisabled.value || !effectiveDateSource.value);

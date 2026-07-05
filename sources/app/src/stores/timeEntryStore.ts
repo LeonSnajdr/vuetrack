@@ -1,4 +1,4 @@
-import type { TimeEntryCreateContract, TimeEntryId, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
+import type { TimeEntryContract, TimeEntryCreateContract, TimeEntryId, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
 import { type ActionResult } from "@/util/ActionResult";
 import { type Nullable } from "@/util/Nullable";
 
@@ -28,34 +28,24 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
 
     watch(filter, executeLoadWithFilters, { deep: true });
 
-    const create = async (createContract: Nullable<TimeEntryCreateContract>): Promise<ActionResult> => {
-        // TODO
-        /*if (!isNonNullable(createContract)) {
-            return error();
-        }*/
+    const create = async (createContract: Nullable<TimeEntryCreateContract>): Promise<ActionResult<TimeEntryContract>> => {
+        if (!isNonNullable(createContract)) return error();
 
         const createResult = await executeCreate(createContract as TimeEntryCreateContract);
 
-        if (createResult.status === "error") {
-            notify.error(t("action.create.error", { type: t("timeEntry.singular") }), { timeout: 5000 });
-        }
-
         if (createResult.status === "success") {
-            await executeLoadWithFilters();
+            timeEntries.value.push(createResult.data);
         }
 
         return createResult;
     };
 
-    const update = async (id: TimeEntryId, updateContract: TimeEntryUpdateContract): Promise<ActionResult> => {
+    const update = async (id: TimeEntryId, updateContract: TimeEntryUpdateContract): Promise<ActionResult<TimeEntryContract>> => {
         const updateResult = await executeUpdate(id, updateContract);
 
-        if (updateResult.status === "error") {
-            notify.error(t("action.save.error", { type: t("timeEntry.singular") }), { timeout: 5000 });
-        }
-
         if (updateResult.status === "success") {
-            await executeLoadWithFilters();
+            const existing = timeEntries.value.find((x) => x.id === id);
+            if (existing) Object.assign(existing, updateResult.data);
         }
 
         return updateResult;
@@ -65,7 +55,7 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
         const deleteResult = await executeDelete(id);
 
         if (deleteResult.status === "success") {
-            await executeLoadWithFilters();
+            timeEntries.value = timeEntries.value.filter((x) => x.id !== id);
         }
 
         if (deleteResult.status === "error") {
