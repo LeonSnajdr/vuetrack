@@ -30,7 +30,7 @@
             <TrackingCalendarCurrentTimeLine :day="day" />
         </template>
         <template #event="{ event }">
-            <TrackingCalendarEvent v-if="isTimeEntryEvent(event)" @resize="beginResizeEvent(event)" :event="event" />
+            <TrackingCalendarEvent v-if="isTimeEntryEvent(event)" @resize="beginResizeEvent(event, $event)" :event="event" />
         </template>
     </VCalendar>
     <TrackingCalendarContextMenu ref="contextMenuRef" />
@@ -40,7 +40,7 @@
 <script setup lang="ts">
 import type { EventSlotScope } from "vuetify/lib/components/VCalendar/VCalendar.mjs";
 import type { CalendarDayBodySlotScope, CalendarEvent } from "vuetify/lib/components/VCalendar/types.mjs";
-import { isTimeEntryEvent, type TimeEntryEvent } from "./types";
+import { isTimeEntryEvent, type EventEdge, type InteractionKind, type TimeEntryEvent } from "./types";
 import { useMove } from "./composables/useMove";
 import { useResize } from "./composables/useResize";
 import { useDraft } from "./composables/useDraft";
@@ -90,7 +90,7 @@ const jumpToMoreDay = (_nativeEvent: Event, day: { year: number; month: number; 
     jumpToDay(new Date(day.year, day.month - 1, day.day));
 };
 
-const canStartInteraction = (currentKind: string): boolean => {
+const canStartInteraction = (currentKind: InteractionKind): boolean => {
     return currentKind !== "create" && currentKind !== "edit" && currentKind !== "conflict" && currentKind !== "delete";
 };
 
@@ -117,10 +117,10 @@ const openContextMenu = (nativeEvent: Event, { event }: EventSlotScope) => {
     contextMenuRef.value?.open(nativeEvent, event);
 };
 
-const beginResizeEvent = (event: CalendarEvent) => {
+const beginResizeEvent = (event: CalendarEvent, edge: EventEdge) => {
     if (isReadonly.value) return;
     if (!canAdjustEvent(event)) return;
-    resize.start(event as TimeEntryEvent);
+    resize.start(event as TimeEntryEvent, edge);
 };
 
 const beginGridInteraction = (nativeEvent: Event, tms: CalendarDayBodySlotScope) => {

@@ -2,6 +2,7 @@ import type {
     DraftTimeEntryCreateMutation,
     DraftTimeEntryDeleteMutation,
     DraftTimeEntryEvent,
+    EventEdge,
     EventPosition,
     ExistingTimeEntryDeleteMutation,
     ExistingTimeEntryEvent,
@@ -224,7 +225,7 @@ export const useCalendarHelper = () => {
 
     const minimumEventDurationMs = 60 * 1000;
 
-    const updateEventPosition = (event: TimeEntryEvent, patch: UpdateEventPositionPatch, lock: "start" | "end" = "start"): void => {
+    const updateEventPosition = (event: TimeEntryEvent, patch: UpdateEventPositionPatch, lock: EventEdge = "start"): void => {
         const nextStart = patch.start ?? event.start;
         const nextEnd = patch.end ?? event.end;
 

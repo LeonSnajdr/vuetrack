@@ -4,6 +4,8 @@ import type { Nullable } from "@/util/Nullable";
 import type { ApiValidationError } from "@/util/ApiValidationError";
 import type { CalendarEvent } from "vuetify/lib/components/VCalendar/types.mjs";
 
+export type EventEdge = "start" | "end";
+
 export type EventPosition = {
     start: number;
     end: number;
@@ -93,6 +95,7 @@ export type Interaction =
       }
     | {
           kind: "resize";
+          edge: EventEdge;
           event: ExistingTimeEntryEvent | SuggestionTimeEntryEvent;
           mutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation;
       }
@@ -126,6 +129,10 @@ export type Interaction =
           event: TimeEntryEvent;
           mutation: DraftTimeEntryDeleteMutation | ExistingTimeEntryDeleteMutation | SuggestionTimeEntryDeleteMutation;
       };
+
+export type EventKind = TimeEntryEvent["kind"];
+export type MutationKind = TimeEntryMutation["kind"];
+export type InteractionKind = Interaction["kind"];
 
 export function isTimeEntryEvent(e: CalendarEvent): e is TimeEntryEvent {
     return e.kind === "suggestion" || e.kind === "existing" || e.kind === "draft";

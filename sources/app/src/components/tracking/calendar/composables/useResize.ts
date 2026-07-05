@@ -1,4 +1,4 @@
-import type { TimeEntryEvent } from "@/components/tracking/calendar/types";
+import type { EventEdge, TimeEntryEvent } from "@/components/tracking/calendar/types";
 import { useCalendarHelper } from "./useCalendarHelper";
 import { useEventMutation } from "./useEventMutation";
 
@@ -10,12 +10,13 @@ export function useResize() {
 
     const isCommitting = ref(false);
 
-    const start = (event: TimeEntryEvent) => {
+    const start = (event: TimeEntryEvent, edge: EventEdge = "end") => {
         const resizeMutation = prepareUpdateMutation(event);
         if (!resizeMutation) return;
 
         interaction.value = {
             kind: "resize",
+            edge,
             event: resizeMutation.event,
             mutation: resizeMutation
         };
@@ -25,11 +26,16 @@ export function useResize() {
         if (isCommitting.value) return;
         if (interaction.value.kind !== "resize") return;
 
-        const { event } = interaction.value;
+        const { event, edge } = interaction.value;
         const snapPoints = getEventBoundaries(event, existingEvents.value);
-        const mouseRounded = roundTime(mouseMs, { down: false, snapPoints });
 
-        updateEventPosition(event, { end: mouseRounded }, "start");
+        if (edge === "start") {
+            const mouseRounded = roundTime(mouseMs, { down: true, snapPoints });
+            updateEventPosition(event, { start: mouseRounded }, "end");
+        } else {
+            const mouseRounded = roundTime(mouseMs, { down: false, snapPoints });
+            updateEventPosition(event, { end: mouseRounded }, "start");
+        }
     };
 
     const finish = async () => {

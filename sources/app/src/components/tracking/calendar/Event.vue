@@ -18,15 +18,16 @@
         </div>
     </div>
     <!-- TODO Might be allowed during conflict-->
-    <div v-if="canResize" @mousedown.stop="emit('resize')" class="v-event-drag-bottom" />
+    <div v-if="canResize" @mousedown.stop="emit('resize', 'start')" class="v-event-drag-top" />
+    <div v-if="canResize" @mousedown.stop="emit('resize', 'end')" class="v-event-drag-bottom" />
 </template>
 
 <script setup lang="ts">
-import type { TimeEntryEvent } from "./types";
+import type { EventEdge, TimeEntryEvent } from "./types";
 import { useCalendarTimePeriod } from "./composables/useCalendarTimePeriod";
 
 const emit = defineEmits<{
-    resize: [];
+    resize: [edge: EventEdge];
 }>();
 
 defineProps<{
@@ -43,11 +44,11 @@ const canResize = computed(() => !isReadonly.value && interaction.value.kind ===
 </script>
 
 <style scoped>
+.v-event-drag-top,
 .v-event-drag-bottom {
     position: absolute;
     left: 0;
     right: 0;
-    bottom: 4px;
     height: 4px;
     cursor: ns-resize;
 
@@ -67,5 +68,13 @@ const canResize = computed(() => !isReadonly.value && interaction.value.kind ===
     &:hover::after {
         display: block;
     }
+}
+
+.v-event-drag-top {
+    top: 4px;
+}
+
+.v-event-drag-bottom {
+    bottom: 4px;
 }
 </style>

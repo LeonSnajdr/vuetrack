@@ -20,7 +20,7 @@
 
 <script setup lang="ts">
 import type { CalendarEvent } from "vuetify/lib/components/VCalendar/types.mjs";
-import type { ExistingTimeEntryEvent, SuggestionTimeEntryEvent } from "./types";
+import type { ExistingTimeEntryEvent, InteractionKind, SuggestionTimeEntryEvent } from "./types";
 import { useCreate } from "./composables/useCreate";
 import { useEdit } from "./composables/useEdit";
 import { useDelete } from "./composables/useDelete";
@@ -43,7 +43,7 @@ const contextMenu = ref<{ show: boolean; x: number; y: number; event: ContextMen
     event: null
 });
 
-const canStartInteraction = (currentKind: string): boolean => {
+const canStartInteraction = (currentKind: InteractionKind): boolean => {
     return currentKind !== "create" && currentKind !== "edit" && currentKind !== "conflict" && currentKind !== "delete";
 };
 
