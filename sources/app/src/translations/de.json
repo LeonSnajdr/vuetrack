@@ -71,6 +71,7 @@
   "settings.list.striped.none": "Keine",
   "settings.list.striped.odd": "Ungerade",
   "settings.title": "Einstellungen",
+  "suggestion.recommendAgain": "Verworfene Vorschläge wiederherstellen",
   "timeEntry.field.activityId": "Tätigkeit",
   "timeEntry.field.comment": "Kommentar",
   "timeEntry.field.endTime": "Endzeit",

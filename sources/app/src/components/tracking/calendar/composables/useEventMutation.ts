@@ -95,7 +95,7 @@ export function useEventMutation() {
                 const idx = draftEvents.value.indexOf(mutation.event);
                 if (idx !== -1) draftEvents.value.splice(idx, 1);
             } else {
-                await suggestionStore.dismiss(mutation.event.timeEntry.id);
+                await suggestionStore.accept(mutation.event.timeEntry.id);
             }
         }
 

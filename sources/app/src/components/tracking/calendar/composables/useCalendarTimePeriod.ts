@@ -1,10 +1,14 @@
 export function useCalendarTimePeriod() {
     const { filter } = useTrackingFilter();
-    const { startOfDay, endOfDay, addDays } = useDateHelper();
+    const { startOfDay, endOfDay, addDays, normalizeRange } = useDateHelper();
 
-    const start = computed(() => startOfDay(filter.value.from));
+    // Guard against an inverted range (from > to): VCalendar's createDayList throws
+    // "No dates found" on an empty weekday list and aborts the whole render.
+    const range = computed(() => normalizeRange(filter.value.from, filter.value.to));
 
-    const end = computed(() => endOfDay(filter.value.to));
+    const start = computed(() => startOfDay(range.value.start));
+
+    const end = computed(() => endOfDay(range.value.end));
 
     const weekdays = computed(() => {
         const includedDays = new Set<number>();
@@ -15,7 +19,9 @@ export function useCalendarTimePeriod() {
             cursor.setTime(addDays(cursor, 1).getTime());
         }
 
-        return [1, 2, 3, 4, 5, 6, 0].filter((weekday) => includedDays.has(weekday));
+        const result = [1, 2, 3, 4, 5, 6, 0].filter((weekday) => includedDays.has(weekday));
+        // Never hand VCalendar an empty weekday list.
+        return result.length ? result : [1, 2, 3, 4, 5, 6, 0];
     });
 
     const dayCount = computed(() => {

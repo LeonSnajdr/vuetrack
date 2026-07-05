@@ -17,6 +17,10 @@
 const devBase: string = (import.meta.env.VITE_API_BASE_URL || "").split("/api")[0];
 const TARGET_BASE: string = import.meta.env.VITE_ASSPI_BASE || (import.meta.env.PROD ? "https://timetracking.cloud.samhammer.de" : devBase);
 
+// Jira is fetched through the same bridge (its host is in the extension's
+// host_permissions), so credentialed requests reuse the live Atlassian session.
+export const JIRA_BASE: string = import.meta.env.VITE_JIRA_BASE || "https://samhammer.atlassian.net";
+
 // How long to wait for the extension bridge before assuming it isn't installed.
 const BRIDGE_TIMEOUT_MS = 30000;
 
@@ -43,7 +47,8 @@ type RequestInitLite = {
 };
 
 // Round-trip a request through the AssPI Bridge extension via window.postMessage.
-function request(path: string, init: RequestInitLite): Promise<PageResult> {
+// `base` defaults to the legacy timetracking site; pass JIRA_BASE for Jira calls.
+function request(path: string, init: RequestInitLite, base: string = TARGET_BASE): Promise<PageResult> {
     return new Promise((resolve, reject) => {
         const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
@@ -67,7 +72,7 @@ function request(path: string, init: RequestInitLite): Promise<PageResult> {
         };
 
         window.addEventListener("message", onMessage);
-        window.postMessage({ __asspi: true, dir: "req", id, url: TARGET_BASE + path, method: init.method, headers: init.headers, body: init.body }, "*");
+        window.postMessage({ __asspi: true, dir: "req", id, url: base + path, method: init.method, headers: init.headers, body: init.body }, "*");
     });
 }
 
@@ -75,6 +80,13 @@ export class AssPiClient {
     // GET a JSON endpoint (e.g. /tracking/activities).
     public async getJson<T>(path: string): Promise<T> {
         const r = await request(path, { method: "GET", headers: { "X-Requested-With": "XMLHttpRequest", Accept: "application/json" } });
+        if (!r.ok) throw new AssPiHttpError(r.status);
+        return JSON.parse(r.text) as T;
+    }
+
+    // GET a JSON endpoint from an arbitrary base host (e.g. Jira at JIRA_BASE).
+    public async getJsonFrom<T>(base: string, path: string): Promise<T> {
+        const r = await request(path, { method: "GET", headers: { Accept: "application/json" } }, base);
         if (!r.ok) throw new AssPiHttpError(r.status);
         return JSON.parse(r.text) as T;
     }

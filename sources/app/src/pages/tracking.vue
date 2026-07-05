@@ -18,6 +18,6 @@ const timeEntrySuggestionStore = useTimeEntrySuggestionStore();
 onMounted(() => {
     projectStore.executeLoad();
     timeEntryStore.executeLoadWithFilters();
-    timeEntrySuggestionStore.executeLoad();
+    timeEntrySuggestionStore.executeLoadWithFilters();
 });
 </script>

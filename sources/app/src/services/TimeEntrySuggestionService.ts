@@ -1,42 +1,47 @@
-import type { ActivityId } from "@/contracts/ActivityContract";
-import type { ProjectId } from "@/contracts/ProjectContract";
 import type { TimeEntrySuggestionContract, TimeEntrySuggestionId, TimeEntrySuggestionUpdateContract } from "@/contracts/TimeEntrySuggestion";
+import type { TrackingFilter } from "@/models/TrackingFilter";
 import axios from "@/plugins/axios";
+import { formatISO } from "date-fns";
 
 class TimeEntrySuggestionService {
-    public async load(): Promise<TimeEntrySuggestionContract[]> {
-        /*const result = await axios.api.get<TimeEntrySuggestionContract[]>(`timeEntrySuggestions`);
-        return result.data;*/
-        return [
-            {
-                taskId: "mySuggestion",
-                activity: {
-                    id: 4 as ActivityId,
-                    name: "activity-3"
-                },
-                project: {
-                    id: 5 as ProjectId,
-                    name: "project-4"
-                },
-                id: 1 as TimeEntrySuggestionId,
-                comment: "",
-                startTime: new Date("2026-07-04T10:00:00"),
-                endTime: new Date("2026-07-04T12:00:00")
+    // Arrow-function properties so `this` stays bound when the store passes these
+    // by reference to useAsyncState/useAsyncTask.
+    public load = async (filter: TrackingFilter, signal?: AbortSignal): Promise<TimeEntrySuggestionContract[]> => {
+        const result = await axios.api.get<TimeEntrySuggestionContract[]>("timeEntrySuggestions", {
+            signal,
+            params: {
+                from: this.formatFilterDate(filter.from),
+                to: this.formatFilterDate(filter.to)
             }
-        ];
-    }
+        });
 
-    public async update(
+        return result.data;
+    };
+
+    public update = async (
         id: TimeEntrySuggestionId,
         updateContract: TimeEntrySuggestionUpdateContract,
         signal?: AbortSignal
-    ): Promise<TimeEntrySuggestionContract> {
+    ): Promise<TimeEntrySuggestionContract> => {
         const result = await axios.api.put<TimeEntrySuggestionContract>(`timeEntrySuggestions/${id}`, updateContract, { signal });
         return result.data;
-    }
+    };
 
-    public async dismiss(id: TimeEntrySuggestionId): Promise<void> {
+    public dismiss = async (id: TimeEntrySuggestionId): Promise<void> => {
         await axios.api.delete(`timeEntrySuggestions/${id}`);
+    };
+
+    public accept = async (id: TimeEntrySuggestionId): Promise<void> => {
+        await axios.api.post(`timeEntrySuggestions/${id}/accept`);
+    };
+
+    // Hard "recommend again": resurface previously dismissed suggestions.
+    public recommendAgain = async (): Promise<void> => {
+        await axios.api.post("timeEntrySuggestions/recommendAgain");
+    };
+
+    private formatFilterDate(value: Date): string {
+        return formatISO(value, { representation: "date" });
     }
 }
 

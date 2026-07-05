@@ -9,6 +9,15 @@
 import axios, { type AxiosAdapter, type AxiosResponse, type InternalAxiosRequestConfig } from "axios";
 import { AssPiHttpError } from "@/plugins/asspi/AssPiClient";
 import { deleteTimeEntry, findProjectIdByTaskId, loadActivities, loadProjects, loadTimeEntries, upsertTimeEntry, type TimeEntryDTO } from "@/plugins/asspi/AssPiHandlers";
+import {
+    acceptSuggestion,
+    dismissSuggestion,
+    loadIssueDetails,
+    loadSuggestions,
+    recommendAgain,
+    updateSuggestion,
+    type TimeEntrySuggestionUpdateDTO
+} from "@/plugins/asspi/AssPiSuggestionHandlers";
 
 // Reduce a request URL to a baseURL-relative path without query string.
 function normalizePath(config: InternalAxiosRequestConfig): string {
@@ -55,6 +64,31 @@ async function route(config: InternalAxiosRequestConfig): Promise<AxiosResponse>
     const activityMatch = /^project\/([^/]+)\/activity$/.exec(path);
     if (method === "get" && activityMatch) {
         return ok(await loadActivities(activityMatch[1]), config);
+    }
+
+    // Suggestions: RESTful fake api backed by Jira + IndexedDB (all in plugins/asspi).
+    if (method === "get" && path === "timeEntrySuggestions") {
+        return ok(await loadSuggestions(String(params.from ?? ""), String(params.to ?? "")), config);
+    }
+    if (method === "post" && path === "timeEntrySuggestions/recommendAgain") {
+        await recommendAgain();
+        return ok(undefined, config);
+    }
+    const suggestionAcceptMatch = /^timeEntrySuggestions\/(\d+)\/accept$/.exec(path);
+    if (method === "post" && suggestionAcceptMatch) {
+        await acceptSuggestion(Number(suggestionAcceptMatch[1]));
+        return ok(undefined, config);
+    }
+    const suggestionIdMatch = /^timeEntrySuggestions\/(\d+)$/.exec(path);
+    if (method === "put" && suggestionIdMatch) {
+        return ok(await updateSuggestion(Number(suggestionIdMatch[1]), parseData<TimeEntrySuggestionUpdateDTO>(config.data)), config);
+    }
+    if (method === "delete" && suggestionIdMatch) {
+        await dismissSuggestion(Number(suggestionIdMatch[1]));
+        return ok(undefined, config);
+    }
+    if (method === "get" && path === "issueDetails") {
+        return ok(await loadIssueDetails(String(params.taskId ?? "")), config);
     }
 
     throw new Error(`AssPI: no handler for ${method.toUpperCase()} ${path}`);

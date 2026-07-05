@@ -1,0 +1,17 @@
+{
+    "version": "0.0.1",
+    "configurations": [
+        {
+            "name": "app",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": ["--prefix", "sources/app", "run", "dev"],
+            "port": 9100
+        },
+        {
+            "name": "fake-api",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": ["--prefix", "sources/fake-api", "run", "dev"],
+            "port": 5001
+        }
+    ]
+}
