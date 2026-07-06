@@ -95,8 +95,8 @@ export function useEventWrapper() {
         const sourceEntry = source.timeEntry;
         const createEntry = {
             taskId: sourceEntry.taskId,
-            projectId: sourceEntry.project.id,
-            activityId: sourceEntry.activity.id,
+            projectId: sourceEntry.project?.id ?? null,
+            activityId: sourceEntry.activity?.id ?? null,
             comment: sourceEntry.comment,
             startTime: new Date(start),
             endTime: new Date(end)

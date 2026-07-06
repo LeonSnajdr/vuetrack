@@ -2,6 +2,8 @@
 import type { ActionResult } from "@/util/ActionResult";
 
 export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", () => {
+    const { filter } = useTrackingFilter();
+
     const {
         data: timeEntrySuggestions,
         execute: executeLoad,
@@ -18,6 +20,20 @@ export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", ()
     const { execute: executeDismiss, isLoading: isDismissing } = useAsyncTask(TimeEntrySuggestionService.dismiss, {
         key: (x) => x.args[0]
     });
+    const { execute: executeAccept, isLoading: isAccepting } = useAsyncTask(TimeEntrySuggestionService.accept, {
+        key: (x) => x.args[0]
+    });
+
+    const executeLoadWithFilters = async () => {
+        await executeLoad(filter.value);
+    };
+
+    watch(filter, executeLoadWithFilters, { deep: true });
+
+    const recommendAgain = async (): Promise<void> => {
+        await TimeEntrySuggestionService.recommendAgain();
+        await executeLoadWithFilters();
+    };
 
     const update = async (id: TimeEntrySuggestionId, updateContract: TimeEntrySuggestionUpdateContract): Promise<ActionResult<TimeEntrySuggestionContract>> => {
         const updateResult = await executeUpdate(id, updateContract);
@@ -40,5 +56,28 @@ export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", ()
         return dismissResult;
     };
 
-    return { timeEntrySuggestions, executeLoad, isLoading, update, isUpdating, dismiss, isDismissing, cancelPendingUpdate };
+    const accept = async (id: TimeEntrySuggestionId): Promise<ActionResult> => {
+        const acceptResult = await executeAccept(id);
+
+        if (acceptResult.status === "success") {
+            timeEntrySuggestions.value = timeEntrySuggestions.value.filter((x) => x.id !== id);
+        }
+
+        return acceptResult;
+    };
+
+    return {
+        timeEntrySuggestions,
+        executeLoad,
+        executeLoadWithFilters,
+        isLoading,
+        update,
+        isUpdating,
+        dismiss,
+        isDismissing,
+        accept,
+        isAccepting,
+        recommendAgain,
+        cancelPendingUpdate
+    };
 });

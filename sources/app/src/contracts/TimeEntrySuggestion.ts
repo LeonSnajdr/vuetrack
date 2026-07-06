@@ -6,19 +6,19 @@ export type TimeEntrySuggestionId = Branded<number, "timeEntrySuggestionId">;
 
 export type TimeEntrySuggestionContract = {
     id: TimeEntrySuggestionId;
-    taskId: string;
+    taskId: string | null;
     startTime: Date;
     endTime: Date;
-    project: ProjectContract;
-    activity: ActivityContract;
+    project: ProjectContract | null;
+    activity: ActivityContract | null;
     comment: string | null;
 };
 
 export type TimeEntrySuggestionUpdateContract = {
-    taskId: string;
+    taskId: string | null;
     startTime: Date;
     endTime: Date;
-    projectId: ProjectId;
-    activityId: ActivityId;
+    projectId: ProjectId | null;
+    activityId: ActivityId | null;
     comment: string | null;
 };

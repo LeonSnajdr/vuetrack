@@ -34,6 +34,7 @@
         </template>
     </VCalendar>
     <TrackingCalendarContextMenu ref="contextMenuRef" />
+    <TrackingCalendarEventDetails />
     <TrackingCalendarOverlays />
 </template>
 

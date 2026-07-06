@@ -2,7 +2,7 @@
     <VRowSingle>
         <VTextField v-model.trim="preset.name" :label="$t('preset.field.name')" :rules="[rules.required()]" maxlength="20" autofocus />
     </VRowSingle>
-    <TimeEntryFieldTaskId v-model="preset.taskId" :required="false" clearable disableRequired />
+    <TimeEntryFieldTaskId v-model="preset.taskId" :required="false" clearable />
     <VRowSingle>
         <VNumberInput v-model="preset.durationMinutes" :label="$t('preset.field.durationMinutes')" :min="1" controlVariant="default" clearable />
     </VRowSingle>

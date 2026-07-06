@@ -5,6 +5,7 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
+    "dev:prod": "vite --mode production",
     "build": "run-p type-check build-only",
     "preview": "vite preview",
     "build-only": "vite build",
@@ -23,6 +24,7 @@
     "@vueuse/core": "^14.3.0",
     "axios": "^1.18.1",
     "date-fns": "^4.4.0",
+    "idb": "^8.0.3",
     "lodash": "^4.18.1",
     "pinia": "^3.0.4",
     "pinia-plugin-persistedstate": "^4.7.1",

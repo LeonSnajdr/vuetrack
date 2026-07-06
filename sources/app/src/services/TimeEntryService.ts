@@ -125,7 +125,7 @@ class TimeEntryService {
         return {
             id: dto.timeEntryId as TimeEntryId,
             userId: dto.userId,
-            taskId: dto.taskId,
+            taskId: dto.taskId || null,
             project: {
                 id: dto.project.id as ProjectId,
                 name: dto.project.name
@@ -153,7 +153,7 @@ class TimeEntryService {
             project: { id: contract.projectId, name: "" },
             activity: { id: contract.activityId, name: "" },
             breakDetails: currentDto?.breakDetails ?? null,
-            taskId: contract.taskId,
+            taskId: contract.taskId ?? "",
             startDate: startParts.date,
             startTime: startParts.time,
             endDate: endParts.date,
