@@ -1,7 +1,7 @@
 <template>
     <div class="d-flex align-center ga-1">
         <VIconBtn
-            @click="shiftPeriod(detectedPreset, filter.from, filter.to, -1)"
+            @click="shiftPeriod(filter.from, filter.to, -1)"
             :icon="mdiChevronLeft"
             :title="t('tracking.period.previous')"
             variant="text"
@@ -37,7 +37,7 @@
                 </VCard>
             </VMenu>
         </div>
-        <VIconBtn @click="shiftPeriod(detectedPreset, filter.from, filter.to, 1)" :icon="mdiChevronRight" :title="t('tracking.period.next')" variant="text" />
+        <VIconBtn @click="shiftPeriod(filter.from, filter.to, 1)" :icon="mdiChevronRight" :title="t('tracking.period.next')" variant="text" />
     </div>
 </template>
 
