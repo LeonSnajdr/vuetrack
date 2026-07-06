@@ -1,8 +1,8 @@
 import type { IssueDetailsContract } from "@/contracts/IssueDetailsContract";
 import axios from "@/plugins/axios";
 
-// Issue metadata (summary/type/status) for event tooltips. Backend-agnostic: the
-// fake api resolves it from Jira; a real backend would do the same server-side.
+export const isIssueKey = (taskId: string | null | undefined): boolean => !!taskId && /^[A-Za-z][A-Za-z0-9]+-\d+$/.test(taskId.trim());
+
 class IssueDetailsService {
     private readonly cache = new Map<string, Promise<IssueDetailsContract>>();
 
@@ -15,7 +15,6 @@ class IssueDetailsService {
             .get<IssueDetailsContract>("issueDetails", { params: { taskId } })
             .then((result) => result.data)
             .catch((error) => {
-                // Don't cache failures — allow a later hover to retry.
                 this.cache.delete(key);
                 throw error;
             });

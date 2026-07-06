@@ -1,5 +1,13 @@
 <template>
-    <div :id="event.uiId" class="h-100">
+    <div
+        :id="event.uiId"
+        @contextmenu="details.close()"
+        @mousedown="details.close()"
+        @mouseenter="details.open($event, event)"
+        @mouseleave="details.close()"
+        @mousemove="details.move($event, event)"
+        class="h-100"
+    >
         <div class="h-100 pa-1 d-flex flex-column ga-2 text-truncate">
             <div class="d-flex flex-col justify-space-between">
                 <div class="text-truncate">
@@ -25,6 +33,7 @@
 <script setup lang="ts">
 import type { EventEdge, TimeEntryEvent } from "./types";
 import { useCalendarTimePeriod } from "./composables/useCalendarTimePeriod";
+import { useEventDetails } from "./composables/useEventDetails";
 
 const emit = defineEmits<{
     resize: [edge: EventEdge];
@@ -37,6 +46,7 @@ defineProps<{
 const calendarStore = useCalendarStore();
 const { interaction } = storeToRefs(calendarStore);
 const { isReadonly } = useCalendarTimePeriod();
+const details = useEventDetails();
 
 const dateFormatter = useDate();
 

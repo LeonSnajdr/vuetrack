@@ -25,6 +25,7 @@ import { useCreate } from "./composables/useCreate";
 import { useEdit } from "./composables/useEdit";
 import { useDelete } from "./composables/useDelete";
 import { useCalendarTimePeriod } from "./composables/useCalendarTimePeriod";
+import { useEventDetails } from "./composables/useEventDetails";
 
 type ContextMenuEvent = ExistingTimeEntryEvent | SuggestionTimeEntryEvent;
 
@@ -35,6 +36,7 @@ const create = useCreate();
 const edit = useEdit();
 const remove = useDelete();
 const { isReadonly } = useCalendarTimePeriod();
+const { setContextMenuOpen } = useEventDetails();
 
 const contextMenu = ref<{ show: boolean; x: number; y: number; event: ContextMenuEvent | null }>({
     show: false,
@@ -42,6 +44,11 @@ const contextMenu = ref<{ show: boolean; x: number; y: number; event: ContextMen
     y: 0,
     event: null
 });
+
+watch(
+    () => contextMenu.value.show,
+    (show) => setContextMenuOpen(show)
+);
 
 const canStartInteraction = (currentKind: InteractionKind): boolean => {
     return currentKind !== "create" && currentKind !== "edit" && currentKind !== "conflict" && currentKind !== "delete";
@@ -57,12 +64,12 @@ const open = (nativeEvent: Event, event?: CalendarEvent) => {
 
     const target = event as ContextMenuEvent;
 
-    // Ctrl (Strg) + right click is a shortcut that opens the edit directly.
     if (mouseEvent.ctrlKey) {
         edit.start(target);
         return;
     }
 
+    setContextMenuOpen(true);
     contextMenu.value = { show: true, x: mouseEvent.clientX, y: mouseEvent.clientY, event: target };
 };
 

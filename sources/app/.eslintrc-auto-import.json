@@ -93,6 +93,7 @@
     "inject": true,
     "injectLocal": true,
     "isDefined": true,
+    "isIssueKey": true,
     "isNonNullable": true,
     "isProxy": true,
     "isReactive": true,

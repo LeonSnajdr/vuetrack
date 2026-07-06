@@ -5,7 +5,8 @@
             "name": "app",
             "runtimeExecutable": "npm",
             "runtimeArgs": ["--prefix", "sources/app", "run", "dev"],
-            "port": 9100
+            "port": 9100,
+            "autoPort": true
         },
         {
             "name": "fake-api",
