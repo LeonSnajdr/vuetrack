@@ -9,7 +9,7 @@
         location="end"
         scrollStrategy="close"
     >
-        <VCard v-if="timeEntry" class="pa-3" maxWidth="360" minWidth="260">
+        <VCard v-if="timeEntry" class="pa-3" width="360">
             <div class="d-flex flex-column ga-1">
                 <div class="font-weight-bold">
                     {{ timeEntry.taskId ?? timeEntry.project?.name }}
