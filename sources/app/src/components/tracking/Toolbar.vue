@@ -19,7 +19,5 @@
 </template>
 
 <script setup lang="ts">
-import { mdiLightbulbOnOutline } from "@mdi/js";
-
 const timeEntrySuggestionStore = useTimeEntrySuggestionStore();
 </script>

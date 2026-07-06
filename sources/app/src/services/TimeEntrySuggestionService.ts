@@ -4,8 +4,6 @@ import axios from "@/plugins/axios";
 import { formatISO } from "date-fns";
 
 class TimeEntrySuggestionService {
-    // Arrow-function properties so `this` stays bound when the store passes these
-    // by reference to useAsyncState/useAsyncTask.
     public load = async (filter: TrackingFilter, signal?: AbortSignal): Promise<TimeEntrySuggestionContract[]> => {
         const result = await axios.api.get<TimeEntrySuggestionContract[]>("timeEntrySuggestions", {
             signal,
@@ -35,7 +33,6 @@ class TimeEntrySuggestionService {
         await axios.api.post(`timeEntrySuggestions/${id}/accept`);
     };
 
-    // Hard "recommend again": resurface previously dismissed suggestions.
     public recommendAgain = async (): Promise<void> => {
         await axios.api.post("timeEntrySuggestions/recommendAgain");
     };

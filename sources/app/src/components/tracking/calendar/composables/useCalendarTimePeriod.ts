@@ -2,8 +2,6 @@ export function useCalendarTimePeriod() {
     const { filter } = useTrackingFilter();
     const { startOfDay, endOfDay, addDays, normalizeRange } = useDateHelper();
 
-    // Guard against an inverted range (from > to): VCalendar's createDayList throws
-    // "No dates found" on an empty weekday list and aborts the whole render.
     const range = computed(() => normalizeRange(filter.value.from, filter.value.to));
 
     const start = computed(() => startOfDay(range.value.start));
@@ -20,7 +18,6 @@ export function useCalendarTimePeriod() {
         }
 
         const result = [1, 2, 3, 4, 5, 6, 0].filter((weekday) => includedDays.has(weekday));
-        // Never hand VCalendar an empty weekday list.
         return result.length ? result : [1, 2, 3, 4, 5, 6, 0];
     });
 
