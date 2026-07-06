@@ -3,7 +3,7 @@ import type { ActivityContract, ActivityId } from "@/contracts/ActivityContract"
 import type { ProjectContract, ProjectId } from "@/contracts/ProjectContract";
 
 export type TimeEntryCreateContract = {
-    taskId: string;
+    taskId: string | null;
     startTime: Date;
     endTime: Date;
     projectId: ProjectId;
@@ -16,7 +16,7 @@ export type TimeEntryId = Branded<number, "timeEntryId"> | null;
 export type TimeEntryContract = {
     id: TimeEntryId;
     userId: number;
-    taskId: string;
+    taskId: string | null;
     project: ProjectContract;
     activity: ActivityContract;
     breakDetails: TimeEntryBreakContract | null;
@@ -31,7 +31,7 @@ export type TimeEntryBreakContract = {
 };
 
 export type TimeEntryUpdateContract = {
-    taskId: string;
+    taskId: string | null;
     projectId: ProjectId;
     activityId: ActivityId;
     startTime: Date;

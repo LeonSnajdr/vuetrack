@@ -10,32 +10,32 @@ type TimeEntrySuggestionId = Branded<string, "timeEntryId">;
 type TimeEntryContract = {
     id: TimeEntryId;
     user: string;
-    taskId: string;
+    taskId: string | null;
     startTime: Date;
     endTime: Date;
 };
 
 type TimeEntryCreateContract = {
-    taskId: string;
+    taskId: string | null;
     startTime: Date;
     endTime: Date;
 };
 
 type TimeEntryUpdateContract = {
-    taskId: string;
+    taskId: string | null;
     startTime: Date;
     endTime: Date;
 };
 
 type TimeEntrySuggestionContract = {
     id: TimeEntrySuggestionId;
-    taskId: string;
+    taskId: string | null;
     startTime: Date;
     endTime: Date;
 };
 
 type TimeEntrySuggestionUpdateContract = {
-    taskId: string;
+    taskId: string | null;
     startTime: Date;
     endTime: Date;
 };
