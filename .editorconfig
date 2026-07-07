@@ -6,6 +6,7 @@ insert_final_newline = true
 indent_style = space
 indent_size = 4
 charset = utf-8
+trim_trailing_whitespace = true
 
 [*.js]
 indent_size = 2
@@ -36,6 +37,9 @@ insert_final_newline = unset
 [*.DotSettings]
 indent_style = tab
 insert_final_newline = unset
+
+[*.cs]
+csharp_style_namespace_declarations = file_scoped:warning
 
 [.gitbugtraq]
 indent_size = 1
