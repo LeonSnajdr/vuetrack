@@ -8,7 +8,7 @@
         @mousemove="details.move($event, event)"
         class="h-100"
     >
-        <div class="h-100 pa-1 d-flex flex-column ga-2 text-truncate">
+        <div class="h-100 pa-1 d-flex flex-column text-truncate">
             <div class="d-flex flex-col justify-space-between">
                 <div class="text-truncate">
                     <template v-if="event.kind === 'existing' || event.kind === 'suggestion'">
