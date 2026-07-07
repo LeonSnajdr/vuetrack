@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vuetrack.Api", "Vuetrack.Api\Vuetrack.Api.csproj", "{28B79DCB-17EC-4A49-A03A-2ECC8EB73274}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Executable", "Executable", "{457DD223-BCF6-4B70-B9D3-05DA37A5CD40}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Framework", "Framework", "{F6E64FF9-7F1D-4734-9846-23D195A8C998}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{28B79DCB-17EC-4A49-A03A-2ECC8EB73274}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{28B79DCB-17EC-4A49-A03A-2ECC8EB73274}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{28B79DCB-17EC-4A49-A03A-2ECC8EB73274}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{28B79DCB-17EC-4A49-A03A-2ECC8EB73274}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{28B79DCB-17EC-4A49-A03A-2ECC8EB73274} = {457DD223-BCF6-4B70-B9D3-05DA37A5CD40}
+	EndGlobalSection
+EndGlobal
