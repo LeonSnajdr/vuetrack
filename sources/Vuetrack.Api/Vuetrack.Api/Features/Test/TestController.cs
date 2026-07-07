@@ -6,11 +6,14 @@ namespace Vuetrack.Api.Test;
 [ApiController]
 [ApiVersion("1")]
 [Route("api/v{version:apiVersion}/[controller]")]
-public class TestController : ControllerBase
+public class TestController(ITestService testService) : ControllerBase
 {
+    private ITestService TestService = testService;
+
     [HttpGet]
     public IActionResult Get()
     {
-        return Ok("Hello World!");
+        var text = TestService.GetText();
+        return Ok(text);
     }
 }

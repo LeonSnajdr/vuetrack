@@ -12,12 +12,18 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Samhammer.DependencyInjection" Version="10.0.0" />
+    <PackageReference Include="Samhammer.Options" Version="10.0.0" />
     <PackageReference Include="Samhammer.Swagger.Versioning" Version="10.0.0" />
     <PackageReference Include="Samhammer.Web.Common" Version="10.0.0" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.406">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Vuetrack.Logging\Vuetrack.Logging.csproj" />
   </ItemGroup>
 
 </Project>
