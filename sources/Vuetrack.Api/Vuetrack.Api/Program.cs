@@ -1,8 +1,10 @@
+using Asp.Versioning;
 using Samhammer.DependencyInjection;
 using Samhammer.Options;
 using Samhammer.Swagger.Versioning;
 using Samhammer.Web.Common.Extensions;
 using Serilog;
+using Vuetrack.Api.Initialization;
 using Vuetrack.Logging;
 
 Log.Logger = new LoggerConfiguration()
@@ -23,7 +25,14 @@ try
 
     builder.Services.AddControllers();
 
-    builder.Services.AddApiVersioning();
+    builder.Services.AddApiVersioning(o =>
+    {
+        o.ReportApiVersions = true;
+        o.AssumeDefaultVersionWhenUnspecified = true;
+        o.DefaultApiVersion = new ApiVersion(1);
+    });
+
+    builder.Services.ConfigureOptions<ConfigureCors>();
 
     builder.Services.AddSwaggerGen();
     builder.Services.AddSwaggerVersionedApi();
@@ -44,6 +53,8 @@ try
     app.UseSwaggerUI();
 
     app.UseSerilogRequestLogging();
+
+    app.UseCors();
 
     app.MapControllers();
 
