@@ -8,9 +8,6 @@ const router = createRouter({
 });
 
 router.beforeEach((to) => {
-    // TODO: Remove
-    return true;
-
     if (to.name === "/auth/login") {
         if (AuthPlugin.authenticated) {
             return { name: "/tracking" };
