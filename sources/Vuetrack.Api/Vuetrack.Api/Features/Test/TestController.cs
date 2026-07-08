@@ -10,12 +10,12 @@ namespace Vuetrack.Api.Features.Test;
 [Authorize]
 public class TestController(ITestService testService) : ControllerBase
 {
-    private ITestService TestService = testService;
+    private ITestService TestService { get; } = testService;
 
     [HttpGet]
-    public IActionResult Get()
+    public async Task<IActionResult> Get()
     {
-        var text = TestService.GetText();
+        var text = await TestService.GetText();
         return Ok(text);
     }
 }

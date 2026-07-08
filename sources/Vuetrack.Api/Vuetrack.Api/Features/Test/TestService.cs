@@ -3,15 +3,19 @@
 namespace Vuetrack.Api.Features.Test;
 
 [Inject]
-public class TestService : ITestService
+public class TestService(ITestRepository testRepository) : ITestService
 {
-    public string GetText()
+    private ITestRepository TestRepository { get; } = testRepository;
+
+    public async Task<string> GetText()
     {
-        return "Hello World";
+        await TestRepository.Save(new TestModel { Test = "test" });
+
+        return "test";
     }
 }
 
 public interface ITestService
 {
-    string GetText();
+    Task<string> GetText();
 }
