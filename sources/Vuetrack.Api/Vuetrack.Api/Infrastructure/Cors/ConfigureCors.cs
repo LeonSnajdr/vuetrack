@@ -1,16 +1,11 @@
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.Extensions.Options;
 
-namespace Vuetrack.Api.Initialization;
+namespace Vuetrack.Api.Infrastructure.Cors;
 
-public class ConfigureCors : IConfigureOptions<CorsOptions>
+public class ConfigureCors(IOptions<CorsPolicyOptions> options) : IConfigureOptions<CorsOptions>
 {
-    private IOptions<CorsPolicyOptions> Options { get; }
-
-    public ConfigureCors(IOptions<CorsPolicyOptions> options)
-    {
-        Options = options;
-    }
+    private IOptions<CorsPolicyOptions> Options { get; } = options;
 
     public void Configure(CorsOptions options)
     {

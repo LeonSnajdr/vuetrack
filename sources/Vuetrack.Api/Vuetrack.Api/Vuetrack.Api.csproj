@@ -12,8 +12,17 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="ConfigurationSubstitutor" Version="1.5.1" />
+    <PackageReference Include="GitInfo" Version="3.3.5">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Samhammer.Authentication.Api" Version="10.0.0" />
+    <PackageReference Include="Samhammer.Authentication.Client" Version="10.0.0" />
+    <PackageReference Include="Samhammer.Configuration.Childs" Version="10.0.0" />
     <PackageReference Include="Samhammer.DependencyInjection" Version="10.0.0" />
     <PackageReference Include="Samhammer.Options" Version="10.0.0" />
+    <PackageReference Include="Samhammer.Swagger.Authentication" Version="10.0.0" />
     <PackageReference Include="Samhammer.Swagger.Versioning" Version="10.0.0" />
     <PackageReference Include="Samhammer.Web.Common" Version="10.0.0" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.406">

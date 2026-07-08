@@ -1,6 +1,6 @@
 ﻿using Samhammer.DependencyInjection.Attributes;
 
-namespace Vuetrack.Api.Test;
+namespace Vuetrack.Api.Features.Test;
 
 [Inject]
 public class TestService : ITestService

@@ -1,10 +1,14 @@
 using Asp.Versioning;
+using Samhammer.Authentication.Api.Jwt;
+using Samhammer.Authentication.Api.Keycloak;
 using Samhammer.DependencyInjection;
 using Samhammer.Options;
+using Samhammer.Swagger.Authentication;
 using Samhammer.Swagger.Versioning;
 using Samhammer.Web.Common.Extensions;
 using Serilog;
-using Vuetrack.Api.Initialization;
+using Vuetrack.Api.Infrastructure.Config;
+using Vuetrack.Api.Infrastructure.Cors;
 using Vuetrack.Logging;
 
 Log.Logger = new LoggerConfiguration()
@@ -17,11 +21,15 @@ try
 {
     var builder = WebApplication.CreateBuilder(args);
 
+    builder.Configuration.AddAppConfiguration(builder.Environment);
+
     builder.Logging.ClearProviders();
     builder.Host.UseSerilog(SerilogConfig.ConfigureLogger);
 
     builder.Services.ResolveOptions(builder.Configuration);
     builder.Services.ResolveDependencies();
+
+    builder.Services.AddJwtAuthentication().AddKeycloak(builder.Configuration);
 
     builder.Services.AddControllers();
 
@@ -35,6 +43,7 @@ try
     builder.Services.ConfigureOptions<ConfigureCors>();
 
     builder.Services.AddSwaggerGen();
+    builder.Services.AddSwaggerAuthentication(builder.Configuration);
     builder.Services.AddSwaggerVersionedApi();
 
     builder.Services.AddHttpClient();
@@ -52,7 +61,11 @@ try
 
     app.UseSwaggerUI();
 
+    app.UseAuthentication();
+
     app.UseSerilogRequestLogging();
+
+    app.UseAuthorization();
 
     app.UseCors();
 
