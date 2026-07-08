@@ -2,6 +2,7 @@ using Asp.Versioning;
 using Samhammer.Authentication.Api.Jwt;
 using Samhammer.Authentication.Api.Keycloak;
 using Samhammer.DependencyInjection;
+using Samhammer.Mongo;
 using Samhammer.Options;
 using Samhammer.Swagger.Authentication;
 using Samhammer.Swagger.Versioning;
@@ -32,6 +33,8 @@ try
     builder.Services.AddJwtAuthentication().AddKeycloak(builder.Configuration);
 
     builder.Services.AddControllers();
+
+    builder.Services.AddMongoDb(builder.Configuration);
 
     builder.Services.AddApiVersioning(o =>
     {

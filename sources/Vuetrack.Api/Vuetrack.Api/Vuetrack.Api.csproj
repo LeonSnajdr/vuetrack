@@ -21,6 +21,7 @@
     <PackageReference Include="Samhammer.Authentication.Client" Version="10.0.0" />
     <PackageReference Include="Samhammer.Configuration.Childs" Version="10.0.0" />
     <PackageReference Include="Samhammer.DependencyInjection" Version="10.0.0" />
+    <PackageReference Include="Samhammer.Mongo" Version="10.0.1" />
     <PackageReference Include="Samhammer.Options" Version="10.0.0" />
     <PackageReference Include="Samhammer.Swagger.Authentication" Version="10.0.0" />
     <PackageReference Include="Samhammer.Swagger.Versioning" Version="10.0.0" />
