@@ -1,14 +1,14 @@
 ﻿{
   "$schema": "https://json.schemastore.org/launchsettings.json",
   "profiles": {
-    "sag": {
+    "core": {
       "commandName": "Project",
       "launchBrowser": true,
       "launchUrl": "swagger",
-      "applicationUrl": "https://localhost:5101;http://localhost:5100",
+      "applicationUrl": "https://localhost:9201;http://localhost:9200",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "Brand": "sag"
+        "Brand": "core"
       }
     }
   }

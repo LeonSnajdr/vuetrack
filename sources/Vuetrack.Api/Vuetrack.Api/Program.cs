@@ -10,6 +10,8 @@ using Samhammer.Web.Common.Extensions;
 using Serilog;
 using Vuetrack.Api.Infrastructure.Config;
 using Vuetrack.Api.Infrastructure.Cors;
+using Vuetrack.Api.Infrastructure.Validation;
+using Vuetrack.Connectors.Jira;
 using Vuetrack.Logging;
 
 Log.Logger = new LoggerConfiguration()
@@ -32,9 +34,14 @@ try
 
     builder.Services.AddJwtAuthentication().AddKeycloak(builder.Configuration);
 
-    builder.Services.AddControllers();
+    builder.Services.AddScoped<ValidationActionFilter>();
+    builder.Services.AddControllers(options => options.Filters.Add<ValidationActionFilter>());
 
     builder.Services.AddMongoDb(builder.Configuration);
+
+    builder.Services.AddDataProtection();
+
+    builder.Services.AddMemoryCache();
 
     builder.Services.AddApiVersioning(o =>
     {
@@ -50,6 +57,7 @@ try
     builder.Services.AddSwaggerVersionedApi();
 
     builder.Services.AddHttpClient();
+    builder.Services.AddJiraConnectorHttpClients();
     builder.Services.AddHttpContextAccessor();
 
     var app = builder.Build();

@@ -43,6 +43,11 @@ async function route(config: InternalAxiosRequestConfig): Promise<AxiosResponse>
     const path = normalizePath(config);
     const params = (config.params ?? {}) as Record<string, string>;
 
+    // Connectors are the real backend replacement for AssPI — never fake them; hit the network.
+    if (path.startsWith("connectors")) {
+        return axios.getAdapter("xhr")(config);
+    }
+
     if (method === "get" && path === "timeEntry") {
         return ok(await loadTimeEntries(params.from, params.to), config);
     }

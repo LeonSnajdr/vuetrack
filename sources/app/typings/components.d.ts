@@ -14,6 +14,7 @@ declare module 'vue' {
     AppHeader: typeof import('./../src/components/app/Header.vue')['default']
     AppNotificationView: typeof import('./../src/components/app/NotificationView.vue')['default']
     AppSettingsCalendar: typeof import('./../src/components/app/settings/Calendar.vue')['default']
+    AppSettingsConnectors: typeof import('./../src/components/app/settings/Connectors.vue')['default']
     AppSettingsDialog: typeof import('./../src/components/app/settings/Dialog.vue')['default']
     AppSettingsGeneral: typeof import('./../src/components/app/settings/General.vue')['default']
     AppSettingsList: typeof import('./../src/components/app/settings/List.vue')['default']

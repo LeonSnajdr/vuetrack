@@ -5,5 +5,5 @@ namespace Vuetrack.Api.Infrastructure.Cors;
 [Option]
 public class CorsPolicyOptions
 {
-    public required List<string> DomainUrls { get; init; } = [];
+    public List<string>? DomainUrls { get; init; }
 }

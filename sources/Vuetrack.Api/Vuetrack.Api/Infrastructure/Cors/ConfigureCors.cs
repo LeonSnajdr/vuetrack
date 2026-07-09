@@ -9,6 +9,11 @@ public class ConfigureCors(IOptions<CorsPolicyOptions> options) : IConfigureOpti
 
     public void Configure(CorsOptions options)
     {
+        if (Options.Value.DomainUrls == null)
+        {
+            return;
+        }
+
         options.AddDefaultPolicy(builder =>
         {
             builder

@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <PackageReference Include="ConfigurationSubstitutor" Version="1.5.1" />
+    <PackageReference Include="FluentValidation" Version="11.11.0" />
     <PackageReference Include="GitInfo" Version="3.3.5">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -34,6 +35,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Vuetrack.Logging\Vuetrack.Logging.csproj" />
+    <ProjectReference Include="..\Vuetrack.Connectors.Jira\Vuetrack.Connectors.Jira.csproj" />
+    <ProjectReference Include="..\Vuetrack.Connectors.Abstractions\Vuetrack.Connectors.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>
