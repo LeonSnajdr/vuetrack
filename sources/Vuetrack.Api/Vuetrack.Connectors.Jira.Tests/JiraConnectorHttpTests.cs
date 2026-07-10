@@ -59,6 +59,10 @@ public class JiraConnectorHttpTests
 
         static HttpResponseMessage Respond(HttpRequestMessage request)
         {
+            // The client (not a delegating handler) attaches the ambient access token.
+            Assert.Equal("Bearer", request.Headers.Authorization?.Scheme);
+            Assert.Equal("access-token", request.Headers.Authorization?.Parameter);
+
             var uri = request.RequestUri!.ToString();
             if (uri.Contains("/myself"))
             {

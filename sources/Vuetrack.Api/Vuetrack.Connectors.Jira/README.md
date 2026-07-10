@@ -49,18 +49,20 @@ Only the encrypted refresh token is persisted (`JiraConnectionModel`), via `ISec
 (ASP.NET Data Protection, local key ring — no external key service). Access tokens live in
 memory only. No token, code, or secret is written to a log, a URL, or the API response.
 
-## Ambient connection + auth
+## Scoped connection + auth
 
 The live connection for the current operation (access token + `cloudId` + `siteUrl`) is a
-`JiraConnection` held on `IJiraConnectionAccessor`, an `AsyncLocal`-backed singleton — **not**
-threaded through the connector API. `JiraAuthHandler` (a `DelegatingHandler` on the
-`JiraApiClient` typed client, wired by `AddJiraConnectorHttpClients`) reads the accessor and
-attaches the `Bearer` header automatically; `JiraApiClient` reads `cloudId` from it to build URLs.
+`JiraConnectionContainer` held on `IJiraConnectionAccessor`, a **scoped** service (one instance per
+HTTP request) — **not** threaded through the connector API. `JiraApiClient` reads it to build the
+`cloudId`-addressed URL *and* to attach the `Bearer` header on every request, so no delegating
+handler is involved.
 
-Callers publish the connection by assigning `accessor.Current` **in their own call frame** (an
-`AsyncLocal` set inside an awaited method does not flow back to the caller): the connect flow
-seeds it directly in `JiraConnectionService`, and a fetch flow assigns the result of
-`JiraConnectionContextFactory.CreateAsync` before invoking the connector.
+The connection reaches the accessor two ways: a fetch flow calls
+`JiraConnectionContextFactory.CreateAsync`, which resolves the connection and publishes it on the
+scoped accessor itself; the connect flow (whose token is freshly exchanged and not yet persisted)
+assigns `accessor.Current` directly in `JiraConnectionService`. Because the accessor is a scoped
+reference (not an `AsyncLocal`), a callee setting it is visible to the caller. A background/hosted
+service driving a fetch must first open a DI scope; nothing does that today.
 
 ## Fetching
 
@@ -95,16 +97,17 @@ Registration is mostly attribute-driven via the Samhammer packages already wired
 
 - `[Option]` on `JiraOptions` binds the `JiraOptions` config section.
 - `[Inject]` on clients, services, and the repository registers each to its matching interface;
-  `[Inject(Target.Matching, ServiceLifetime.Singleton)]` on `JiraConnectionAccessor` makes the
-  ambient accessor a singleton.
+  `[Inject(Target.Matching, ServiceLifetime.Scoped)]` on `JiraConnectionAccessor` scopes the
+  connection holder to the request.
 - `[InjectAs(typeof(ISuggestionConnector))]` on `JiraConnector` registers it as a plain (non-keyed)
   `ISuggestionConnector`. `ConnectorRegistry` collects `IEnumerable<ISuggestionConnector>` and
   resolves by `Descriptor.Key`, so `GET /api/v1/connectors` picks up every connector automatically.
 
 The one piece of explicit wiring is `AddJiraConnectorHttpClients()` (called in `Program.cs`): it
-registers `JiraApiClient` as a **typed `HttpClient`** with the `JiraAuthHandler` delegating handler.
-`JiraApiClient` therefore does *not* carry `[Inject]`. `JiraOAuthApiClient` stays `[Inject]` on the
-default `HttpClient` (the token endpoint must not receive a Bearer header).
+registers `JiraApiClient` as a **typed `HttpClient`** (which is why `JiraApiClient` does *not* carry
+`[Inject]`); the client attaches the `Bearer` header itself, so no delegating handler is needed.
+`JiraOAuthApiClient` stays `[Inject]` on the default `HttpClient` (the token endpoint must not
+receive a Bearer header).
 
 ## Adding the next connector
 

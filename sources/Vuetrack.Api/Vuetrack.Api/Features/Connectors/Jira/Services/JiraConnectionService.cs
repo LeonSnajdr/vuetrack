@@ -94,15 +94,12 @@ public class JiraConnectionService(
 
     public async Task<FetchResult> FetchRecommendationsAsync(string userId, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken)
     {
+        // CreateAsync publishes the connection on the scoped accessor for JiraApiClient to read.
         var connection = await ContextFactory.CreateAsync(userId, cancellationToken);
         if (connection is null)
         {
             return new FetchNotConnected();
         }
-
-        // Must be assigned in this frame so JiraAuthHandler / JiraApiClient pick it up
-        // when FetchAsync runs downstream (see IJiraConnectionContextFactory.CreateAsync).
-        Accessor.Current = connection;
 
         var connector = Registry.Resolve(JiraConnector.Key)
             ?? throw new InvalidOperationException("Jira connector is not registered.");

@@ -184,8 +184,8 @@ public class JiraApiClient : IJiraApiClient
 
         var uri = $"{Options.ApiBaseUrl.TrimEnd('/')}/ex/jira/{connection.CloudId}/rest/api/3/{path}";
 
-        // Authorization is attached by JiraAuthHandler on the named client from the ambient connection.
         using var request = new HttpRequestMessage(HttpMethod.Get, uri);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", connection.AccessToken);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
         HttpResponseMessage response;

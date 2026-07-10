@@ -4,22 +4,21 @@ using Samhammer.DependencyInjection.Attributes;
 namespace Vuetrack.Connectors.Jira.Services;
 
 /// <summary>
-/// Holds the <see cref="JiraConnectionContainer"/> for the current logical operation so the
-/// <c>JiraAuthHandler</c> and <see cref="ApiClients.JiraApiClient"/> can read it ambiently.
-/// Backed by <see cref="AsyncLocal{T}"/> (not DI scope): a <see cref="System.Net.Http.DelegatingHandler"/>
-/// is long-lived and cannot safely capture a scoped service, but the async-local value flows
-/// with the call chain that set it.
+/// Holds the <see cref="JiraConnectionContainer"/> for the current DI scope (i.e. the current HTTP
+/// request) so <see cref="ApiClients.JiraApiClient"/> can read the access token and <c>cloudId</c>
+/// without threading them through the connector API. Registered <see cref="ServiceLifetime.Scoped"/>:
+/// every service resolved within the request shares this one instance.
 /// </summary>
-[Inject(Target.Matching, ServiceLifetime.Singleton)]
+/// <remarks>
+/// Because this is a scoped reference (not an <see cref="AsyncLocal{T}"/>), a callee such as
+/// <see cref="JiraConnectionContextFactory"/> can populate <see cref="Current"/> and the value is
+/// visible to the caller. A background/hosted service driving a fetch must first open a scope
+/// (<see cref="IServiceScopeFactory.CreateScope"/>); nothing does that today.
+/// </remarks>
+[Inject(Target.Matching, ServiceLifetime.Scoped)]
 public class JiraConnectionAccessor : IJiraConnectionAccessor
 {
-    private readonly AsyncLocal<JiraConnectionContainer?> current = new();
-
-    public JiraConnectionContainer? Current
-    {
-        get => current.Value;
-        set => current.Value = value;
-    }
+    public JiraConnectionContainer? Current { get; set; }
 }
 
 public interface IJiraConnectionAccessor

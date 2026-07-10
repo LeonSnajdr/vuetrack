@@ -10,6 +10,7 @@ public class JiraConnectionContextFactory(
     IJiraConnectionRepository repository,
     IJiraOAuthApiClient oauthClient,
     ISecretProtector secretProtector,
+    IJiraConnectionAccessor accessor,
     IMemoryCache cache) : IJiraConnectionContextFactory
 {
     // Refresh a little early so a token never expires mid-request.
@@ -21,12 +22,15 @@ public class JiraConnectionContextFactory(
 
     private ISecretProtector SecretProtector { get; } = secretProtector;
 
+    private IJiraConnectionAccessor Accessor { get; } = accessor;
+
     private IMemoryCache Cache { get; } = cache;
 
     public async Task<JiraConnectionContainer?> CreateAsync(string userId, CancellationToken cancellationToken)
     {
         if (Cache.TryGetValue(CacheKey(userId), out JiraConnectionContainer? cached) && cached is not null)
         {
+            Accessor.Current = cached;
             return cached;
         }
 
@@ -59,6 +63,7 @@ public class JiraConnectionContextFactory(
             Cache.Set(CacheKey(userId), resolved, lifetime);
         }
 
+        Accessor.Current = resolved;
         return resolved;
     }
 
@@ -70,10 +75,9 @@ public class JiraConnectionContextFactory(
 public interface IJiraConnectionContextFactory
 {
     /// <summary>
-    /// Resolves the current user's Jira connection (from cache, else refresh + persist rotation).
-    /// The caller must assign the result to <see cref="IJiraConnectionAccessor.Current"/> in its own
-    /// call frame so <c>JiraAuthHandler</c> / <see cref="ApiClients.JiraApiClient"/> pick it up — an
-    /// <see cref="AsyncLocal{T}"/> set inside this awaited method would not flow back to the caller.
+    /// Resolves the current user's Jira connection (from cache, else refresh + persist rotation) and
+    /// publishes it on the scoped <see cref="IJiraConnectionAccessor"/> so <see cref="ApiClients.JiraApiClient"/>
+    /// picks it up. Returns the same connection (or <c>null</c> when the user has no enabled connection).
     /// </summary>
     Task<JiraConnectionContainer?> CreateAsync(string userId, CancellationToken cancellationToken);
 

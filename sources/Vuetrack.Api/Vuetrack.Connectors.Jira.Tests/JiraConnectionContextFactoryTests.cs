@@ -17,7 +17,8 @@ public class JiraConnectionContextFactoryTests
     public async Task CreateAsync_CachesAccessToken_AndDoesNotRefreshTwice()
     {
         var oauth = new FakeOAuthClient(expiresInSeconds: 3600);
-        var factory = BuildFactory(oauth);
+        var accessor = new JiraConnectionAccessor();
+        var factory = BuildFactory(oauth, accessor);
 
         var first = await factory.CreateAsync(UserId, CancellationToken.None);
         var second = await factory.CreateAsync(UserId, CancellationToken.None);
@@ -27,6 +28,8 @@ public class JiraConnectionContextFactoryTests
         Assert.Equal("access-0", first!.AccessToken);
         Assert.Equal("access-0", second!.AccessToken);
         Assert.Equal(1, oauth.RefreshCalls);
+        // CreateAsync publishes the resolved connection on the scoped accessor (cache-hit path too).
+        Assert.Same(second, accessor.Current);
     }
 
     [Fact]
@@ -56,7 +59,7 @@ public class JiraConnectionContextFactoryTests
         Assert.Equal(2, oauth.RefreshCalls);
     }
 
-    private static JiraConnectionContextFactory BuildFactory(FakeOAuthClient oauth)
+    private static JiraConnectionContextFactory BuildFactory(FakeOAuthClient oauth, JiraConnectionAccessor? accessor = null)
     {
         var repository = new FakeRepository(new JiraConnectionModel
         {
@@ -69,7 +72,7 @@ public class JiraConnectionContextFactoryTests
         });
 
         var cache = new MemoryCache(new MemoryCacheOptions());
-        return new JiraConnectionContextFactory(repository, oauth, new PassthroughSecretProtector(), cache);
+        return new JiraConnectionContextFactory(repository, oauth, new PassthroughSecretProtector(), accessor ?? new JiraConnectionAccessor(), cache);
     }
 
     private sealed class FakeOAuthClient(int expiresInSeconds) : IJiraOAuthApiClient
