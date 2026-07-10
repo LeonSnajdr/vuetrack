@@ -9,3 +9,5 @@ public sealed record FetchAuthFailed(string Reason) : FetchResult;
 public sealed record FetchRateLimited(TimeSpan RetryAfter) : FetchResult;
 
 public sealed record FetchConnectorError(string Message) : FetchResult;
+
+public sealed record FetchNotConnected : FetchResult;

@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Vuetrack.Api\Vuetrack.Api.csproj" />
     <ProjectReference Include="..\Vuetrack.Connectors.Abstractions\Vuetrack.Connectors.Abstractions.csproj" />
     <ProjectReference Include="..\Vuetrack.Connectors.Jira\Vuetrack.Connectors.Jira.csproj" />
   </ItemGroup>

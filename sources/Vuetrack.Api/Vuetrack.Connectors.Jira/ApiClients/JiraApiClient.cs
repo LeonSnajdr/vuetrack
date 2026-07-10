@@ -270,14 +270,7 @@ public interface IJiraApiClient
 {
     Task<string> GetMyAccountIdAsync(CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<JiraWorklogContainer>> GetWorklogEntriesAsync(
-        string accountId,
-        DateTimeOffset from,
-        DateTimeOffset to,
-        CancellationToken cancellationToken);
+    Task<IReadOnlyList<JiraWorklogContainer>> GetWorklogEntriesAsync(string accountId, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<JiraIssueActivityContainer>> GetIssueActivityAsync(
-        DateTimeOffset from,
-        DateTimeOffset to,
-        CancellationToken cancellationToken);
+    Task<IReadOnlyList<JiraIssueActivityContainer>> GetIssueActivityAsync(DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken);
 }

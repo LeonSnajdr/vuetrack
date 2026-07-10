@@ -48,7 +48,7 @@ public class JiraConnectionService(
         return new JiraStatusContract(connection is { Enabled: true }, connection?.SiteUrl);
     }
 
-    public async Task<JiraConnectContract> ConnectAsync(string userId, JiraConnectCreateContract request, CancellationToken cancellationToken)
+    public async Task<JiraConnectResult> ConnectAsync(string userId, JiraConnectCreateContract request, CancellationToken cancellationToken)
     {
         try
         {
@@ -57,7 +57,7 @@ public class JiraConnectionService(
             var site = resources.FirstOrDefault();
             if (site is null)
             {
-                return new JiraConnectContract(false, ["No accessible Jira site for this account."]);
+                return new JiraConnectNoSite();
             }
 
             Accessor.Current = new JiraConnectionContainer
@@ -74,25 +74,30 @@ public class JiraConnectionService(
             var outcome = await connector.ValidateAsync(cancellationToken);
             if (outcome is ValidationInvalid invalid)
             {
-                return new JiraConnectContract(false, invalid.Errors);
+                return new JiraConnectValidationFailed(invalid.Errors);
             }
 
             await PersistConnection(userId, site, token);
-            return new JiraConnectContract(true, []);
+            return new JiraConnectSuccess(site.Url);
         }
         catch (JiraApiException ex)
         {
             Logger.LogWarning("Jira connect failed: {Kind}", ex.Kind);
-            return new JiraConnectContract(false, [ex.Message]);
+            return ex.Kind switch
+            {
+                JiraApiErrorKind.Auth => new JiraConnectAuthFailed(ex.Message),
+                JiraApiErrorKind.RateLimited => new JiraConnectRateLimited(ex.RetryAfter ?? TimeSpan.FromSeconds(60)),
+                _ => new JiraConnectError(ex.Message),
+            };
         }
     }
 
-    public async Task<FetchResult?> FetchRecommendationsAsync(string userId, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken)
+    public async Task<FetchResult> FetchRecommendationsAsync(string userId, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken)
     {
         var connection = await ContextFactory.CreateAsync(userId, cancellationToken);
         if (connection is null)
         {
-            return null;
+            return new FetchNotConnected();
         }
 
         // Must be assigned in this frame so JiraAuthHandler / JiraApiClient pick it up
@@ -145,7 +150,7 @@ public interface IJiraConnectionService
 
     Task<JiraStatusContract> GetStatusAsync(string userId);
 
-    Task<JiraConnectContract> ConnectAsync(string userId, JiraConnectCreateContract request, CancellationToken cancellationToken);
+    Task<JiraConnectResult> ConnectAsync(string userId, JiraConnectCreateContract request, CancellationToken cancellationToken);
 
-    Task<FetchResult?> FetchRecommendationsAsync(string userId, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken);
+    Task<FetchResult> FetchRecommendationsAsync(string userId, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken);
 }

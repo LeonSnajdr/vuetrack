@@ -49,7 +49,17 @@ public class JiraConnectionController(IJiraConnectionService connectionService) 
         }
 
         var result = await ConnectionService.ConnectAsync(userId, request, cancellationToken);
-        return Ok(result);
+
+        return result switch
+        {
+            JiraConnectSuccess success => Ok(new JiraConnectContract(success.SiteUrl)),
+            JiraConnectNoSite => Conflict(new { errors = new[] { "No accessible Jira site for this account." } }),
+            JiraConnectValidationFailed invalid => BadRequest(new { errors = invalid.Errors }),
+            JiraConnectAuthFailed authFailed => Unauthorized(new { errors = new[] { authFailed.Reason } }),
+            JiraConnectRateLimited rateLimited => StatusCode(429, new { retryAfterSeconds = rateLimited.RetryAfter.TotalSeconds }),
+            JiraConnectError error => StatusCode(502, new { errors = new[] { error.Message } }),
+            _ => StatusCode(500),
+        };
     }
 
     /// <summary>
@@ -71,7 +81,7 @@ public class JiraConnectionController(IJiraConnectionService connectionService) 
 
         return result switch
         {
-            null => Conflict(new { errors = new[] { "Jira is not connected." } }),
+            FetchNotConnected => Conflict(new { errors = new[] { "Jira is not connected." } }),
             FetchSuccess success => Ok(success.Signals),
             FetchAuthFailed authFailed => Unauthorized(new { errors = new[] { authFailed.Reason } }),
             FetchRateLimited rateLimited => StatusCode(429, new { retryAfterSeconds = rateLimited.RetryAfter.TotalSeconds }),
