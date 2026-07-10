@@ -7,12 +7,12 @@ result with a `switch` expression that has one arm per case.
 ## Switch over every case
 
 ```csharp
-private static string Describe(FetchOutcome result) => result switch
+private static string Describe(ActivityFetchResult result) => result switch
 {
-    FetchSuccess success => $"success:{success.Signals.Count}",
-    FetchAuthFailed authFailed => $"auth:{authFailed.Reason}",
-    FetchRateLimited rateLimited => $"rate:{rateLimited.RetryAfter.TotalSeconds:0}",
-    FetchConnectorError error => $"error:{error.Message}",
+    ActivityFetchSuccess success => $"success:{success.Signals.Count}",
+    ActivityFetchAuthFailed authFailed => $"auth:{authFailed.Reason}",
+    ActivityFetchRateLimited rateLimited => $"rate:{rateLimited.RetryAfter.TotalSeconds:0}",
+    ActivityFetchConnectorError error => $"error:{error.Message}",
     _ => throw new InvalidOperationException(),
 };
 ```
@@ -49,10 +49,10 @@ var result = await ConnectionService.FetchRecommendationsAsync(userId, fromDate,
 return result switch
 {
     null => Conflict(new { errors = new[] { "Jira is not connected." } }),
-    FetchSuccess success => Ok(success.Signals),
-    FetchAuthFailed authFailed => Unauthorized(new { errors = new[] { authFailed.Reason } }),
-    FetchRateLimited rateLimited => StatusCode(429, new { retryAfterSeconds = rateLimited.RetryAfter.TotalSeconds }),
-    FetchConnectorError error => StatusCode(502, new { errors = new[] { error.Message } }),
+    ActivityFetchSuccess success => Ok(success.Signals),
+    ActivityFetchAuthFailed authFailed => Unauthorized(new { errors = new[] { authFailed.Reason } }),
+    ActivityFetchRateLimited rateLimited => StatusCode(429, new { retryAfterSeconds = rateLimited.RetryAfter.TotalSeconds }),
+    ActivityFetchConnectorError error => StatusCode(502, new { errors = new[] { error.Message } }),
     _ => StatusCode(500),
 };
 ```
@@ -68,11 +68,11 @@ Notes:
   it's less code — the distinction is why the result type exists.
 - A result **cross the API boundary** as a `Contract`, not as the raw result
   record. Above, the success payload (`success.Signals`) and shaped error
-  objects are what serialize; the `FetchOutcome` cases themselves stay internal.
+  objects are what serialize; the `ActivityFetchResult` cases themselves stay internal.
 
 ### `null` for an outcome outside the family
 
-`FetchRecommendationsAsync` returns `FetchOutcome?` and uses `null` for "the user
+`FetchRecommendationsAsync` returns `ActivityFetchResult?` and uses `null` for "the user
 isn't connected" — a *precondition* that sits outside the fetch's own outcomes.
 That's a deliberate, narrow use of `null`: a state orthogonal to the family,
 handled as its own arm. Prefer an explicit case inside the family when the state
@@ -87,12 +87,12 @@ exercised at least once:
 
 ```csharp
 [Fact]
-public void FetchOutcome_MatchesEachCase()
+public void ActivityFetchResult_MatchesEachCase()
 {
-    Assert.Equal("success:2", Describe(new FetchSuccess([Signal(), Signal()])));
-    Assert.Equal("auth:nope", Describe(new FetchAuthFailed("nope")));
-    Assert.Equal("rate:30", Describe(new FetchRateLimited(TimeSpan.FromSeconds(30))));
-    Assert.Equal("error:boom", Describe(new FetchConnectorError("boom")));
+    Assert.Equal("success:2", Describe(new ActivityFetchSuccess([Signal(), Signal()])));
+    Assert.Equal("auth:nope", Describe(new ActivityFetchAuthFailed("nope")));
+    Assert.Equal("rate:30", Describe(new ActivityFetchRateLimited(TimeSpan.FromSeconds(30))));
+    Assert.Equal("error:boom", Describe(new ActivityFetchConnectorError("boom")));
 }
 ```
 

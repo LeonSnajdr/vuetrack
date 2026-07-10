@@ -69,16 +69,7 @@ public class JiraConnectionContextFactory(IJiraConnectionRepository repository, 
 
 public interface IJiraConnectionContextFactory
 {
-    /// <summary>
-    /// Resolves the current user's Jira connection (from cache, else refresh + persist rotation) and
-    /// publishes it on the scoped <see cref="IJiraConnectionAccessor"/> so <see cref="Activity.JiraApiClient"/>
-    /// picks it up. Returns the same connection (or <c>null</c> when the user has no enabled connection).
-    /// </summary>
     Task<JiraConnectionContainer?> CreateAsync(string userId, CancellationToken cancellationToken);
 
-    /// <summary>
-    /// Drops the cached access token for a user so the next <see cref="CreateAsync"/> forces a refresh.
-    /// Call this when Jira rejects the token (401/403) so a revoked/rotated token is not reused.
-    /// </summary>
     void Evict(string userId);
 }

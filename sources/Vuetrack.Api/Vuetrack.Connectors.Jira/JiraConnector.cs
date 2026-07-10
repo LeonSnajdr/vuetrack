@@ -5,8 +5,8 @@ using Vuetrack.Connectors.Jira.Connection;
 
 namespace Vuetrack.Connectors.Jira;
 
-[InjectAs(typeof(ISuggestionConnector))]
-public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor accessor) : ISuggestionConnector
+[InjectAs(typeof(IConnector))]
+public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor accessor) : IConnector
 {
     public const string Key = "jira";
 
@@ -21,46 +21,50 @@ public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor access
         Capabilities = ConnectorCapabilities.Worklogs | ConnectorCapabilities.IssueActivity | ConnectorCapabilities.OAuth,
     };
 
-    public async Task<ValidationOutcome> ValidateAsync(CancellationToken cancellationToken)
+    public async Task<ConnectorValidationResult> ValidateAsync(CancellationToken cancellationToken)
     {
         try
         {
             var accountId = await Client.GetMyAccountIdAsync(cancellationToken);
-            return string.IsNullOrEmpty(accountId)
-                ? new ValidationInvalid(["Jira did not return an account for these credentials."])
-                : new ValidationValid();
+
+            if (string.IsNullOrEmpty(accountId))
+            {
+                return new ConnectorValidationInvalid(["Jira did not return an account for these credentials."]);
+            }
+
+            return new ConnectorValidationValid();
         }
         catch (JiraApiException ex)
         {
-            return new ValidationInvalid([ex.Message]);
+            return new ConnectorValidationInvalid([ex.Message]);
         }
     }
 
-    public async Task<FetchOutcome> FetchAsync(FetchContainer request, CancellationToken cancellationToken)
+    public async Task<ActivityFetchResult> FetchAsync(ActivityFetchContainer container, CancellationToken cancellationToken)
     {
         try
         {
             var accountId = await Client.GetMyAccountIdAsync(cancellationToken);
-            var worklogs = await Client.GetWorklogEntriesAsync(accountId, request.From, request.To, cancellationToken);
-            var issues = await Client.GetIssueActivityAsync(request.From, request.To, cancellationToken);
+            var worklogs = await Client.GetWorklogEntriesAsync(accountId, container.From, container.To, cancellationToken);
+            var issues = await Client.GetIssueActivityAsync(container.From, container.To, cancellationToken);
 
             var siteUrl = Accessor.Current?.SiteUrl ?? string.Empty;
-            var mapperContext = new JiraMapperContainer(Key, siteUrl);
+            var mapperContext = new JiraMapperContext(Key, siteUrl);
             var signals = MergeSignals(worklogs, issues, mapperContext);
-            return new FetchSuccess(signals);
+            return new ActivityFetchSuccess(signals);
         }
         catch (JiraApiException ex)
         {
             return ex.Kind switch
             {
-                JiraApiErrorKind.Auth => new FetchAuthFailed(ex.Message),
-                JiraApiErrorKind.RateLimited => new FetchRateLimited(ex.RetryAfter ?? TimeSpan.FromSeconds(60)),
-                _ => new FetchConnectorError(ex.Message),
+                JiraApiErrorKind.Auth => new ActivityFetchAuthFailed(ex.Message),
+                JiraApiErrorKind.RateLimited => new ActivityFetchRateLimited(ex.RetryAfter ?? TimeSpan.FromSeconds(60)),
+                _ => new ActivityFetchConnectorError(ex.Message),
             };
         }
     }
 
-    private static IReadOnlyList<ActivitySignal> MergeSignals(IReadOnlyList<JiraWorklogContainer> worklogs, IReadOnlyList<JiraIssueActivityContainer> issues, JiraMapperContainer context)
+    private static IReadOnlyList<ActivitySignal> MergeSignals(IReadOnlyList<JiraWorklogContainer> worklogs, IReadOnlyList<JiraIssueActivityContainer> issues, JiraMapperContext context)
     {
         var byExternalId = new Dictionary<string, ActivitySignal>();
 

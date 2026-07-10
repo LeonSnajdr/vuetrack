@@ -3,7 +3,7 @@ name: result-types
 description: >-
     How to model an operation's known outcomes as a discriminated-union result
     type in this .NET codebase — an abstract record base with sealed record
-    cases, consumed with exhaustive switch expressions (like FetchOutcome /
+    cases, consumed with exhaustive switch expressions (like ActivityFetchResult /
     ValidationOutcome). Use this whenever you write or review a service or
     feature method that can succeed or fail in more than one *expected* way
     (validation, auth, not-found, conflict, rate-limited, …), whenever you catch
@@ -24,7 +24,7 @@ each.
 In this codebase a result type is a **discriminated union**: an abstract record
 base with a sealed record per case, consumed with a `switch` expression. See the
 canonical examples in
-[`Vuetrack.Connectors.Abstractions/FetchOutcome.cs`](../../../Vuetrack.Connectors.Abstractions/FetchOutcome.cs)
+[`Vuetrack.Connectors.Abstractions/ActivityFetchResult.cs`](../../../Vuetrack.Connectors.Abstractions/ActivityFetchResult.cs)
 and
 [`ValidationOutcome.cs`](../../../Vuetrack.Connectors.Abstractions/ValidationOutcome.cs).
 This pattern is not tied to connectors — use it anywhere in the codebase a
@@ -33,15 +33,15 @@ method has several expected outcomes.
 ## The shape
 
 ```csharp
-public abstract record FetchOutcome;
+public abstract record ActivityFetchResult;
 
-public sealed record FetchSuccess(IReadOnlyList<ActivitySignal> Signals) : FetchOutcome;
+public sealed record ActivityFetchSuccess(IReadOnlyList<ActivitySignal> Signals) : ActivityFetchResult;
 
-public sealed record FetchAuthFailed(string Reason) : FetchOutcome;
+public sealed record ActivityFetchAuthFailed(string Reason) : ActivityFetchResult;
 
-public sealed record FetchRateLimited(TimeSpan RetryAfter) : FetchOutcome;
+public sealed record ActivityFetchRateLimited(TimeSpan RetryAfter) : ActivityFetchResult;
 
-public sealed record FetchConnectorError(string Message) : FetchOutcome;
+public sealed record ActivityFetchConnectorError(string Message) : ActivityFetchResult;
 ```
 
 - The **base** is an `abstract record` — it has no members of its own; it only
@@ -56,7 +56,7 @@ public sealed record FetchConnectorError(string Message) : FetchOutcome;
   assert in tests.
 
 The base and all its cases live together in **one file named after the base**
-(`FetchOutcome.cs` holds `FetchOutcome` plus every `Fetch*` case). The family is
+(`ActivityFetchResult.cs` holds `ActivityFetchResult` plus every `Fetch*` case). The family is
 one unit — reading the file tells you the complete set of outcomes at a glance.
 
 ## When to use a result type — and when not
@@ -94,16 +94,16 @@ Rules of thumb:
 `<Concept><Role>` for the base, `<Concept><Case>` for each case:
 
 - **Base** — the concept plus `Result` or `Outcome`. Both are in use:
-  `FetchOutcome`, `ValidationOutcome`. Prefer `Result` for "the operation
+  `ActivityFetchResult`, `ValidationOutcome`. Prefer `Result` for "the operation
   produced something", `Outcome` for a pass/fail judgement (a validation is an
   outcome, not a result). Either reads fine; be consistent within a family.
-- **Cases** — the concept prefix plus what the case *is*: `FetchSuccess`,
-  `FetchAuthFailed`, `FetchRateLimited`, `ValidationValid`, `ValidationInvalid`.
+- **Cases** — the concept prefix plus what the case *is*: `ActivityFetchSuccess`,
+  `ActivityFetchAuthFailed`, `ActivityFetchRateLimited`, `ValidationValid`, `ValidationInvalid`.
   Name the state, not an error code. The success case is usually
   `<Concept>Success` or `<Concept>Valid`.
 
 The concept prefix matters because these names appear bare in `switch` arms
-across the codebase — `FetchAuthFailed` is self-describing at the call site in a
+across the codebase — `ActivityFetchAuthFailed` is self-describing at the call site in a
 way `AuthFailed` or `Failure` is not.
 
 Result types are a `Container`-family concern (intermediate data a service

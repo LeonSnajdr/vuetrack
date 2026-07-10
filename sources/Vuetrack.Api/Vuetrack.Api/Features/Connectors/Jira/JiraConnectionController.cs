@@ -95,11 +95,11 @@ public class JiraConnectionController(IJiraConnectionService connectionService) 
 
         return result switch
         {
-            FetchNotConnected => Conflict(new { errors = new[] { "Jira is not connected." } }),
-            FetchSuccess success => Ok(success.Signals),
-            FetchAuthFailed authFailed => Unauthorized(new { errors = new[] { authFailed.Reason } }),
-            FetchRateLimited rateLimited => StatusCode(429, new { retryAfterSeconds = rateLimited.RetryAfter.TotalSeconds }),
-            FetchConnectorError error => StatusCode(502, new { errors = new[] { error.Message } }),
+            ActivityFetchNotConnected => Conflict(new { errors = new[] { "Jira is not connected." } }),
+            ActivityFetchSuccess success => Ok(success.Signals),
+            ActivityFetchAuthFailed authFailed => Unauthorized(new { errors = new[] { authFailed.Reason } }),
+            ActivityFetchRateLimited rateLimited => StatusCode(429, new { retryAfterSeconds = rateLimited.RetryAfter.TotalSeconds }),
+            ActivityFetchConnectorError error => StatusCode(502, new { errors = new[] { error.Message } }),
             _ => BadRequest(),
         };
     }

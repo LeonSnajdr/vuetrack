@@ -14,7 +14,7 @@ public class JiraConnectorHttpTests
 {
     private const string SiteUrl = "https://acme.atlassian.net";
 
-    private static readonly FetchContainer Request = new()
+    private static readonly ActivityFetchContainer Container = new()
     {
         From = new DateTimeOffset(2026, 7, 1, 0, 0, 0, TimeSpan.Zero),
         To = new DateTimeOffset(2026, 7, 2, 0, 0, 0, TimeSpan.Zero),
@@ -44,9 +44,9 @@ public class JiraConnectorHttpTests
     {
         var connector = BuildConnector(Respond);
 
-        var result = await connector.FetchAsync(Request, CancellationToken.None);
+        var result = await connector.FetchAsync(Container, CancellationToken.None);
 
-        var success = result.Should().BeOfType<FetchSuccess>().Which;
+        var success = result.Should().BeOfType<ActivityFetchSuccess>().Which;
 
         var signal = success.Signals.Should().ContainSingle().Which;
         signal.ExternalId.Should().Be("PROJ-1:worklog:100");
@@ -106,9 +106,9 @@ public class JiraConnectorHttpTests
     {
         var connector = BuildConnector(Respond);
 
-        var result = await connector.FetchAsync(Request, CancellationToken.None);
+        var result = await connector.FetchAsync(Container, CancellationToken.None);
 
-        var success = result.Should().BeOfType<FetchSuccess>().Which;
+        var success = result.Should().BeOfType<ActivityFetchSuccess>().Which;
 
         success.Signals.Should().HaveCount(2);
         success.Signals.Should().Contain(s => s.ExternalId == "PROJ-1:worklog:100");
@@ -159,9 +159,9 @@ public class JiraConnectorHttpTests
     {
         var connector = BuildConnector(_ => StubHttpMessageHandler.Json(HttpStatusCode.Unauthorized, "{}"));
 
-        var result = await connector.FetchAsync(Request, CancellationToken.None);
+        var result = await connector.FetchAsync(Container, CancellationToken.None);
 
-        result.Should().BeOfType<FetchAuthFailed>();
+        result.Should().BeOfType<ActivityFetchAuthFailed>();
     }
 
     [Fact]
@@ -174,9 +174,9 @@ public class JiraConnectorHttpTests
             return response;
         });
 
-        var result = await connector.FetchAsync(Request, CancellationToken.None);
+        var result = await connector.FetchAsync(Container, CancellationToken.None);
 
-        var rateLimited = result.Should().BeOfType<FetchRateLimited>().Which;
+        var rateLimited = result.Should().BeOfType<ActivityFetchRateLimited>().Which;
 
         rateLimited.RetryAfter.Should().Be(TimeSpan.FromSeconds(30));
     }
@@ -188,7 +188,7 @@ public class JiraConnectorHttpTests
 
         var result = await connector.ValidateAsync(CancellationToken.None);
 
-        result.Should().BeOfType<ValidationValid>();
+        result.Should().BeOfType<ConnectorValidationValid>();
     }
 
     [Fact]
@@ -198,6 +198,6 @@ public class JiraConnectorHttpTests
 
         var result = await connector.ValidateAsync(CancellationToken.None);
 
-        result.Should().BeOfType<ValidationInvalid>();
+        result.Should().BeOfType<ConnectorValidationInvalid>();
     }
 }

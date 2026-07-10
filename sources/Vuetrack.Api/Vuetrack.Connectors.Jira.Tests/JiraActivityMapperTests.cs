@@ -8,7 +8,7 @@ public class JiraActivityMapperTests
 {
     private const string SiteUrl = "https://acme.atlassian.net";
 
-    private static readonly JiraMapperContainer Context = new("jira", SiteUrl);
+    private static readonly JiraMapperContext Context = new("jira", SiteUrl);
 
     private static JiraWorklogContainer Worklog(string issueKey = "PROJ-1", string worklogId = "100") => new()
     {

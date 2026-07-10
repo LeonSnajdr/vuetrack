@@ -8,20 +8,20 @@ namespace Vuetrack.Connectors.Jira.Tests;
 public class ResultTypeTests
 {
     [Fact]
-    public void FetchOutcome_MatchesEachCase()
+    public void ActivityFetchResult_MatchesEachCase()
     {
-        Describe(new FetchSuccess([Signal(), Signal()])).Should().Be("success:2");
-        Describe(new FetchAuthFailed("nope")).Should().Be("auth:nope");
-        Describe(new FetchRateLimited(TimeSpan.FromSeconds(30))).Should().Be("rate:30");
-        Describe(new FetchConnectorError("boom")).Should().Be("error:boom");
-        Describe(new FetchNotConnected()).Should().Be("notConnected");
+        Describe(new ActivityFetchSuccess([Signal(), Signal()])).Should().Be("success:2");
+        Describe(new ActivityFetchAuthFailed("nope")).Should().Be("auth:nope");
+        Describe(new ActivityFetchRateLimited(TimeSpan.FromSeconds(30))).Should().Be("rate:30");
+        Describe(new ActivityFetchConnectorError("boom")).Should().Be("error:boom");
+        Describe(new ActivityFetchNotConnected()).Should().Be("notConnected");
     }
 
     [Fact]
-    public void ValidationOutcome_MatchesEachCase()
+    public void ValidationResult_MatchesEachCase()
     {
-        Describe(new ValidationValid()).Should().Be("valid");
-        Describe(new ValidationInvalid(["a", "b"])).Should().Be("invalid:2");
+        Describe(new ConnectorValidationValid()).Should().Be("valid");
+        Describe(new ConnectorValidationInvalid(["a", "b"])).Should().Be("invalid:2");
     }
 
     [Fact]
@@ -35,13 +35,13 @@ public class ResultTypeTests
         Describe(new JiraConnectError("boom")).Should().Be("error:boom");
     }
 
-    private static string Describe(FetchOutcome result) => result switch
+    private static string Describe(ActivityFetchResult result) => result switch
     {
-        FetchSuccess success => $"success:{success.Signals.Count}",
-        FetchAuthFailed authFailed => $"auth:{authFailed.Reason}",
-        FetchRateLimited rateLimited => $"rate:{rateLimited.RetryAfter.TotalSeconds:0}",
-        FetchConnectorError error => $"error:{error.Message}",
-        FetchNotConnected => "notConnected",
+        ActivityFetchSuccess success => $"success:{success.Signals.Count}",
+        ActivityFetchAuthFailed authFailed => $"auth:{authFailed.Reason}",
+        ActivityFetchRateLimited rateLimited => $"rate:{rateLimited.RetryAfter.TotalSeconds:0}",
+        ActivityFetchConnectorError error => $"error:{error.Message}",
+        ActivityFetchNotConnected => "notConnected",
         _ => throw new InvalidOperationException(),
     };
 
@@ -56,10 +56,10 @@ public class ResultTypeTests
         _ => throw new InvalidOperationException(),
     };
 
-    private static string Describe(ValidationOutcome outcome) => outcome switch
+    private static string Describe(ConnectorValidationResult result) => result switch
     {
-        ValidationValid => "valid",
-        ValidationInvalid invalid => $"invalid:{invalid.Errors.Count}",
+        ConnectorValidationValid => "valid",
+        ConnectorValidationInvalid invalid => $"invalid:{invalid.Errors.Count}",
         _ => throw new InvalidOperationException(),
     };
 

@@ -59,8 +59,8 @@ public class JiraConnectionService(IConnectorRegistry registry, IJiraOAuthApiCli
 
             var connector = Registry.Resolve(JiraConnector.Key) ?? throw new InvalidOperationException("Jira connector is not registered.");
 
-            var outcome = await connector.ValidateAsync(cancellationToken);
-            if (outcome is ValidationInvalid invalid)
+            var result = await connector.ValidateAsync(cancellationToken);
+            if (result is ConnectorValidationInvalid invalid)
             {
                 return new JiraConnectValidationFailed(invalid.Errors);
             }
@@ -91,19 +91,19 @@ public class JiraConnectionService(IConnectorRegistry registry, IJiraOAuthApiCli
         ContextFactory.Evict(userId);
     }
 
-    public async Task<FetchOutcome> FetchRecommendationsAsync(string userId, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken)
+    public async Task<ActivityFetchResult> FetchRecommendationsAsync(string userId, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken)
     {
         var connection = await ContextFactory.CreateAsync(userId, cancellationToken);
         if (connection is null)
         {
-            return new FetchNotConnected();
+            return new ActivityFetchNotConnected();
         }
 
         var connector = Registry.Resolve(JiraConnector.Key) ?? throw new InvalidOperationException("Jira connector is not registered.");
 
-        var result = await connector.FetchAsync(new FetchContainer { From = from, To = to }, cancellationToken);
+        var result = await connector.FetchAsync(new ActivityFetchContainer { From = from, To = to }, cancellationToken);
 
-        if (result is FetchAuthFailed)
+        if (result is ActivityFetchAuthFailed)
         {
             ContextFactory.Evict(userId);
         }
@@ -148,5 +148,5 @@ public interface IJiraConnectionService
 
     Task DisconnectAsync(string userId);
 
-    Task<FetchOutcome> FetchRecommendationsAsync(string userId, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken);
+    Task<ActivityFetchResult> FetchRecommendationsAsync(string userId, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken);
 }

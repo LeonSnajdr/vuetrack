@@ -162,8 +162,7 @@ public class JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor access
 
     private async Task<JsonDocument> GetJsonAsync(string path, CancellationToken cancellationToken)
     {
-        var connection = Accessor.Current
-            ?? throw new JiraApiException(JiraApiErrorKind.Auth, "No active Jira connection for this request.");
+        var connection = Accessor.Current ?? throw new JiraApiException(JiraApiErrorKind.Auth, "No active Jira connection for this request.");
 
         var uri = $"{Options.Value.ApiBaseUrl.TrimEnd('/')}/ex/jira/{connection.CloudId}/rest/api/3/{path}";
 
@@ -199,12 +198,9 @@ public class JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor access
 
         return response.StatusCode switch
         {
-            HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden =>
-                new JiraApiException(JiraApiErrorKind.Auth, $"Jira rejected the credentials ({(int)response.StatusCode})."),
-            HttpStatusCode.TooManyRequests =>
-                new JiraApiException(JiraApiErrorKind.RateLimited, "Jira rate limit exceeded.", GetRetryAfter(response)),
-            _ =>
-                new JiraApiException(JiraApiErrorKind.Transport, $"Jira request failed ({(int)response.StatusCode})."),
+            HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden => new JiraApiException(JiraApiErrorKind.Auth, $"Jira rejected the credentials ({(int)response.StatusCode})."),
+            HttpStatusCode.TooManyRequests => new JiraApiException(JiraApiErrorKind.RateLimited, "Jira rate limit exceeded.", GetRetryAfter(response)),
+            _ => new JiraApiException(JiraApiErrorKind.Transport, $"Jira request failed ({(int)response.StatusCode})."),
         };
     }
 
