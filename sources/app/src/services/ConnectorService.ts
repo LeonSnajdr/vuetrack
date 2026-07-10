@@ -1,4 +1,4 @@
-import type { ConnectorDescriptorContract, ConnectResponse, JiraAuthorizeResponse, JiraConnectRequest, JiraStatusResponse } from "@/contracts/ConnectorContract";
+import type { ConnectorDescriptorContract, JiraAuthorizeResponse, JiraConnectRequest, JiraConnectResponse, JiraStatusResponse } from "@/contracts/ConnectorContract";
 import axios from "@/plugins/axios";
 
 class ConnectorService {
@@ -17,9 +17,13 @@ class ConnectorService {
         return result.data;
     };
 
-    public connectJira = async (request: JiraConnectRequest): Promise<ConnectResponse> => {
-        const result = await axios.api.post<ConnectResponse>("connectors/jira/callback", request);
+    public connectJira = async (request: JiraConnectRequest): Promise<JiraConnectResponse> => {
+        const result = await axios.api.post<JiraConnectResponse>("connectors/jira/callback", request);
         return result.data;
+    };
+
+    public disconnectJira = async (): Promise<void> => {
+        await axios.api.delete("connectors/jira");
     };
 }
 

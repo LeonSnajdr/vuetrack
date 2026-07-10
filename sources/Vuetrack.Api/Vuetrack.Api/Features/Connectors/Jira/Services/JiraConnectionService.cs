@@ -84,6 +84,17 @@ public class JiraConnectionService(IConnectorRegistry registry, IJiraOAuthApiCli
         }
     }
 
+    public async Task DisconnectAsync(string userId)
+    {
+        var connection = await Repository.GetByUserId(userId);
+        if (connection is not null)
+        {
+            await Repository.Delete(connection);
+        }
+
+        ContextFactory.Evict(userId);
+    }
+
     public async Task<FetchResult> FetchRecommendationsAsync(string userId, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken)
     {
         // CreateAsync publishes the connection on the scoped accessor for JiraApiClient to read.
@@ -139,6 +150,8 @@ public interface IJiraConnectionService
     Task<JiraStatusContract> GetStatusAsync(string userId);
 
     Task<JiraConnectResult> ConnectAsync(string userId, JiraConnectCreateContract request, CancellationToken cancellationToken);
+
+    Task DisconnectAsync(string userId);
 
     Task<FetchResult> FetchRecommendationsAsync(string userId, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken);
 }

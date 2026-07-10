@@ -62,6 +62,20 @@ public class JiraConnectionController(IJiraConnectionService connectionService) 
         };
     }
 
+    [HttpDelete]
+    public async Task<IActionResult> Disconnect()
+    {
+        var userId = User.GetUserId();
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized();
+        }
+
+        await ConnectionService.DisconnectAsync(userId);
+
+        return NoContent();
+    }
+
     /// <summary>
     /// Testing-only: fetches the caller's Jira activity ("recommendations") end-to-end to verify the OAuth connection works.
     /// </summary>

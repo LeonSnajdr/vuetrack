@@ -59,6 +59,7 @@
   "settings.connectors.description": "Verbinde externe Konten, um Aktivitäten als Zeiteintrags-Vorschläge zu importieren.",
   "settings.connectors.jira.connect": "Jira verbinden",
   "settings.connectors.jira.connected": "Verbunden",
+  "settings.connectors.jira.disconnect": "Trennen",
   "settings.connectors.jira.error": "Dein Jira-Konto konnte nicht verbunden werden. Bitte versuche es erneut.",
   "settings.connectors.jira.popupBlocked": "Das Login-Fenster wurde blockiert. Bitte erlaube Popups und versuche es erneut.",
   "settings.general": "Allgemein",

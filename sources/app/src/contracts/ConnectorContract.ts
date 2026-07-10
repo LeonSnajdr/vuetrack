@@ -15,9 +15,8 @@ export type JiraConnectRequest = {
     redirectUri: string;
 };
 
-export type ConnectResponse = {
-    valid: boolean;
-    errors: string[];
+export type JiraConnectResponse = {
+    siteUrl: string;
 };
 
 export type JiraStatusResponse = {

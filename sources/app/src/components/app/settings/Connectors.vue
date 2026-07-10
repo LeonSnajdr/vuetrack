@@ -9,10 +9,16 @@
             </VCardTitle>
             <VCardText>
                 <template v-if="connector.key === 'jira'">
-                    <VAlert v-if="jiraStatus.connected" :icon="mdiCheckCircle" type="success" variant="tonal">
-                        {{ $t("settings.connectors.jira.connected") }}
-                        <template v-if="jiraStatus.siteUrl"> — {{ jiraStatus.siteUrl }}</template>
-                    </VAlert>
+                    <template v-if="jiraStatus.connected">
+                        <VAlert :icon="mdiCheckCircle" type="success" variant="tonal">
+                            {{ $t("settings.connectors.jira.connected") }}
+                            <template v-if="jiraStatus.siteUrl"> — {{ jiraStatus.siteUrl }}</template>
+                        </VAlert>
+                        <VBtn @click="disconnect" :loading="isDisconnecting" :prependIcon="mdiLinkOff" class="mt-3" color="error" variant="tonal">
+                            {{ $t("settings.connectors.jira.disconnect") }}
+                        </VBtn>
+                        <VAlert v-if="error" class="mt-3" type="error" variant="tonal">{{ error }}</VAlert>
+                    </template>
                     <template v-else>
                         <VBtn @click="connect" :loading="isConnecting" :prependIcon="mdiJira" color="primary" variant="flat">
                             {{ $t("settings.connectors.jira.connect") }}
@@ -33,7 +39,14 @@ const connectorStore = useConnectorStore();
 const { connectors, jiraStatus } = storeToRefs(connectorStore);
 
 const isConnecting = ref(false);
+const isDisconnecting = ref(false);
 const error = ref("");
+
+const errorMessage = (e: unknown): string => {
+    const errors = (e as { response?: { data?: { errors?: unknown } } })?.response?.data?.errors;
+    if (Array.isArray(errors) && errors.length) return errors.join(" ");
+    return t("settings.connectors.jira.error");
+};
 
 onBeforeMount(() => {
     connectorStore.executeLoad();
@@ -70,18 +83,28 @@ const handleResult = async (data: { code?: string; state?: string; error?: strin
             return;
         }
 
-        const response = await ConnectorService.connectJira({ code: data.code, state: data.state, redirectUri });
-        if (!response.valid) {
-            error.value = response.errors.join(" ") || t("settings.connectors.jira.error");
-            return;
-        }
-
+        await ConnectorService.connectJira({ code: data.code, state: data.state, redirectUri });
         await connectorStore.executeLoadJiraStatus();
     } catch (e) {
         console.error("jira callback failed", e);
-        error.value = t("settings.connectors.jira.error");
+        error.value = errorMessage(e);
     } finally {
         isConnecting.value = false;
+    }
+};
+
+const disconnect = async () => {
+    error.value = "";
+    isDisconnecting.value = true;
+
+    try {
+        await ConnectorService.disconnectJira();
+        await connectorStore.executeLoadJiraStatus();
+    } catch (e) {
+        console.error("jira disconnect failed", e);
+        error.value = errorMessage(e);
+    } finally {
+        isDisconnecting.value = false;
     }
 };
 

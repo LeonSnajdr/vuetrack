@@ -59,6 +59,7 @@
   "settings.connectors.description": "Connect external accounts to import activity as time entry suggestions.",
   "settings.connectors.jira.connect": "Connect Jira",
   "settings.connectors.jira.connected": "Connected",
+  "settings.connectors.jira.disconnect": "Disconnect",
   "settings.connectors.jira.error": "Could not connect your Jira account. Please try again.",
   "settings.connectors.jira.popupBlocked": "The login window was blocked. Please allow popups and try again.",
   "settings.general": "General",
