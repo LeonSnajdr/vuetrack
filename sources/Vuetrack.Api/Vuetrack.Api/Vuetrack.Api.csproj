@@ -37,6 +37,7 @@
     <ProjectReference Include="..\Vuetrack.Logging\Vuetrack.Logging.csproj" />
     <ProjectReference Include="..\Vuetrack.Connectors.Jira\Vuetrack.Connectors.Jira.csproj" />
     <ProjectReference Include="..\Vuetrack.Connectors.Abstractions\Vuetrack.Connectors.Abstractions.csproj" />
+    <ProjectReference Include="..\Vuetrack.Suggestions.Engine\Vuetrack.Suggestions.Engine.csproj" />
   </ItemGroup>
 
 </Project>
