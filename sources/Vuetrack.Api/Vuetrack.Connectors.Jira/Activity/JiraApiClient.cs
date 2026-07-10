@@ -5,13 +5,10 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Samhammer.DependencyInjection.Attributes;
-using Vuetrack.Connectors.Jira.Containers;
-using Vuetrack.Connectors.Jira.Exceptions;
-using Vuetrack.Connectors.Jira.Configuration;
+using Vuetrack.Connectors.Jira.Connection;
 using Vuetrack.Connectors.Jira.Internal;
-using Vuetrack.Connectors.Jira.Services;
 
-namespace Vuetrack.Connectors.Jira.ApiClients;
+namespace Vuetrack.Connectors.Jira.Activity;
 
 [Inject]
 public class JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor accessor, IOptions<JiraOptions> options, ILogger<JiraApiClient> logger) : IJiraApiClient

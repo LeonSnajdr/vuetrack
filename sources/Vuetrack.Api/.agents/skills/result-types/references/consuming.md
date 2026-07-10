@@ -7,7 +7,7 @@ result with a `switch` expression that has one arm per case.
 ## Switch over every case
 
 ```csharp
-private static string Describe(FetchResult result) => result switch
+private static string Describe(FetchOutcome result) => result switch
 {
     FetchSuccess success => $"success:{success.Signals.Count}",
     FetchAuthFailed authFailed => $"auth:{authFailed.Reason}",
@@ -68,11 +68,11 @@ Notes:
   it's less code — the distinction is why the result type exists.
 - A result **cross the API boundary** as a `Contract`, not as the raw result
   record. Above, the success payload (`success.Signals`) and shaped error
-  objects are what serialize; the `FetchResult` cases themselves stay internal.
+  objects are what serialize; the `FetchOutcome` cases themselves stay internal.
 
 ### `null` for an outcome outside the family
 
-`FetchRecommendationsAsync` returns `FetchResult?` and uses `null` for "the user
+`FetchRecommendationsAsync` returns `FetchOutcome?` and uses `null` for "the user
 isn't connected" — a *precondition* that sits outside the fetch's own outcomes.
 That's a deliberate, narrow use of `null`: a state orthogonal to the family,
 handled as its own arm. Prefer an explicit case inside the family when the state
@@ -87,7 +87,7 @@ exercised at least once:
 
 ```csharp
 [Fact]
-public void FetchResult_MatchesEachCase()
+public void FetchOutcome_MatchesEachCase()
 {
     Assert.Equal("success:2", Describe(new FetchSuccess([Signal(), Signal()])));
     Assert.Equal("auth:nope", Describe(new FetchAuthFailed("nope")));

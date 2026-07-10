@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
 using Samhammer.DependencyInjection.Attributes;
 
-namespace Vuetrack.Connectors.Jira.Services;
+namespace Vuetrack.Connectors.Jira.Connection;
 
 [Inject(Target.Matching, ServiceLifetime.Singleton)]
 public class SecretProtector(IDataProtectionProvider provider) : ISecretProtector

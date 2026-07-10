@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Vuetrack.Connectors.Jira.Contracts;
+namespace Vuetrack.Connectors.Jira.OAuth;
 
 public sealed record JiraAccessibleResourceResponse
 {

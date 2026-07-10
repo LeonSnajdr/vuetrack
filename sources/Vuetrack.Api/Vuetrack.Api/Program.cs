@@ -12,6 +12,7 @@ using Vuetrack.Api.Infrastructure.Config;
 using Vuetrack.Api.Infrastructure.Cors;
 using Vuetrack.Api.Infrastructure.Validation;
 using Vuetrack.Logging;
+using ZiggyCreatures.Caching.Fusion;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console(outputTemplate: SerilogConfig.ConsoleTemplate)
@@ -40,7 +41,7 @@ try
 
     builder.Services.AddDataProtection();
 
-    builder.Services.AddMemoryCache();
+    builder.Services.AddFusionCache();
 
     builder.Services.AddApiVersioning(o =>
     {

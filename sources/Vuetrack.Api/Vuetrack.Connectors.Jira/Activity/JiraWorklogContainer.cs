@@ -1,4 +1,4 @@
-namespace Vuetrack.Connectors.Jira.Containers;
+namespace Vuetrack.Connectors.Jira.Activity;
 
 public sealed record JiraWorklogContainer
 {

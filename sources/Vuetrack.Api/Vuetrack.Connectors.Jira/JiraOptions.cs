@@ -1,6 +1,6 @@
 using Samhammer.Options.Abstractions;
 
-namespace Vuetrack.Connectors.Jira.Configuration;
+namespace Vuetrack.Connectors.Jira;
 
 [Option]
 public class JiraOptions

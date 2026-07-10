@@ -5,7 +5,7 @@ weaker "issues you touched" fallback) for a time range and returns normalized
 `ActivitySignal`s that the suggestion engine consumes. It is the reference implementation
 of the connector platform seam in `Vuetrack.Connectors.Abstractions`.
 
-Targets `net10.0`, consistent with the rest of the solution. Result types (`FetchResult`,
+Targets `net10.0`, consistent with the rest of the solution. Result types (`FetchOutcome`,
 `ValidationOutcome`) are sealed-record hierarchies matched with pattern matching; they live
 only transiently between produce-and-match and never appear in a Mongo document, a DTO, or
 the API contract.

@@ -1,6 +1,6 @@
 using Samhammer.DependencyInjection.Attributes;
 
-namespace Vuetrack.Connectors.Jira.Services;
+namespace Vuetrack.Connectors.Jira.Connection;
 
 [Inject]
 public class JiraConnectionAccessor : IJiraConnectionAccessor

@@ -1,4 +1,4 @@
-namespace Vuetrack.Connectors.Jira.Exceptions;
+namespace Vuetrack.Connectors.Jira;
 
 public enum JiraApiErrorKind
 {
@@ -7,8 +7,7 @@ public enum JiraApiErrorKind
     Transport,
 }
 
-public sealed class JiraApiException(JiraApiErrorKind kind, string message, TimeSpan? retryAfter = null)
-    : Exception(message)
+public sealed class JiraApiException(JiraApiErrorKind kind, string message, TimeSpan? retryAfter = null) : Exception(message)
 {
     public JiraApiErrorKind Kind { get; } = kind;
 

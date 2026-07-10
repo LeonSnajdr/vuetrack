@@ -1,12 +1,11 @@
-using Microsoft.Extensions.Caching.Memory;
 using Samhammer.DependencyInjection.Attributes;
-using Vuetrack.Connectors.Jira.ApiClients;
-using Vuetrack.Connectors.Jira.Repositories;
+using Vuetrack.Connectors.Jira.OAuth;
+using ZiggyCreatures.Caching.Fusion;
 
-namespace Vuetrack.Connectors.Jira.Services;
+namespace Vuetrack.Connectors.Jira.Connection;
 
 [Inject]
-public class JiraConnectionContextFactory(IJiraConnectionRepository repository, IJiraOAuthApiClient oauthClient, ISecretProtector secretProtector, IJiraConnectionAccessor accessor, IMemoryCache cache) : IJiraConnectionContextFactory
+public class JiraConnectionContextFactory(IJiraConnectionRepository repository, IJiraOAuthApiClient oauthClient, ISecretProtector secretProtector, IJiraConnectionAccessor accessor, IFusionCache cache) : IJiraConnectionContextFactory
 {
     // Refresh a little early so a token never expires mid-request.
     private static readonly TimeSpan ExpiryBuffer = TimeSpan.FromSeconds(60);
@@ -19,14 +18,15 @@ public class JiraConnectionContextFactory(IJiraConnectionRepository repository, 
 
     private IJiraConnectionAccessor Accessor { get; } = accessor;
 
-    private IMemoryCache Cache { get; } = cache;
+    private IFusionCache Cache { get; } = cache;
 
     public async Task<JiraConnectionContainer?> CreateAsync(string userId, CancellationToken cancellationToken)
     {
-        if (Cache.TryGetValue(CacheKey(userId), out JiraConnectionContainer? cached) && cached is not null)
+        var cached = await Cache.TryGetAsync<JiraConnectionContainer>(CacheKey(userId), token: cancellationToken);
+        if (cached.HasValue)
         {
-            Accessor.Current = cached;
-            return cached;
+            Accessor.Current = cached.Value;
+            return cached.Value;
         }
 
         var connection = await Repository.GetByUserId(userId);
@@ -55,7 +55,7 @@ public class JiraConnectionContextFactory(IJiraConnectionRepository repository, 
         var lifetime = TimeSpan.FromSeconds(token.ExpiresInSeconds) - ExpiryBuffer;
         if (lifetime > TimeSpan.Zero)
         {
-            Cache.Set(CacheKey(userId), resolved, lifetime);
+            await Cache.SetAsync(CacheKey(userId), resolved, lifetime, token: cancellationToken);
         }
 
         Accessor.Current = resolved;
@@ -71,7 +71,7 @@ public interface IJiraConnectionContextFactory
 {
     /// <summary>
     /// Resolves the current user's Jira connection (from cache, else refresh + persist rotation) and
-    /// publishes it on the scoped <see cref="IJiraConnectionAccessor"/> so <see cref="ApiClients.JiraApiClient"/>
+    /// publishes it on the scoped <see cref="IJiraConnectionAccessor"/> so <see cref="Activity.JiraApiClient"/>
     /// picks it up. Returns the same connection (or <c>null</c> when the user has no enabled connection).
     /// </summary>
     Task<JiraConnectionContainer?> CreateAsync(string userId, CancellationToken cancellationToken);

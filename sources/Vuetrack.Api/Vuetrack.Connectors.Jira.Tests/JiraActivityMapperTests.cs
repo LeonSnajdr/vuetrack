@@ -1,6 +1,5 @@
 using AwesomeAssertions;
-using Vuetrack.Connectors.Jira.Containers;
-using Vuetrack.Connectors.Jira.Mapping;
+using Vuetrack.Connectors.Jira.Activity;
 using Xunit;
 
 namespace Vuetrack.Connectors.Jira.Tests;

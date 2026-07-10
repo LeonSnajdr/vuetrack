@@ -4,9 +4,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Vuetrack.Connectors.Abstractions;
 using Vuetrack.Connectors.Jira;
-using Vuetrack.Connectors.Jira.ApiClients;
-using Vuetrack.Connectors.Jira.Configuration;
-using Vuetrack.Connectors.Jira.Services;
+using Vuetrack.Connectors.Jira.Activity;
+using Vuetrack.Connectors.Jira.Connection;
 using Xunit;
 
 namespace Vuetrack.Connectors.Jira.Tests;

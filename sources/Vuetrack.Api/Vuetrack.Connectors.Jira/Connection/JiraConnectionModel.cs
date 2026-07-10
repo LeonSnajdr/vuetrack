@@ -1,6 +1,6 @@
 using Samhammer.Mongo.Abstractions;
 
-namespace Vuetrack.Connectors.Jira.Models;
+namespace Vuetrack.Connectors.Jira.Connection;
 
 [MongoCollection]
 public class JiraConnectionModel : BaseModelMongo

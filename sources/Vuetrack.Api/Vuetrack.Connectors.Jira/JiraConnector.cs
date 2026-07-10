@@ -1,10 +1,7 @@
 using Samhammer.DependencyInjection.Attributes;
 using Vuetrack.Connectors.Abstractions;
-using Vuetrack.Connectors.Jira.ApiClients;
-using Vuetrack.Connectors.Jira.Containers;
-using Vuetrack.Connectors.Jira.Exceptions;
-using Vuetrack.Connectors.Jira.Mapping;
-using Vuetrack.Connectors.Jira.Services;
+using Vuetrack.Connectors.Jira.Activity;
+using Vuetrack.Connectors.Jira.Connection;
 
 namespace Vuetrack.Connectors.Jira;
 
@@ -39,7 +36,7 @@ public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor access
         }
     }
 
-    public async Task<FetchResult> FetchAsync(FetchContainer request, CancellationToken cancellationToken)
+    public async Task<FetchOutcome> FetchAsync(FetchContainer request, CancellationToken cancellationToken)
     {
         try
         {

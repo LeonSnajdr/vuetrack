@@ -1,12 +1,10 @@
 using System.Collections.Generic;
 using AwesomeAssertions;
-using Microsoft.Extensions.Caching.Memory;
-using Vuetrack.Connectors.Jira.ApiClients;
-using Vuetrack.Connectors.Jira.Contracts;
-using Vuetrack.Connectors.Jira.Models;
-using Vuetrack.Connectors.Jira.Repositories;
-using Vuetrack.Connectors.Jira.Services;
+using Microsoft.Extensions.Options;
+using Vuetrack.Connectors.Jira.Connection;
+using Vuetrack.Connectors.Jira.OAuth;
 using Xunit;
+using ZiggyCreatures.Caching.Fusion;
 
 namespace Vuetrack.Connectors.Jira.Tests;
 
@@ -72,7 +70,7 @@ public class JiraConnectionContextFactoryTests
             Enabled = true,
         });
 
-        var cache = new MemoryCache(new MemoryCacheOptions());
+        var cache = new FusionCache(Options.Create(new FusionCacheOptions()));
         return new JiraConnectionContextFactory(repository, oauth, new PassthroughSecretProtector(), accessor ?? new JiraConnectionAccessor(), cache);
     }
 

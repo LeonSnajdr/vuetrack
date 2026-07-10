@@ -1,4 +1,4 @@
-namespace Vuetrack.Connectors.Jira.Services;
+namespace Vuetrack.Connectors.Jira.Connection;
 
 /// <summary>
 /// The resolved Jira connection for the current operation: the live access token plus the

@@ -2,12 +2,8 @@ using Samhammer.DependencyInjection.Attributes;
 using Vuetrack.Api.Features.Connectors.Jira.Contracts;
 using Vuetrack.Connectors.Abstractions;
 using Vuetrack.Connectors.Jira;
-using Vuetrack.Connectors.Jira.ApiClients;
-using Vuetrack.Connectors.Jira.Contracts;
-using Vuetrack.Connectors.Jira.Exceptions;
-using Vuetrack.Connectors.Jira.Models;
-using Vuetrack.Connectors.Jira.Repositories;
-using Vuetrack.Connectors.Jira.Services;
+using Vuetrack.Connectors.Jira.Connection;
+using Vuetrack.Connectors.Jira.OAuth;
 
 namespace Vuetrack.Api.Features.Connectors.Jira.Services;
 
@@ -95,7 +91,7 @@ public class JiraConnectionService(IConnectorRegistry registry, IJiraOAuthApiCli
         ContextFactory.Evict(userId);
     }
 
-    public async Task<FetchResult> FetchRecommendationsAsync(string userId, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken)
+    public async Task<FetchOutcome> FetchRecommendationsAsync(string userId, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken)
     {
         var connection = await ContextFactory.CreateAsync(userId, cancellationToken);
         if (connection is null)
@@ -152,5 +148,5 @@ public interface IJiraConnectionService
 
     Task DisconnectAsync(string userId);
 
-    Task<FetchResult> FetchRecommendationsAsync(string userId, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken);
+    Task<FetchOutcome> FetchRecommendationsAsync(string userId, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken);
 }

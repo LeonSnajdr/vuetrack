@@ -8,7 +8,7 @@ namespace Vuetrack.Connectors.Jira.Tests;
 public class ResultTypeTests
 {
     [Fact]
-    public void FetchResult_MatchesEachCase()
+    public void FetchOutcome_MatchesEachCase()
     {
         Describe(new FetchSuccess([Signal(), Signal()])).Should().Be("success:2");
         Describe(new FetchAuthFailed("nope")).Should().Be("auth:nope");
@@ -35,7 +35,7 @@ public class ResultTypeTests
         Describe(new JiraConnectError("boom")).Should().Be("error:boom");
     }
 
-    private static string Describe(FetchResult result) => result switch
+    private static string Describe(FetchOutcome result) => result switch
     {
         FetchSuccess success => $"success:{success.Signals.Count}",
         FetchAuthFailed authFailed => $"auth:{authFailed.Reason}",

@@ -3,9 +3,8 @@ using MongoDB.Driver;
 using Samhammer.DependencyInjection.Attributes;
 using Samhammer.Mongo;
 using Samhammer.Mongo.Abstractions;
-using Vuetrack.Connectors.Jira.Models;
 
-namespace Vuetrack.Connectors.Jira.Repositories;
+namespace Vuetrack.Connectors.Jira.Connection;
 
 [Inject]
 public class JiraConnectionRepository(ILogger<JiraConnectionRepository> logger, IMongoDbConnector connector) : BaseRepositoryMongo<JiraConnectionModel>(logger, connector), IJiraConnectionRepository

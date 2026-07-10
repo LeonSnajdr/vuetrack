@@ -1,7 +1,6 @@
 using Vuetrack.Connectors.Abstractions;
-using Vuetrack.Connectors.Jira.Containers;
 
-namespace Vuetrack.Connectors.Jira.Mapping;
+namespace Vuetrack.Connectors.Jira.Activity;
 
 public static class JiraActivityMapper
 {

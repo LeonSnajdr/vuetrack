@@ -5,11 +5,8 @@ using Duende.IdentityModel.Client;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Samhammer.DependencyInjection.Attributes;
-using Vuetrack.Connectors.Jira.Contracts;
-using Vuetrack.Connectors.Jira.Configuration;
-using Vuetrack.Connectors.Jira.Exceptions;
 
-namespace Vuetrack.Connectors.Jira.ApiClients;
+namespace Vuetrack.Connectors.Jira.OAuth;
 
 [Inject]
 public class JiraOAuthApiClient(HttpClient httpClient, IOptions<JiraOptions> options, ILogger<JiraOAuthApiClient> logger) : IJiraOAuthApiClient
