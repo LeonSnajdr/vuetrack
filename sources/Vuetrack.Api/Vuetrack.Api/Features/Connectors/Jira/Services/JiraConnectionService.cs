@@ -97,7 +97,6 @@ public class JiraConnectionService(IConnectorRegistry registry, IJiraOAuthApiCli
 
     public async Task<FetchResult> FetchRecommendationsAsync(string userId, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken)
     {
-        // CreateAsync publishes the connection on the scoped accessor for JiraApiClient to read.
         var connection = await ContextFactory.CreateAsync(userId, cancellationToken);
         if (connection is null)
         {

@@ -100,7 +100,7 @@ public class JiraConnectionController(IJiraConnectionService connectionService) 
             FetchAuthFailed authFailed => Unauthorized(new { errors = new[] { authFailed.Reason } }),
             FetchRateLimited rateLimited => StatusCode(429, new { retryAfterSeconds = rateLimited.RetryAfter.TotalSeconds }),
             FetchConnectorError error => StatusCode(502, new { errors = new[] { error.Message } }),
-            _ => StatusCode(500),
+            _ => BadRequest(),
         };
     }
 }
