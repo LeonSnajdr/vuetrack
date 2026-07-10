@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "dotnet-conventions": {
+      "source": "SamhammerAG/skills",
+      "sourceType": "github",
+      "skillPath": "skills/dotnet-conventions/SKILL.md",
+      "computedHash": "5e0e9e6920855821b24e6fa99d72f171a1c82fdeca7c7229f514ab237bbaf4e1"
+    }
+  }
+}
