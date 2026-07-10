@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Vuetrack.Api.Features.Connectors.Jira.Contracts;
 using Vuetrack.Api.Features.Connectors.Jira.Services;
 using Vuetrack.Api.Infrastructure.Authentication;
+using Vuetrack.Connectors.Abstractions;
 
 namespace Vuetrack.Api.Features.Connectors.Jira;
 
@@ -49,5 +50,33 @@ public class JiraConnectionController(IJiraConnectionService connectionService) 
 
         var result = await ConnectionService.ConnectAsync(userId, request, cancellationToken);
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Testing-only: fetches the caller's Jira activity ("recommendations") end-to-end to verify the OAuth connection works.
+    /// </summary>
+    [HttpGet("recommendations")]
+    public async Task<IActionResult> Recommendations([FromQuery] DateTimeOffset? from, [FromQuery] DateTimeOffset? to, CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized();
+        }
+
+        var toDate = to ?? DateTimeOffset.UtcNow;
+        var fromDate = from ?? toDate.AddDays(-7);
+
+        var result = await ConnectionService.FetchRecommendationsAsync(userId, fromDate, toDate, cancellationToken);
+
+        return result switch
+        {
+            null => Conflict(new { errors = new[] { "Jira is not connected." } }),
+            Success success => Ok(success.Signals),
+            AuthFailed authFailed => Unauthorized(new { errors = new[] { authFailed.Reason } }),
+            RateLimited rateLimited => StatusCode(429, new { retryAfterSeconds = rateLimited.RetryAfter.TotalSeconds }),
+            ConnectorError error => StatusCode(502, new { errors = new[] { error.Message } }),
+            _ => StatusCode(500),
+        };
     }
 }
