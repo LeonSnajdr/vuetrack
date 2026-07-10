@@ -8,32 +8,32 @@ public class ResultTypeTests
     [Fact]
     public void FetchResult_MatchesEachCase()
     {
-        Assert.Equal("success:2", Describe(new Success([Signal(), Signal()])));
-        Assert.Equal("auth:nope", Describe(new AuthFailed("nope")));
-        Assert.Equal("rate:30", Describe(new RateLimited(TimeSpan.FromSeconds(30))));
-        Assert.Equal("error:boom", Describe(new ConnectorError("boom")));
+        Assert.Equal("success:2", Describe(new FetchSuccess([Signal(), Signal()])));
+        Assert.Equal("auth:nope", Describe(new FetchAuthFailed("nope")));
+        Assert.Equal("rate:30", Describe(new FetchRateLimited(TimeSpan.FromSeconds(30))));
+        Assert.Equal("error:boom", Describe(new FetchConnectorError("boom")));
     }
 
     [Fact]
     public void ValidationOutcome_MatchesEachCase()
     {
-        Assert.Equal("valid", Describe(new Valid()));
-        Assert.Equal("invalid:2", Describe(new Invalid(["a", "b"])));
+        Assert.Equal("valid", Describe(new ValidationValid()));
+        Assert.Equal("invalid:2", Describe(new ValidationInvalid(["a", "b"])));
     }
 
     private static string Describe(FetchResult result) => result switch
     {
-        Success success => $"success:{success.Signals.Count}",
-        AuthFailed authFailed => $"auth:{authFailed.Reason}",
-        RateLimited rateLimited => $"rate:{rateLimited.RetryAfter.TotalSeconds:0}",
-        ConnectorError error => $"error:{error.Message}",
+        FetchSuccess success => $"success:{success.Signals.Count}",
+        FetchAuthFailed authFailed => $"auth:{authFailed.Reason}",
+        FetchRateLimited rateLimited => $"rate:{rateLimited.RetryAfter.TotalSeconds:0}",
+        FetchConnectorError error => $"error:{error.Message}",
         _ => throw new InvalidOperationException(),
     };
 
     private static string Describe(ValidationOutcome outcome) => outcome switch
     {
-        Valid => "valid",
-        Invalid invalid => $"invalid:{invalid.Errors.Count}",
+        ValidationValid => "valid",
+        ValidationInvalid invalid => $"invalid:{invalid.Errors.Count}",
         _ => throw new InvalidOperationException(),
     };
 

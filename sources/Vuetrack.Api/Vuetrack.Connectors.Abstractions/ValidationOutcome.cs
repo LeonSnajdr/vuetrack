@@ -2,6 +2,6 @@ namespace Vuetrack.Connectors.Abstractions;
 
 public abstract record ValidationOutcome;
 
-public sealed record Valid() : ValidationOutcome;
+public sealed record ValidationValid() : ValidationOutcome;
 
-public sealed record Invalid(IReadOnlyList<string> Errors) : ValidationOutcome;
+public sealed record ValidationInvalid(IReadOnlyList<string> Errors) : ValidationOutcome;

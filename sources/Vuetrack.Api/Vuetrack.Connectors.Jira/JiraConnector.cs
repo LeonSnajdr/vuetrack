@@ -1,7 +1,7 @@
 using Samhammer.DependencyInjection.Attributes;
 using Vuetrack.Connectors.Abstractions;
 using Vuetrack.Connectors.Jira.ApiClients;
-using Vuetrack.Connectors.Jira.Contracts;
+using Vuetrack.Connectors.Jira.Containers;
 using Vuetrack.Connectors.Jira.Exceptions;
 using Vuetrack.Connectors.Jira.Mapping;
 using Vuetrack.Connectors.Jira.Services;
@@ -31,16 +31,16 @@ public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor access
         {
             var accountId = await Client.GetMyAccountIdAsync(cancellationToken);
             return string.IsNullOrEmpty(accountId)
-                ? new Invalid(["Jira did not return an account for these credentials."])
-                : new Valid();
+                ? new ValidationInvalid(["Jira did not return an account for these credentials."])
+                : new ValidationValid();
         }
         catch (JiraApiException ex)
         {
-            return new Invalid([ex.Message]);
+            return new ValidationInvalid([ex.Message]);
         }
     }
 
-    public async Task<FetchResult> FetchAsync(FetchRequest request, CancellationToken cancellationToken)
+    public async Task<FetchResult> FetchAsync(FetchContainer request, CancellationToken cancellationToken)
     {
         try
         {
@@ -49,25 +49,25 @@ public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor access
             var issues = await Client.GetIssueActivityAsync(request.From, request.To, cancellationToken);
 
             var siteUrl = Accessor.Current?.SiteUrl ?? string.Empty;
-            var mapperContext = new JiraMapperContext(Key, siteUrl);
+            var mapperContext = new JiraMapperContainer(Key, siteUrl);
             var signals = MergeSignals(worklogs, issues, mapperContext);
-            return new Success(signals);
+            return new FetchSuccess(signals);
         }
         catch (JiraApiException ex)
         {
             return ex.Kind switch
             {
-                JiraApiErrorKind.Auth => new AuthFailed(ex.Message),
-                JiraApiErrorKind.RateLimited => new RateLimited(ex.RetryAfter ?? TimeSpan.FromSeconds(60)),
-                _ => new ConnectorError(ex.Message),
+                JiraApiErrorKind.Auth => new FetchAuthFailed(ex.Message),
+                JiraApiErrorKind.RateLimited => new FetchRateLimited(ex.RetryAfter ?? TimeSpan.FromSeconds(60)),
+                _ => new FetchConnectorError(ex.Message),
             };
         }
     }
 
     private static IReadOnlyList<ActivitySignal> MergeSignals(
-        IReadOnlyList<JiraWorklogResponse> worklogs,
-        IReadOnlyList<JiraIssueActivityResponse> issues,
-        JiraMapperContext context)
+        IReadOnlyList<JiraWorklogContainer> worklogs,
+        IReadOnlyList<JiraIssueActivityContainer> issues,
+        JiraMapperContainer context)
     {
         var byExternalId = new Dictionary<string, ActivitySignal>();
 

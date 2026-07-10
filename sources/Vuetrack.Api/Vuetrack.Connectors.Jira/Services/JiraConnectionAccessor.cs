@@ -4,7 +4,7 @@ using Samhammer.DependencyInjection.Attributes;
 namespace Vuetrack.Connectors.Jira.Services;
 
 /// <summary>
-/// Holds the <see cref="JiraConnection"/> for the current logical operation so the
+/// Holds the <see cref="JiraConnectionContainer"/> for the current logical operation so the
 /// <c>JiraAuthHandler</c> and <see cref="ApiClients.JiraApiClient"/> can read it ambiently.
 /// Backed by <see cref="AsyncLocal{T}"/> (not DI scope): a <see cref="System.Net.Http.DelegatingHandler"/>
 /// is long-lived and cannot safely capture a scoped service, but the async-local value flows
@@ -13,9 +13,9 @@ namespace Vuetrack.Connectors.Jira.Services;
 [Inject(Target.Matching, ServiceLifetime.Singleton)]
 public class JiraConnectionAccessor : IJiraConnectionAccessor
 {
-    private readonly AsyncLocal<JiraConnection?> current = new();
+    private readonly AsyncLocal<JiraConnectionContainer?> current = new();
 
-    public JiraConnection? Current
+    public JiraConnectionContainer? Current
     {
         get => current.Value;
         set => current.Value = value;
@@ -24,5 +24,5 @@ public class JiraConnectionAccessor : IJiraConnectionAccessor
 
 public interface IJiraConnectionAccessor
 {
-    JiraConnection? Current { get; set; }
+    JiraConnectionContainer? Current { get; set; }
 }

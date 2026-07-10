@@ -1,4 +1,4 @@
-using Vuetrack.Connectors.Jira.Contracts;
+using Vuetrack.Connectors.Jira.Containers;
 using Vuetrack.Connectors.Jira.Mapping;
 using Xunit;
 
@@ -8,9 +8,9 @@ public class JiraActivityMapperTests
 {
     private const string SiteUrl = "https://acme.atlassian.net";
 
-    private static readonly JiraMapperContext Context = new("jira", SiteUrl);
+    private static readonly JiraMapperContainer Context = new("jira", SiteUrl);
 
-    private static JiraWorklogResponse Worklog(string issueKey = "PROJ-1", string worklogId = "100") => new()
+    private static JiraWorklogContainer Worklog(string issueKey = "PROJ-1", string worklogId = "100") => new()
     {
         IssueKey = issueKey,
         IssueSummary = "Fix login",
@@ -23,7 +23,7 @@ public class JiraActivityMapperTests
         Status = "In Progress",
     };
 
-    private static JiraIssueActivityResponse Issue(string issueKey = "PROJ-2") => new()
+    private static JiraIssueActivityContainer Issue(string issueKey = "PROJ-2") => new()
     {
         IssueKey = issueKey,
         Summary = "Some other issue",

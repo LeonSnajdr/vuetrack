@@ -4,7 +4,7 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Vuetrack.Connectors.Jira.Contracts;
+using Vuetrack.Connectors.Jira.Containers;
 using Vuetrack.Connectors.Jira.Exceptions;
 using Vuetrack.Connectors.Jira.Configuration;
 using Vuetrack.Connectors.Jira.Internal;
@@ -39,7 +39,7 @@ public class JiraApiClient : IJiraApiClient
             : string.Empty;
     }
 
-    public async Task<IReadOnlyList<JiraWorklogResponse>> GetWorklogEntriesAsync(
+    public async Task<IReadOnlyList<JiraWorklogContainer>> GetWorklogEntriesAsync(
         string accountId,
         DateTimeOffset from,
         DateTimeOffset to,
@@ -49,7 +49,7 @@ public class JiraApiClient : IJiraApiClient
         var issues = await SearchIssuesAsync(jql, "summary,issuetype,status,project", cancellationToken);
 
         var startedAfterMs = from.ToUnixTimeMilliseconds();
-        var entries = new List<JiraWorklogResponse>();
+        var entries = new List<JiraWorklogContainer>();
 
         foreach (var issue in issues)
         {
@@ -78,7 +78,7 @@ public class JiraApiClient : IJiraApiClient
                     ? AdfTextExtractor.Extract(commentNode)
                     : null;
 
-                entries.Add(new JiraWorklogResponse
+                entries.Add(new JiraWorklogContainer
                 {
                     IssueKey = issue.Key,
                     IssueSummary = issue.Summary,
@@ -96,7 +96,7 @@ public class JiraApiClient : IJiraApiClient
         return entries;
     }
 
-    public async Task<IReadOnlyList<JiraIssueActivityResponse>> GetIssueActivityAsync(
+    public async Task<IReadOnlyList<JiraIssueActivityContainer>> GetIssueActivityAsync(
         DateTimeOffset from,
         DateTimeOffset to,
         CancellationToken cancellationToken)
@@ -106,7 +106,7 @@ public class JiraApiClient : IJiraApiClient
 
         return issues
             .Where(i => i.Updated is not null)
-            .Select(i => new JiraIssueActivityResponse
+            .Select(i => new JiraIssueActivityContainer
             {
                 IssueKey = i.Key,
                 Summary = i.Summary,
@@ -118,12 +118,12 @@ public class JiraApiClient : IJiraApiClient
             .ToList();
     }
 
-    private async Task<IReadOnlyList<SearchIssueResponse>> SearchIssuesAsync(
+    private async Task<IReadOnlyList<SearchIssueContainer>> SearchIssuesAsync(
         string jql,
         string fields,
         CancellationToken cancellationToken)
     {
-        var results = new List<SearchIssueResponse>();
+        var results = new List<SearchIssueContainer>();
         string? pageToken = null;
 
         for (var page = 0; page < Options.MaxPages; page++)
@@ -159,7 +159,7 @@ public class JiraApiClient : IJiraApiClient
         return results;
     }
 
-    private static SearchIssueResponse ParseSearchIssue(JsonElement issue)
+    private static SearchIssueContainer ParseSearchIssue(JsonElement issue)
     {
         var key = issue.TryGetProperty("key", out var k) ? k.GetString() ?? string.Empty : string.Empty;
         var summary = issue.GetPropertyPath("fields", "summary")?.GetString() ?? string.Empty;
@@ -174,7 +174,7 @@ public class JiraApiClient : IJiraApiClient
             updated = parsed;
         }
 
-        return new SearchIssueResponse(key, summary, issueType, status, project, updated);
+        return new SearchIssueContainer(key, summary, issueType, status, project, updated);
     }
 
     private async Task<JsonDocument> GetJsonAsync(string path, CancellationToken cancellationToken)
@@ -257,7 +257,7 @@ public class JiraApiClient : IJiraApiClient
         return DateTimeOffset.TryParse(prop.GetString(), CultureInfo.InvariantCulture, DateTimeStyles.None, out value);
     }
 
-    private sealed record SearchIssueResponse(
+    private sealed record SearchIssueContainer(
         string Key,
         string Summary,
         string? IssueType,
@@ -270,13 +270,13 @@ public interface IJiraApiClient
 {
     Task<string> GetMyAccountIdAsync(CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<JiraWorklogResponse>> GetWorklogEntriesAsync(
+    Task<IReadOnlyList<JiraWorklogContainer>> GetWorklogEntriesAsync(
         string accountId,
         DateTimeOffset from,
         DateTimeOffset to,
         CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<JiraIssueActivityResponse>> GetIssueActivityAsync(
+    Task<IReadOnlyList<JiraIssueActivityContainer>> GetIssueActivityAsync(
         DateTimeOffset from,
         DateTimeOffset to,
         CancellationToken cancellationToken);

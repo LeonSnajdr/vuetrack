@@ -5,7 +5,7 @@ namespace Vuetrack.Connectors.Jira.Services;
 /// site identifiers needed to address the Jira Cloud API. Held ambiently via
 /// <see cref="IJiraConnectionAccessor"/> rather than threaded through method calls.
 /// </summary>
-public sealed record JiraConnection
+public sealed record JiraConnectionContainer
 {
     public required string UserId { get; init; }
 

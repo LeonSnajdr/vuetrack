@@ -1,6 +1,6 @@
 namespace Vuetrack.Connectors.Abstractions;
 
-public sealed record FetchRequest
+public sealed record FetchContainer
 {
     public required DateTimeOffset From { get; init; }
 

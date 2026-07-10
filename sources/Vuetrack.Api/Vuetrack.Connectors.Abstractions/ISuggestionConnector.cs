@@ -6,5 +6,5 @@ public interface ISuggestionConnector
 
     Task<ValidationOutcome> ValidateAsync(CancellationToken cancellationToken);
 
-    Task<FetchResult> FetchAsync(FetchRequest request, CancellationToken cancellationToken);
+    Task<FetchResult> FetchAsync(FetchContainer request, CancellationToken cancellationToken);
 }

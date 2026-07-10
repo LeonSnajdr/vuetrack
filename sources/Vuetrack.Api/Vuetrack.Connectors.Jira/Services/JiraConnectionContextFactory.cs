@@ -23,9 +23,9 @@ public class JiraConnectionContextFactory(
 
     private IMemoryCache Cache { get; } = cache;
 
-    public async Task<JiraConnection?> CreateAsync(string userId, CancellationToken cancellationToken)
+    public async Task<JiraConnectionContainer?> CreateAsync(string userId, CancellationToken cancellationToken)
     {
-        if (Cache.TryGetValue(CacheKey(userId), out JiraConnection? cached) && cached is not null)
+        if (Cache.TryGetValue(CacheKey(userId), out JiraConnectionContainer? cached) && cached is not null)
         {
             return cached;
         }
@@ -45,7 +45,7 @@ public class JiraConnectionContextFactory(
             await Repository.Save(connection);
         }
 
-        var resolved = new JiraConnection
+        var resolved = new JiraConnectionContainer
         {
             UserId = userId,
             AccessToken = token.AccessToken,
@@ -75,7 +75,7 @@ public interface IJiraConnectionContextFactory
     /// call frame so <c>JiraAuthHandler</c> / <see cref="ApiClients.JiraApiClient"/> pick it up — an
     /// <see cref="AsyncLocal{T}"/> set inside this awaited method would not flow back to the caller.
     /// </summary>
-    Task<JiraConnection?> CreateAsync(string userId, CancellationToken cancellationToken);
+    Task<JiraConnectionContainer?> CreateAsync(string userId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Drops the cached access token for a user so the next <see cref="CreateAsync"/> forces a refresh.

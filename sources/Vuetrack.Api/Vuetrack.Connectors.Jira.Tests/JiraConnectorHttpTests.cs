@@ -14,7 +14,7 @@ public class JiraConnectorHttpTests
 {
     private const string SiteUrl = "https://acme.atlassian.net";
 
-    private static readonly FetchRequest Request = new()
+    private static readonly FetchContainer Request = new()
     {
         From = new DateTimeOffset(2026, 7, 1, 0, 0, 0, TimeSpan.Zero),
         To = new DateTimeOffset(2026, 7, 2, 0, 0, 0, TimeSpan.Zero),
@@ -27,7 +27,7 @@ public class JiraConnectorHttpTests
         var options = Options.Create(new JiraOptions());
         var accessor = new JiraConnectionAccessor
         {
-            Current = new JiraConnection
+            Current = new JiraConnectionContainer
             {
                 UserId = "user-1",
                 AccessToken = "access-token",
@@ -46,7 +46,7 @@ public class JiraConnectorHttpTests
 
         var result = await connector.FetchAsync(Request, CancellationToken.None);
 
-        if (result is not Success success)
+        if (result is not FetchSuccess success)
         {
             Assert.Fail("expected Success");
             return;
@@ -108,7 +108,7 @@ public class JiraConnectorHttpTests
 
         var result = await connector.FetchAsync(Request, CancellationToken.None);
 
-        if (result is not Success success)
+        if (result is not FetchSuccess success)
         {
             Assert.Fail("expected Success");
             return;
@@ -165,7 +165,7 @@ public class JiraConnectorHttpTests
 
         var result = await connector.FetchAsync(Request, CancellationToken.None);
 
-        Assert.True(result is AuthFailed, "expected AuthFailed");
+        Assert.True(result is FetchAuthFailed, "expected AuthFailed");
     }
 
     [Fact]
@@ -180,7 +180,7 @@ public class JiraConnectorHttpTests
 
         var result = await connector.FetchAsync(Request, CancellationToken.None);
 
-        if (result is not RateLimited rateLimited)
+        if (result is not FetchRateLimited rateLimited)
         {
             Assert.Fail("expected RateLimited");
             return;
@@ -196,7 +196,7 @@ public class JiraConnectorHttpTests
 
         var result = await connector.ValidateAsync(CancellationToken.None);
 
-        Assert.True(result is Valid, "expected Valid");
+        Assert.True(result is ValidationValid, "expected Valid");
     }
 
     [Fact]
@@ -206,6 +206,6 @@ public class JiraConnectorHttpTests
 
         var result = await connector.ValidateAsync(CancellationToken.None);
 
-        Assert.True(result is Invalid, "expected Invalid");
+        Assert.True(result is ValidationInvalid, "expected Invalid");
     }
 }

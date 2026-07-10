@@ -35,20 +35,20 @@ public class JiraConnectionService(
 
     private ILogger<JiraConnectionService> Logger { get; } = logger;
 
-    public JiraAuthorizeResponse BuildAuthorization(string redirectUri)
+    public JiraAuthorizeContract BuildAuthorization(string redirectUri)
     {
         var state = Guid.NewGuid().ToString("N");
         var url = OAuthClient.BuildAuthorizationUrl(state, redirectUri);
-        return new JiraAuthorizeResponse(url, state);
+        return new JiraAuthorizeContract(url, state);
     }
 
-    public async Task<JiraStatusResponse> GetStatusAsync(string userId)
+    public async Task<JiraStatusContract> GetStatusAsync(string userId)
     {
         var connection = await Repository.GetByUserId(userId);
-        return new JiraStatusResponse(connection is { Enabled: true }, connection?.SiteUrl);
+        return new JiraStatusContract(connection is { Enabled: true }, connection?.SiteUrl);
     }
 
-    public async Task<ConnectResponse> ConnectAsync(string userId, JiraConnectRequest request, CancellationToken cancellationToken)
+    public async Task<JiraConnectContract> ConnectAsync(string userId, JiraConnectCreateContract request, CancellationToken cancellationToken)
     {
         try
         {
@@ -57,10 +57,10 @@ public class JiraConnectionService(
             var site = resources.FirstOrDefault();
             if (site is null)
             {
-                return new ConnectResponse(false, ["No accessible Jira site for this account."]);
+                return new JiraConnectContract(false, ["No accessible Jira site for this account."]);
             }
 
-            Accessor.Current = new JiraConnection
+            Accessor.Current = new JiraConnectionContainer
             {
                 UserId = userId,
                 AccessToken = token.AccessToken,
@@ -72,18 +72,18 @@ public class JiraConnectionService(
                 ?? throw new InvalidOperationException("Jira connector is not registered.");
 
             var outcome = await connector.ValidateAsync(cancellationToken);
-            if (outcome is Invalid invalid)
+            if (outcome is ValidationInvalid invalid)
             {
-                return new ConnectResponse(false, invalid.Errors);
+                return new JiraConnectContract(false, invalid.Errors);
             }
 
             await PersistConnection(userId, site, token);
-            return new ConnectResponse(true, []);
+            return new JiraConnectContract(true, []);
         }
         catch (JiraApiException ex)
         {
             Logger.LogWarning("Jira connect failed: {Kind}", ex.Kind);
-            return new ConnectResponse(false, [ex.Message]);
+            return new JiraConnectContract(false, [ex.Message]);
         }
     }
 
@@ -102,9 +102,9 @@ public class JiraConnectionService(
         var connector = Registry.Resolve(JiraConnector.Key)
             ?? throw new InvalidOperationException("Jira connector is not registered.");
 
-        var result = await connector.FetchAsync(new FetchRequest { From = from, To = to }, cancellationToken);
+        var result = await connector.FetchAsync(new FetchContainer { From = from, To = to }, cancellationToken);
 
-        if (result is AuthFailed)
+        if (result is FetchAuthFailed)
         {
             ContextFactory.Evict(userId);
         }
@@ -141,11 +141,11 @@ public class JiraConnectionService(
 
 public interface IJiraConnectionService
 {
-    JiraAuthorizeResponse BuildAuthorization(string redirectUri);
+    JiraAuthorizeContract BuildAuthorization(string redirectUri);
 
-    Task<JiraStatusResponse> GetStatusAsync(string userId);
+    Task<JiraStatusContract> GetStatusAsync(string userId);
 
-    Task<ConnectResponse> ConnectAsync(string userId, JiraConnectRequest request, CancellationToken cancellationToken);
+    Task<JiraConnectContract> ConnectAsync(string userId, JiraConnectCreateContract request, CancellationToken cancellationToken);
 
     Task<FetchResult?> FetchRecommendationsAsync(string userId, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken);
 }

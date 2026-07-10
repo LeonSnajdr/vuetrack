@@ -4,10 +4,10 @@ using Vuetrack.Api.Features.Connectors.Jira.Contracts;
 
 namespace Vuetrack.Api.Features.Connectors.Jira.Validation;
 
-[InjectAs(typeof(IValidator<JiraConnectRequest>))]
-public class JiraConnectRequestValidator : AbstractValidator<JiraConnectRequest>
+[InjectAs(typeof(IValidator<JiraConnectCreateContract>))]
+public class JiraConnectCreateContractValidator : AbstractValidator<JiraConnectCreateContract>
 {
-    public JiraConnectRequestValidator()
+    public JiraConnectCreateContractValidator()
     {
         RuleFor(x => x.Code).NotEmpty();
         RuleFor(x => x.State).NotEmpty();

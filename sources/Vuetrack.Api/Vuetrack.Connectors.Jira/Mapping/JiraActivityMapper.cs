@@ -1,11 +1,11 @@
 using Vuetrack.Connectors.Abstractions;
-using Vuetrack.Connectors.Jira.Contracts;
+using Vuetrack.Connectors.Jira.Containers;
 
 namespace Vuetrack.Connectors.Jira.Mapping;
 
 public static class JiraActivityMapper
 {
-    public static ActivitySignal ToActivitySignal(this JiraWorklogResponse worklog, JiraMapperContext context) => new()
+    public static ActivitySignal ToActivitySignal(this JiraWorklogContainer worklog, JiraMapperContainer context) => new()
     {
         ConnectorKey = context.ConnectorKey,
         ExternalId = $"{worklog.IssueKey}:worklog:{worklog.WorklogId}",
@@ -17,7 +17,7 @@ public static class JiraActivityMapper
         Metadata = BuildMetadata(worklog.IssueKey, worklog.Project, worklog.IssueType, worklog.Status, ("worklogId", worklog.WorklogId)),
     };
 
-    public static ActivitySignal ToActivitySignal(this JiraIssueActivityResponse issue, JiraMapperContext context) => new()
+    public static ActivitySignal ToActivitySignal(this JiraIssueActivityContainer issue, JiraMapperContainer context) => new()
     {
         ConnectorKey = context.ConnectorKey,
         ExternalId = $"{issue.IssueKey}:issue",

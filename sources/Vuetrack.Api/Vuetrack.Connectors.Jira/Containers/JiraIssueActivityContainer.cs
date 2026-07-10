@@ -1,6 +1,6 @@
-namespace Vuetrack.Connectors.Jira.Contracts;
+namespace Vuetrack.Connectors.Jira.Containers;
 
-public sealed record JiraIssueActivityResponse
+public sealed record JiraIssueActivityContainer
 {
     public required string IssueKey { get; init; }
 

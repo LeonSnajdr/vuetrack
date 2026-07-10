@@ -1,6 +1,6 @@
 namespace Vuetrack.Api.Features.Connectors.Jira.Contracts;
 
-public sealed record JiraConnectRequest
+public sealed record JiraConnectCreateContract
 {
     public string Code { get; init; } = string.Empty;
 

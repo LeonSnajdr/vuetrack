@@ -40,7 +40,7 @@ public class JiraConnectionController(IJiraConnectionService connectionService) 
     }
 
     [HttpPost("callback")]
-    public async Task<IActionResult> Callback([FromBody] JiraConnectRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Callback([FromBody] JiraConnectCreateContract request, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
         if (string.IsNullOrEmpty(userId))
@@ -72,10 +72,10 @@ public class JiraConnectionController(IJiraConnectionService connectionService) 
         return result switch
         {
             null => Conflict(new { errors = new[] { "Jira is not connected." } }),
-            Success success => Ok(success.Signals),
-            AuthFailed authFailed => Unauthorized(new { errors = new[] { authFailed.Reason } }),
-            RateLimited rateLimited => StatusCode(429, new { retryAfterSeconds = rateLimited.RetryAfter.TotalSeconds }),
-            ConnectorError error => StatusCode(502, new { errors = new[] { error.Message } }),
+            FetchSuccess success => Ok(success.Signals),
+            FetchAuthFailed authFailed => Unauthorized(new { errors = new[] { authFailed.Reason } }),
+            FetchRateLimited rateLimited => StatusCode(429, new { retryAfterSeconds = rateLimited.RetryAfter.TotalSeconds }),
+            FetchConnectorError error => StatusCode(502, new { errors = new[] { error.Message } }),
             _ => StatusCode(500),
         };
     }
