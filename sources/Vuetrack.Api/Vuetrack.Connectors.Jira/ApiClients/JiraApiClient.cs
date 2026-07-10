@@ -4,6 +4,7 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Samhammer.DependencyInjection.Attributes;
 using Vuetrack.Connectors.Jira.Containers;
 using Vuetrack.Connectors.Jira.Exceptions;
 using Vuetrack.Connectors.Jira.Configuration;
@@ -12,6 +13,7 @@ using Vuetrack.Connectors.Jira.Services;
 
 namespace Vuetrack.Connectors.Jira.ApiClients;
 
+[Inject]
 public class JiraApiClient : IJiraApiClient
 {
     public JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor accessor, IOptions<JiraOptions> options, ILogger<JiraApiClient> logger)

@@ -1,3 +1,4 @@
+using AwesomeAssertions;
 using Vuetrack.Connectors.Jira.Containers;
 using Vuetrack.Connectors.Jira.Mapping;
 using Xunit;
@@ -38,18 +39,18 @@ public class JiraActivityMapperTests
     {
         var signal = Worklog().ToActivitySignal(Context);
 
-        Assert.Equal("jira", signal.ConnectorKey);
-        Assert.Equal("PROJ-1:worklog:100", signal.ExternalId);
-        Assert.Equal("PROJ-1 Fix login", signal.Title);
-        Assert.Equal("worked on it", signal.Description);
-        Assert.Equal(new DateTimeOffset(2026, 7, 1, 9, 0, 0, TimeSpan.Zero), signal.Start);
-        Assert.Equal(new DateTimeOffset(2026, 7, 1, 10, 0, 0, TimeSpan.Zero), signal.End);
-        Assert.Equal("https://acme.atlassian.net/browse/PROJ-1", signal.Link);
-        Assert.Equal("PROJ-1", signal.Metadata["issueKey"]);
-        Assert.Equal("100", signal.Metadata["worklogId"]);
-        Assert.Equal("PROJ", signal.Metadata["project"]);
-        Assert.Equal("Bug", signal.Metadata["issueType"]);
-        Assert.Equal("In Progress", signal.Metadata["status"]);
+        signal.ConnectorKey.Should().Be("jira");
+        signal.ExternalId.Should().Be("PROJ-1:worklog:100");
+        signal.Title.Should().Be("PROJ-1 Fix login");
+        signal.Description.Should().Be("worked on it");
+        signal.Start.Should().Be(new DateTimeOffset(2026, 7, 1, 9, 0, 0, TimeSpan.Zero));
+        signal.End.Should().Be(new DateTimeOffset(2026, 7, 1, 10, 0, 0, TimeSpan.Zero));
+        signal.Link.Should().Be("https://acme.atlassian.net/browse/PROJ-1");
+        signal.Metadata["issueKey"].Should().Be("PROJ-1");
+        signal.Metadata["worklogId"].Should().Be("100");
+        signal.Metadata["project"].Should().Be("PROJ");
+        signal.Metadata["issueType"].Should().Be("Bug");
+        signal.Metadata["status"].Should().Be("In Progress");
     }
 
     [Fact]
@@ -57,9 +58,9 @@ public class JiraActivityMapperTests
     {
         var signal = Issue().ToActivitySignal(Context);
 
-        Assert.Equal("PROJ-2:issue", signal.ExternalId);
-        Assert.Equal(new DateTimeOffset(2026, 7, 1, 15, 0, 0, TimeSpan.Zero), signal.Start);
-        Assert.Null(signal.End);
-        Assert.Null(signal.Description);
+        signal.ExternalId.Should().Be("PROJ-2:issue");
+        signal.Start.Should().Be(new DateTimeOffset(2026, 7, 1, 15, 0, 0, TimeSpan.Zero));
+        signal.End.Should().BeNull();
+        signal.Description.Should().BeNull();
     }
 }

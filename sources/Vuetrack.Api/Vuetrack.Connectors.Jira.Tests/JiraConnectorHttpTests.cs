@@ -1,4 +1,5 @@
 using System.Net;
+using AwesomeAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Vuetrack.Connectors.Abstractions;
@@ -46,22 +47,18 @@ public class JiraConnectorHttpTests
 
         var result = await connector.FetchAsync(Request, CancellationToken.None);
 
-        if (result is not FetchSuccess success)
-        {
-            Assert.Fail("expected Success");
-            return;
-        }
+        var success = result.Should().BeOfType<FetchSuccess>().Which;
 
-        var signal = Assert.Single(success.Signals);
-        Assert.Equal("PROJ-1:worklog:100", signal.ExternalId);
-        Assert.Equal("https://acme.atlassian.net/browse/PROJ-1", signal.Link);
-        Assert.Equal("worked on the fix", signal.Description);
+        var signal = success.Signals.Should().ContainSingle().Which;
+        signal.ExternalId.Should().Be("PROJ-1:worklog:100");
+        signal.Link.Should().Be("https://acme.atlassian.net/browse/PROJ-1");
+        signal.Description.Should().Be("worked on the fix");
 
         static HttpResponseMessage Respond(HttpRequestMessage request)
         {
             // The client (not a delegating handler) attaches the ambient access token.
-            Assert.Equal("Bearer", request.Headers.Authorization?.Scheme);
-            Assert.Equal("access-token", request.Headers.Authorization?.Parameter);
+            request.Headers.Authorization?.Scheme.Should().Be("Bearer");
+            request.Headers.Authorization?.Parameter.Should().Be("access-token");
 
             var uri = request.RequestUri!.ToString();
             if (uri.Contains("/myself"))
@@ -112,15 +109,11 @@ public class JiraConnectorHttpTests
 
         var result = await connector.FetchAsync(Request, CancellationToken.None);
 
-        if (result is not FetchSuccess success)
-        {
-            Assert.Fail("expected Success");
-            return;
-        }
+        var success = result.Should().BeOfType<FetchSuccess>().Which;
 
-        Assert.Equal(2, success.Signals.Count);
-        Assert.Contains(success.Signals, s => s.ExternalId == "PROJ-1:worklog:100");
-        Assert.Contains(success.Signals, s => s.ExternalId == "PROJ-2:issue");
+        success.Signals.Should().HaveCount(2);
+        success.Signals.Should().Contain(s => s.ExternalId == "PROJ-1:worklog:100");
+        success.Signals.Should().Contain(s => s.ExternalId == "PROJ-2:issue");
 
         static HttpResponseMessage Respond(HttpRequestMessage request)
         {
@@ -169,7 +162,7 @@ public class JiraConnectorHttpTests
 
         var result = await connector.FetchAsync(Request, CancellationToken.None);
 
-        Assert.True(result is FetchAuthFailed, "expected AuthFailed");
+        result.Should().BeOfType<FetchAuthFailed>();
     }
 
     [Fact]
@@ -184,13 +177,9 @@ public class JiraConnectorHttpTests
 
         var result = await connector.FetchAsync(Request, CancellationToken.None);
 
-        if (result is not FetchRateLimited rateLimited)
-        {
-            Assert.Fail("expected RateLimited");
-            return;
-        }
+        var rateLimited = result.Should().BeOfType<FetchRateLimited>().Which;
 
-        Assert.Equal(TimeSpan.FromSeconds(30), rateLimited.RetryAfter);
+        rateLimited.RetryAfter.Should().Be(TimeSpan.FromSeconds(30));
     }
 
     [Fact]
@@ -200,7 +189,7 @@ public class JiraConnectorHttpTests
 
         var result = await connector.ValidateAsync(CancellationToken.None);
 
-        Assert.True(result is ValidationValid, "expected Valid");
+        result.Should().BeOfType<ValidationValid>();
     }
 
     [Fact]
@@ -210,6 +199,6 @@ public class JiraConnectorHttpTests
 
         var result = await connector.ValidateAsync(CancellationToken.None);
 
-        Assert.True(result is ValidationInvalid, "expected Invalid");
+        result.Should().BeOfType<ValidationInvalid>();
     }
 }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using AwesomeAssertions;
 using Microsoft.Extensions.Caching.Memory;
 using Vuetrack.Connectors.Jira.ApiClients;
 using Vuetrack.Connectors.Jira.Contracts;
@@ -23,13 +24,13 @@ public class JiraConnectionContextFactoryTests
         var first = await factory.CreateAsync(UserId, CancellationToken.None);
         var second = await factory.CreateAsync(UserId, CancellationToken.None);
 
-        Assert.NotNull(first);
-        Assert.NotNull(second);
-        Assert.Equal("access-0", first!.AccessToken);
-        Assert.Equal("access-0", second!.AccessToken);
-        Assert.Equal(1, oauth.RefreshCalls);
+        first.Should().NotBeNull();
+        second.Should().NotBeNull();
+        first!.AccessToken.Should().Be("access-0");
+        second!.AccessToken.Should().Be("access-0");
+        oauth.RefreshCalls.Should().Be(1);
         // CreateAsync publishes the resolved connection on the scoped accessor (cache-hit path too).
-        Assert.Same(second, accessor.Current);
+        accessor.Current.Should().BeSameAs(second);
     }
 
     [Fact]
@@ -42,9 +43,9 @@ public class JiraConnectionContextFactoryTests
         factory.Evict(UserId);
         var second = await factory.CreateAsync(UserId, CancellationToken.None);
 
-        Assert.Equal("access-0", first!.AccessToken);
-        Assert.Equal("access-1", second!.AccessToken);
-        Assert.Equal(2, oauth.RefreshCalls);
+        first!.AccessToken.Should().Be("access-0");
+        second!.AccessToken.Should().Be("access-1");
+        oauth.RefreshCalls.Should().Be(2);
     }
 
     [Fact]
@@ -56,7 +57,7 @@ public class JiraConnectionContextFactoryTests
         await factory.CreateAsync(UserId, CancellationToken.None);
         await factory.CreateAsync(UserId, CancellationToken.None);
 
-        Assert.Equal(2, oauth.RefreshCalls);
+        oauth.RefreshCalls.Should().Be(2);
     }
 
     private static JiraConnectionContextFactory BuildFactory(FakeOAuthClient oauth, JiraConnectionAccessor? accessor = null)

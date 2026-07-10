@@ -103,11 +103,10 @@ Registration is mostly attribute-driven via the Samhammer packages already wired
   `ISuggestionConnector`. `ConnectorRegistry` collects `IEnumerable<ISuggestionConnector>` and
   resolves by `Descriptor.Key`, so `GET /api/v1/connectors` picks up every connector automatically.
 
-The one piece of explicit wiring is `AddJiraConnectorHttpClients()` (called in `Program.cs`): it
-registers `JiraApiClient` as a **typed `HttpClient`** (which is why `JiraApiClient` does *not* carry
-`[Inject]`); the client attaches the `Bearer` header itself, so no delegating handler is needed.
-`JiraOAuthApiClient` stays `[Inject]` on the default `HttpClient` (the token endpoint must not
-receive a Bearer header).
+Both `JiraApiClient` and `JiraOAuthApiClient` are `[Inject]` and inject the default `HttpClient`
+(resolved from the `AddHttpClient()` factory already registered in `Program.cs`), so no explicit
+`IServiceCollection` wiring or delegating handler is needed. `JiraApiClient` attaches the `Bearer`
+header itself per request, and the token endpoint used by `JiraOAuthApiClient` must not receive one.
 
 ## Adding the next connector
 

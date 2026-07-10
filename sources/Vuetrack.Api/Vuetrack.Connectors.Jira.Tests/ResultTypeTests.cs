@@ -1,3 +1,4 @@
+using AwesomeAssertions;
 using Vuetrack.Api.Features.Connectors.Jira;
 using Vuetrack.Connectors.Abstractions;
 using Xunit;
@@ -9,29 +10,29 @@ public class ResultTypeTests
     [Fact]
     public void FetchResult_MatchesEachCase()
     {
-        Assert.Equal("success:2", Describe(new FetchSuccess([Signal(), Signal()])));
-        Assert.Equal("auth:nope", Describe(new FetchAuthFailed("nope")));
-        Assert.Equal("rate:30", Describe(new FetchRateLimited(TimeSpan.FromSeconds(30))));
-        Assert.Equal("error:boom", Describe(new FetchConnectorError("boom")));
-        Assert.Equal("notConnected", Describe(new FetchNotConnected()));
+        Describe(new FetchSuccess([Signal(), Signal()])).Should().Be("success:2");
+        Describe(new FetchAuthFailed("nope")).Should().Be("auth:nope");
+        Describe(new FetchRateLimited(TimeSpan.FromSeconds(30))).Should().Be("rate:30");
+        Describe(new FetchConnectorError("boom")).Should().Be("error:boom");
+        Describe(new FetchNotConnected()).Should().Be("notConnected");
     }
 
     [Fact]
     public void ValidationOutcome_MatchesEachCase()
     {
-        Assert.Equal("valid", Describe(new ValidationValid()));
-        Assert.Equal("invalid:2", Describe(new ValidationInvalid(["a", "b"])));
+        Describe(new ValidationValid()).Should().Be("valid");
+        Describe(new ValidationInvalid(["a", "b"])).Should().Be("invalid:2");
     }
 
     [Fact]
     public void JiraConnectResult_MatchesEachCase()
     {
-        Assert.Equal("success:https://site", Describe(new JiraConnectSuccess("https://site")));
-        Assert.Equal("noSite", Describe(new JiraConnectNoSite()));
-        Assert.Equal("invalid:2", Describe(new JiraConnectValidationFailed(["a", "b"])));
-        Assert.Equal("auth:nope", Describe(new JiraConnectAuthFailed("nope")));
-        Assert.Equal("rate:30", Describe(new JiraConnectRateLimited(TimeSpan.FromSeconds(30))));
-        Assert.Equal("error:boom", Describe(new JiraConnectError("boom")));
+        Describe(new JiraConnectSuccess("https://site")).Should().Be("success:https://site");
+        Describe(new JiraConnectNoSite()).Should().Be("noSite");
+        Describe(new JiraConnectValidationFailed(["a", "b"])).Should().Be("invalid:2");
+        Describe(new JiraConnectAuthFailed("nope")).Should().Be("auth:nope");
+        Describe(new JiraConnectRateLimited(TimeSpan.FromSeconds(30))).Should().Be("rate:30");
+        Describe(new JiraConnectError("boom")).Should().Be("error:boom");
     }
 
     private static string Describe(FetchResult result) => result switch

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using AwesomeAssertions;
 using Vuetrack.Connectors.Jira.Internal;
 using Xunit;
 
@@ -22,7 +23,7 @@ public class AdfTextExtractorTests
 
         var result = AdfTextExtractor.Extract(adf);
 
-        Assert.Equal("Fixed the login bug\nand added a test", result);
+        result.Should().Be("Fixed the login bug\nand added a test");
     }
 
     [Fact]
@@ -41,20 +42,20 @@ public class AdfTextExtractorTests
         }
         """);
 
-        Assert.Equal("line one\nline two", AdfTextExtractor.Extract(adf));
+        AdfTextExtractor.Extract(adf).Should().Be("line one\nline two");
     }
 
     [Fact]
     public void Extract_ReturnsNullForNullInput()
     {
-        Assert.Null(AdfTextExtractor.Extract(null));
+        AdfTextExtractor.Extract(null).Should().BeNull();
     }
 
     [Fact]
     public void Extract_ReturnsNullForEmptyDocument()
     {
         var adf = Parse("""{ "type": "doc", "content": [] }""");
-        Assert.Null(AdfTextExtractor.Extract(adf));
+        AdfTextExtractor.Extract(adf).Should().BeNull();
     }
 
     private static JsonElement Parse(string json) => JsonDocument.Parse(json).RootElement.Clone();

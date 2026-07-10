@@ -11,7 +11,6 @@ using Serilog;
 using Vuetrack.Api.Infrastructure.Config;
 using Vuetrack.Api.Infrastructure.Cors;
 using Vuetrack.Api.Infrastructure.Validation;
-using Vuetrack.Connectors.Jira;
 using Vuetrack.Logging;
 
 Log.Logger = new LoggerConfiguration()
@@ -57,7 +56,6 @@ try
     builder.Services.AddSwaggerVersionedApi();
 
     builder.Services.AddHttpClient();
-    builder.Services.AddJiraConnectorHttpClients();
     builder.Services.AddHttpContextAccessor();
 
     var app = builder.Build();
