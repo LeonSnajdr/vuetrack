@@ -6,12 +6,7 @@ using Vuetrack.Connectors.Jira.Repositories;
 namespace Vuetrack.Connectors.Jira.Services;
 
 [Inject]
-public class JiraConnectionContextFactory(
-    IJiraConnectionRepository repository,
-    IJiraOAuthApiClient oauthClient,
-    ISecretProtector secretProtector,
-    IJiraConnectionAccessor accessor,
-    IMemoryCache cache) : IJiraConnectionContextFactory
+public class JiraConnectionContextFactory(IJiraConnectionRepository repository, IJiraOAuthApiClient oauthClient, ISecretProtector secretProtector, IJiraConnectionAccessor accessor, IMemoryCache cache) : IJiraConnectionContextFactory
 {
     // Refresh a little early so a token never expires mid-request.
     private static readonly TimeSpan ExpiryBuffer = TimeSpan.FromSeconds(60);

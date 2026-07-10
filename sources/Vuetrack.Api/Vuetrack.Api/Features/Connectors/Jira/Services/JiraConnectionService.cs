@@ -12,14 +12,7 @@ using Vuetrack.Connectors.Jira.Services;
 namespace Vuetrack.Api.Features.Connectors.Jira.Services;
 
 [Inject]
-public class JiraConnectionService(
-    IConnectorRegistry registry,
-    IJiraOAuthApiClient oauthClient,
-    IJiraConnectionRepository repository,
-    ISecretProtector secretProtector,
-    IJiraConnectionAccessor accessor,
-    IJiraConnectionContextFactory contextFactory,
-    ILogger<JiraConnectionService> logger) : IJiraConnectionService
+public class JiraConnectionService(IConnectorRegistry registry, IJiraOAuthApiClient oauthClient, IJiraConnectionRepository repository, ISecretProtector secretProtector, IJiraConnectionAccessor accessor, IJiraConnectionContextFactory contextFactory, ILogger<JiraConnectionService> logger) : IJiraConnectionService
 {
     private IConnectorRegistry Registry { get; } = registry;
 
@@ -68,8 +61,7 @@ public class JiraConnectionService(
                 SiteUrl = site.Url,
             };
 
-            var connector = Registry.Resolve(JiraConnector.Key)
-                ?? throw new InvalidOperationException("Jira connector is not registered.");
+            var connector = Registry.Resolve(JiraConnector.Key) ?? throw new InvalidOperationException("Jira connector is not registered.");
 
             var outcome = await connector.ValidateAsync(cancellationToken);
             if (outcome is ValidationInvalid invalid)
@@ -101,8 +93,7 @@ public class JiraConnectionService(
             return new FetchNotConnected();
         }
 
-        var connector = Registry.Resolve(JiraConnector.Key)
-            ?? throw new InvalidOperationException("Jira connector is not registered.");
+        var connector = Registry.Resolve(JiraConnector.Key) ?? throw new InvalidOperationException("Jira connector is not registered.");
 
         var result = await connector.FetchAsync(new FetchContainer { From = from, To = to }, cancellationToken);
 
@@ -118,7 +109,7 @@ public class JiraConnectionService(
     {
         if (string.IsNullOrEmpty(token.RefreshToken))
         {
-            Logger.LogWarning("Jira token response had no refresh token; connection not persisted.");
+            Logger.LogWarning("Jira token response had no refresh token; connection not persisted");
             return;
         }
 

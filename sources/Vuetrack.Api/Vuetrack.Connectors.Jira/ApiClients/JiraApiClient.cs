@@ -14,24 +14,15 @@ using Vuetrack.Connectors.Jira.Services;
 namespace Vuetrack.Connectors.Jira.ApiClients;
 
 [Inject]
-public class JiraApiClient : IJiraApiClient
+public class JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor accessor, IOptions<JiraOptions> options, ILogger<JiraApiClient> logger) : IJiraApiClient
 {
-    public JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor accessor, IOptions<JiraOptions> options, ILogger<JiraApiClient> logger)
-    {
-        Options = options.Value;
-        Logger = logger;
-        Accessor = accessor;
-        httpClient.Timeout = TimeSpan.FromSeconds(Options.TimeoutSeconds);
-        HttpClient = httpClient;
-    }
+    private HttpClient HttpClient { get; } = httpClient;
 
-    private HttpClient HttpClient { get; }
+    private IJiraConnectionAccessor Accessor { get; } = accessor;
 
-    private IJiraConnectionAccessor Accessor { get; }
+    private IOptions<JiraOptions> Options { get; } = options;
 
-    private JiraOptions Options { get; }
-
-    private ILogger<JiraApiClient> Logger { get; }
+    private ILogger<JiraApiClient> Logger { get; } = logger;
 
     public async Task<string> GetMyAccountIdAsync(CancellationToken cancellationToken)
     {
@@ -41,11 +32,7 @@ public class JiraApiClient : IJiraApiClient
             : string.Empty;
     }
 
-    public async Task<IReadOnlyList<JiraWorklogContainer>> GetWorklogEntriesAsync(
-        string accountId,
-        DateTimeOffset from,
-        DateTimeOffset to,
-        CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<JiraWorklogContainer>> GetWorklogEntriesAsync(string accountId, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken)
     {
         var jql = $"worklogAuthor = currentUser() AND worklogDate >= \"{IsoDate(from)}\" AND worklogDate <= \"{IsoDate(to)}\" ORDER BY updated DESC";
         var issues = await SearchIssuesAsync(jql, "summary,issuetype,status,project", cancellationToken);
@@ -98,10 +85,7 @@ public class JiraApiClient : IJiraApiClient
         return entries;
     }
 
-    public async Task<IReadOnlyList<JiraIssueActivityContainer>> GetIssueActivityAsync(
-        DateTimeOffset from,
-        DateTimeOffset to,
-        CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<JiraIssueActivityContainer>> GetIssueActivityAsync(DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken)
     {
         var jql = $"(assignee was currentUser() OR status changed by currentUser()) AND updated >= \"{IsoDateTime(from)}\" AND updated <= \"{IsoDateTime(to)}\" ORDER BY updated DESC";
         var issues = await SearchIssuesAsync(jql, "summary,issuetype,status,project,updated", cancellationToken);
@@ -128,9 +112,9 @@ public class JiraApiClient : IJiraApiClient
         var results = new List<SearchIssueContainer>();
         string? pageToken = null;
 
-        for (var page = 0; page < Options.MaxPages; page++)
+        for (var page = 0; page < Options.Value.MaxPages; page++)
         {
-            var path = $"search/jql?jql={Uri.EscapeDataString(jql)}&fields={Uri.EscapeDataString(fields)}&maxResults={Options.PageSize}";
+            var path = $"search/jql?jql={Uri.EscapeDataString(jql)}&fields={Uri.EscapeDataString(fields)}&maxResults={Options.Value.PageSize}";
             if (pageToken is not null)
             {
                 path += $"&nextPageToken={Uri.EscapeDataString(pageToken)}";
@@ -184,7 +168,7 @@ public class JiraApiClient : IJiraApiClient
         var connection = Accessor.Current
             ?? throw new JiraApiException(JiraApiErrorKind.Auth, "No active Jira connection for this request.");
 
-        var uri = $"{Options.ApiBaseUrl.TrimEnd('/')}/ex/jira/{connection.CloudId}/rest/api/3/{path}";
+        var uri = $"{Options.Value.ApiBaseUrl.TrimEnd('/')}/ex/jira/{connection.CloudId}/rest/api/3/{path}";
 
         using var request = new HttpRequestMessage(HttpMethod.Get, uri);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", connection.AccessToken);
@@ -259,13 +243,7 @@ public class JiraApiClient : IJiraApiClient
         return DateTimeOffset.TryParse(prop.GetString(), CultureInfo.InvariantCulture, DateTimeStyles.None, out value);
     }
 
-    private sealed record SearchIssueContainer(
-        string Key,
-        string Summary,
-        string? IssueType,
-        string? Status,
-        string? Project,
-        DateTimeOffset? Updated);
+    private sealed record SearchIssueContainer(string Key, string Summary, string? IssueType, string? Status, string? Project, DateTimeOffset? Updated);
 }
 
 public interface IJiraApiClient

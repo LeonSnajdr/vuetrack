@@ -22,7 +22,6 @@ public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor access
         Key = Key,
         DisplayName = "Jira",
         Capabilities = ConnectorCapabilities.Worklogs | ConnectorCapabilities.IssueActivity | ConnectorCapabilities.OAuth,
-        ConfigSchema = [],
     };
 
     public async Task<ValidationOutcome> ValidateAsync(CancellationToken cancellationToken)
@@ -64,10 +63,7 @@ public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor access
         }
     }
 
-    private static IReadOnlyList<ActivitySignal> MergeSignals(
-        IReadOnlyList<JiraWorklogContainer> worklogs,
-        IReadOnlyList<JiraIssueActivityContainer> issues,
-        JiraMapperContainer context)
+    private static IReadOnlyList<ActivitySignal> MergeSignals(IReadOnlyList<JiraWorklogContainer> worklogs, IReadOnlyList<JiraIssueActivityContainer> issues, JiraMapperContainer context)
     {
         var byExternalId = new Dictionary<string, ActivitySignal>();
 

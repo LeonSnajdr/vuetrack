@@ -15,8 +15,6 @@ public class JiraOptions
 
     public string Scopes { get; init; } = "read:jira-work read:jira-user offline_access";
 
-    public int TimeoutSeconds { get; init; } = 30;
-
     public int PageSize { get; init; } = 50;
 
     public int MaxPages { get; init; } = 20;

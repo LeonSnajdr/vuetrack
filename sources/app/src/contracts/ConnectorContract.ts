@@ -2,7 +2,6 @@ export type ConnectorDescriptorContract = {
     key: string;
     displayName: string;
     capabilities: number;
-    configSchema: unknown[];
 };
 
 export type JiraAuthorizeResponse = {

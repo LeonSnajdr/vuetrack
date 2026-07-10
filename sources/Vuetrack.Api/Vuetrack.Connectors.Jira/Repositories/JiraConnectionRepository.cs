@@ -8,8 +8,7 @@ using Vuetrack.Connectors.Jira.Models;
 namespace Vuetrack.Connectors.Jira.Repositories;
 
 [Inject]
-public class JiraConnectionRepository(ILogger<JiraConnectionRepository> logger, IMongoDbConnector connector)
-    : BaseRepositoryMongo<JiraConnectionModel>(logger, connector), IJiraConnectionRepository
+public class JiraConnectionRepository(ILogger<JiraConnectionRepository> logger, IMongoDbConnector connector) : BaseRepositoryMongo<JiraConnectionModel>(logger, connector), IJiraConnectionRepository
 {
     public async Task<JiraConnectionModel?> GetByUserId(string userId)
     {

@@ -7,6 +7,4 @@ public sealed record ConnectorDescriptor
     public required string DisplayName { get; init; }
 
     public required ConnectorCapabilities Capabilities { get; init; }
-
-    public IReadOnlyList<ConfigField> ConfigSchema { get; init; } = [];
 }

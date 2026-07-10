@@ -12,33 +12,25 @@ using Vuetrack.Connectors.Jira.Exceptions;
 namespace Vuetrack.Connectors.Jira.ApiClients;
 
 [Inject]
-public class JiraOAuthApiClient : IJiraOAuthApiClient
+public class JiraOAuthApiClient(HttpClient httpClient, IOptions<JiraOptions> options, ILogger<JiraOAuthApiClient> logger) : IJiraOAuthApiClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    public JiraOAuthApiClient(HttpClient httpClient, IOptions<JiraOptions> options, ILogger<JiraOAuthApiClient> logger)
-    {
-        Options = options.Value;
-        Logger = logger;
-        httpClient.Timeout = TimeSpan.FromSeconds(Options.TimeoutSeconds);
-        HttpClient = httpClient;
-    }
+    private HttpClient HttpClient { get; } = httpClient;
 
-    private HttpClient HttpClient { get; }
+    private IOptions<JiraOptions> Options { get; } = options;
 
-    private JiraOptions Options { get; }
+    private ILogger<JiraOAuthApiClient> Logger { get; } = logger;
 
-    private ILogger<JiraOAuthApiClient> Logger { get; }
-
-    private string TokenEndpoint => $"{Options.IdentityBaseUrl.TrimEnd('/')}/oauth/token";
+    private string TokenEndpoint => $"{Options.Value.IdentityBaseUrl.TrimEnd('/')}/oauth/token";
 
     public string BuildAuthorizationUrl(string state, string redirectUri)
     {
-        var request = new RequestUrl($"{Options.IdentityBaseUrl.TrimEnd('/')}/authorize");
+        var request = new RequestUrl($"{Options.Value.IdentityBaseUrl.TrimEnd('/')}/authorize");
         return request.CreateAuthorizeUrl(
-            clientId: Options.ClientId,
+            clientId: Options.Value.ClientId,
             responseType: "code",
-            scope: Options.Scopes,
+            scope: Options.Value.Scopes,
             redirectUri: redirectUri,
             state: state,
             prompt: "consent",
@@ -51,8 +43,8 @@ public class JiraOAuthApiClient : IJiraOAuthApiClient
             new AuthorizationCodeTokenRequest
             {
                 Address = TokenEndpoint,
-                ClientId = Options.ClientId,
-                ClientSecret = Options.ClientSecret,
+                ClientId = Options.Value.ClientId,
+                ClientSecret = Options.Value.ClientSecret,
                 ClientCredentialStyle = ClientCredentialStyle.PostBody,
                 Code = code,
                 RedirectUri = redirectUri,
@@ -68,8 +60,8 @@ public class JiraOAuthApiClient : IJiraOAuthApiClient
             new RefreshTokenRequest
             {
                 Address = TokenEndpoint,
-                ClientId = Options.ClientId,
-                ClientSecret = Options.ClientSecret,
+                ClientId = Options.Value.ClientId,
+                ClientSecret = Options.Value.ClientSecret,
                 ClientCredentialStyle = ClientCredentialStyle.PostBody,
                 RefreshToken = refreshToken,
             },
@@ -80,7 +72,7 @@ public class JiraOAuthApiClient : IJiraOAuthApiClient
 
     public async Task<IReadOnlyList<JiraAccessibleResourceResponse>> GetAccessibleResourcesAsync(string accessToken, CancellationToken cancellationToken)
     {
-        var uri = $"{Options.ApiBaseUrl.TrimEnd('/')}/oauth/token/accessible-resources";
+        var uri = $"{Options.Value.ApiBaseUrl.TrimEnd('/')}/oauth/token/accessible-resources";
         using var request = new HttpRequestMessage(HttpMethod.Get, uri);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
