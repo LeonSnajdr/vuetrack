@@ -1,7 +1,7 @@
 using Samhammer.DependencyInjection.Attributes;
 using Vuetrack.Connectors.Abstractions;
 
-namespace Vuetrack.Api.Infrastructure.Connectors;
+namespace Vuetrack.Api.Features.Connectors;
 
 [Inject]
 public class ConnectorRegistry(IEnumerable<IConnector> connectors) : IConnectorRegistry
