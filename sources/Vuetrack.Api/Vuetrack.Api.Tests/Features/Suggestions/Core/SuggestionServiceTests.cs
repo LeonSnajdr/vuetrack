@@ -175,8 +175,8 @@ public class SuggestionServiceTests
 
         var updated = result.Should().BeOfType<SuggestionUpdated>().Subject;
         updated.Suggestion.Title.Should().Be("Changed");
-        updated.Suggestion.Start.Should().Be(At(10, 0));
-        updated.Suggestion.End.Should().Be(At(11, 0));
+        updated.Suggestion.DateStarted.Should().Be(At(10, 0));
+        updated.Suggestion.DateEnded.Should().Be(At(11, 0));
         updated.Suggestion.Status.Should().Be(nameof(SuggestionStatus.Edited));
     }
 
@@ -228,21 +228,21 @@ public class SuggestionServiceTests
     private static SuggestionUpdateContract UpdateContract(string title, DateTime start, DateTime end) => new()
     {
         Title = title,
-        Start = start,
-        End = end,
+        DateStarted = start,
+        DateEnded = end,
     };
 
     private static SuggestionModel BuildModel(string userId, string title, DateTime start, DateTime end) => new()
     {
         UserId = userId,
         Title = title,
-        Start = start,
-        End = end,
+        DateStarted = start,
+        DateEnded = end,
         Status = SuggestionStatus.Pending,
         Sources = [],
         Confidence = 0.5,
-        CreatedAt = start,
-        UpdatedAt = start,
+        DateCreated = start,
+        DateUpdated = start,
     };
 
     private static ConnectorDescriptor Descriptor(ConnectorKey key) => new()
@@ -259,7 +259,7 @@ public class SuggestionServiceTests
         ConnectorKey = connectorKey,
         ExternalId = externalId,
         Title = title,
-        Start = start,
-        End = end,
+        DateStarted = start,
+        DateEnded = end,
     };
 }

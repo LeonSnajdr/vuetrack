@@ -25,8 +25,8 @@ public class SuggestionRepository : BaseRepositoryMongo<SuggestionModel>, ISugge
     public async Task<List<SuggestionModel>> ListAsync(string userId, DateTime from, DateTime to)
     {
         return await Collection
-            .Find(x => x.UserId == userId && x.Status != SuggestionStatus.Dismissed && x.Start >= from && x.Start < to)
-            .SortBy(x => x.Start)
+            .Find(x => x.UserId == userId && x.Status != SuggestionStatus.Dismissed && x.DateStarted >= from && x.DateStarted < to)
+            .SortBy(x => x.DateStarted)
             .ToListAsync();
     }
 
@@ -52,10 +52,10 @@ public class SuggestionRepository : BaseRepositoryMongo<SuggestionModel>, ISugge
         var update = Update
             .Set(x => x.Title, title)
             .Set(x => x.Description, description)
-            .Set(x => x.Start, start)
-            .Set(x => x.End, end)
+            .Set(x => x.DateStarted, start)
+            .Set(x => x.DateEnded, end)
             .Set(x => x.Status, SuggestionStatus.Edited)
-            .Set(x => x.UpdatedAt, updatedAt);
+            .Set(x => x.DateUpdated, updatedAt);
 
         var filters = new List<FilterDefinition<SuggestionModel>>
         {
@@ -73,7 +73,7 @@ public class SuggestionRepository : BaseRepositoryMongo<SuggestionModel>, ISugge
     {
         var update = Update
             .Set(x => x.Status, status)
-            .Set(x => x.UpdatedAt, updatedAt);
+            .Set(x => x.DateUpdated, updatedAt);
 
         var filters = new List<FilterDefinition<SuggestionModel>>
         {
@@ -93,7 +93,7 @@ public class SuggestionRepository : BaseRepositoryMongo<SuggestionModel>, ISugge
             return;
         }
 
-        var indexKeys = Builders<SuggestionModel>.IndexKeys.Ascending(x => x.UserId).Ascending(x => x.Start);
+        var indexKeys = Builders<SuggestionModel>.IndexKeys.Ascending(x => x.UserId).Ascending(x => x.DateStarted);
 
         _ = Collection.Indexes.CreateOneAsync(new CreateIndexModel<SuggestionModel>(indexKeys))
             .ContinueWith(t => logger.LogWarning(t.Exception, "Failed to ensure suggestions index"), TaskContinuationOptions.OnlyOnFaulted);

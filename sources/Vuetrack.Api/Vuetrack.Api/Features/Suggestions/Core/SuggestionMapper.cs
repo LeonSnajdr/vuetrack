@@ -12,8 +12,8 @@ public static class SuggestionMapper
             UserId = userId,
             Title = suggestion.Title,
             Description = suggestion.Description,
-            Start = suggestion.Start,
-            End = suggestion.End,
+            DateStarted = suggestion.DateStarted,
+            DateEnded = suggestion.DateEnded,
             Status = SuggestionStatus.Pending,
             Sources = suggestion.Sources.Select(s => new SuggestionSourceModel
             {
@@ -22,8 +22,8 @@ public static class SuggestionMapper
                 Link = s.Link,
             }).ToList(),
             Confidence = suggestion.Confidence,
-            CreatedAt = now,
-            UpdatedAt = now,
+            DateCreated = now,
+            DateUpdated = now,
         };
     }
 
@@ -33,8 +33,8 @@ public static class SuggestionMapper
             model.Id,
             model.Title,
             model.Description,
-            model.Start,
-            model.End,
+            model.DateStarted,
+            model.DateEnded,
             model.Status.ToString(),
             model.Sources.Select(s => new SuggestionSourceContract(s.ConnectorKey, s.ExternalId, s.Link)).ToList(),
             model.Confidence,

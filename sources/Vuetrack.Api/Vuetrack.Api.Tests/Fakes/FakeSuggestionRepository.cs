@@ -12,8 +12,8 @@ public sealed class FakeSuggestionRepository : ISuggestionRepository
     public Task<List<SuggestionModel>> ListAsync(string userId, DateTime from, DateTime to)
     {
         var result = items
-            .Where(x => x.UserId == userId && x.Status != SuggestionStatus.Dismissed && x.Start >= from && x.Start < to)
-            .OrderBy(x => x.Start)
+            .Where(x => x.UserId == userId && x.Status != SuggestionStatus.Dismissed && x.DateStarted >= from && x.DateStarted < to)
+            .OrderBy(x => x.DateStarted)
             .ToList();
 
         return Task.FromResult(result);
@@ -50,10 +50,10 @@ public sealed class FakeSuggestionRepository : ISuggestionRepository
 
         model.Title = title;
         model.Description = description;
-        model.Start = start;
-        model.End = end;
+        model.DateStarted = start;
+        model.DateEnded = end;
         model.Status = SuggestionStatus.Edited;
-        model.UpdatedAt = updatedAt;
+        model.DateUpdated = updatedAt;
 
         return Task.FromResult<SuggestionModel?>(model);
     }
@@ -67,7 +67,7 @@ public sealed class FakeSuggestionRepository : ISuggestionRepository
         }
 
         model.Status = status;
-        model.UpdatedAt = updatedAt;
+        model.DateUpdated = updatedAt;
 
         return Task.FromResult(true);
     }

@@ -68,7 +68,7 @@ public class SuggestionService(IConnectorRegistry registry, IEnumerable<IConnect
 
     public async Task<SuggestionUpdateResult> UpdateAsync(string userId, string id, SuggestionUpdateContract request, CancellationToken cancellationToken)
     {
-        var updated = await Repository.UpdateFieldsAsync(id, userId, request.Title, request.Description, request.Start, request.End, DateTime.UtcNow);
+        var updated = await Repository.UpdateFieldsAsync(id, userId, request.Title, request.Description, request.DateStarted, request.DateEnded, DateTime.UtcNow);
 
         return updated is null ? new SuggestionNotFound() : new SuggestionUpdated(updated.ToContract());
     }

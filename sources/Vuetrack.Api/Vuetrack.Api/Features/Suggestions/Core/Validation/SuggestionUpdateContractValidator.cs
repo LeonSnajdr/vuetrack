@@ -11,6 +11,6 @@ public class SuggestionUpdateContractValidator : AbstractValidator<SuggestionUpd
     {
         RuleFor(x => x.Title).NotEmpty().MaximumLength(200);
         RuleFor(x => x.Description).MaximumLength(2000);
-        RuleFor(x => x.Start).LessThan(x => x.End).WithMessage("Start must be before End.");
+        RuleFor(x => x.DateStarted).LessThan(x => x.DateEnded).WithMessage("Start must be before End.");
     }
 }

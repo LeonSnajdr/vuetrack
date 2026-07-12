@@ -19,8 +19,8 @@ public sealed class SuggestionEngine(IOptions<SuggestionEngineOptions> options) 
 
         foreach (var block in blocks)
         {
-            var start = RoundDown(block.Start, Options.RoundTo);
-            var end = RoundUp(block.End, Options.RoundTo);
+            var start = RoundDown(block.DateStarted, Options.RoundTo);
+            var end = RoundUp(block.DateEnded, Options.RoundTo);
 
             if (end - start < Options.MinimumBlock)
             {
@@ -31,7 +31,7 @@ public sealed class SuggestionEngine(IOptions<SuggestionEngineOptions> options) 
         }
 
         return suggestions
-            .OrderBy(s => s.Start)
+            .OrderBy(s => s.DateStarted)
             .ThenBy(s => s.Title, StringComparer.Ordinal)
             .ToList();
     }
@@ -42,15 +42,15 @@ public sealed class SuggestionEngine(IOptions<SuggestionEngineOptions> options) 
 
         foreach (var signal in signals)
         {
-            var hasExplicitDuration = signal.End.HasValue;
-            var effectiveEnd = signal.End ?? signal.Start + Options.DefaultPointDuration;
+            var hasExplicitDuration = signal.DateEnded.HasValue;
+            var effectiveEnd = signal.DateEnded ?? signal.DateStarted + Options.DefaultPointDuration;
 
-            if (effectiveEnd <= from || signal.Start >= to)
+            if (effectiveEnd <= from || signal.DateStarted >= to)
             {
                 continue;
             }
 
-            var start = signal.Start < from ? from : signal.Start;
+            var start = signal.DateStarted < from ? from : signal.DateStarted;
             var end = effectiveEnd > to ? to : effectiveEnd;
 
             if (end <= start)
@@ -84,8 +84,8 @@ public sealed class SuggestionEngine(IOptions<SuggestionEngineOptions> options) 
 
             byKey[key] = existing with
             {
-                Start = existing.Start < signal.Start ? existing.Start : signal.Start,
-                End = existing.End > signal.End ? existing.End : signal.End,
+                DateStarted = existing.DateStarted < signal.DateStarted ? existing.DateStarted : signal.DateStarted,
+                DateEnded = existing.DateEnded > signal.DateEnded ? existing.DateEnded : signal.DateEnded,
                 HasExplicitDuration = existing.HasExplicitDuration || signal.HasExplicitDuration,
                 Description = existing.Description ?? signal.Description,
                 Link = existing.Link ?? signal.Link,
@@ -105,7 +105,7 @@ public sealed class SuggestionEngine(IOptions<SuggestionEngineOptions> options) 
 
         foreach (var group in groups)
         {
-            var ordered = group.OrderBy(s => s.Start).ThenBy(s => s.ExternalId, StringComparer.Ordinal).ToList();
+            var ordered = group.OrderBy(s => s.DateStarted).ThenBy(s => s.ExternalId, StringComparer.Ordinal).ToList();
 
             List<NormalizedSignal>? current = null;
             var blockStart = default(DateTime);
@@ -116,18 +116,18 @@ public sealed class SuggestionEngine(IOptions<SuggestionEngineOptions> options) 
                 if (current is null)
                 {
                     current = [signal];
-                    blockStart = signal.Start;
-                    blockEnd = signal.End;
+                    blockStart = signal.DateStarted;
+                    blockEnd = signal.DateEnded;
                     continue;
                 }
 
-                var gap = signal.Start - blockEnd;
+                var gap = signal.DateStarted - blockEnd;
                 if (gap <= Options.MergeGap)
                 {
                     current.Add(signal);
-                    if (signal.End > blockEnd)
+                    if (signal.DateEnded > blockEnd)
                     {
-                        blockEnd = signal.End;
+                        blockEnd = signal.DateEnded;
                     }
 
                     continue;
@@ -135,8 +135,8 @@ public sealed class SuggestionEngine(IOptions<SuggestionEngineOptions> options) 
 
                 blocks.Add(new SignalBlock(blockStart, blockEnd, current));
                 current = [signal];
-                blockStart = signal.Start;
-                blockEnd = signal.End;
+                blockStart = signal.DateStarted;
+                blockEnd = signal.DateEnded;
             }
 
             if (current is not null)
@@ -151,7 +151,7 @@ public sealed class SuggestionEngine(IOptions<SuggestionEngineOptions> options) 
     private static TimeSuggestion BuildSuggestion(IReadOnlyList<NormalizedSignal> contributors, DateTime start, DateTime end)
     {
         var ordered = contributors
-            .OrderBy(s => s.Start)
+            .OrderBy(s => s.DateStarted)
             .ThenBy(s => s.ConnectorKey)
             .ThenBy(s => s.ExternalId, StringComparer.Ordinal)
             .ToList();
@@ -204,13 +204,13 @@ public sealed class SuggestionEngine(IOptions<SuggestionEngineOptions> options) 
         string ExternalId,
         string Title,
         string? Description,
-        DateTime Start,
-        DateTime End,
+        DateTime DateStarted,
+        DateTime DateEnded,
         string? Link,
         bool HasExplicitDuration,
         string CorrelationKey);
 
-    private sealed record SignalBlock(DateTime Start, DateTime End, IReadOnlyList<NormalizedSignal> Signals);
+    private sealed record SignalBlock(DateTime DateStarted, DateTime DateEnded, IReadOnlyList<NormalizedSignal> Signals);
 }
 
 public interface ISuggestionEngine

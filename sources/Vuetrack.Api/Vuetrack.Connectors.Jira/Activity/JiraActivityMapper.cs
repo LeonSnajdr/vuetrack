@@ -10,8 +10,8 @@ public static class JiraActivityMapper
         ExternalId = $"{worklog.IssueKey}:worklog:{worklog.WorklogId}",
         Title = $"{worklog.IssueKey} {worklog.IssueSummary}".TrimEnd(),
         Description = worklog.Comment,
-        Start = worklog.Started,
-        End = worklog.Started.AddSeconds(worklog.TimeSpentSeconds),
+        DateStarted = worklog.Started,
+        DateEnded = worklog.Started.AddSeconds(worklog.TimeSpentSeconds),
         Link = BrowseUrl(context.SiteUrl, worklog.IssueKey),
         Metadata = BuildMetadata(worklog.IssueKey, worklog.Project, worklog.IssueType, worklog.Status, ("worklogId", worklog.WorklogId)),
     };
@@ -22,8 +22,8 @@ public static class JiraActivityMapper
         ExternalId = $"{issue.IssueKey}:issue",
         Title = $"{issue.IssueKey} {issue.Summary}".TrimEnd(),
         Description = null,
-        Start = issue.Updated,
-        End = null,
+        DateStarted = issue.Updated,
+        DateEnded = null,
         Link = BrowseUrl(context.SiteUrl, issue.IssueKey),
         Metadata = BuildMetadata(issue.IssueKey, issue.Project, issue.IssueType, issue.Status),
     };

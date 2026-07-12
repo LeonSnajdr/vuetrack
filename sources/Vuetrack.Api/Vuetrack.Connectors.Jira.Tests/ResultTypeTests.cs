@@ -68,6 +68,6 @@ public class ResultTypeTests
         ConnectorKey = ConnectorKey.Jira,
         ExternalId = "PROJ-1:issue",
         Title = "PROJ-1",
-        Start = DateTime.UnixEpoch,
+        DateStarted = DateTime.UnixEpoch,
     };
 }

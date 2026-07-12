@@ -35,8 +35,8 @@ public class SuggestionEngineTests
         result.Should().HaveCount(1);
         var suggestion = result[0];
         suggestion.Title.Should().Be("PROJ-1 Fix login");
-        suggestion.Start.Should().Be(At(9, 0));
-        suggestion.End.Should().Be(At(9, 15));
+        suggestion.DateStarted.Should().Be(At(9, 0));
+        suggestion.DateEnded.Should().Be(At(9, 15));
         suggestion.Confidence.Should().BeApproximately(0.6, 0.0001);
         suggestion.Sources.Should().ContainSingle();
         suggestion.Sources[0].ConnectorKey.Should().Be(ConnectorKey.Jira);
@@ -54,8 +54,8 @@ public class SuggestionEngineTests
 
         result.Should().HaveCount(1);
         var suggestion = result[0];
-        suggestion.Start.Should().Be(At(10, 0));
-        suggestion.End.Should().Be(At(10, 15));
+        suggestion.DateStarted.Should().Be(At(10, 0));
+        suggestion.DateEnded.Should().Be(At(10, 15));
         suggestion.Confidence.Should().BeApproximately(0.75, 0.0001);
         suggestion.Sources.Should().HaveCount(2);
     }
@@ -70,10 +70,10 @@ public class SuggestionEngineTests
         var result = engine.Build([first, second], From, To);
 
         result.Should().HaveCount(2);
-        result[0].Start.Should().Be(At(11, 0));
-        result[0].End.Should().Be(At(11, 5));
-        result[1].Start.Should().Be(At(11, 25));
-        result[1].End.Should().Be(At(11, 30));
+        result[0].DateStarted.Should().Be(At(11, 0));
+        result[0].DateEnded.Should().Be(At(11, 5));
+        result[1].DateStarted.Should().Be(At(11, 25));
+        result[1].DateEnded.Should().Be(At(11, 30));
     }
 
     [Fact]
@@ -112,8 +112,8 @@ public class SuggestionEngineTests
         var result = engine.Build([signal], customFrom, customTo);
 
         result.Should().HaveCount(1);
-        result[0].Start.Should().Be(At(9, 0));
-        result[0].End.Should().Be(At(9, 30));
+        result[0].DateStarted.Should().Be(At(9, 0));
+        result[0].DateEnded.Should().Be(At(9, 30));
     }
 
     [Fact]
@@ -138,8 +138,8 @@ public class SuggestionEngineTests
         var result = engine.Build([signal], From, To);
 
         result.Should().HaveCount(1);
-        result[0].Start.Should().Be(At(14, 0));
-        result[0].End.Should().Be(At(14, 15));
+        result[0].DateStarted.Should().Be(At(14, 0));
+        result[0].DateEnded.Should().Be(At(14, 15));
         result[0].Confidence.Should().BeApproximately(0.3, 0.0001);
     }
 
@@ -151,8 +151,8 @@ public class SuggestionEngineTests
 
         var result = engine.Build([signal], From, To);
 
-        result[0].Start.Should().Be(At(15, 0));
-        result[0].End.Should().Be(At(15, 5));
+        result[0].DateStarted.Should().Be(At(15, 0));
+        result[0].DateEnded.Should().Be(At(15, 5));
     }
 
     [Fact]
@@ -163,8 +163,8 @@ public class SuggestionEngineTests
 
         var result = engine.Build([signal], From, To);
 
-        result[0].Start.Should().Be(At(16, 0));
-        result[0].End.Should().Be(At(16, 10));
+        result[0].DateStarted.Should().Be(At(16, 0));
+        result[0].DateEnded.Should().Be(At(16, 10));
     }
 
     [Fact]
@@ -213,8 +213,8 @@ public class SuggestionEngineTests
             ConnectorKey = connectorKey,
             ExternalId = externalId,
             Title = title,
-            Start = start,
-            End = end,
+            DateStarted = start,
+            DateEnded = end,
             Metadata = correlationId is null
                 ? new Dictionary<string, string>()
                 : new Dictionary<string, string> { ["correlationId"] = correlationId },

@@ -111,9 +111,9 @@ public class JiraConnectorHttpTests
         var signal = result.Should().BeOfType<ActivityFetchSuccess>().Which.Signals.Should().ContainSingle().Which;
 
         // The worklog started at 09:00 +02:00, i.e. 07:00 UTC. It must be collapsed to a Kind=Utc instant.
-        signal.Start.Should().Be(new DateTime(2026, 7, 1, 7, 0, 0, DateTimeKind.Utc));
-        signal.Start.Kind.Should().Be(DateTimeKind.Utc);
-        signal.End!.Value.Kind.Should().Be(DateTimeKind.Utc);
+        signal.DateStarted.Should().Be(new DateTime(2026, 7, 1, 7, 0, 0, DateTimeKind.Utc));
+        signal.DateStarted.Kind.Should().Be(DateTimeKind.Utc);
+        signal.DateEnded!.Value.Kind.Should().Be(DateTimeKind.Utc);
 
         static HttpResponseMessage Respond(HttpRequestMessage request)
         {

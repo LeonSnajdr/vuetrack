@@ -56,8 +56,8 @@ public class SuggestionsControllerResultMappingTests
     private static SuggestionUpdateContract UpdateContract() => new()
     {
         Title = "Title",
-        Start = DateTime.UnixEpoch,
-        End = DateTime.UnixEpoch.AddMinutes(30),
+        DateStarted = DateTime.UnixEpoch,
+        DateEnded = DateTime.UnixEpoch.AddMinutes(30),
     };
 
     private static SuggestionsController CreateController(StubSuggestionService service)
