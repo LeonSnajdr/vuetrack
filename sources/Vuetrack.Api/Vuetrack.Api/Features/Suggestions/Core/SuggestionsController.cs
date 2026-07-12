@@ -19,10 +19,6 @@ public class SuggestionsController(ISuggestionService suggestionService) : Contr
     public async Task<IActionResult> List([FromQuery] DateTime from, [FromQuery] DateTime to)
     {
         var userId = User.GetUserId();
-        if (string.IsNullOrEmpty(userId))
-        {
-            return Unauthorized();
-        }
 
         return Ok(await SuggestionService.ListAsync(userId, from, to));
     }
@@ -31,10 +27,6 @@ public class SuggestionsController(ISuggestionService suggestionService) : Contr
     public async Task<IActionResult> Generate([FromBody] GenerateSuggestionsRequestContract request, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
-        if (string.IsNullOrEmpty(userId))
-        {
-            return Unauthorized();
-        }
 
         return Ok(await SuggestionService.GenerateAsync(userId, request, cancellationToken));
     }
@@ -43,10 +35,6 @@ public class SuggestionsController(ISuggestionService suggestionService) : Contr
     public async Task<IActionResult> Update(string id, [FromBody] SuggestionUpdateContract request, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
-        if (string.IsNullOrEmpty(userId))
-        {
-            return Unauthorized();
-        }
 
         var result = await SuggestionService.UpdateAsync(userId, id, request, cancellationToken);
 
@@ -62,10 +50,6 @@ public class SuggestionsController(ISuggestionService suggestionService) : Contr
     public async Task<IActionResult> Dismiss(string id, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
-        if (string.IsNullOrEmpty(userId))
-        {
-            return Unauthorized();
-        }
 
         var result = await SuggestionService.DismissAsync(userId, id, cancellationToken);
 

@@ -30,10 +30,6 @@ public class JiraConnectionController(IJiraConnectionService connectionService) 
     public async Task<IActionResult> Status()
     {
         var userId = User.GetUserId();
-        if (string.IsNullOrEmpty(userId))
-        {
-            return Unauthorized();
-        }
 
         return Ok(await ConnectionService.GetStatusAsync(userId));
     }
@@ -42,10 +38,6 @@ public class JiraConnectionController(IJiraConnectionService connectionService) 
     public async Task<IActionResult> Callback([FromBody] JiraConnectCreateContract request, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
-        if (string.IsNullOrEmpty(userId))
-        {
-            return Unauthorized();
-        }
 
         var result = await ConnectionService.ConnectAsync(userId, request, cancellationToken);
 
@@ -65,10 +57,6 @@ public class JiraConnectionController(IJiraConnectionService connectionService) 
     public async Task<IActionResult> Disconnect()
     {
         var userId = User.GetUserId();
-        if (string.IsNullOrEmpty(userId))
-        {
-            return Unauthorized();
-        }
 
         await ConnectionService.DisconnectAsync(userId);
 
