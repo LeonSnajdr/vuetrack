@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Asp.Versioning;
 using Samhammer.Authentication.Api.Jwt;
 using Samhammer.Authentication.Api.Keycloak;
@@ -36,7 +38,13 @@ try
     builder.Services.AddJwtAuthentication().AddKeycloak(builder.Configuration);
 
     builder.Services.AddScoped<ValidationActionFilter>();
-    builder.Services.AddControllers(options => options.Filters.Add<ValidationActionFilter>());
+    builder.Services
+        .AddControllers(options => options.Filters.Add<ValidationActionFilter>())
+        .AddJsonOptions(opts =>
+        {
+            var enumConverter = new JsonStringEnumConverter(JsonNamingPolicy.CamelCase);
+            opts.JsonSerializerOptions.Converters.Add(enumConverter);
+        });
 
     builder.Services.AddMongoDb(builder.Configuration);
 

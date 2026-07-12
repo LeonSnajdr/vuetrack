@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using Vuetrack.Connectors.Abstractions;
 using Vuetrack.Connectors.Jira.Activity;
 using Xunit;
 
@@ -8,7 +9,7 @@ public class JiraActivityMapperTests
 {
     private const string SiteUrl = "https://acme.atlassian.net";
 
-    private static readonly JiraMapperContext Context = new("jira", SiteUrl);
+    private static readonly JiraMapperContext Context = new(ConnectorKey.Jira, SiteUrl);
 
     private static JiraWorklogContainer Worklog(string issueKey = "PROJ-1", string worklogId = "100") => new()
     {
@@ -38,7 +39,7 @@ public class JiraActivityMapperTests
     {
         var signal = Worklog().ToActivitySignal(Context);
 
-        signal.ConnectorKey.Should().Be("jira");
+        signal.ConnectorKey.Should().Be(ConnectorKey.Jira);
         signal.ExternalId.Should().Be("PROJ-1:worklog:100");
         signal.Title.Should().Be("PROJ-1 Fix login");
         signal.Description.Should().Be("worked on it");

@@ -1,4 +1,5 @@
 using Vuetrack.Api.Features.Suggestions.Core;
+using Vuetrack.Connectors.Abstractions;
 
 namespace Vuetrack.Api.Tests.Fakes;
 
@@ -33,7 +34,7 @@ public sealed class FakeSuggestionRepository : ISuggestionRepository
         return Task.CompletedTask;
     }
 
-    public Task<bool> ExistsBySourceAsync(string userId, string connectorKey, string externalId)
+    public Task<bool> ExistsBySourceAsync(string userId, ConnectorKey connectorKey, string externalId)
     {
         var exists = items.Any(x => x.UserId == userId && x.Sources.Any(s => s.ConnectorKey == connectorKey && s.ExternalId == externalId));
         return Task.FromResult(exists);

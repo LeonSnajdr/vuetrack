@@ -65,7 +65,7 @@ public class ResultTypeTests
 
     private static ActivitySignal Signal() => new()
     {
-        ConnectorKey = "jira",
+        ConnectorKey = ConnectorKey.Jira,
         ExternalId = "PROJ-1:issue",
         Title = "PROJ-1",
         Start = DateTime.UnixEpoch,

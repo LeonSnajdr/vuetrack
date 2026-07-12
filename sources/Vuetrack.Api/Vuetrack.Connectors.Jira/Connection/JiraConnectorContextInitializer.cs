@@ -8,7 +8,7 @@ public class JiraConnectorContextInitializer(IJiraConnectionContextFactory conte
 {
     private IJiraConnectionContextFactory ContextFactory { get; } = contextFactory;
 
-    public string ConnectorKey => JiraConnector.Key;
+    public ConnectorKey ConnectorKey => JiraConnector.Key;
 
     public async Task<bool> TryInitializeAsync(string userId, CancellationToken cancellationToken)
     {

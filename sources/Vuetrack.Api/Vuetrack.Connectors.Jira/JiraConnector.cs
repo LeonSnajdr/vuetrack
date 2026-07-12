@@ -8,7 +8,7 @@ namespace Vuetrack.Connectors.Jira;
 [InjectAs(typeof(IConnector))]
 public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor accessor) : IConnector
 {
-    public const string Key = "jira";
+    public const ConnectorKey Key = ConnectorKey.Jira;
 
     private IJiraApiClient Client { get; } = client;
 

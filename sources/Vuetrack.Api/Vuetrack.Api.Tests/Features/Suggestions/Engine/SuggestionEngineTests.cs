@@ -39,7 +39,7 @@ public class SuggestionEngineTests
         suggestion.End.Should().Be(At(9, 15));
         suggestion.Confidence.Should().BeApproximately(0.6, 0.0001);
         suggestion.Sources.Should().ContainSingle();
-        suggestion.Sources[0].ConnectorKey.Should().Be("jira");
+        suggestion.Sources[0].ConnectorKey.Should().Be(ConnectorKey.Jira);
         suggestion.Sources[0].ExternalId.Should().Be("PROJ-1:worklog:1");
     }
 
@@ -206,7 +206,7 @@ public class SuggestionEngineTests
 
     private static DateTime At(int hour, int minute) => BaseDate + TimeSpan.FromHours(hour) + TimeSpan.FromMinutes(minute);
 
-    private static ActivitySignal Signal(string externalId, string title, DateTime start, DateTime? end = null, string? correlationId = null, string connectorKey = "jira")
+    private static ActivitySignal Signal(string externalId, string title, DateTime start, DateTime? end = null, string? correlationId = null, ConnectorKey connectorKey = ConnectorKey.Jira)
     {
         return new ActivitySignal
         {

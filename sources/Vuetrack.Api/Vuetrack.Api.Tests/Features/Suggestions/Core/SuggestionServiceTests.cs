@@ -20,19 +20,17 @@ public class SuggestionServiceTests
     private static readonly DateTime To = BaseDate.AddDays(1);
 
     [Fact]
-    public async Task GenerateAsync_MultipleConnectors_AggregatesSignalsAndPersistsAllSuggestions()
+    public async Task GenerateAsync_ConnectorReturnsMultipleSignals_AggregatesAndPersistsAllSuggestions()
     {
         var registry = new FakeConnectorRegistry();
-        registry.Add(new FakeConnector(Descriptor("jira"), (_, _) => Task.FromResult<ActivityFetchResult>(
-            new ActivityFetchSuccess([Signal("jira", "J-1:worklog:1", "J-1 work", At(9, 0), At(9, 10))]))));
-        registry.Add(new FakeConnector(Descriptor("other"), (_, _) => Task.FromResult<ActivityFetchResult>(
-            new ActivityFetchSuccess([Signal("other", "O-1:worklog:1", "O-1 work", At(11, 0), At(11, 10))]))));
+        registry.Add(new FakeConnector(Descriptor(ConnectorKey.Jira), (_, _) => Task.FromResult<ActivityFetchResult>(
+            new ActivityFetchSuccess(
+            [
+                Signal(ConnectorKey.Jira, "J-1:worklog:1", "J-1 work", At(9, 0), At(9, 10)),
+                Signal(ConnectorKey.Jira, "J-2:worklog:1", "J-2 work", At(11, 0), At(11, 10)),
+            ]))));
 
-        var initializers = new IConnectorContextInitializer[]
-        {
-            new FakeConnectorContextInitializer("jira", true),
-            new FakeConnectorContextInitializer("other", true),
-        };
+        var initializers = new IConnectorContextInitializer[] { new FakeConnectorContextInitializer(ConnectorKey.Jira, true) };
 
         var repository = new FakeSuggestionRepository();
         var service = CreateService(registry, initializers, repository);
@@ -40,56 +38,70 @@ public class SuggestionServiceTests
         var result = await service.GenerateAsync("user-1", Request(), CancellationToken.None);
 
         result.GeneratedCount.Should().Be(2);
-        result.ConnectorOutcomes.Should().HaveCount(2);
-        result.ConnectorOutcomes.Should().OnlyContain(o => o.Status == "Success" && o.SignalCount == 1);
+        var outcome = result.ConnectorOutcomes.Should().ContainSingle().Subject;
+        outcome.Status.Should().Be("Success");
+        outcome.SignalCount.Should().Be(2);
         repository.Items.Should().HaveCount(2);
     }
 
-    [Fact]
-    public async Task GenerateAsync_MixedConnectorOutcomes_NeverThrowsAndRecordsEachOutcome()
+    public enum OutcomeScenario
     {
-        var registry = new FakeConnectorRegistry();
-        registry.Add(new FakeConnector(Descriptor("throws"), (_, _) => throw new InvalidOperationException("boom")));
-        registry.Add(new FakeConnector(Descriptor("authfail"), (_, _) => Task.FromResult<ActivityFetchResult>(new ActivityFetchAuthFailed("nope"))));
-        registry.Add(new FakeConnector(Descriptor("ratelimited"), (_, _) => Task.FromResult<ActivityFetchResult>(new ActivityFetchRateLimited(TimeSpan.FromSeconds(30)))));
-        registry.Add(new FakeConnector(Descriptor("notconnected"), (_, _) => throw new InvalidOperationException("should never be called")));
-        registry.Add(new FakeConnector(Descriptor("success"), (_, _) => Task.FromResult<ActivityFetchResult>(
-            new ActivityFetchSuccess([Signal("success", "S-1:worklog:1", "S-1 work", At(9, 0), At(9, 10))]))));
+        Success,
+        AuthFailed,
+        RateLimited,
+        ConnectorError,
+        Throws,
+        NotConnected,
+    }
 
-        var initializers = new IConnectorContextInitializer[]
+    [Theory]
+    [InlineData(OutcomeScenario.Success, "Success")]
+    [InlineData(OutcomeScenario.AuthFailed, "AuthFailed")]
+    [InlineData(OutcomeScenario.RateLimited, "RateLimited")]
+    [InlineData(OutcomeScenario.ConnectorError, "Error")]
+    [InlineData(OutcomeScenario.Throws, "Error")]
+    [InlineData(OutcomeScenario.NotConnected, "NotConnected")]
+    public async Task GenerateAsync_ConnectorOutcome_IsRecordedWithoutThrowing(OutcomeScenario scenario, string expectedStatus)
+    {
+        var connected = scenario != OutcomeScenario.NotConnected;
+
+        Func<ActivityFetchContainer, CancellationToken, Task<ActivityFetchResult>> fetch = (_, _) => scenario switch
         {
-            new FakeConnectorContextInitializer("throws", true),
-            new FakeConnectorContextInitializer("authfail", true),
-            new FakeConnectorContextInitializer("ratelimited", true),
-            new FakeConnectorContextInitializer("notconnected", false),
-            new FakeConnectorContextInitializer("success", true),
+            OutcomeScenario.Success => Task.FromResult<ActivityFetchResult>(
+                new ActivityFetchSuccess([Signal(ConnectorKey.Jira, "J-1:worklog:1", "J-1 work", At(9, 0), At(9, 10))])),
+            OutcomeScenario.AuthFailed => Task.FromResult<ActivityFetchResult>(new ActivityFetchAuthFailed("nope")),
+            OutcomeScenario.RateLimited => Task.FromResult<ActivityFetchResult>(new ActivityFetchRateLimited(TimeSpan.FromSeconds(30))),
+            OutcomeScenario.ConnectorError => Task.FromResult<ActivityFetchResult>(new ActivityFetchConnectorError("boom")),
+            OutcomeScenario.Throws => throw new InvalidOperationException("boom"),
+            OutcomeScenario.NotConnected => throw new InvalidOperationException("should never be called"),
+            _ => throw new ArgumentOutOfRangeException(nameof(scenario), scenario, null),
         };
 
+        var registry = new FakeConnectorRegistry();
+        registry.Add(new FakeConnector(Descriptor(ConnectorKey.Jira), fetch));
+
+        var initializers = new IConnectorContextInitializer[] { new FakeConnectorContextInitializer(ConnectorKey.Jira, connected) };
         var repository = new FakeSuggestionRepository();
         var service = CreateService(registry, initializers, repository);
 
         var result = await service.GenerateAsync("user-1", Request(), CancellationToken.None);
 
-        result.ConnectorOutcomes.Should().HaveCount(5);
-        result.ConnectorOutcomes.First(o => o.ConnectorKey == "throws").Status.Should().Be("Error");
-        result.ConnectorOutcomes.First(o => o.ConnectorKey == "authfail").Status.Should().Be("AuthFailed");
-        result.ConnectorOutcomes.First(o => o.ConnectorKey == "ratelimited").Status.Should().Be("RateLimited");
-        result.ConnectorOutcomes.First(o => o.ConnectorKey == "notconnected").Status.Should().Be("NotConnected");
-        result.ConnectorOutcomes.First(o => o.ConnectorKey == "success").Status.Should().Be("Success");
-        result.GeneratedCount.Should().Be(1);
+        var outcome = result.ConnectorOutcomes.Should().ContainSingle().Subject;
+        outcome.ConnectorKey.Should().Be(ConnectorKey.Jira);
+        outcome.Status.Should().Be(expectedStatus);
     }
 
     [Fact]
     public async Task GenerateAsync_SecondRunOverSameRange_InsertsNothingNewAndPreservesEditedStatus()
     {
         var registry = new FakeConnectorRegistry();
-        registry.Add(new FakeConnector(Descriptor("jira"), (_, _) => Task.FromResult<ActivityFetchResult>(new ActivityFetchSuccess(
+        registry.Add(new FakeConnector(Descriptor(ConnectorKey.Jira), (_, _) => Task.FromResult<ActivityFetchResult>(new ActivityFetchSuccess(
         [
-            Signal("jira", "J-1:worklog:1", "J-1 work", At(9, 0), At(9, 10)),
-            Signal("jira", "J-2:worklog:1", "J-2 work", At(12, 0), At(12, 10)),
+            Signal(ConnectorKey.Jira, "J-1:worklog:1", "J-1 work", At(9, 0), At(9, 10)),
+            Signal(ConnectorKey.Jira, "J-2:worklog:1", "J-2 work", At(12, 0), At(12, 10)),
         ]))));
 
-        var initializers = new IConnectorContextInitializer[] { new FakeConnectorContextInitializer("jira", true) };
+        var initializers = new IConnectorContextInitializer[] { new FakeConnectorContextInitializer(ConnectorKey.Jira, true) };
         var repository = new FakeSuggestionRepository();
         var service = CreateService(registry, initializers, repository);
 
@@ -233,16 +245,16 @@ public class SuggestionServiceTests
         UpdatedAt = start,
     };
 
-    private static ConnectorDescriptor Descriptor(string key) => new()
+    private static ConnectorDescriptor Descriptor(ConnectorKey key) => new()
     {
         Key = key,
-        DisplayName = key,
+        DisplayName = key.ToString(),
         Capabilities = ConnectorCapabilities.None,
     };
 
     private static DateTime At(int hour, int minute) => BaseDate + TimeSpan.FromHours(hour) + TimeSpan.FromMinutes(minute);
 
-    private static ActivitySignal Signal(string connectorKey, string externalId, string title, DateTime start, DateTime? end = null) => new()
+    private static ActivitySignal Signal(ConnectorKey connectorKey, string externalId, string title, DateTime start, DateTime? end = null) => new()
     {
         ConnectorKey = connectorKey,
         ExternalId = externalId,

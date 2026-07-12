@@ -10,5 +10,5 @@ public class ConnectorRegistry(IEnumerable<IConnector> connectors) : IConnectorR
 
     public IReadOnlyList<ConnectorDescriptor> Descriptors => Connectors.Select(connector => connector.Descriptor).ToList();
 
-    public IConnector? Resolve(string key) => Connectors.FirstOrDefault(connector => connector.Descriptor.Key == key);
+    public IConnector? Resolve(ConnectorKey key) => Connectors.FirstOrDefault(connector => connector.Descriptor.Key == key);
 }

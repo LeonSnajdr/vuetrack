@@ -2,7 +2,7 @@ namespace Vuetrack.Connectors.Abstractions;
 
 public sealed record ConnectorDescriptor
 {
-    public required string Key { get; init; }
+    public required ConnectorKey Key { get; init; }
 
     public required string DisplayName { get; init; }
 

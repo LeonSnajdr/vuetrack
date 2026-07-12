@@ -60,7 +60,7 @@ public sealed class SuggestionEngine(IOptions<SuggestionEngineOptions> options) 
 
             var correlationKey = signal.Metadata.TryGetValue(Options.CorrelationMetadataKey, out var explicitKey) && !string.IsNullOrEmpty(explicitKey)
                 ? explicitKey
-                : $"{signal.ConnectorKey}|{signal.Title}";
+                : $"{signal.ConnectorKey.ToString()}|{signal.Title}";
 
             result.Add(new NormalizedSignal(signal.ConnectorKey, signal.ExternalId, signal.Title, signal.Description, start, end, signal.Link, hasExplicitDuration, correlationKey));
         }
@@ -70,7 +70,7 @@ public sealed class SuggestionEngine(IOptions<SuggestionEngineOptions> options) 
 
     private static IReadOnlyList<NormalizedSignal> Deduplicate(IReadOnlyList<NormalizedSignal> signals)
     {
-        var byKey = new Dictionary<(string ConnectorKey, string ExternalId), NormalizedSignal>();
+        var byKey = new Dictionary<(ConnectorKey ConnectorKey, string ExternalId), NormalizedSignal>();
 
         foreach (var signal in signals)
         {
@@ -152,7 +152,7 @@ public sealed class SuggestionEngine(IOptions<SuggestionEngineOptions> options) 
     {
         var ordered = contributors
             .OrderBy(s => s.Start)
-            .ThenBy(s => s.ConnectorKey, StringComparer.Ordinal)
+            .ThenBy(s => s.ConnectorKey)
             .ThenBy(s => s.ExternalId, StringComparer.Ordinal)
             .ToList();
 
@@ -200,7 +200,7 @@ public sealed class SuggestionEngine(IOptions<SuggestionEngineOptions> options) 
     }
 
     private sealed record NormalizedSignal(
-        string ConnectorKey,
+        ConnectorKey ConnectorKey,
         string ExternalId,
         string Title,
         string? Description,

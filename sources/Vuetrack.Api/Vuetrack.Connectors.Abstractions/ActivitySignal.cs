@@ -2,7 +2,7 @@ namespace Vuetrack.Connectors.Abstractions;
 
 public sealed record ActivitySignal
 {
-    public required string ConnectorKey { get; init; }
+    public required ConnectorKey ConnectorKey { get; init; }
 
     public required string ExternalId { get; init; }
 

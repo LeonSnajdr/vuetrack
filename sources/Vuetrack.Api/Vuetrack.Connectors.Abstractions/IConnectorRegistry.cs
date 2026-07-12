@@ -4,5 +4,5 @@ public interface IConnectorRegistry
 {
     IReadOnlyList<ConnectorDescriptor> Descriptors { get; }
 
-    IConnector? Resolve(string key);
+    IConnector? Resolve(ConnectorKey key);
 }

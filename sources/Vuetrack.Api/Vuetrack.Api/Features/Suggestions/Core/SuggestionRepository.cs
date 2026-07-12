@@ -2,6 +2,7 @@ using MongoDB.Driver;
 using Samhammer.DependencyInjection.Attributes;
 using Samhammer.Mongo;
 using Samhammer.Mongo.Abstractions;
+using Vuetrack.Connectors.Abstractions;
 
 namespace Vuetrack.Api.Features.Suggestions.Core;
 
@@ -39,7 +40,7 @@ public class SuggestionRepository : BaseRepositoryMongo<SuggestionModel>, ISugge
         await Collection.InsertManyAsync(items);
     }
 
-    public async Task<bool> ExistsBySourceAsync(string userId, string connectorKey, string externalId)
+    public async Task<bool> ExistsBySourceAsync(string userId, ConnectorKey connectorKey, string externalId)
     {
         return await Collection
             .Find(x => x.UserId == userId && x.Sources.Any(s => s.ConnectorKey == connectorKey && s.ExternalId == externalId))
@@ -105,7 +106,7 @@ public interface ISuggestionRepository : IBaseRepositoryMongo<SuggestionModel>
 
     Task InsertManyAsync(IReadOnlyList<SuggestionModel> items);
 
-    Task<bool> ExistsBySourceAsync(string userId, string connectorKey, string externalId);
+    Task<bool> ExistsBySourceAsync(string userId, ConnectorKey connectorKey, string externalId);
 
     Task<SuggestionModel?> UpdateFieldsAsync(string id, string userId, string title, string? description, DateTime start, DateTime end, DateTime updatedAt);
 

@@ -1,7 +1,7 @@
 export type ConnectorDescriptorContract = {
     key: string;
     displayName: string;
-    capabilities: number;
+    capabilities: string;
 };
 
 export type JiraAuthorizeResponse = {
