@@ -1,8 +1,10 @@
 using Microsoft.Extensions.Options;
+using Samhammer.DependencyInjection.Attributes;
 using Vuetrack.Connectors.Abstractions;
 
-namespace Vuetrack.Suggestions.Engine;
+namespace Vuetrack.Api.Features.Suggestions.Engine;
 
+[Inject]
 public sealed class SuggestionEngine(IOptions<SuggestionEngineOptions> options) : ISuggestionEngine
 {
     private SuggestionEngineOptions Options { get; } = options.Value;
@@ -209,4 +211,9 @@ public sealed class SuggestionEngine(IOptions<SuggestionEngineOptions> options) 
         string CorrelationKey);
 
     private sealed record SignalBlock(DateTimeOffset Start, DateTimeOffset End, IReadOnlyList<NormalizedSignal> Signals);
+}
+
+public interface ISuggestionEngine
+{
+    IReadOnlyList<TimeSuggestion> Build(IReadOnlyList<ActivitySignal> signals, DateTimeOffset from, DateTimeOffset to);
 }

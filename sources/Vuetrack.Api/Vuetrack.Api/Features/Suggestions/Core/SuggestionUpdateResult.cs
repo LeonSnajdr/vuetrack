@@ -1,6 +1,6 @@
-using Vuetrack.Api.Features.Suggestions.Contracts;
+using Vuetrack.Api.Features.Suggestions.Core.Contracts;
 
-namespace Vuetrack.Api.Features.Suggestions;
+namespace Vuetrack.Api.Features.Suggestions.Core;
 
 public abstract record SuggestionUpdateResult;
 

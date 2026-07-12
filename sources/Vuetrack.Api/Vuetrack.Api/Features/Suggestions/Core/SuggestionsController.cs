@@ -1,11 +1,11 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Vuetrack.Api.Features.Suggestions.Contracts;
-using Vuetrack.Api.Features.Suggestions.Services;
+using Vuetrack.Api.Features.Suggestions.Core.Contracts;
+using Vuetrack.Api.Features.Suggestions.Core.Services;
 using Vuetrack.Api.Infrastructure.Authentication;
 
-namespace Vuetrack.Api.Features.Suggestions;
+namespace Vuetrack.Api.Features.Suggestions.Core;
 
 [ApiController]
 [ApiVersion("1")]

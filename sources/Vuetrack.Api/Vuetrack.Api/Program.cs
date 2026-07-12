@@ -8,11 +8,11 @@ using Samhammer.Swagger.Authentication;
 using Samhammer.Swagger.Versioning;
 using Samhammer.Web.Common.Extensions;
 using Serilog;
+using Vuetrack.Api.Features.Suggestions.Engine;
 using Vuetrack.Api.Infrastructure.Config;
 using Vuetrack.Api.Infrastructure.Cors;
 using Vuetrack.Api.Infrastructure.Validation;
 using Vuetrack.Logging;
-using Vuetrack.Suggestions.Engine;
 using ZiggyCreatures.Caching.Fusion;
 
 Log.Logger = new LoggerConfiguration()
@@ -32,11 +32,6 @@ try
 
     builder.Services.ResolveOptions(builder.Configuration);
     builder.Services.ResolveDependencies();
-
-    // The suggestion engine lives in a pure project with no Samhammer.* reference, so it can't
-    // use [Option]/ResolveOptions() like every other feature - bind and register it explicitly.
-    builder.Services.Configure<SuggestionEngineOptions>(builder.Configuration.GetSection(nameof(SuggestionEngineOptions)));
-    builder.Services.AddSuggestionEngine();
 
     builder.Services.AddJwtAuthentication().AddKeycloak(builder.Configuration);
 

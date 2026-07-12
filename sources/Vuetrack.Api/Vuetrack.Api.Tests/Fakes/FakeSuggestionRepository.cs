@@ -1,4 +1,4 @@
-using Vuetrack.Api.Features.Suggestions;
+using Vuetrack.Api.Features.Suggestions.Core;
 
 namespace Vuetrack.Api.Tests.Fakes;
 

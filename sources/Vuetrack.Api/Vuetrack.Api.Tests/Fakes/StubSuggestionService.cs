@@ -1,6 +1,6 @@
-using Vuetrack.Api.Features.Suggestions;
-using Vuetrack.Api.Features.Suggestions.Contracts;
-using Vuetrack.Api.Features.Suggestions.Services;
+using Vuetrack.Api.Features.Suggestions.Core;
+using Vuetrack.Api.Features.Suggestions.Core.Contracts;
+using Vuetrack.Api.Features.Suggestions.Core.Services;
 
 namespace Vuetrack.Api.Tests.Fakes;
 

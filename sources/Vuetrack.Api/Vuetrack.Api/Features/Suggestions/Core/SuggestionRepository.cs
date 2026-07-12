@@ -1,10 +1,9 @@
-using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using Samhammer.DependencyInjection.Attributes;
 using Samhammer.Mongo;
 using Samhammer.Mongo.Abstractions;
 
-namespace Vuetrack.Api.Features.Suggestions;
+namespace Vuetrack.Api.Features.Suggestions.Core;
 
 [Inject]
 public class SuggestionRepository : BaseRepositoryMongo<SuggestionModel>, ISuggestionRepository

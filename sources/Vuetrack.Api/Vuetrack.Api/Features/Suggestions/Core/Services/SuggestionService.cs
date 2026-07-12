@@ -1,18 +1,12 @@
-using Microsoft.Extensions.Logging;
 using Samhammer.DependencyInjection.Attributes;
-using Vuetrack.Api.Features.Suggestions.Contracts;
+using Vuetrack.Api.Features.Suggestions.Core.Contracts;
+using Vuetrack.Api.Features.Suggestions.Engine;
 using Vuetrack.Connectors.Abstractions;
-using Vuetrack.Suggestions.Engine;
 
-namespace Vuetrack.Api.Features.Suggestions.Services;
+namespace Vuetrack.Api.Features.Suggestions.Core.Services;
 
 [Inject]
-public class SuggestionService(
-    IConnectorRegistry registry,
-    IEnumerable<IConnectorContextInitializer> contextInitializers,
-    ISuggestionRepository repository,
-    ISuggestionEngine engine,
-    ILogger<SuggestionService> logger) : ISuggestionService
+public class SuggestionService(IConnectorRegistry registry, IEnumerable<IConnectorContextInitializer> contextInitializers, ISuggestionRepository repository, ISuggestionEngine engine, ILogger<SuggestionService> logger) : ISuggestionService
 {
     private IConnectorRegistry Registry { get; } = registry;
 
@@ -76,20 +70,17 @@ public class SuggestionService(
     {
         var updated = await Repository.UpdateFieldsAsync(id, userId, request.Title, request.Description, request.Start, request.End, DateTimeOffset.UtcNow);
 
-        return updated is null
-            ? new SuggestionNotFound()
-            : new SuggestionUpdated(updated.ToContract());
+        return updated is null ? new SuggestionNotFound() : new SuggestionUpdated(updated.ToContract());
     }
 
     public async Task<SuggestionDismissResult> DismissAsync(string userId, string id, CancellationToken cancellationToken)
     {
         var found = await Repository.SetStatusAsync(id, userId, SuggestionStatus.Dismissed, DateTimeOffset.UtcNow);
 
-        return found
-            ? new SuggestionDismissed()
-            : new SuggestionDismissNotFound();
+        return found ? new SuggestionDismissed() : new SuggestionDismissNotFound();
     }
 
+    // TODO could be solved with one mongo query
     private async Task<bool> IsAlreadyGeneratedAsync(string userId, TimeSuggestion suggestion)
     {
         foreach (var source in suggestion.Sources)

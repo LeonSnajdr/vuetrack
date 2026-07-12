@@ -1,5 +1,8 @@
-namespace Vuetrack.Suggestions.Engine;
+using Samhammer.Options.Abstractions;
 
+namespace Vuetrack.Api.Features.Suggestions.Engine;
+
+[Option]
 public sealed record SuggestionEngineOptions
 {
     public TimeSpan MergeGap { get; init; } = TimeSpan.FromMinutes(15);

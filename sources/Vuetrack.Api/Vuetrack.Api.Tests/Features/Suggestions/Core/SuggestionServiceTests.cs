@@ -1,15 +1,15 @@
 using AwesomeAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
-using Vuetrack.Api.Features.Suggestions;
-using Vuetrack.Api.Features.Suggestions.Contracts;
-using Vuetrack.Api.Features.Suggestions.Services;
+using Vuetrack.Api.Features.Suggestions.Core;
+using Vuetrack.Api.Features.Suggestions.Core.Contracts;
+using Vuetrack.Api.Features.Suggestions.Core.Services;
+using Vuetrack.Api.Features.Suggestions.Engine;
 using Vuetrack.Api.Tests.Fakes;
 using Vuetrack.Connectors.Abstractions;
-using Vuetrack.Suggestions.Engine;
 using Xunit;
 
-namespace Vuetrack.Api.Tests.Features.Suggestions;
+namespace Vuetrack.Api.Tests.Features.Suggestions.Core;
 
 public class SuggestionServiceTests
 {

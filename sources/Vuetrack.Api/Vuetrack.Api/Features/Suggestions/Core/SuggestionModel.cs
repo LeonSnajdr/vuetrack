@@ -2,7 +2,7 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using Samhammer.Mongo.Abstractions;
 
-namespace Vuetrack.Api.Features.Suggestions;
+namespace Vuetrack.Api.Features.Suggestions.Core;
 
 [MongoCollection]
 public class SuggestionModel : BaseModelMongo

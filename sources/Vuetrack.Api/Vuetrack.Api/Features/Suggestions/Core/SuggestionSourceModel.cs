@@ -1,4 +1,4 @@
-namespace Vuetrack.Api.Features.Suggestions;
+namespace Vuetrack.Api.Features.Suggestions.Core;
 
 public sealed class SuggestionSourceModel
 {

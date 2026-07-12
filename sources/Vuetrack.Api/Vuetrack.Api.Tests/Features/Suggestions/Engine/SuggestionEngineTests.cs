@@ -1,9 +1,10 @@
 using AwesomeAssertions;
 using Microsoft.Extensions.Options;
+using Vuetrack.Api.Features.Suggestions.Engine;
 using Vuetrack.Connectors.Abstractions;
 using Xunit;
 
-namespace Vuetrack.Suggestions.Engine.Tests;
+namespace Vuetrack.Api.Tests.Features.Suggestions.Engine;
 
 public class SuggestionEngineTests
 {
@@ -169,7 +170,7 @@ public class SuggestionEngineTests
     [Fact]
     public void Build_BlockShorterThanMinimumAfterRounding_IsDropped()
     {
-        var options = Microsoft.Extensions.Options.Options.Create(new SuggestionEngineOptions
+        var options = Options.Create(new SuggestionEngineOptions
         {
             RoundTo = TimeSpan.FromMinutes(1),
             MinimumBlock = TimeSpan.FromMinutes(5),

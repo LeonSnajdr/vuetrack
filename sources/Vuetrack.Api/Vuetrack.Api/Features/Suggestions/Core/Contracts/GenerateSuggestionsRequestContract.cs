@@ -1,4 +1,4 @@
-namespace Vuetrack.Api.Features.Suggestions.Contracts;
+namespace Vuetrack.Api.Features.Suggestions.Core.Contracts;
 
 public sealed record GenerateSuggestionsRequestContract
 {

@@ -1,8 +1,8 @@
 using FluentValidation;
 using Samhammer.DependencyInjection.Attributes;
-using Vuetrack.Api.Features.Suggestions.Contracts;
+using Vuetrack.Api.Features.Suggestions.Core.Contracts;
 
-namespace Vuetrack.Api.Features.Suggestions.Validation;
+namespace Vuetrack.Api.Features.Suggestions.Core.Validation;
 
 [InjectAs(typeof(IValidator<GenerateSuggestionsRequestContract>))]
 public class GenerateSuggestionsRequestContractValidator : AbstractValidator<GenerateSuggestionsRequestContract>

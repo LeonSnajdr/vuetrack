@@ -2,12 +2,12 @@ using System.Security.Claims;
 using AwesomeAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Vuetrack.Api.Features.Suggestions;
-using Vuetrack.Api.Features.Suggestions.Contracts;
+using Vuetrack.Api.Features.Suggestions.Core;
+using Vuetrack.Api.Features.Suggestions.Core.Contracts;
 using Vuetrack.Api.Tests.Fakes;
 using Xunit;
 
-namespace Vuetrack.Api.Tests.Features.Suggestions;
+namespace Vuetrack.Api.Tests.Features.Suggestions.Core;
 
 public class SuggestionsControllerResultMappingTests
 {
