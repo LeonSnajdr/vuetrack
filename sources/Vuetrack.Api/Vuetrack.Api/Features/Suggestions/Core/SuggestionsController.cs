@@ -16,7 +16,7 @@ public class SuggestionsController(ISuggestionService suggestionService) : Contr
     private ISuggestionService SuggestionService { get; } = suggestionService;
 
     [HttpGet]
-    public async Task<IActionResult> List([FromQuery] DateTimeOffset from, [FromQuery] DateTimeOffset to)
+    public async Task<IActionResult> List([FromQuery] DateTime from, [FromQuery] DateTime to)
     {
         var userId = User.GetUserId();
         if (string.IsNullOrEmpty(userId))

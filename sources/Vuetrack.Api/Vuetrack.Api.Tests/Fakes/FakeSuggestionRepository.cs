@@ -8,7 +8,7 @@ public sealed class FakeSuggestionRepository : ISuggestionRepository
 
     public IReadOnlyList<SuggestionModel> Items => items;
 
-    public Task<List<SuggestionModel>> ListAsync(string userId, DateTimeOffset from, DateTimeOffset to)
+    public Task<List<SuggestionModel>> ListAsync(string userId, DateTime from, DateTime to)
     {
         var result = items
             .Where(x => x.UserId == userId && x.Status != SuggestionStatus.Dismissed && x.Start >= from && x.Start < to)
@@ -39,7 +39,7 @@ public sealed class FakeSuggestionRepository : ISuggestionRepository
         return Task.FromResult(exists);
     }
 
-    public Task<SuggestionModel?> UpdateFieldsAsync(string id, string userId, string title, string? description, DateTimeOffset start, DateTimeOffset end, DateTimeOffset updatedAt)
+    public Task<SuggestionModel?> UpdateFieldsAsync(string id, string userId, string title, string? description, DateTime start, DateTime end, DateTime updatedAt)
     {
         var model = items.FirstOrDefault(x => x.Id == id && x.UserId == userId);
         if (model is null)
@@ -57,7 +57,7 @@ public sealed class FakeSuggestionRepository : ISuggestionRepository
         return Task.FromResult<SuggestionModel?>(model);
     }
 
-    public Task<bool> SetStatusAsync(string id, string userId, SuggestionStatus status, DateTimeOffset updatedAt)
+    public Task<bool> SetStatusAsync(string id, string userId, SuggestionStatus status, DateTime updatedAt)
     {
         var model = items.FirstOrDefault(x => x.Id == id && x.UserId == userId);
         if (model is null)

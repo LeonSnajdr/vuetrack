@@ -39,7 +39,7 @@ public class SuggestionService(IConnectorRegistry registry, IEnumerable<IConnect
         }
 
         var suggestions = Engine.Build(signals, request.From, request.To);
-        var now = DateTimeOffset.UtcNow;
+        var now = DateTime.UtcNow;
         var toInsert = new List<SuggestionModel>();
 
         foreach (var suggestion in suggestions)
@@ -60,7 +60,7 @@ public class SuggestionService(IConnectorRegistry registry, IEnumerable<IConnect
         return new GenerateSuggestionsResultContract(toInsert.Count, outcomes);
     }
 
-    public async Task<IReadOnlyList<SuggestionContract>> ListAsync(string userId, DateTimeOffset from, DateTimeOffset to)
+    public async Task<IReadOnlyList<SuggestionContract>> ListAsync(string userId, DateTime from, DateTime to)
     {
         var models = await Repository.ListAsync(userId, from, to);
         return models.Select(m => m.ToContract()).ToList();
@@ -68,14 +68,14 @@ public class SuggestionService(IConnectorRegistry registry, IEnumerable<IConnect
 
     public async Task<SuggestionUpdateResult> UpdateAsync(string userId, string id, SuggestionUpdateContract request, CancellationToken cancellationToken)
     {
-        var updated = await Repository.UpdateFieldsAsync(id, userId, request.Title, request.Description, request.Start, request.End, DateTimeOffset.UtcNow);
+        var updated = await Repository.UpdateFieldsAsync(id, userId, request.Title, request.Description, request.Start, request.End, DateTime.UtcNow);
 
         return updated is null ? new SuggestionNotFound() : new SuggestionUpdated(updated.ToContract());
     }
 
     public async Task<SuggestionDismissResult> DismissAsync(string userId, string id, CancellationToken cancellationToken)
     {
-        var found = await Repository.SetStatusAsync(id, userId, SuggestionStatus.Dismissed, DateTimeOffset.UtcNow);
+        var found = await Repository.SetStatusAsync(id, userId, SuggestionStatus.Dismissed, DateTime.UtcNow);
 
         return found ? new SuggestionDismissed() : new SuggestionDismissNotFound();
     }
@@ -94,7 +94,7 @@ public class SuggestionService(IConnectorRegistry registry, IEnumerable<IConnect
         return false;
     }
 
-    private async Task<(ConnectorOutcomeContract Outcome, IReadOnlyList<ActivitySignal>? Signals)> FetchFromConnectorAsync(ConnectorDescriptor descriptor, string userId, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken)
+    private async Task<(ConnectorOutcomeContract Outcome, IReadOnlyList<ActivitySignal>? Signals)> FetchFromConnectorAsync(ConnectorDescriptor descriptor, string userId, DateTime from, DateTime to, CancellationToken cancellationToken)
     {
         try
         {
@@ -140,7 +140,7 @@ public interface ISuggestionService
 {
     Task<GenerateSuggestionsResultContract> GenerateAsync(string userId, GenerateSuggestionsRequestContract request, CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<SuggestionContract>> ListAsync(string userId, DateTimeOffset from, DateTimeOffset to);
+    Task<IReadOnlyList<SuggestionContract>> ListAsync(string userId, DateTime from, DateTime to);
 
     Task<SuggestionUpdateResult> UpdateAsync(string userId, string id, SuggestionUpdateContract request, CancellationToken cancellationToken);
 

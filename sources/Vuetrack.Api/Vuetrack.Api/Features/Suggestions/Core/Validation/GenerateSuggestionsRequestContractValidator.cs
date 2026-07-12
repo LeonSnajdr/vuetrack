@@ -22,7 +22,7 @@ public class GenerateSuggestionsRequestContractValidator : AbstractValidator<Gen
             .WithMessage($"Range must not exceed {MaxRange.TotalDays:0} days.");
 
         RuleFor(x => x.To)
-            .Must(to => to <= DateTimeOffset.UtcNow + MaxFuture)
+            .Must(to => to <= DateTime.UtcNow + MaxFuture)
             .WithMessage("To must not be far in the future.");
     }
 }

@@ -13,11 +13,11 @@ namespace Vuetrack.Api.Tests.Features.Suggestions.Core;
 
 public class SuggestionServiceTests
 {
-    private static readonly DateTimeOffset BaseDate = new(2026, 7, 1, 0, 0, 0, TimeSpan.Zero);
+    private static readonly DateTime BaseDate = new(2026, 7, 1, 0, 0, 0, DateTimeKind.Utc);
 
-    private static readonly DateTimeOffset From = BaseDate;
+    private static readonly DateTime From = BaseDate;
 
-    private static readonly DateTimeOffset To = BaseDate.AddDays(1);
+    private static readonly DateTime To = BaseDate.AddDays(1);
 
     [Fact]
     public async Task GenerateAsync_MultipleConnectors_AggregatesSignalsAndPersistsAllSuggestions()
@@ -213,14 +213,14 @@ public class SuggestionServiceTests
 
     private static GenerateSuggestionsRequestContract Request() => new() { From = From, To = To };
 
-    private static SuggestionUpdateContract UpdateContract(string title, DateTimeOffset start, DateTimeOffset end) => new()
+    private static SuggestionUpdateContract UpdateContract(string title, DateTime start, DateTime end) => new()
     {
         Title = title,
         Start = start,
         End = end,
     };
 
-    private static SuggestionModel BuildModel(string userId, string title, DateTimeOffset start, DateTimeOffset end) => new()
+    private static SuggestionModel BuildModel(string userId, string title, DateTime start, DateTime end) => new()
     {
         UserId = userId,
         Title = title,
@@ -240,9 +240,9 @@ public class SuggestionServiceTests
         Capabilities = ConnectorCapabilities.None,
     };
 
-    private static DateTimeOffset At(int hour, int minute) => BaseDate + TimeSpan.FromHours(hour) + TimeSpan.FromMinutes(minute);
+    private static DateTime At(int hour, int minute) => BaseDate + TimeSpan.FromHours(hour) + TimeSpan.FromMinutes(minute);
 
-    private static ActivitySignal Signal(string connectorKey, string externalId, string title, DateTimeOffset start, DateTimeOffset? end = null) => new()
+    private static ActivitySignal Signal(string connectorKey, string externalId, string title, DateTime start, DateTime? end = null) => new()
     {
         ConnectorKey = connectorKey,
         ExternalId = externalId,

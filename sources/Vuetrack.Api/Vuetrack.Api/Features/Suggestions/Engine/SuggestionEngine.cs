@@ -9,7 +9,7 @@ public sealed class SuggestionEngine(IOptions<SuggestionEngineOptions> options) 
 {
     private SuggestionEngineOptions Options { get; } = options.Value;
 
-    public IReadOnlyList<TimeSuggestion> Build(IReadOnlyList<ActivitySignal> signals, DateTimeOffset from, DateTimeOffset to)
+    public IReadOnlyList<TimeSuggestion> Build(IReadOnlyList<ActivitySignal> signals, DateTime from, DateTime to)
     {
         var normalized = Normalize(signals, from, to);
         var deduplicated = Deduplicate(normalized);
@@ -36,7 +36,7 @@ public sealed class SuggestionEngine(IOptions<SuggestionEngineOptions> options) 
             .ToList();
     }
 
-    private IReadOnlyList<NormalizedSignal> Normalize(IReadOnlyList<ActivitySignal> signals, DateTimeOffset from, DateTimeOffset to)
+    private IReadOnlyList<NormalizedSignal> Normalize(IReadOnlyList<ActivitySignal> signals, DateTime from, DateTime to)
     {
         var result = new List<NormalizedSignal>();
 
@@ -108,8 +108,8 @@ public sealed class SuggestionEngine(IOptions<SuggestionEngineOptions> options) 
             var ordered = group.OrderBy(s => s.Start).ThenBy(s => s.ExternalId, StringComparer.Ordinal).ToList();
 
             List<NormalizedSignal>? current = null;
-            var blockStart = default(DateTimeOffset);
-            var blockEnd = default(DateTimeOffset);
+            var blockStart = default(DateTime);
+            var blockEnd = default(DateTime);
 
             foreach (var signal in ordered)
             {
@@ -148,7 +148,7 @@ public sealed class SuggestionEngine(IOptions<SuggestionEngineOptions> options) 
         return blocks;
     }
 
-    private static TimeSuggestion BuildSuggestion(IReadOnlyList<NormalizedSignal> contributors, DateTimeOffset start, DateTimeOffset end)
+    private static TimeSuggestion BuildSuggestion(IReadOnlyList<NormalizedSignal> contributors, DateTime start, DateTime end)
     {
         var ordered = contributors
             .OrderBy(s => s.Start)
@@ -171,32 +171,32 @@ public sealed class SuggestionEngine(IOptions<SuggestionEngineOptions> options) 
         return new TimeSuggestion(title, description, start, end, confidence, sources);
     }
 
-    private static DateTimeOffset RoundDown(DateTimeOffset value, TimeSpan step)
+    private static DateTime RoundDown(DateTime value, TimeSpan step)
     {
         if (step <= TimeSpan.Zero)
         {
             return value;
         }
 
-        var ticks = value.UtcTicks - (value.UtcTicks % step.Ticks);
-        return new DateTimeOffset(ticks, TimeSpan.Zero).ToOffset(value.Offset);
+        var ticks = value.Ticks - (value.Ticks % step.Ticks);
+        return new DateTime(ticks, DateTimeKind.Utc);
     }
 
-    private static DateTimeOffset RoundUp(DateTimeOffset value, TimeSpan step)
+    private static DateTime RoundUp(DateTime value, TimeSpan step)
     {
         if (step <= TimeSpan.Zero)
         {
             return value;
         }
 
-        var remainder = value.UtcTicks % step.Ticks;
+        var remainder = value.Ticks % step.Ticks;
         if (remainder == 0)
         {
             return value;
         }
 
-        var ticks = value.UtcTicks - remainder + step.Ticks;
-        return new DateTimeOffset(ticks, TimeSpan.Zero).ToOffset(value.Offset);
+        var ticks = value.Ticks - remainder + step.Ticks;
+        return new DateTime(ticks, DateTimeKind.Utc);
     }
 
     private sealed record NormalizedSignal(
@@ -204,16 +204,16 @@ public sealed class SuggestionEngine(IOptions<SuggestionEngineOptions> options) 
         string ExternalId,
         string Title,
         string? Description,
-        DateTimeOffset Start,
-        DateTimeOffset End,
+        DateTime Start,
+        DateTime End,
         string? Link,
         bool HasExplicitDuration,
         string CorrelationKey);
 
-    private sealed record SignalBlock(DateTimeOffset Start, DateTimeOffset End, IReadOnlyList<NormalizedSignal> Signals);
+    private sealed record SignalBlock(DateTime Start, DateTime End, IReadOnlyList<NormalizedSignal> Signals);
 }
 
 public interface ISuggestionEngine
 {
-    IReadOnlyList<TimeSuggestion> Build(IReadOnlyList<ActivitySignal> signals, DateTimeOffset from, DateTimeOffset to);
+    IReadOnlyList<TimeSuggestion> Build(IReadOnlyList<ActivitySignal> signals, DateTime from, DateTime to);
 }

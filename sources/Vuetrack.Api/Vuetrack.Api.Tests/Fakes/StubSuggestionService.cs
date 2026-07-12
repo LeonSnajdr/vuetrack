@@ -13,7 +13,7 @@ public sealed class StubSuggestionService : ISuggestionService
     public Task<GenerateSuggestionsResultContract> GenerateAsync(string userId, GenerateSuggestionsRequestContract request, CancellationToken cancellationToken) =>
         throw new NotImplementedException();
 
-    public Task<IReadOnlyList<SuggestionContract>> ListAsync(string userId, DateTimeOffset from, DateTimeOffset to) =>
+    public Task<IReadOnlyList<SuggestionContract>> ListAsync(string userId, DateTime from, DateTime to) =>
         throw new NotImplementedException();
 
     public Task<SuggestionUpdateResult> UpdateAsync(string userId, string id, SuggestionUpdateContract request, CancellationToken cancellationToken) =>

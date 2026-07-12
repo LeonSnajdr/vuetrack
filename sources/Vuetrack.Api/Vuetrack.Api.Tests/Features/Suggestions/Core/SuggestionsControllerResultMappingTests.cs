@@ -14,7 +14,7 @@ public class SuggestionsControllerResultMappingTests
     [Fact]
     public async Task Update_WhenServiceReturnsUpdated_ReturnsOkWithSuggestion()
     {
-        var contract = new SuggestionContract("id-1", "Title", null, DateTimeOffset.UnixEpoch, DateTimeOffset.UnixEpoch.AddMinutes(30), "Edited", [], 0.6, null, null);
+        var contract = new SuggestionContract("id-1", "Title", null, DateTime.UnixEpoch, DateTime.UnixEpoch.AddMinutes(30), "Edited", [], 0.6, null, null);
         var controller = CreateController(new StubSuggestionService { OnUpdate = (_, _, _, _) => Task.FromResult<SuggestionUpdateResult>(new SuggestionUpdated(contract)) });
 
         var result = await controller.Update("id-1", UpdateContract(), CancellationToken.None);
@@ -56,8 +56,8 @@ public class SuggestionsControllerResultMappingTests
     private static SuggestionUpdateContract UpdateContract() => new()
     {
         Title = "Title",
-        Start = DateTimeOffset.UnixEpoch,
-        End = DateTimeOffset.UnixEpoch.AddMinutes(30),
+        Start = DateTime.UnixEpoch,
+        End = DateTime.UnixEpoch.AddMinutes(30),
     };
 
     private static SuggestionsController CreateController(StubSuggestionService service)

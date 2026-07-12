@@ -6,7 +6,7 @@ public sealed record JiraIssueActivityContainer
 
     public required string Summary { get; init; }
 
-    public required DateTimeOffset Updated { get; init; }
+    public required DateTime Updated { get; init; }
 
     public string? Project { get; init; }
 

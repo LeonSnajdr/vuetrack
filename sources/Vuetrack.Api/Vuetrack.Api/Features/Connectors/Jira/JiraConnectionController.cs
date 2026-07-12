@@ -80,7 +80,7 @@ public class JiraConnectionController(IJiraConnectionService connectionService) 
     /// Testing-only: fetches the caller's Jira activity ("recommendations") end-to-end to verify the OAuth connection works.
     /// </summary>
     [HttpGet("recommendations")]
-    public async Task<IActionResult> Recommendations([FromQuery] DateTimeOffset? from, [FromQuery] DateTimeOffset? to, CancellationToken cancellationToken)
+    public async Task<IActionResult> Recommendations([FromQuery] DateTime? from, [FromQuery] DateTime? to, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
         if (string.IsNullOrEmpty(userId))
@@ -88,7 +88,7 @@ public class JiraConnectionController(IJiraConnectionService connectionService) 
             return Unauthorized();
         }
 
-        var toDate = to ?? DateTimeOffset.UtcNow;
+        var toDate = to ?? DateTime.UtcNow;
         var fromDate = from ?? toDate.AddDays(-7);
 
         var result = await ConnectionService.FetchRecommendationsAsync(userId, fromDate, toDate, cancellationToken);

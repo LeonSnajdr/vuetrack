@@ -6,7 +6,7 @@ public sealed record SuggestionUpdateContract
 
     public string? Description { get; init; }
 
-    public required DateTimeOffset Start { get; init; }
+    public required DateTime Start { get; init; }
 
-    public required DateTimeOffset End { get; init; }
+    public required DateTime End { get; init; }
 }

@@ -13,9 +13,9 @@ public class SuggestionModel : BaseModelMongo
 
     public string? Description { get; set; }
 
-    public required DateTimeOffset Start { get; set; }
+    public required DateTime Start { get; set; }
 
-    public required DateTimeOffset End { get; set; }
+    public required DateTime End { get; set; }
 
     [BsonRepresentation(BsonType.String)]
     public SuggestionStatus Status { get; set; } = SuggestionStatus.Pending;
@@ -28,9 +28,9 @@ public class SuggestionModel : BaseModelMongo
 
     public double Confidence { get; set; }
 
-    public required DateTimeOffset CreatedAt { get; set; }
+    public required DateTime CreatedAt { get; set; }
 
-    public required DateTimeOffset UpdatedAt { get; set; }
+    public required DateTime UpdatedAt { get; set; }
 }
 
 public enum SuggestionStatus

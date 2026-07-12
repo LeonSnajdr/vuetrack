@@ -29,12 +29,12 @@ public class JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor access
             : string.Empty;
     }
 
-    public async Task<IReadOnlyList<JiraWorklogContainer>> GetWorklogEntriesAsync(string accountId, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<JiraWorklogContainer>> GetWorklogEntriesAsync(string accountId, DateTime from, DateTime to, CancellationToken cancellationToken)
     {
         var jql = $"worklogAuthor = currentUser() AND worklogDate >= \"{IsoDate(from)}\" AND worklogDate <= \"{IsoDate(to)}\" ORDER BY updated DESC";
         var issues = await SearchIssuesAsync(jql, "summary,issuetype,status,project", cancellationToken);
 
-        var startedAfterMs = from.ToUnixTimeMilliseconds();
+        var startedAfterMs = new DateTimeOffset(from, TimeSpan.Zero).ToUnixTimeMilliseconds();
         var entries = new List<JiraWorklogContainer>();
 
         foreach (var issue in issues)
@@ -82,7 +82,7 @@ public class JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor access
         return entries;
     }
 
-    public async Task<IReadOnlyList<JiraIssueActivityContainer>> GetIssueActivityAsync(DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<JiraIssueActivityContainer>> GetIssueActivityAsync(DateTime from, DateTime to, CancellationToken cancellationToken)
     {
         var jql = $"(assignee was currentUser() OR status changed by currentUser()) AND updated >= \"{IsoDateTime(from)}\" AND updated <= \"{IsoDateTime(to)}\" ORDER BY updated DESC";
         var issues = await SearchIssuesAsync(jql, "summary,issuetype,status,project,updated", cancellationToken);
@@ -150,7 +150,7 @@ public class JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor access
         var status = issue.GetPropertyPath("fields", "status", "name")?.GetString();
         var project = issue.GetPropertyPath("fields", "project", "key")?.GetString();
 
-        DateTimeOffset? updated = null;
+        DateTime? updated = null;
         var fields = issue.TryGetProperty("fields", out var f) ? f : default;
         if (fields.ValueKind == JsonValueKind.Object && TryGetDate(fields, "updated", out var parsed))
         {
@@ -221,11 +221,11 @@ public class JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor access
         return TimeSpan.FromSeconds(60);
     }
 
-    private static string IsoDate(DateTimeOffset value) => value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    private static string IsoDate(DateTime value) => value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
-    private static string IsoDateTime(DateTimeOffset value) => value.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+    private static string IsoDateTime(DateTime value) => value.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
 
-    private static bool TryGetDate(JsonElement element, string property, out DateTimeOffset value)
+    private static bool TryGetDate(JsonElement element, string property, out DateTime value)
     {
         value = default;
         if (!element.TryGetProperty(property, out var prop) || prop.ValueKind != JsonValueKind.String)
@@ -233,17 +233,25 @@ public class JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor access
             return false;
         }
 
-        return DateTimeOffset.TryParse(prop.GetString(), CultureInfo.InvariantCulture, DateTimeStyles.None, out value);
+        // Jira returns ISO-8601 timestamps with an offset; collapse to UTC so everything downstream
+        // is a Kind=Utc DateTime.
+        if (!DateTimeOffset.TryParse(prop.GetString(), CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed))
+        {
+            return false;
+        }
+
+        value = parsed.UtcDateTime;
+        return true;
     }
 
-    private sealed record SearchIssueContainer(string Key, string Summary, string? IssueType, string? Status, string? Project, DateTimeOffset? Updated);
+    private sealed record SearchIssueContainer(string Key, string Summary, string? IssueType, string? Status, string? Project, DateTime? Updated);
 }
 
 public interface IJiraApiClient
 {
     Task<string> GetMyAccountIdAsync(CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<JiraWorklogContainer>> GetWorklogEntriesAsync(string accountId, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken);
+    Task<IReadOnlyList<JiraWorklogContainer>> GetWorklogEntriesAsync(string accountId, DateTime from, DateTime to, CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<JiraIssueActivityContainer>> GetIssueActivityAsync(DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken);
+    Task<IReadOnlyList<JiraIssueActivityContainer>> GetIssueActivityAsync(DateTime from, DateTime to, CancellationToken cancellationToken);
 }

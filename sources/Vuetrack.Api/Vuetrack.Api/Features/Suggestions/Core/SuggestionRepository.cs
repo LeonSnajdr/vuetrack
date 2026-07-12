@@ -21,7 +21,7 @@ public class SuggestionRepository : BaseRepositoryMongo<SuggestionModel>, ISugge
         EnsureIndexes();
     }
 
-    public async Task<List<SuggestionModel>> ListAsync(string userId, DateTimeOffset from, DateTimeOffset to)
+    public async Task<List<SuggestionModel>> ListAsync(string userId, DateTime from, DateTime to)
     {
         return await Collection
             .Find(x => x.UserId == userId && x.Status != SuggestionStatus.Dismissed && x.Start >= from && x.Start < to)
@@ -46,7 +46,7 @@ public class SuggestionRepository : BaseRepositoryMongo<SuggestionModel>, ISugge
             .AnyAsync();
     }
 
-    public async Task<SuggestionModel?> UpdateFieldsAsync(string id, string userId, string title, string? description, DateTimeOffset start, DateTimeOffset end, DateTimeOffset updatedAt)
+    public async Task<SuggestionModel?> UpdateFieldsAsync(string id, string userId, string title, string? description, DateTime start, DateTime end, DateTime updatedAt)
     {
         var update = Update
             .Set(x => x.Title, title)
@@ -68,7 +68,7 @@ public class SuggestionRepository : BaseRepositoryMongo<SuggestionModel>, ISugge
             new FindOneAndUpdateOptions<SuggestionModel> { ReturnDocument = ReturnDocument.After });
     }
 
-    public async Task<bool> SetStatusAsync(string id, string userId, SuggestionStatus status, DateTimeOffset updatedAt)
+    public async Task<bool> SetStatusAsync(string id, string userId, SuggestionStatus status, DateTime updatedAt)
     {
         var update = Update
             .Set(x => x.Status, status)
@@ -101,13 +101,13 @@ public class SuggestionRepository : BaseRepositoryMongo<SuggestionModel>, ISugge
 
 public interface ISuggestionRepository : IBaseRepositoryMongo<SuggestionModel>
 {
-    Task<List<SuggestionModel>> ListAsync(string userId, DateTimeOffset from, DateTimeOffset to);
+    Task<List<SuggestionModel>> ListAsync(string userId, DateTime from, DateTime to);
 
     Task InsertManyAsync(IReadOnlyList<SuggestionModel> items);
 
     Task<bool> ExistsBySourceAsync(string userId, string connectorKey, string externalId);
 
-    Task<SuggestionModel?> UpdateFieldsAsync(string id, string userId, string title, string? description, DateTimeOffset start, DateTimeOffset end, DateTimeOffset updatedAt);
+    Task<SuggestionModel?> UpdateFieldsAsync(string id, string userId, string title, string? description, DateTime start, DateTime end, DateTime updatedAt);
 
-    Task<bool> SetStatusAsync(string id, string userId, SuggestionStatus status, DateTimeOffset updatedAt);
+    Task<bool> SetStatusAsync(string id, string userId, SuggestionStatus status, DateTime updatedAt);
 }

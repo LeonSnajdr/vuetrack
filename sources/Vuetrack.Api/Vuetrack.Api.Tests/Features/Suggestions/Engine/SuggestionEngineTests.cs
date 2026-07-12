@@ -8,11 +8,11 @@ namespace Vuetrack.Api.Tests.Features.Suggestions.Engine;
 
 public class SuggestionEngineTests
 {
-    private static readonly DateTimeOffset BaseDate = new(2026, 7, 1, 0, 0, 0, TimeSpan.Zero);
+    private static readonly DateTime BaseDate = new(2026, 7, 1, 0, 0, 0, DateTimeKind.Utc);
 
-    private static readonly DateTimeOffset From = BaseDate;
+    private static readonly DateTime From = BaseDate;
 
-    private static readonly DateTimeOffset To = BaseDate.AddDays(1);
+    private static readonly DateTime To = BaseDate.AddDays(1);
 
     [Fact]
     public void Build_EmptyInput_ReturnsEmptyList()
@@ -204,9 +204,9 @@ public class SuggestionEngineTests
         return new SuggestionEngine(Options.Create(options ?? new SuggestionEngineOptions()));
     }
 
-    private static DateTimeOffset At(int hour, int minute) => BaseDate + TimeSpan.FromHours(hour) + TimeSpan.FromMinutes(minute);
+    private static DateTime At(int hour, int minute) => BaseDate + TimeSpan.FromHours(hour) + TimeSpan.FromMinutes(minute);
 
-    private static ActivitySignal Signal(string externalId, string title, DateTimeOffset start, DateTimeOffset? end = null, string? correlationId = null, string connectorKey = "jira")
+    private static ActivitySignal Signal(string externalId, string title, DateTime start, DateTime? end = null, string? correlationId = null, string connectorKey = "jira")
     {
         return new ActivitySignal
         {

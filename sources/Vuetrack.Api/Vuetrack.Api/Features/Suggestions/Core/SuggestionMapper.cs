@@ -5,7 +5,7 @@ namespace Vuetrack.Api.Features.Suggestions.Core;
 
 public static class SuggestionMapper
 {
-    public static SuggestionModel ToModel(this TimeSuggestion suggestion, string userId, DateTimeOffset now)
+    public static SuggestionModel ToModel(this TimeSuggestion suggestion, string userId, DateTime now)
     {
         return new SuggestionModel
         {

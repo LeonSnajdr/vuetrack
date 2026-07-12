@@ -2,9 +2,9 @@ namespace Vuetrack.Api.Features.Suggestions.Core.Contracts;
 
 public sealed record GenerateSuggestionsRequestContract
 {
-    public required DateTimeOffset From { get; init; }
+    public required DateTime From { get; init; }
 
-    public required DateTimeOffset To { get; init; }
+    public required DateTime To { get; init; }
 
     public IReadOnlyList<string>? ConnectorKeys { get; init; }
 }

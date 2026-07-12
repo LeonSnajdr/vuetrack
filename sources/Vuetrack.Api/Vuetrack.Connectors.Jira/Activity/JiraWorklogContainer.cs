@@ -8,7 +8,7 @@ public sealed record JiraWorklogContainer
 
     public required string WorklogId { get; init; }
 
-    public required DateTimeOffset Started { get; init; }
+    public required DateTime Started { get; init; }
 
     public required long TimeSpentSeconds { get; init; }
 

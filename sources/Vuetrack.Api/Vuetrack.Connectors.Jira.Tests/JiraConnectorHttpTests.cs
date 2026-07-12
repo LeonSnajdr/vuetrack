@@ -16,8 +16,8 @@ public class JiraConnectorHttpTests
 
     private static readonly ActivityFetchContainer Container = new()
     {
-        From = new DateTimeOffset(2026, 7, 1, 0, 0, 0, TimeSpan.Zero),
-        To = new DateTimeOffset(2026, 7, 2, 0, 0, 0, TimeSpan.Zero),
+        From = new DateTime(2026, 7, 1, 0, 0, 0, DateTimeKind.Utc),
+        To = new DateTime(2026, 7, 2, 0, 0, 0, DateTimeKind.Utc),
     };
 
     private static JiraConnector BuildConnector(Func<HttpRequestMessage, HttpResponseMessage> responder)
@@ -94,6 +94,59 @@ public class JiraConnectorHttpTests
                   "comment": { "type": "doc", "content": [
                     { "type": "paragraph", "content": [ { "type": "text", "text": "worked on the fix" } ] }
                   ] }
+                }
+              ]
+            }
+            """);
+        }
+    }
+
+    [Fact]
+    public async Task FetchAsync_NormalizesOffsetTimestampsToUtc()
+    {
+        var connector = BuildConnector(Respond);
+
+        var result = await connector.FetchAsync(Container, CancellationToken.None);
+
+        var signal = result.Should().BeOfType<ActivityFetchSuccess>().Which.Signals.Should().ContainSingle().Which;
+
+        // The worklog started at 09:00 +02:00, i.e. 07:00 UTC. It must be collapsed to a Kind=Utc instant.
+        signal.Start.Should().Be(new DateTime(2026, 7, 1, 7, 0, 0, DateTimeKind.Utc));
+        signal.Start.Kind.Should().Be(DateTimeKind.Utc);
+        signal.End!.Value.Kind.Should().Be(DateTimeKind.Utc);
+
+        static HttpResponseMessage Respond(HttpRequestMessage request)
+        {
+            var uri = request.RequestUri!.ToString();
+            if (uri.Contains("/myself"))
+            {
+                return StubHttpMessageHandler.Json(HttpStatusCode.OK, """{ "accountId": "acc-1" }""");
+            }
+
+            if (uri.Contains("/search/jql"))
+            {
+                // Same issue key as the worklog, so the issue fallback is deduped and a single signal remains.
+                return StubHttpMessageHandler.Json(HttpStatusCode.OK, """
+                {
+                  "issues": [
+                    { "key": "PROJ-1", "fields": {
+                      "summary": "Fix login",
+                      "updated": "2026-07-01T17:00:00.000+02:00"
+                    } }
+                  ],
+                  "isLast": true
+                }
+                """);
+            }
+
+            return StubHttpMessageHandler.Json(HttpStatusCode.OK, """
+            {
+              "worklogs": [
+                {
+                  "id": "100",
+                  "author": { "accountId": "acc-1" },
+                  "started": "2026-07-01T09:00:00.000+02:00",
+                  "timeSpentSeconds": 3600
                 }
               ]
             }

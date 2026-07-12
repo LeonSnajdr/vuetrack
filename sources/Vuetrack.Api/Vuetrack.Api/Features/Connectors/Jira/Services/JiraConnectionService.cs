@@ -91,7 +91,7 @@ public class JiraConnectionService(IConnectorRegistry registry, IJiraOAuthApiCli
         ContextFactory.Evict(userId);
     }
 
-    public async Task<ActivityFetchResult> FetchRecommendationsAsync(string userId, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken)
+    public async Task<ActivityFetchResult> FetchRecommendationsAsync(string userId, DateTime from, DateTime to, CancellationToken cancellationToken)
     {
         var connection = await ContextFactory.CreateAsync(userId, cancellationToken);
         if (connection is null)
@@ -148,5 +148,5 @@ public interface IJiraConnectionService
 
     Task DisconnectAsync(string userId);
 
-    Task<ActivityFetchResult> FetchRecommendationsAsync(string userId, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken);
+    Task<ActivityFetchResult> FetchRecommendationsAsync(string userId, DateTime from, DateTime to, CancellationToken cancellationToken);
 }

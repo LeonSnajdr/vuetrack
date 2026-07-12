@@ -10,9 +10,9 @@ public sealed record ActivitySignal
 
     public string? Description { get; init; }
 
-    public required DateTimeOffset Start { get; init; }
+    public required DateTime Start { get; init; }
 
-    public DateTimeOffset? End { get; init; }
+    public DateTime? End { get; init; }
 
     public string? Link { get; init; }
 

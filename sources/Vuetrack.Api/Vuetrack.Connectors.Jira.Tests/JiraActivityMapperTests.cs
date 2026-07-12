@@ -15,7 +15,7 @@ public class JiraActivityMapperTests
         IssueKey = issueKey,
         IssueSummary = "Fix login",
         WorklogId = worklogId,
-        Started = new DateTimeOffset(2026, 7, 1, 9, 0, 0, TimeSpan.Zero),
+        Started = new DateTime(2026, 7, 1, 9, 0, 0, DateTimeKind.Utc),
         TimeSpentSeconds = 3600,
         Comment = "worked on it",
         Project = "PROJ",
@@ -27,7 +27,7 @@ public class JiraActivityMapperTests
     {
         IssueKey = issueKey,
         Summary = "Some other issue",
-        Updated = new DateTimeOffset(2026, 7, 1, 15, 0, 0, TimeSpan.Zero),
+        Updated = new DateTime(2026, 7, 1, 15, 0, 0, DateTimeKind.Utc),
         Project = "PROJ",
         IssueType = "Task",
         Status = "Done",
@@ -42,8 +42,8 @@ public class JiraActivityMapperTests
         signal.ExternalId.Should().Be("PROJ-1:worklog:100");
         signal.Title.Should().Be("PROJ-1 Fix login");
         signal.Description.Should().Be("worked on it");
-        signal.Start.Should().Be(new DateTimeOffset(2026, 7, 1, 9, 0, 0, TimeSpan.Zero));
-        signal.End.Should().Be(new DateTimeOffset(2026, 7, 1, 10, 0, 0, TimeSpan.Zero));
+        signal.Start.Should().Be(new DateTime(2026, 7, 1, 9, 0, 0, DateTimeKind.Utc));
+        signal.End.Should().Be(new DateTime(2026, 7, 1, 10, 0, 0, DateTimeKind.Utc));
         signal.Link.Should().Be("https://acme.atlassian.net/browse/PROJ-1");
         signal.Metadata["issueKey"].Should().Be("PROJ-1");
         signal.Metadata["worklogId"].Should().Be("100");
@@ -58,7 +58,7 @@ public class JiraActivityMapperTests
         var signal = Issue().ToActivitySignal(Context);
 
         signal.ExternalId.Should().Be("PROJ-2:issue");
-        signal.Start.Should().Be(new DateTimeOffset(2026, 7, 1, 15, 0, 0, TimeSpan.Zero));
+        signal.Start.Should().Be(new DateTime(2026, 7, 1, 15, 0, 0, DateTimeKind.Utc));
         signal.End.Should().BeNull();
         signal.Description.Should().BeNull();
     }
