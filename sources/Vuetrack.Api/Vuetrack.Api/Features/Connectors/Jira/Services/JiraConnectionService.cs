@@ -91,26 +91,6 @@ public class JiraConnectionService(IConnectorRegistry registry, IJiraOAuthApiCli
         ContextFactory.Evict(userId);
     }
 
-    public async Task<ActivityFetchResult> FetchRecommendationsAsync(string userId, DateTime from, DateTime to, CancellationToken cancellationToken)
-    {
-        var connection = await ContextFactory.CreateAsync(userId, cancellationToken);
-        if (connection is null)
-        {
-            return new ActivityFetchNotConnected();
-        }
-
-        var connector = Registry.Resolve(JiraConnector.Key) ?? throw new InvalidOperationException("Jira connector is not registered.");
-
-        var result = await connector.FetchAsync(new ActivityFetchContainer { From = from, To = to }, cancellationToken);
-
-        if (result is ActivityFetchAuthFailed)
-        {
-            ContextFactory.Evict(userId);
-        }
-
-        return result;
-    }
-
     private async Task PersistConnection(string userId, JiraAccessibleResourceResponse site, JiraTokenResponse token)
     {
         if (string.IsNullOrEmpty(token.RefreshToken))
@@ -147,6 +127,4 @@ public interface IJiraConnectionService
     Task<JiraConnectResult> ConnectAsync(string userId, JiraConnectCreateContract request, CancellationToken cancellationToken);
 
     Task DisconnectAsync(string userId);
-
-    Task<ActivityFetchResult> FetchRecommendationsAsync(string userId, DateTime from, DateTime to, CancellationToken cancellationToken);
 }
