@@ -7,8 +7,8 @@ import { ApiValidationException, type ApiValidationError, tryGetApiValidationErr
 
 const validationFieldKeyMappings: ReadonlyArray<readonly [string, readonly string[]]> = [
     ["taskId", ["taskId"]],
-    ["startTime", ["startDate", "startTime"]],
-    ["endTime", ["endDate", "endTime"]],
+    ["dateStarted", ["startDate", "startTime"]],
+    ["dateEnded", ["endDate", "endTime"]],
     ["projectId", ["projectId", "project.id"]],
     ["activityId", ["activityId", "activity.id"]],
     ["comment", ["comment"]]
@@ -69,7 +69,7 @@ class TimeEntryService {
 
         await this.invokeWithValidationMapping(() => axios.api.post<void>("timeEntry/upsert", this.mapContractToDto(createContract)));
 
-        const contracts = await this.load({ from: createContract.startTime, to: createContract.endTime });
+        const contracts = await this.load({ from: createContract.dateStarted, to: createContract.dateEnded });
         const created = contracts.find((c) => !knownIds.has(c.id));
         if (!created) throw new Error("Created time entry not found after upsert");
         return created;
@@ -78,7 +78,7 @@ class TimeEntryService {
     public update = async (id: TimeEntryId, updateContract: TimeEntryUpdateContract, signal?: AbortSignal): Promise<TimeEntryContract> => {
         await this.invokeWithValidationMapping(() => axios.api.post<void>("timeEntry/upsert", this.mapContractToDto(updateContract, id), { signal }));
 
-        const contracts = await this.load({ from: updateContract.startTime, to: updateContract.endTime }, signal);
+        const contracts = await this.load({ from: updateContract.dateStarted, to: updateContract.dateEnded }, signal);
         const updated = contracts.find((c) => c.id === id);
         if (!updated) throw new Error(`Updated time entry ${id} not found after upsert`);
         return updated;
@@ -135,16 +135,16 @@ class TimeEntryService {
                 name: dto.activity.name
             },
             breakDetails: dto.breakDetails,
-            startTime: this.combineDateAndTime(dto.startDate, dto.startTime),
-            endTime: this.combineDateAndTime(dto.endDate, dto.endTime),
+            dateStarted: this.combineDateAndTime(dto.startDate, dto.startTime),
+            dateEnded: this.combineDateAndTime(dto.endDate, dto.endTime),
             comment: dto.comment
         };
     }
 
     private mapContractToDto(contract: TimeEntryCreateContract | TimeEntryUpdateContract, id?: TimeEntryId): TimeEntryDTO {
         const currentDto = id ? this.dtoById.get(id) : undefined;
-        const startParts = this.splitDateAndTime(contract.startTime);
-        const endParts = this.splitDateAndTime(contract.endTime);
+        const startParts = this.splitDateAndTime(contract.dateStarted);
+        const endParts = this.splitDateAndTime(contract.dateEnded);
 
         return {
             timeEntryId: id ? id : (currentDto?.timeEntryId ?? null),

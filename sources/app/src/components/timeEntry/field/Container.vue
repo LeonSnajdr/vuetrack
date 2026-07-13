@@ -3,20 +3,20 @@
         <TimeEntryFieldTaskId v-model="timeEntry.taskId" :autofocus="firstEmptyField === 'taskId'" :errorMessages="fieldErrors?.taskId" />
         <VRow :class="isEndTimeFullMode ? 'ga-4' : 'ga-2'">
             <VCol :cols="isEndTimeFullMode ? undefined : 8">
-                <TimeEntryFieldStartTime
-                    v-model="timeEntry.startTime"
-                    :autofocus="firstEmptyField === 'startTime'"
-                    :errorMessages="fieldErrors?.startTime"
+                <TimeEntryFieldDateStarted
+                    v-model="timeEntry.dateStarted"
+                    :autofocus="firstEmptyField === 'dateStarted'"
+                    :errorMessages="fieldErrors?.dateStarted"
                     :tabindex="skipTimeFields ? -1 : undefined"
                 />
             </VCol>
             <VCol :cols="isEndTimeFullMode ? 12 : undefined">
-                <TimeEntryFieldEndTime
-                    v-model="timeEntry.endTime"
+                <TimeEntryFieldDateEnded
+                    v-model="timeEntry.dateEnded"
                     v-model:fullMode="isEndTimeFullMode"
-                    :autofocus="firstEmptyField === 'endTime'"
-                    :errorMessages="fieldErrors?.endTime"
-                    :startTime="timeEntry.startTime"
+                    :autofocus="firstEmptyField === 'dateEnded'"
+                    :errorMessages="fieldErrors?.dateEnded"
+                    :dateStarted="timeEntry.dateStarted"
                     :tabindex="skipTimeFields ? -1 : undefined"
                 />
             </VCol>
@@ -48,8 +48,8 @@ const props = defineProps<{
 
 const timeEntry = defineModel<{
     taskId: string | null;
-    startTime: Date | null;
-    endTime: Date | null;
+    dateStarted: Date | null;
+    dateEnded: Date | null;
     projectId: ProjectId | null;
     activityId: ActivityId | null;
     comment: string | null;
@@ -61,8 +61,8 @@ const isEndTimeFullMode = ref(false);
 
 const firstEmptyField = computed(() => {
     if (!timeEntry.value.taskId) return "taskId";
-    if (!props.skipTimeFields && !timeEntry.value.startTime) return "startTime";
-    if (!props.skipTimeFields && !timeEntry.value.endTime) return "endTime";
+    if (!props.skipTimeFields && !timeEntry.value.dateStarted) return "dateStarted";
+    if (!props.skipTimeFields && !timeEntry.value.dateEnded) return "dateEnded";
     if (!timeEntry.value.projectId) return "projectId";
     if (!timeEntry.value.activityId) return "activityId";
     if (!timeEntry.value.comment) return "comment";

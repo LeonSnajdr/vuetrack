@@ -23,7 +23,7 @@ export function useCreate() {
         }
 
         if (result.status === "success" && createAnother) {
-            interaction.value.create = timeEntryHelper.createDefaultTimeEntry({ startTime: interaction.value.create.endTime });
+            interaction.value.create = timeEntryHelper.createDefaultTimeEntry({ dateStarted: interaction.value.create.dateEnded });
             return;
         }
 

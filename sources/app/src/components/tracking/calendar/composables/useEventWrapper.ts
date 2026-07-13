@@ -21,16 +21,16 @@ export function useEventWrapper() {
             uiId: `event-uiId-${uuidv4()}`,
             timeEntry: contract,
             get start() {
-                return this.timeEntry.startTime.getTime();
+                return this.timeEntry.dateStarted.getTime();
             },
             set start(ms: number) {
-                this.timeEntry.startTime = new Date(ms);
+                this.timeEntry.dateStarted = new Date(ms);
             },
             get end() {
-                return this.timeEntry.endTime.getTime();
+                return this.timeEntry.dateEnded.getTime();
             },
             set end(ms: number) {
-                this.timeEntry.endTime = new Date(ms);
+                this.timeEntry.dateEnded = new Date(ms);
             }
         };
         existingWrapperCache.set(contract, wrapper);
@@ -48,16 +48,16 @@ export function useEventWrapper() {
             uiId: `event-uiId-${uuidv4()}`,
             timeEntry: contract,
             get start() {
-                return this.timeEntry.startTime.getTime();
+                return this.timeEntry.dateStarted.getTime();
             },
             set start(ms: number) {
-                this.timeEntry.startTime = new Date(ms);
+                this.timeEntry.dateStarted = new Date(ms);
             },
             get end() {
-                return this.timeEntry.endTime.getTime();
+                return this.timeEntry.dateEnded.getTime();
             },
             set end(ms: number) {
-                this.timeEntry.endTime = new Date(ms);
+                this.timeEntry.dateEnded = new Date(ms);
             }
         };
         suggestionWrapperCache.set(contract, wrapper);
@@ -66,8 +66,8 @@ export function useEventWrapper() {
 
     const createDraftEvent = (anchorStartMs: number): DraftTimeEntryEvent => {
         const createEntry = timeEntryHelper.createDefaultTimeEntry({
-            startTime: new Date(anchorStartMs),
-            endTime: new Date(anchorStartMs + minimumEventDurationMs)
+            dateStarted: new Date(anchorStartMs),
+            dateEnded: new Date(anchorStartMs + minimumEventDurationMs)
         });
 
         return {
@@ -77,16 +77,16 @@ export function useEventWrapper() {
             uiId: `event-uiId-${uuidv4()}`,
             createEntry,
             get start() {
-                return this.createEntry.startTime.getTime();
+                return this.createEntry.dateStarted.getTime();
             },
             set start(ms: number) {
-                this.createEntry.startTime = new Date(ms);
+                this.createEntry.dateStarted = new Date(ms);
             },
             get end() {
-                return this.createEntry.endTime.getTime();
+                return this.createEntry.dateEnded.getTime();
             },
             set end(ms: number) {
-                this.createEntry.endTime = new Date(ms);
+                this.createEntry.dateEnded = new Date(ms);
             }
         };
     };
@@ -98,8 +98,8 @@ export function useEventWrapper() {
             projectId: sourceEntry.project?.id ?? null,
             activityId: sourceEntry.activity?.id ?? null,
             comment: sourceEntry.comment,
-            startTime: new Date(start),
-            endTime: new Date(end)
+            dateStarted: new Date(start),
+            dateEnded: new Date(end)
         };
 
         return {
@@ -109,16 +109,16 @@ export function useEventWrapper() {
             uiId: `event-uiId-${uuidv4()}`,
             createEntry,
             get start() {
-                return this.createEntry.startTime.getTime();
+                return this.createEntry.dateStarted.getTime();
             },
             set start(ms: number) {
-                this.createEntry.startTime = new Date(ms);
+                this.createEntry.dateStarted = new Date(ms);
             },
             get end() {
-                return this.createEntry.endTime.getTime();
+                return this.createEntry.dateEnded.getTime();
             },
             set end(ms: number) {
-                this.createEntry.endTime = new Date(ms);
+                this.createEntry.dateEnded = new Date(ms);
             }
         };
     };

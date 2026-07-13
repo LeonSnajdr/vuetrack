@@ -4,8 +4,8 @@ import type { ProjectContract, ProjectId } from "@/contracts/ProjectContract";
 
 export type TimeEntryCreateContract = {
     taskId: string | null;
-    startTime: Date;
-    endTime: Date;
+    dateStarted: Date;
+    dateEnded: Date;
     projectId: ProjectId;
     activityId: ActivityId;
     comment: string | null;
@@ -20,8 +20,8 @@ export type TimeEntryContract = {
     project: ProjectContract;
     activity: ActivityContract;
     breakDetails: TimeEntryBreakContract | null;
-    startTime: Date;
-    endTime: Date;
+    dateStarted: Date;
+    dateEnded: Date;
     comment: string | null;
 };
 
@@ -34,7 +34,7 @@ export type TimeEntryUpdateContract = {
     taskId: string | null;
     projectId: ProjectId;
     activityId: ActivityId;
-    startTime: Date;
-    endTime: Date;
+    dateStarted: Date;
+    dateEnded: Date;
     comment: string | null;
 };

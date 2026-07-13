@@ -120,7 +120,7 @@ export const useCalendarHelper = () => {
             activityId: source.activityId,
             comment: source.comment
         })
-            .from(source, "startTime", "endTime")
+            .from(source, "dateStarted", "dateEnded")
             .build();
     };
 
@@ -131,7 +131,7 @@ export const useCalendarHelper = () => {
             activityId: source.activity?.id ?? null,
             comment: source.comment
         })
-            .from(source, "startTime", "endTime")
+            .from(source, "dateStarted", "dateEnded")
             .build();
     };
 
@@ -142,7 +142,7 @@ export const useCalendarHelper = () => {
             activityId: source.activity.id,
             comment: source.comment
         })
-            .from(source, "startTime", "endTime")
+            .from(source, "dateStarted", "dateEnded")
             .build();
     };
 
@@ -153,7 +153,7 @@ export const useCalendarHelper = () => {
             activityId: source.activity?.id ?? null,
             comment: source.comment
         })
-            .from(source, "startTime", "endTime")
+            .from(source, "dateStarted", "dateEnded")
             .build();
     };
 
@@ -200,13 +200,13 @@ export const useCalendarHelper = () => {
         if (mutation.kind === "update") {
             return {
                 ...mutation,
-                update: { ...mutation.update, startTime: new Date(start), endTime: new Date(end) }
+                update: { ...mutation.update, dateStarted: new Date(start), dateEnded: new Date(end) }
             };
         }
         if (mutation.kind === "create") {
             return {
                 ...mutation,
-                create: { ...mutation.create, startTime: new Date(start), endTime: new Date(end) }
+                create: { ...mutation.create, dateStarted: new Date(start), dateEnded: new Date(end) }
             };
         }
         return mutation;

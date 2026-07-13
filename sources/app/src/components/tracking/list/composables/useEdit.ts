@@ -14,8 +14,8 @@ export function useEdit() {
     const createEditableTimeEntry = (source: TimeEntryContract): TimeEntryUpdateContract => {
         return {
             taskId: source.taskId,
-            startTime: source.startTime,
-            endTime: source.endTime,
+            dateStarted: source.dateStarted,
+            dateEnded: source.dateEnded,
             projectId: source.project.id,
             activityId: source.activity.id,
             comment: source.comment

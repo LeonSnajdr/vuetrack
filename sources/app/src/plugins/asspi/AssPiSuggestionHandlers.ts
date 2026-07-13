@@ -26,8 +26,8 @@ import { idFromSourceKey, sourceKeyOf, type SuggestionCandidate, type Suggestion
 export type TimeEntrySuggestionDTO = {
     id: number;
     taskId: string;
-    startTime: Date;
-    endTime: Date;
+    dateStarted: Date;
+    dateEnded: Date;
     project: { id: number; name: string } | null;
     activity: { id: number; name: string } | null;
     comment: string | null;
@@ -36,8 +36,8 @@ export type TimeEntrySuggestionDTO = {
 // Body of PUT timeEntrySuggestions/{id} (dates arrive as ISO strings after JSON).
 export type TimeEntrySuggestionUpdateDTO = {
     taskId: string;
-    startTime: string;
-    endTime: string;
+    dateStarted: string;
+    dateEnded: string;
     projectId: number | null;
     activityId: number | null;
     comment: string | null;
@@ -249,8 +249,8 @@ export async function loadSuggestions(fromIso: string, toIso: string): Promise<T
             result.push({
                 id,
                 taskId: r.candidate.taskId,
-                startTime: start,
-                endTime: end,
+                dateStarted: start,
+                dateEnded: end,
                 project: r.project,
                 activity: r.activity,
                 comment: null
@@ -266,8 +266,8 @@ export async function loadSuggestions(fromIso: string, toIso: string): Promise<T
 
 export async function updateSuggestion(id: number, update: TimeEntrySuggestionUpdateDTO): Promise<TimeEntrySuggestionDTO> {
     const sourceKey = idToMeta.get(id)?.sourceKey;
-    const start = new Date(update.startTime);
-    const end = new Date(update.endTime);
+    const start = new Date(update.dateStarted);
+    const end = new Date(update.dateEnded);
     if (sourceKey) await SuggestionDb.savePosition(sourceKey, { start: start.getTime(), end: end.getTime() });
 
     const projectNames = new Map((await loadProjects()).map((p) => [Number(p.id), p.name]));
@@ -276,8 +276,8 @@ export async function updateSuggestion(id: number, update: TimeEntrySuggestionUp
     return {
         id,
         taskId: update.taskId,
-        startTime: start,
-        endTime: end,
+        dateStarted: start,
+        dateEnded: end,
         project: update.projectId != null ? { id: update.projectId, name: projectNames.get(update.projectId) ?? "" } : null,
         activity: update.activityId != null ? { id: update.activityId, name: activities.find((a) => Number(a.id) === update.activityId)?.name ?? "" } : null,
         comment: update.comment

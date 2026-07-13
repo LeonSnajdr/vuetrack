@@ -40,14 +40,14 @@
                 <template #item.taskId>
                     <div class="text-truncate" style="max-width: 200px" v-tooltip="item.taskId">{{ item.taskId }}</div>
                 </template>
-                <template #item.startTime>
-                    {{ dateFormatter.format(item.startTime, "fullTime24h") }}
+                <template #item.dateStarted>
+                    {{ dateFormatter.format(item.dateStarted, "fullTime24h") }}
                 </template>
-                <template #item.endTime>
-                    {{ dateFormatter.format(item.endTime, "fullTime24h") }}
+                <template #item.dateEnded>
+                    {{ dateFormatter.format(item.dateEnded, "fullTime24h") }}
                 </template>
                 <template #item.duration>
-                    {{ dateHelper.formatDurationMillis(dateHelper.durationBetween(item.startTime, item.endTime)) }}
+                    {{ dateHelper.formatDurationMillis(dateHelper.durationBetween(item.dateStarted, item.dateEnded)) }}
                 </template>
                 <template #item.comment>
                     <div class="text-truncate" style="max-width: 200px" v-tooltip="item.comment">{{ item.comment }}</div>
@@ -98,8 +98,8 @@ const remove = useDelete();
 
 const headers: DataTableHeader[] = [
     { title: t("list.table.date"), key: "data-table-group", sortable: false, nowrap: true, width: 200 },
-    { title: t("list.table.start"), key: "startTime", sortable: false, nowrap: true, width: 120 },
-    { title: t("list.table.end"), key: "endTime", sortable: false, nowrap: true, width: 120 },
+    { title: t("list.table.start"), key: "dateStarted", sortable: false, nowrap: true, width: 120 },
+    { title: t("list.table.end"), key: "dateEnded", sortable: false, nowrap: true, width: 120 },
     { title: t("list.table.duration"), key: "duration", sortable: false, nowrap: true, width: 120 },
     { title: t("list.table.task"), key: "taskId", sortable: false, nowrap: true, width: 120 },
     { title: t("list.table.project"), key: "project.name", sortable: false, nowrap: true, width: 120 },
@@ -111,13 +111,13 @@ const headers: DataTableHeader[] = [
 const tableItems = computed((): TimeEntryListContract[] => {
     return timeEntries.value.map((x) => ({
         ...x,
-        date: dateFormatter.format(x.startTime, "keyboardDate")
+        date: dateFormatter.format(x.dateStarted, "keyboardDate")
     }));
 });
 
 const dayDurationByDate = computed(() => {
     return tableItems.value.reduce<Record<string, number>>((acc, item) => {
-        acc[item.date] = (acc[item.date] ?? 0) + dateHelper.durationBetween(item.startTime, item.endTime);
+        acc[item.date] = (acc[item.date] ?? 0) + dateHelper.durationBetween(item.dateStarted, item.dateEnded);
         return acc;
     }, {});
 });
