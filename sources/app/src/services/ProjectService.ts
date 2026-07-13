@@ -13,12 +13,12 @@ class ProjectService {
         return result.data;
     };
 
-    public findProjectIdByTaskId = async (taskId: string): Promise<ProjectId | undefined> => {
-        const result = await axios.api.get<ProjectId | undefined>("project/findByTaskId", {
+    public findProjectByTaskId = async (taskId: string): Promise<ProjectContract | undefined> => {
+        const result = await axios.api.get<ProjectContract | null>("project/findByTaskId", {
             params: { taskId: taskId }
         });
 
-        return result.data;
+        return result.data ?? undefined;
     };
 }
 

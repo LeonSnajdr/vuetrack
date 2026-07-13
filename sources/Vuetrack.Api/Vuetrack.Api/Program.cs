@@ -37,6 +37,8 @@ try
 
     builder.Services.AddJwtAuthentication().AddKeycloak(builder.Configuration);
 
+    builder.Services.AddProblemDetails();
+
     builder.Services.AddScoped<ValidationActionFilter>();
     builder.Services
         .AddControllers(options => options.Filters.Add<ValidationActionFilter>())

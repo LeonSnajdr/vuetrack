@@ -11,11 +11,11 @@ export type TimeEntryCreateContract = {
     comment: string | null;
 };
 
-export type TimeEntryId = Branded<number, "timeEntryId"> | null;
+export type TimeEntryId = Branded<string, "timeEntryId"> | null;
 
 export type TimeEntryContract = {
     id: TimeEntryId;
-    userId: number;
+    userId: string;
     taskId: string | null;
     project: ProjectContract;
     activity: ActivityContract;

@@ -8,6 +8,7 @@
                     <VTab :prependIcon="mdiCalendar" value="calendar">{{ $t("settings.calendar") }}</VTab>
                     <VTab :prependIcon="mdiFormatListBulleted" value="list">{{ $t("settings.list") }}</VTab>
                     <VTab :prependIcon="mdiConnection" value="connectors">{{ $t("settings.connectors") }}</VTab>
+                    <VTab :prependIcon="mdiClockOutline" value="backends">{{ $t("settings.backends") }}</VTab>
                 </VTabs>
                 <VTabsWindow v-model="activeTab" class="flex-grow-1 overflow-auto overflow-x-hidden">
                     <VTabsWindowItem value="general">
@@ -21,6 +22,9 @@
                     </VTabsWindowItem>
                     <VTabsWindowItem value="connectors">
                         <AppSettingsConnectors />
+                    </VTabsWindowItem>
+                    <VTabsWindowItem value="backends">
+                        <AppSettingsBackends />
                     </VTabsWindowItem>
                 </VTabsWindow>
             </VCardText>

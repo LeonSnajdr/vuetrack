@@ -1,6 +1,6 @@
 import type { Branded } from "typings/brand";
 
-export type ProjectId = Branded<number, "projectId">;
+export type ProjectId = Branded<string, "projectId">;
 
 export type ProjectContract = {
     id: ProjectId;

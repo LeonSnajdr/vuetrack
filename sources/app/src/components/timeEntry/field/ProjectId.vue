@@ -30,15 +30,15 @@ const projectStore = useProjectStore();
 const { projects } = storeToRefs(projectStore);
 
 const rules = useRules();
-const { execute: findProjectIdByTaskId, isLoading } = useAsyncTask(ProjectService.findProjectIdByTaskId);
+const { execute: findProjectByTaskId, isLoading } = useAsyncTask(ProjectService.findProjectByTaskId);
 
 const updateProjectId = useDebounceFn(async () => {
     if (props.disableInferFromTaskId) return;
     if (!props.taskId) return;
 
-    const findResult = await findProjectIdByTaskId(props.taskId);
+    const findResult = await findProjectByTaskId(props.taskId);
     if (findResult.status === "success" && findResult.data) {
-        projectId.value = findResult.data;
+        projectId.value = findResult.data.id;
     }
 }, 500);
 
