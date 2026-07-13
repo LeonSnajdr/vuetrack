@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Vuetrack.Api.Features.Backends.Timetracking.Contracts;
 using Vuetrack.Api.Features.Backends.Timetracking.Services;
 using Vuetrack.Api.Infrastructure.Authentication;
+using Vuetrack.Api.Infrastructure.Validation;
 
 namespace Vuetrack.Api.Features.Backends.Timetracking;
 
@@ -20,7 +21,8 @@ public class TimetrackingConnectionController(ITimetrackingConnectionService con
     {
         if (!Uri.TryCreate(redirectUri, UriKind.Absolute, out _))
         {
-            return BadRequest(new { errors = new[] { "redirectUri must be a valid absolute URI." } });
+            ModelState.AddModelError(nameof(redirectUri), "redirectUri must be a valid absolute URI.");
+            return ValidationProblem();
         }
 
         return Ok(ConnectionService.BuildAuthorization(redirectUri));
@@ -41,7 +43,7 @@ public class TimetrackingConnectionController(ITimetrackingConnectionService con
 
         var result = await ConnectionService.ConnectAsync(userId, request, cancellationToken);
 
-        return result.ToActionResult();
+        return this.ToActionResult(result);
     }
 
     [HttpDelete]

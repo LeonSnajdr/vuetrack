@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Vuetrack.Api.Features.Backends;
 using Vuetrack.Api.Features.Project.Services;
 using Vuetrack.Api.Infrastructure.Authentication;
+using Vuetrack.Api.Infrastructure.Validation;
 
 namespace Vuetrack.Api.Features.Project;
 
@@ -22,7 +23,7 @@ public class ProjectController(IProjectService projectService) : ControllerBase
 
         var result = await ProjectService.ListAsync(userId, cancellationToken);
 
-        return result.ToActionResult();
+        return this.ToActionResult(result);
     }
 
     [HttpGet("{projectId}/activity")]
@@ -32,7 +33,7 @@ public class ProjectController(IProjectService projectService) : ControllerBase
 
         var result = await ProjectService.ListActivitiesAsync(userId, projectId, cancellationToken);
 
-        return result.ToActionResult();
+        return this.ToActionResult(result);
     }
 
     [HttpGet("findByTaskId")]
@@ -42,6 +43,6 @@ public class ProjectController(IProjectService projectService) : ControllerBase
 
         var result = await ProjectService.FindByTaskIdAsync(userId, taskId, cancellationToken);
 
-        return result.ToActionResult();
+        return this.ToActionResult(result);
     }
 }

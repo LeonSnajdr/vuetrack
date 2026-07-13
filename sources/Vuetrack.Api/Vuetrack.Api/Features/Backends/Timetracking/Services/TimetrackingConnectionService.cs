@@ -84,7 +84,7 @@ public class TimetrackingConnectionService(
         catch (Exception ex)
         {
             Logger.LogWarning(ex, "Timetracking connect failed");
-            return BackendError.Unexpected;
+            return Error.Unexpected();
         }
     }
 

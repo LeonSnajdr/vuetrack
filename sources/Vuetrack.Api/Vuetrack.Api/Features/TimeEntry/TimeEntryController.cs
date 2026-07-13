@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Vuetrack.Api.Features.Backends;
 using Vuetrack.Api.Features.TimeEntry.Services;
 using Vuetrack.Api.Infrastructure.Authentication;
+using Vuetrack.Api.Infrastructure.Validation;
 using Vuetrack.Backends.Abstractions.Contracts;
 
 namespace Vuetrack.Api.Features.TimeEntry;
@@ -23,7 +24,7 @@ public class TimeEntryController(ITimeEntryService timeEntryService) : Controlle
 
         var result = await TimeEntryService.ListAsync(userId, from, to, cancellationToken);
 
-        return result.ToActionResult();
+        return this.ToActionResult(result);
     }
 
     [HttpPost]
@@ -33,7 +34,7 @@ public class TimeEntryController(ITimeEntryService timeEntryService) : Controlle
 
         var result = await TimeEntryService.CreateAsync(userId, contract, cancellationToken);
 
-        return result.ToActionResult();
+        return this.ToActionResult(result);
     }
 
     [HttpPut("{id}")]
@@ -43,7 +44,7 @@ public class TimeEntryController(ITimeEntryService timeEntryService) : Controlle
 
         var result = await TimeEntryService.UpdateAsync(userId, id, contract, cancellationToken);
 
-        return result.ToActionResult();
+        return this.ToActionResult(result);
     }
 
     [HttpDelete("{id}")]
@@ -53,6 +54,6 @@ public class TimeEntryController(ITimeEntryService timeEntryService) : Controlle
 
         var result = await TimeEntryService.DeleteAsync(userId, id, cancellationToken);
 
-        return result.ToActionResult();
+        return this.ToActionResult(result);
     }
 }
