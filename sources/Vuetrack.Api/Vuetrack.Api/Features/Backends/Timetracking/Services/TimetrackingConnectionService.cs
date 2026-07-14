@@ -107,19 +107,9 @@ public class TimetrackingConnectionService(
             return;
         }
 
-        var connection = await Repository.GetByUserId(userId) ?? new TimetrackingConnectionModel
-        {
-            UserId = userId,
-            AuthMode = AuthMode,
-            EncryptedRefreshToken = string.Empty,
-        };
+        var encryptedRefreshToken = SecretProtector.Protect(token.RefreshToken);
 
-        connection.AuthMode = AuthMode;
-        connection.EncryptedRefreshToken = SecretProtector.Protect(token.RefreshToken);
-        connection.ExternalUserId = externalUserId;
-        connection.Enabled = true;
-
-        await Repository.Save(connection);
+        await Repository.UpsertConnectionAsync(userId, AuthMode, encryptedRefreshToken, externalUserId);
     }
 }
 

@@ -112,6 +112,19 @@ public class JiraConnectionContextFactoryTests
 
         public Task<JiraConnectionModel?> GetByUserId(string userId) => Task.FromResult(Connection);
 
+        public Task UpsertConnectionAsync(string userId, string siteUrl, string cloudId, string authMode, string encryptedRefreshToken)
+            => throw new NotSupportedException();
+
+        public Task SetRefreshTokenAsync(string userId, string encryptedRefreshToken)
+        {
+            if (Connection is not null)
+            {
+                Connection.EncryptedRefreshToken = encryptedRefreshToken;
+            }
+
+            return Task.CompletedTask;
+        }
+
         public Task Save(JiraConnectionModel model)
         {
             Connection = model;

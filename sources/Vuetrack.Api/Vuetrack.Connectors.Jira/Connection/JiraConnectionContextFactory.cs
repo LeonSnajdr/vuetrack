@@ -40,8 +40,8 @@ public class JiraConnectionContextFactory(IJiraConnectionRepository repository, 
 
         if (!string.IsNullOrEmpty(token.RefreshToken) && token.RefreshToken != refreshToken)
         {
-            connection.EncryptedRefreshToken = SecretProtector.Protect(token.RefreshToken);
-            await Repository.Save(connection);
+            var rotatedRefreshToken = SecretProtector.Protect(token.RefreshToken);
+            await Repository.SetRefreshTokenAsync(userId, rotatedRefreshToken);
         }
 
         var resolved = new JiraConnectionContainer

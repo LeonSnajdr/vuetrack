@@ -99,22 +99,9 @@ public class JiraConnectionService(IConnectorRegistry registry, IJiraOAuthApiCli
             return;
         }
 
-        var connection = await Repository.GetByUserId(userId) ?? new JiraConnectionModel
-        {
-            UserId = userId,
-            SiteUrl = site.Url,
-            CloudId = site.CloudId,
-            AuthMode = "oauth2-3lo",
-            EncryptedRefreshToken = string.Empty,
-        };
+        var encryptedRefreshToken = SecretProtector.Protect(token.RefreshToken);
 
-        connection.SiteUrl = site.Url;
-        connection.CloudId = site.CloudId;
-        connection.AuthMode = "oauth2-3lo";
-        connection.EncryptedRefreshToken = SecretProtector.Protect(token.RefreshToken);
-        connection.Enabled = true;
-
-        await Repository.Save(connection);
+        await Repository.UpsertConnectionAsync(userId, site.Url, site.CloudId, "oauth2-3lo", encryptedRefreshToken);
     }
 }
 

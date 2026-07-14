@@ -6,7 +6,6 @@ using Vuetrack.Backends.Abstractions.Contracts;
 using Vuetrack.Backends.Timetracking.Api;
 using Vuetrack.Backends.Timetracking.Connection;
 using Vuetrack.Backends.Timetracking.Internal;
-using Vuetrack.Framework.Errors;
 
 namespace Vuetrack.Backends.Timetracking;
 

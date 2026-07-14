@@ -13,9 +13,36 @@ public class TimetrackingConnectionRepository(ILogger<TimetrackingConnectionRepo
     {
         return await Collection.Find(x => x.UserId == userId).FirstOrDefaultAsync();
     }
+
+    public async Task UpsertConnectionAsync(string userId, string authMode, string encryptedRefreshToken, string externalUserId)
+    {
+        var update = Update
+            .Set(x => x.AuthMode, authMode)
+            .Set(x => x.EncryptedRefreshToken, encryptedRefreshToken)
+            .Set(x => x.ExternalUserId, externalUserId)
+            .Set(x => x.Enabled, true)
+            .SetOnInsert(x => x.UserId, userId);
+
+        var filter = Filter.Where(x => x.UserId == userId);
+        var options = new UpdateOptions { IsUpsert = true };
+
+        await Collection.UpdateOneAsync(filter, update, options);
+    }
+
+    public async Task SetRefreshTokenAsync(string userId, string encryptedRefreshToken)
+    {
+        var update = Update.Set(x => x.EncryptedRefreshToken, encryptedRefreshToken);
+        var filter = Filter.Where(x => x.UserId == userId);
+
+        await Collection.UpdateOneAsync(filter, update);
+    }
 }
 
 public interface ITimetrackingConnectionRepository : IBaseRepositoryMongo<TimetrackingConnectionModel>
 {
     Task<TimetrackingConnectionModel?> GetByUserId(string userId);
+
+    Task UpsertConnectionAsync(string userId, string authMode, string encryptedRefreshToken, string externalUserId);
+
+    Task SetRefreshTokenAsync(string userId, string encryptedRefreshToken);
 }
