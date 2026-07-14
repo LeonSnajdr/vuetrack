@@ -11,7 +11,8 @@ public static class SuggestionMapper
         {
             UserId = userId,
             Title = suggestion.Title,
-            Description = suggestion.Description,
+            TaskId = suggestion.TaskId,
+            Comment = suggestion.Comment,
             DateStarted = suggestion.DateStarted,
             DateEnded = suggestion.DateEnded,
             Status = SuggestionStatus.Pending,
@@ -32,13 +33,14 @@ public static class SuggestionMapper
         return new SuggestionContract(
             model.Id,
             model.Title,
-            model.Description,
+            model.TaskId,
+            model.ProjectId,
+            model.ActivityId,
             model.DateStarted,
             model.DateEnded,
+            model.Comment,
             model.Status.ToString(),
             model.Sources.Select(s => new SuggestionSourceContract(s.ConnectorKey, s.ExternalId, s.Link)).ToList(),
-            model.Confidence,
-            model.ProposedBackendProjectId,
-            model.ProposedBackendActivityId);
+            model.Confidence);
     }
 }

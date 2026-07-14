@@ -25,6 +25,18 @@ public class SuggestionEngineTests
     }
 
     [Fact]
+    public void Build_TaskIdMetadata_PropagatesFromEarliestContributor()
+    {
+        var engine = CreateEngine();
+        var first = Signal("PROJ-1:worklog:1", "Work", At(9, 0), At(9, 5), correlationId: "PROJ-1", taskId: "PROJ-1");
+        var second = Signal("PROJ-1:worklog:2", "Work", At(9, 6), At(9, 10), correlationId: "PROJ-1", taskId: "PROJ-2");
+
+        var result = engine.Build([second, first], From, To);
+
+        result.Should().ContainSingle().Which.TaskId.Should().Be("PROJ-1");
+    }
+
+    [Fact]
     public void Build_SingleWorklogSignal_ProducesSingleSuggestionWithHighConfidence()
     {
         var engine = CreateEngine();
@@ -206,7 +218,7 @@ public class SuggestionEngineTests
 
     private static DateTime At(int hour, int minute) => BaseDate + TimeSpan.FromHours(hour) + TimeSpan.FromMinutes(minute);
 
-    private static ActivitySignal Signal(string externalId, string title, DateTime start, DateTime? end = null, string? correlationId = null, ConnectorKey connectorKey = ConnectorKey.Jira)
+    private static ActivitySignal Signal(string externalId, string title, DateTime start, DateTime? end = null, string? correlationId = null, ConnectorKey connectorKey = ConnectorKey.Jira, string? taskId = null)
     {
         return new ActivitySignal
         {
@@ -215,9 +227,14 @@ public class SuggestionEngineTests
             Title = title,
             DateStarted = start,
             DateEnded = end,
-            Metadata = correlationId is null
-                ? new Dictionary<string, string>()
-                : new Dictionary<string, string> { ["correlationId"] = correlationId },
+            Metadata = new Dictionary<string, string>(
+                new[]
+                {
+                    new KeyValuePair<string, string?>("correlationId", correlationId),
+                    new KeyValuePair<string, string?>(ActivityMetadataKeys.TaskId, taskId),
+                }
+                .Where(x => x.Value is not null)
+                .Select(x => new KeyValuePair<string, string>(x.Key, x.Value!))),
         };
     }
 }

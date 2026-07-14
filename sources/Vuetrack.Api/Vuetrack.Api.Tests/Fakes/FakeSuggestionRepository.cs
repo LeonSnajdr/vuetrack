@@ -12,7 +12,7 @@ public sealed class FakeSuggestionRepository : ISuggestionRepository
     public Task<List<SuggestionModel>> ListAsync(string userId, DateTime from, DateTime to)
     {
         var result = items
-            .Where(x => x.UserId == userId && x.Status != SuggestionStatus.Dismissed && x.DateStarted >= from && x.DateStarted < to)
+            .Where(x => x.UserId == userId && x.Status != SuggestionStatus.Dismissed && x.Status != SuggestionStatus.Confirmed && x.DateStarted >= from && x.DateStarted < to)
             .OrderBy(x => x.DateStarted)
             .ToList();
 
@@ -40,7 +40,7 @@ public sealed class FakeSuggestionRepository : ISuggestionRepository
         return Task.FromResult(exists);
     }
 
-    public Task<SuggestionModel?> UpdateFieldsAsync(string id, string userId, string title, string? description, DateTime start, DateTime end, DateTime updatedAt)
+    public Task<SuggestionModel?> UpdateFieldsAsync(string id, string userId, string title, string? taskId, string? projectId, string? activityId, DateTime start, DateTime end, string? comment, DateTime updatedAt)
     {
         var model = items.FirstOrDefault(x => x.Id == id && x.UserId == userId);
         if (model is null)
@@ -49,9 +49,12 @@ public sealed class FakeSuggestionRepository : ISuggestionRepository
         }
 
         model.Title = title;
-        model.Description = description;
+        model.TaskId = taskId;
+        model.ProjectId = projectId;
+        model.ActivityId = activityId;
         model.DateStarted = start;
         model.DateEnded = end;
+        model.Comment = comment;
         model.Status = SuggestionStatus.Edited;
         model.DateUpdated = updatedAt;
 
@@ -70,6 +73,18 @@ public sealed class FakeSuggestionRepository : ISuggestionRepository
         model.DateUpdated = updatedAt;
 
         return Task.FromResult(true);
+    }
+
+    public Task DeleteResettableAsync(string userId, DateTime from, DateTime to, IReadOnlyList<ConnectorKey>? connectorKeys)
+    {
+        items.RemoveAll(x =>
+            x.UserId == userId &&
+            x.DateStarted >= from &&
+            x.DateStarted < to &&
+            x.Status is SuggestionStatus.Pending or SuggestionStatus.Edited or SuggestionStatus.Dismissed &&
+            (connectorKeys is null || x.Sources.Any(s => connectorKeys.Contains(s.ConnectorKey))));
+
+        return Task.CompletedTask;
     }
 
     public Task<SuggestionModel> GetById(string id) => Task.FromResult(items.First(x => x.Id == id));

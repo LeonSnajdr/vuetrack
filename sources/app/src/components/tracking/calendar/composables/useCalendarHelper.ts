@@ -127,8 +127,8 @@ export const useCalendarHelper = () => {
     const buildTimeEntryCreateFromSuggestion = (source: TimeEntrySuggestionContract): Nullable<TimeEntryCreateContract> => {
         return withProxy({
             taskId: source.taskId,
-            projectId: source.project?.id ?? null,
-            activityId: source.activity?.id ?? null,
+            projectId: source.projectId,
+            activityId: source.activityId,
             comment: source.comment
         })
             .from(source, "dateStarted", "dateEnded")
@@ -148,9 +148,10 @@ export const useCalendarHelper = () => {
 
     const buildTimeEntrySuggestionUpdate = (source: TimeEntrySuggestionContract): TimeEntrySuggestionUpdateContract => {
         return withProxy({
+            title: source.title,
             taskId: source.taskId,
-            projectId: source.project?.id ?? null,
-            activityId: source.activity?.id ?? null,
+            projectId: source.projectId,
+            activityId: source.activityId,
             comment: source.comment
         })
             .from(source, "dateStarted", "dateEnded")

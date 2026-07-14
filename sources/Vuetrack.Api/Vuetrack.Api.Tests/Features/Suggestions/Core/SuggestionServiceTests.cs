@@ -7,7 +7,9 @@ using Vuetrack.Api.Features.Suggestions.Core;
 using Vuetrack.Api.Features.Suggestions.Core.Contracts;
 using Vuetrack.Api.Features.Suggestions.Core.Services;
 using Vuetrack.Api.Features.Suggestions.Engine;
+using Vuetrack.Api.Features.TimeEntry.Services;
 using Vuetrack.Api.Tests.Fakes;
+using Vuetrack.Backends.Abstractions.Contracts;
 using Vuetrack.Connectors.Abstractions;
 using Xunit;
 
@@ -219,11 +221,93 @@ public class SuggestionServiceTests
         result.FirstError.Type.Should().Be(ErrorType.NotFound);
     }
 
-    private static SuggestionService CreateService(FakeConnectorRegistry registry, IEnumerable<IConnectorContextInitializer> initializers, FakeSuggestionRepository repository)
+    [Fact]
+    public async Task AcceptAsync_ExistingSuggestion_ConfirmsAndExcludesFromList()
+    {
+        var repository = new FakeSuggestionRepository();
+        var model = BuildModel("user-a", "Original", At(9, 0), At(9, 30));
+        await repository.Save(model);
+        var service = CreateService(new FakeConnectorRegistry(), [], repository);
+
+        var result = await service.AcceptAsync("user-a", model.Id, CancellationToken.None);
+        var listed = await service.ListAsync("user-a", From, To);
+
+        result.IsError.Should().BeFalse();
+        repository.Items.Should().ContainSingle(x => x.Status == SuggestionStatus.Confirmed);
+        listed.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GenerateAsync_ManualEntryWithSameTaskId_SkipsSuggestion()
+    {
+        var registry = new FakeConnectorRegistry();
+        registry.Add(new FakeConnector(Descriptor(ConnectorKey.Jira), (_, _) => Signals(
+        [
+            Signal(ConnectorKey.Jira, "J-1:worklog:1", "J-1 work", At(9, 0), At(9, 10), "J-1"),
+        ])));
+        var timeEntries = new StubTimeEntryService
+        {
+            ListResult = ((IReadOnlyList<TimeEntryContract>)new List<TimeEntryContract>
+            {
+                new() { UserId = "user-1", TaskId = "J-1", Project = new ProjectContract("p", "P"), Activity = new ActivityContract("a", "A"), DateStarted = At(8, 0), DateEnded = At(8, 30) },
+            }).ToErrorOr(),
+        };
+        var repository = new FakeSuggestionRepository();
+        var service = CreateService(registry, [new FakeConnectorContextInitializer(ConnectorKey.Jira, true)], repository, timeEntries);
+
+        var result = await service.GenerateAsync("user-1", Request(), CancellationToken.None);
+
+        result.GeneratedCount.Should().Be(0);
+        repository.Items.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ReloadAsync_Success_ResetsMutableSuggestionsAndKeepsConfirmed()
+    {
+        var registry = new FakeConnectorRegistry();
+        registry.Add(new FakeConnector(Descriptor(ConnectorKey.Jira), (_, _) => Signals(
+        [
+            Signal(ConnectorKey.Jira, "J-1:worklog:1", "Original", At(9, 0), At(9, 10), "J-1"),
+            Signal(ConnectorKey.Jira, "J-2:worklog:1", "Accepted", At(10, 0), At(10, 10), "J-2"),
+        ])));
+        var repository = new FakeSuggestionRepository();
+        var edited = BuildModel("user-1", "Edited", At(9, 0), At(9, 30), "J-1:worklog:1");
+        edited.Status = SuggestionStatus.Edited;
+        var confirmed = BuildModel("user-1", "Accepted", At(10, 0), At(10, 30), "J-2:worklog:1");
+        confirmed.Status = SuggestionStatus.Confirmed;
+        await repository.Save(edited);
+        await repository.Save(confirmed);
+        var service = CreateService(registry, [new FakeConnectorContextInitializer(ConnectorKey.Jira, true)], repository);
+
+        var result = await service.ReloadAsync("user-1", Request(), CancellationToken.None);
+
+        result.GeneratedCount.Should().Be(1);
+        repository.Items.Should().HaveCount(2);
+        repository.Items.Should().ContainSingle(x => x.Status == SuggestionStatus.Confirmed && x.Title == "Accepted");
+        repository.Items.Should().ContainSingle(x => x.Status == SuggestionStatus.Pending && x.Title == "Original");
+    }
+
+    [Fact]
+    public async Task ReloadAsync_FetchFails_DoesNotDeleteExistingSuggestions()
+    {
+        var registry = new FakeConnectorRegistry();
+        registry.Add(new FakeConnector(Descriptor(ConnectorKey.Jira), (_, _) => Fail(Error.Failure())));
+        var repository = new FakeSuggestionRepository();
+        await repository.Save(BuildModel("user-1", "Keep", At(9, 0), At(9, 30), "J-1"));
+        var service = CreateService(registry, [new FakeConnectorContextInitializer(ConnectorKey.Jira, true)], repository);
+
+        var result = await service.ReloadAsync("user-1", Request(), CancellationToken.None);
+
+        result.GeneratedCount.Should().Be(0);
+        repository.Items.Should().ContainSingle(x => x.Title == "Keep");
+    }
+
+    private static SuggestionService CreateService(FakeConnectorRegistry registry, IEnumerable<IConnectorContextInitializer> initializers, FakeSuggestionRepository repository, ITimeEntryService? timeEntryService = null)
     {
         var engine = new SuggestionEngine(Options.Create(new SuggestionEngineOptions()));
         var resolver = new ConnectorResolver(registry, initializers);
-        return new SuggestionService(registry, resolver, repository, engine, NullLogger<SuggestionService>.Instance);
+        timeEntryService ??= new StubTimeEntryService { ListResult = ((IReadOnlyList<TimeEntryContract>)Array.Empty<TimeEntryContract>()).ToErrorOr() };
+        return new SuggestionService(registry, resolver, repository, engine, timeEntryService, NullLogger<SuggestionService>.Instance);
     }
 
     private static Task<ErrorOr<IReadOnlyList<ActivitySignal>>> Signals(IReadOnlyList<ActivitySignal> signals) =>
@@ -241,14 +325,14 @@ public class SuggestionServiceTests
         DateEnded = end,
     };
 
-    private static SuggestionModel BuildModel(string userId, string title, DateTime start, DateTime end) => new()
+    private static SuggestionModel BuildModel(string userId, string title, DateTime start, DateTime end, string? externalId = null) => new()
     {
         UserId = userId,
         Title = title,
         DateStarted = start,
         DateEnded = end,
         Status = SuggestionStatus.Pending,
-        Sources = [],
+        Sources = externalId is null ? [] : [new SuggestionSourceModel { ConnectorKey = ConnectorKey.Jira, ExternalId = externalId }],
         Confidence = 0.5,
         DateCreated = start,
         DateUpdated = start,
@@ -263,12 +347,13 @@ public class SuggestionServiceTests
 
     private static DateTime At(int hour, int minute) => BaseDate + TimeSpan.FromHours(hour) + TimeSpan.FromMinutes(minute);
 
-    private static ActivitySignal Signal(ConnectorKey connectorKey, string externalId, string title, DateTime start, DateTime? end = null) => new()
+    private static ActivitySignal Signal(ConnectorKey connectorKey, string externalId, string title, DateTime start, DateTime? end = null, string? taskId = null) => new()
     {
         ConnectorKey = connectorKey,
         ExternalId = externalId,
         Title = title,
         DateStarted = start,
         DateEnded = end,
+        Metadata = taskId is null ? new Dictionary<string, string>() : new Dictionary<string, string> { [ActivityMetadataKeys.TaskId] = taskId },
     };
 }

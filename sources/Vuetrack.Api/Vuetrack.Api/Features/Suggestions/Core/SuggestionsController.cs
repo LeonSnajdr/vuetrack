@@ -32,6 +32,14 @@ public class SuggestionsController(ISuggestionService suggestionService) : Contr
         return Ok(await SuggestionService.GenerateAsync(userId, request, cancellationToken));
     }
 
+    [HttpPost("reload")]
+    public async Task<IActionResult> Reload([FromBody] GenerateSuggestionsRequestContract request, CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+
+        return Ok(await SuggestionService.ReloadAsync(userId, request, cancellationToken));
+    }
+
     [HttpPatch("{id}")]
     public async Task<IActionResult> Update(string id, [FromBody] SuggestionUpdateContract request, CancellationToken cancellationToken)
     {
@@ -48,6 +56,16 @@ public class SuggestionsController(ISuggestionService suggestionService) : Contr
         var userId = User.GetUserId();
 
         var result = await SuggestionService.DismissAsync(userId, id, cancellationToken);
+
+        return this.ToActionResult(result);
+    }
+
+    [HttpPost("{id}/accept")]
+    public async Task<IActionResult> Accept(string id, CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+
+        var result = await SuggestionService.AcceptAsync(userId, id, cancellationToken);
 
         return this.ToActionResult(result);
     }

@@ -1,24 +1,45 @@
 import type { Branded } from "typings/brand";
-import type { ActivityContract, ActivityId } from "@/contracts/ActivityContract";
-import type { ProjectContract, ProjectId } from "@/contracts/ProjectContract";
+import type { ActivityId } from "@/contracts/ActivityContract";
+import type { ProjectId } from "@/contracts/ProjectContract";
 
-export type TimeEntrySuggestionId = Branded<number, "timeEntrySuggestionId">;
+export type TimeEntrySuggestionId = Branded<string, "timeEntrySuggestionId">;
+
+export type TimeEntrySuggestionSourceContract = {
+    connectorKey: string;
+    externalId: string;
+    link: string | null;
+};
 
 export type TimeEntrySuggestionContract = {
     id: TimeEntrySuggestionId;
+    title: string;
     taskId: string | null;
+    projectId: ProjectId | null;
+    activityId: ActivityId | null;
     dateStarted: Date;
     dateEnded: Date;
-    project: ProjectContract | null;
-    activity: ActivityContract | null;
     comment: string | null;
+    status: "Pending" | "Edited" | "Dismissed" | "Confirmed";
+    sources: TimeEntrySuggestionSourceContract[];
+    confidence: number;
 };
 
 export type TimeEntrySuggestionUpdateContract = {
+    title: string;
     taskId: string | null;
-    dateStarted: Date;
-    dateEnded: Date;
     projectId: ProjectId | null;
     activityId: ActivityId | null;
+    dateStarted: Date;
+    dateEnded: Date;
     comment: string | null;
+};
+
+export type GenerateSuggestionsResultContract = {
+    generatedCount: number;
+    connectorOutcomes: {
+        connectorKey: string;
+        status: string;
+        signalCount: number;
+        error: string | null;
+    }[];
 };

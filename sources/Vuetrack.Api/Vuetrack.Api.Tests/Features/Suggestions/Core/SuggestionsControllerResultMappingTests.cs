@@ -16,7 +16,7 @@ public class SuggestionsControllerResultMappingTests
     [Fact]
     public async Task Update_WhenServiceReturnsValue_ReturnsOkWithSuggestion()
     {
-        var contract = new SuggestionContract("id-1", "Title", null, DateTime.UnixEpoch, DateTime.UnixEpoch.AddMinutes(30), "Edited", [], 0.6, null, null);
+        var contract = new SuggestionContract("id-1", "Title", null, null, null, DateTime.UnixEpoch, DateTime.UnixEpoch.AddMinutes(30), null, "Edited", [], 0.6);
         var controller = CreateController(new StubSuggestionService { OnUpdate = (_, _, _, _) => Task.FromResult<ErrorOr<SuggestionContract>>(contract) });
 
         var result = await controller.Update("id-1", UpdateContract(), CancellationToken.None);
@@ -57,6 +57,27 @@ public class SuggestionsControllerResultMappingTests
         var objectResult = result.Should().BeOfType<ObjectResult>().Subject;
         objectResult.StatusCode.Should().Be(StatusCodes.Status404NotFound);
         objectResult.Value.Should().BeOfType<ProblemDetails>();
+    }
+
+    [Fact]
+    public async Task Accept_WhenServiceReturnsSuccess_ReturnsNoContent()
+    {
+        var controller = CreateController(new StubSuggestionService { OnAccept = (_, _, _) => Task.FromResult<ErrorOr<Success>>(Result.Success) });
+
+        var result = await controller.Accept("id-1", CancellationToken.None);
+
+        result.Should().BeOfType<NoContentResult>();
+    }
+
+    [Fact]
+    public async Task Reload_ReturnsGenerationResult()
+    {
+        var expected = new GenerateSuggestionsResultContract(1, []);
+        var controller = CreateController(new StubSuggestionService { OnReload = (_, _, _) => Task.FromResult(expected) });
+
+        var result = await controller.Reload(new GenerateSuggestionsRequestContract { From = DateTime.UnixEpoch, To = DateTime.UnixEpoch.AddDays(1) }, CancellationToken.None);
+
+        result.Should().BeOfType<OkObjectResult>().Which.Value.Should().Be(expected);
     }
 
     private static SuggestionUpdateContract UpdateContract() => new()

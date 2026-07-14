@@ -18,3 +18,8 @@ public sealed record ActivitySignal
 
     public IReadOnlyDictionary<string, string> Metadata { get; init; } = new Dictionary<string, string>();
 }
+
+public static class ActivityMetadataKeys
+{
+    public const string TaskId = "taskId";
+}

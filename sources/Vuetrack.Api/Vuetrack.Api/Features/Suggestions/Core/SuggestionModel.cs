@@ -11,7 +11,13 @@ public class SuggestionModel : BaseModelMongo
 
     public required string Title { get; set; }
 
-    public string? Description { get; set; }
+    public string? TaskId { get; set; }
+
+    public string? ProjectId { get; set; }
+
+    public string? ActivityId { get; set; }
+
+    public string? Comment { get; set; }
 
     public required DateTime DateStarted { get; set; }
 
@@ -21,10 +27,6 @@ public class SuggestionModel : BaseModelMongo
     public SuggestionStatus Status { get; set; } = SuggestionStatus.Pending;
 
     public List<SuggestionSourceModel> Sources { get; set; } = [];
-
-    public string? ProposedBackendProjectId { get; set; }
-
-    public string? ProposedBackendActivityId { get; set; }
 
     public double Confidence { get; set; }
 

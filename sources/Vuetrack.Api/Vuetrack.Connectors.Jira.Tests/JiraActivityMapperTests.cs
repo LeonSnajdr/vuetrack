@@ -43,6 +43,7 @@ public class JiraActivityMapperTests
         signal.ExternalId.Should().Be("PROJ-1:worklog:100");
         signal.Title.Should().Be("PROJ-1 Fix login");
         signal.Description.Should().Be("worked on it");
+        signal.Metadata[ActivityMetadataKeys.TaskId].Should().Be("PROJ-1");
         signal.DateStarted.Should().Be(new DateTime(2026, 7, 1, 9, 0, 0, DateTimeKind.Utc));
         signal.DateEnded.Should().Be(new DateTime(2026, 7, 1, 10, 0, 0, DateTimeKind.Utc));
         signal.Link.Should().Be("https://acme.atlassian.net/browse/PROJ-1");
@@ -62,5 +63,6 @@ public class JiraActivityMapperTests
         signal.DateStarted.Should().Be(new DateTime(2026, 7, 1, 15, 0, 0, DateTimeKind.Utc));
         signal.DateEnded.Should().BeNull();
         signal.Description.Should().BeNull();
+        signal.Metadata[ActivityMetadataKeys.TaskId].Should().Be("PROJ-2");
     }
 }

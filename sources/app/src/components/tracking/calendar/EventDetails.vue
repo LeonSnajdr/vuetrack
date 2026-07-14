@@ -12,7 +12,7 @@
         <VCard v-if="timeEntry" class="pa-3" width="360">
             <div class="d-flex flex-column ga-1">
                 <div class="font-weight-bold">
-                    {{ timeEntry.taskId ?? timeEntry.project?.name }}
+                    {{ displayTitle }}
                 </div>
 
                 <div v-if="issue.isLoading.value" class="d-flex align-center ga-2 text-medium-emphasis">
@@ -37,13 +37,13 @@
                     <span class="text-medium-emphasis flex-shrink-0 text-no-wrap" style="width: 84px">{{ $t("calendar.event.details.time") }}</span>
                     <span>{{ dateFormatter.format(state.event!.start, "fullTime24h") }} – {{ dateFormatter.format(state.event!.end, "fullTime24h") }}</span>
                 </div>
-                <div v-if="timeEntry.project?.name" class="d-flex ga-3">
+                <div v-if="projectName" class="d-flex ga-3">
                     <span class="text-medium-emphasis flex-shrink-0 text-no-wrap" style="width: 84px">{{ $t("calendar.event.details.project") }}</span>
-                    <span>{{ timeEntry.project.name }}</span>
+                    <span>{{ projectName }}</span>
                 </div>
-                <div v-if="timeEntry.activity?.name" class="d-flex ga-3">
+                <div v-if="activityName" class="d-flex ga-3">
                     <span class="text-medium-emphasis flex-shrink-0 text-no-wrap" style="width: 84px">{{ $t("calendar.event.details.activity") }}</span>
-                    <span>{{ timeEntry.activity.name }}</span>
+                    <span>{{ activityName }}</span>
                 </div>
                 <div v-if="timeEntry.comment" class="d-flex ga-3">
                     <span class="text-medium-emphasis flex-shrink-0 text-no-wrap" style="width: 84px">{{ $t("calendar.event.details.comment") }}</span>
@@ -68,6 +68,16 @@ const timeEntry = computed(() => {
     if (event && (event.kind === "existing" || event.kind === "suggestion")) return event.timeEntry;
     return null;
 });
+
+const displayTitle = computed(() => {
+    const event = state.value.event;
+    if (event?.kind === "existing") return event.timeEntry.taskId ?? event.timeEntry.project.name;
+    if (event?.kind === "suggestion") return event.timeEntry.taskId ?? event.timeEntry.title;
+    return null;
+});
+
+const projectName = computed(() => (state.value.event?.kind === "existing" ? state.value.event.timeEntry.project.name : null));
+const activityName = computed(() => (state.value.event?.kind === "existing" ? state.value.event.timeEntry.activity.name : null));
 
 const issue = useAsyncState((id: string) => IssueDetailsService.get(id));
 

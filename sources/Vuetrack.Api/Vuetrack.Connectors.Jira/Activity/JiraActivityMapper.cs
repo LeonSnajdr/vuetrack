@@ -38,7 +38,11 @@ public static class JiraActivityMapper
         string? status,
         params (string Key, string Value)[] extra)
     {
-        var metadata = new Dictionary<string, string> { ["issueKey"] = issueKey };
+        var metadata = new Dictionary<string, string>
+        {
+            ["issueKey"] = issueKey,
+            [ActivityMetadataKeys.TaskId] = issueKey,
+        };
 
         if (!string.IsNullOrEmpty(project))
         {

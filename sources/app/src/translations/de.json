@@ -90,7 +90,7 @@
   "settings.list.striped.none": "Keine",
   "settings.list.striped.odd": "Ungerade",
   "settings.title": "Einstellungen",
-  "suggestion.recommendAgain": "Verworfene Vorschläge wiederherstellen",
+  "suggestion.forceReload": "Vorschläge neu laden und verworfene Einträge wiederherstellen",
   "timeEntry.field.activityId": "Tätigkeit",
   "timeEntry.field.comment": "Kommentar",
   "timeEntry.field.dateEnded": "Endzeit",

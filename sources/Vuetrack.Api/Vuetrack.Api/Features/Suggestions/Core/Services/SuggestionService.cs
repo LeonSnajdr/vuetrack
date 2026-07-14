@@ -3,12 +3,13 @@ using Samhammer.DependencyInjection.Attributes;
 using Vuetrack.Api.Features.Connectors;
 using Vuetrack.Api.Features.Suggestions.Core.Contracts;
 using Vuetrack.Api.Features.Suggestions.Engine;
+using Vuetrack.Api.Features.TimeEntry.Services;
 using Vuetrack.Connectors.Abstractions;
 
 namespace Vuetrack.Api.Features.Suggestions.Core.Services;
 
 [Inject]
-public class SuggestionService(IConnectorRegistry registry, IConnectorResolver resolver, ISuggestionRepository repository, ISuggestionEngine engine, ILogger<SuggestionService> logger) : ISuggestionService
+public class SuggestionService(IConnectorRegistry registry, IConnectorResolver resolver, ISuggestionRepository repository, ISuggestionEngine engine, ITimeEntryService timeEntryService, ILogger<SuggestionService> logger) : ISuggestionService
 {
     private IConnectorRegistry Registry { get; } = registry;
 
@@ -17,6 +18,8 @@ public class SuggestionService(IConnectorRegistry registry, IConnectorResolver r
     private ISuggestionRepository Repository { get; } = repository;
 
     private ISuggestionEngine Engine { get; } = engine;
+
+    private ITimeEntryService TimeEntryService { get; } = timeEntryService;
 
     private ILogger<SuggestionService> Logger { get; } = logger;
 
@@ -40,26 +43,39 @@ public class SuggestionService(IConnectorRegistry registry, IConnectorResolver r
             }
         }
 
-        var suggestions = Engine.Build(signals, request.From, request.To);
-        var now = DateTime.UtcNow;
-        var toInsert = new List<SuggestionModel>();
+        var generatedCount = await BuildAndInsertAsync(userId, request.From, request.To, signals, cancellationToken);
+        return new GenerateSuggestionsResultContract(generatedCount, outcomes);
+    }
 
-        foreach (var suggestion in suggestions)
+    public async Task<GenerateSuggestionsResultContract> ReloadAsync(string userId, GenerateSuggestionsRequestContract request, CancellationToken cancellationToken)
+    {
+        var descriptors = Registry.Descriptors
+            .Where(d => request.ConnectorKeys is null || request.ConnectorKeys.Contains(d.Key))
+            .ToList();
+
+        var signals = new List<ActivitySignal>();
+        var outcomes = new List<ConnectorOutcomeContract>();
+        var successfulConnectorKeys = new List<ConnectorKey>();
+
+        foreach (var descriptor in descriptors)
         {
-            if (await IsAlreadyGeneratedAsync(userId, suggestion))
+            var (outcome, fetchedSignals) = await FetchFromConnectorAsync(descriptor, userId, request.From, request.To, cancellationToken);
+            outcomes.Add(outcome);
+
+            if (fetchedSignals is not null)
             {
-                continue;
+                successfulConnectorKeys.Add(descriptor.Key);
+                signals.AddRange(fetchedSignals);
             }
-
-            toInsert.Add(suggestion.ToModel(userId, now));
         }
 
-        if (toInsert.Count > 0)
+        if (successfulConnectorKeys.Count > 0)
         {
-            await Repository.InsertManyAsync(toInsert);
+            await Repository.DeleteResettableAsync(userId, request.From, request.To, successfulConnectorKeys);
         }
 
-        return new GenerateSuggestionsResultContract(toInsert.Count, outcomes);
+        var generatedCount = await BuildAndInsertAsync(userId, request.From, request.To, signals, cancellationToken);
+        return new GenerateSuggestionsResultContract(generatedCount, outcomes);
     }
 
     public async Task<IReadOnlyList<SuggestionContract>> ListAsync(string userId, DateTime from, DateTime to)
@@ -70,7 +86,17 @@ public class SuggestionService(IConnectorRegistry registry, IConnectorResolver r
 
     public async Task<ErrorOr<SuggestionContract>> UpdateAsync(string userId, string id, SuggestionUpdateContract request, CancellationToken cancellationToken)
     {
-        var updated = await Repository.UpdateFieldsAsync(id, userId, request.Title, request.Description, request.DateStarted, request.DateEnded, DateTime.UtcNow);
+        var updated = await Repository.UpdateFieldsAsync(
+            id,
+            userId,
+            request.Title,
+            request.TaskId,
+            request.ProjectId,
+            request.ActivityId,
+            request.DateStarted,
+            request.DateEnded,
+            request.Comment,
+            DateTime.UtcNow);
 
         if (updated is null)
         {
@@ -90,6 +116,55 @@ public class SuggestionService(IConnectorRegistry registry, IConnectorResolver r
         }
 
         return Result.Deleted;
+    }
+
+    public async Task<ErrorOr<Success>> AcceptAsync(string userId, string id, CancellationToken cancellationToken)
+    {
+        var found = await Repository.SetStatusAsync(id, userId, SuggestionStatus.Confirmed, DateTime.UtcNow);
+
+        if (!found)
+        {
+            return Error.NotFound();
+        }
+
+        return Result.Success;
+    }
+
+    private async Task<int> BuildAndInsertAsync(string userId, DateTime from, DateTime to, IReadOnlyList<ActivitySignal> signals, CancellationToken cancellationToken)
+    {
+        var existingTaskIds = await GetExistingTaskIdsAsync(userId, from, to, cancellationToken);
+        var suggestions = Engine.Build(signals, from, to);
+        var now = DateTime.UtcNow;
+        var toInsert = new List<SuggestionModel>();
+
+        foreach (var suggestion in suggestions)
+        {
+            if ((suggestion.TaskId is not null && existingTaskIds.Contains(suggestion.TaskId)) || await IsAlreadyGeneratedAsync(userId, suggestion))
+            {
+                continue;
+            }
+
+            toInsert.Add(suggestion.ToModel(userId, now));
+        }
+
+        await Repository.InsertManyAsync(toInsert);
+        return toInsert.Count;
+    }
+
+    private async Task<HashSet<string>> GetExistingTaskIdsAsync(string userId, DateTime from, DateTime to, CancellationToken cancellationToken)
+    {
+        var entries = await TimeEntryService.ListAsync(userId, from, to, cancellationToken);
+        if (entries.IsError)
+        {
+            Logger.LogWarning("Could not load time entries for suggestion deduplication for user {UserId}: {Errors}", userId, entries.Errors);
+            return [];
+        }
+
+        return entries.Value
+            .Select(x => x.TaskId)
+            .OfType<string>()
+            .Where(x => x.Length > 0)
+            .ToHashSet(StringComparer.Ordinal);
     }
 
     // TODO could be solved with one mongo query
@@ -150,9 +225,13 @@ public interface ISuggestionService
 {
     Task<GenerateSuggestionsResultContract> GenerateAsync(string userId, GenerateSuggestionsRequestContract request, CancellationToken cancellationToken);
 
+    Task<GenerateSuggestionsResultContract> ReloadAsync(string userId, GenerateSuggestionsRequestContract request, CancellationToken cancellationToken);
+
     Task<IReadOnlyList<SuggestionContract>> ListAsync(string userId, DateTime from, DateTime to);
 
     Task<ErrorOr<SuggestionContract>> UpdateAsync(string userId, string id, SuggestionUpdateContract request, CancellationToken cancellationToken);
 
     Task<ErrorOr<Deleted>> DismissAsync(string userId, string id, CancellationToken cancellationToken);
+
+    Task<ErrorOr<Success>> AcceptAsync(string userId, string id, CancellationToken cancellationToken);
 }

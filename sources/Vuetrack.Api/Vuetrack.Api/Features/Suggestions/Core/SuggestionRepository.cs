@@ -17,7 +17,7 @@ public class SuggestionRepository : BaseRepositoryMongo<SuggestionModel>, ISugge
     public async Task<List<SuggestionModel>> ListAsync(string userId, DateTime from, DateTime to)
     {
         return await Collection
-            .Find(x => x.UserId == userId && x.Status != SuggestionStatus.Dismissed && x.DateStarted >= from && x.DateStarted < to)
+            .Find(x => x.UserId == userId && x.Status != SuggestionStatus.Dismissed && x.Status != SuggestionStatus.Confirmed && x.DateStarted >= from && x.DateStarted < to)
             .SortBy(x => x.DateStarted)
             .ToListAsync();
     }
@@ -39,13 +39,16 @@ public class SuggestionRepository : BaseRepositoryMongo<SuggestionModel>, ISugge
             .AnyAsync();
     }
 
-    public async Task<SuggestionModel?> UpdateFieldsAsync(string id, string userId, string title, string? description, DateTime start, DateTime end, DateTime updatedAt)
+    public async Task<SuggestionModel?> UpdateFieldsAsync(string id, string userId, string title, string? taskId, string? projectId, string? activityId, DateTime start, DateTime end, string? comment, DateTime updatedAt)
     {
         var update = Update
             .Set(x => x.Title, title)
-            .Set(x => x.Description, description)
+            .Set(x => x.TaskId, taskId)
+            .Set(x => x.ProjectId, projectId)
+            .Set(x => x.ActivityId, activityId)
             .Set(x => x.DateStarted, start)
             .Set(x => x.DateEnded, end)
+            .Set(x => x.Comment, comment)
             .Set(x => x.Status, SuggestionStatus.Edited)
             .Set(x => x.DateUpdated, updatedAt);
 
@@ -77,6 +80,19 @@ public class SuggestionRepository : BaseRepositoryMongo<SuggestionModel>, ISugge
 
         return result.MatchedCount > 0;
     }
+
+    public async Task DeleteResettableAsync(string userId, DateTime from, DateTime to, IReadOnlyList<ConnectorKey>? connectorKeys)
+    {
+        var resettableStatuses = new[] { SuggestionStatus.Pending, SuggestionStatus.Edited, SuggestionStatus.Dismissed };
+        var filter = Filter.Where(x => x.UserId == userId && x.DateStarted >= from && x.DateStarted < to && resettableStatuses.Contains(x.Status));
+
+        if (connectorKeys is not null)
+        {
+            filter &= Filter.Where(x => x.Sources.Any(s => connectorKeys.Contains(s.ConnectorKey)));
+        }
+
+        await Collection.DeleteManyAsync(filter);
+    }
 }
 
 public interface ISuggestionRepository : IBaseRepositoryMongo<SuggestionModel>
@@ -87,7 +103,9 @@ public interface ISuggestionRepository : IBaseRepositoryMongo<SuggestionModel>
 
     Task<bool> ExistsBySourceAsync(string userId, ConnectorKey connectorKey, string externalId);
 
-    Task<SuggestionModel?> UpdateFieldsAsync(string id, string userId, string title, string? description, DateTime start, DateTime end, DateTime updatedAt);
+    Task<SuggestionModel?> UpdateFieldsAsync(string id, string userId, string title, string? taskId, string? projectId, string? activityId, DateTime start, DateTime end, string? comment, DateTime updatedAt);
 
     Task<bool> SetStatusAsync(string id, string userId, SuggestionStatus status, DateTime updatedAt);
+
+    Task DeleteResettableAsync(string userId, DateTime from, DateTime to, IReadOnlyList<ConnectorKey>? connectorKeys);
 }

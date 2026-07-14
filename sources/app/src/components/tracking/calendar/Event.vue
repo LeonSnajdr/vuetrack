@@ -11,9 +11,8 @@
         <div class="h-100 pa-1 d-flex flex-column ga-2 text-truncate">
             <div class="d-flex flex-col justify-space-between">
                 <div class="text-truncate">
-                    <template v-if="event.kind === 'existing' || event.kind === 'suggestion'">
-                        {{ event.timeEntry.taskId ?? event.timeEntry.project?.name }}
-                    </template>
+                    <template v-if="event.kind === 'existing'">{{ event.timeEntry.taskId ?? event.timeEntry.project.name }}</template>
+                    <template v-else-if="event.kind === 'suggestion'">{{ event.timeEntry.taskId ?? event.timeEntry.title }}</template>
                     <template v-else>{{ $t("calendar.event.draft") }}</template>
                 </div>
                 <VChip class="text-label-small flex-shrink-0" color="" density="compact" variant="tonal">

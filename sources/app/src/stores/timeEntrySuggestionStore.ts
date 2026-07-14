@@ -23,16 +23,30 @@ export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", ()
     const { execute: executeAccept, isLoading: isAccepting } = useAsyncTask(TimeEntrySuggestionService.accept, {
         key: (x) => x.args[0]
     });
+    const { execute: executeGenerate, isLoading: isGenerating } = useAsyncTask(TimeEntrySuggestionService.generate, {
+        cancelPolicy: "byKey",
+        key: () => "generate"
+    });
+    const { execute: executeReload, isLoading: isReloading } = useAsyncTask(TimeEntrySuggestionService.reload);
 
     const executeLoadWithFilters = async () => {
-        await executeLoad(filter.value);
+        const currentFilter = filter.value;
+        await executeLoad(currentFilter);
+
+        const generateResult = await executeGenerate(currentFilter);
+        if (generateResult.status === "success") {
+            await executeLoad(currentFilter);
+        }
     };
 
     watch(filter, executeLoadWithFilters, { deep: true });
 
-    const recommendAgain = async (): Promise<void> => {
-        await TimeEntrySuggestionService.recommendAgain();
-        await executeLoadWithFilters();
+    const reload = async (): Promise<ActionResult> => {
+        const reloadResult = await executeReload(filter.value);
+        if (reloadResult.status === "success") {
+            await executeLoadWithFilters();
+        }
+        return reloadResult;
     };
 
     const update = async (id: TimeEntrySuggestionId, updateContract: TimeEntrySuggestionUpdateContract): Promise<ActionResult<TimeEntrySuggestionContract>> => {
@@ -77,7 +91,9 @@ export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", ()
         isDismissing,
         accept,
         isAccepting,
-        recommendAgain,
+        isGenerating,
+        reload,
+        isReloading,
         cancelPendingUpdate
     };
 });

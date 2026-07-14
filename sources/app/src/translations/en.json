@@ -90,7 +90,7 @@
   "settings.list.striped.none": "None",
   "settings.list.striped.odd": "Odd",
   "settings.title": "Settings",
-  "suggestion.recommendAgain": "Restore dismissed suggestions",
+  "suggestion.forceReload": "Reload suggestions and restore dismissed items",
   "timeEntry.field.activityId": "Activity",
   "timeEntry.field.comment": "Comment",
   "timeEntry.field.dateEnded": "End time",

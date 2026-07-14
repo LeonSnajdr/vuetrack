@@ -62,7 +62,8 @@ public sealed class SuggestionEngine(IOptions<SuggestionEngineOptions> options) 
                 ? explicitKey
                 : $"{signal.ConnectorKey.ToString()}|{signal.Title}";
 
-            result.Add(new NormalizedSignal(signal.ConnectorKey, signal.ExternalId, signal.Title, signal.Description, start, end, signal.Link, hasExplicitDuration, correlationKey));
+            signal.Metadata.TryGetValue(ActivityMetadataKeys.TaskId, out var taskId);
+            result.Add(new NormalizedSignal(signal.ConnectorKey, signal.ExternalId, signal.Title, taskId, signal.Description, start, end, signal.Link, hasExplicitDuration, correlationKey));
         }
 
         return result;
@@ -87,6 +88,7 @@ public sealed class SuggestionEngine(IOptions<SuggestionEngineOptions> options) 
                 DateStarted = existing.DateStarted < signal.DateStarted ? existing.DateStarted : signal.DateStarted,
                 DateEnded = existing.DateEnded > signal.DateEnded ? existing.DateEnded : signal.DateEnded,
                 HasExplicitDuration = existing.HasExplicitDuration || signal.HasExplicitDuration,
+                TaskId = existing.TaskId ?? signal.TaskId,
                 Description = existing.Description ?? signal.Description,
                 Link = existing.Link ?? signal.Link,
             };
@@ -168,7 +170,7 @@ public sealed class SuggestionEngine(IOptions<SuggestionEngineOptions> options) 
             .Select(s => new SignalRef(s.ConnectorKey, s.ExternalId, s.Link))
             .ToList();
 
-        return new TimeSuggestion(title, description, start, end, confidence, sources);
+        return new TimeSuggestion(title, ordered[0].TaskId, description, start, end, confidence, sources);
     }
 
     private static DateTime RoundDown(DateTime value, TimeSpan step)
@@ -203,6 +205,7 @@ public sealed class SuggestionEngine(IOptions<SuggestionEngineOptions> options) 
         ConnectorKey ConnectorKey,
         string ExternalId,
         string Title,
+        string? TaskId,
         string? Description,
         DateTime DateStarted,
         DateTime DateEnded,
