@@ -14,6 +14,7 @@ using Serilog;
 using Vuetrack.Api.Features.Suggestions.Engine;
 using Vuetrack.Api.Infrastructure.Config;
 using Vuetrack.Api.Infrastructure.Cors;
+using Vuetrack.Api.Infrastructure.ModelBinding;
 using Vuetrack.Api.Infrastructure.Validation;
 using Vuetrack.Backends.Timetracking;
 using Vuetrack.Backends.Timetracking.Api;
@@ -44,7 +45,11 @@ try
 
     builder.Services.AddScoped<ValidationActionFilter>();
     builder.Services
-        .AddControllers(options => options.Filters.Add<ValidationActionFilter>())
+        .AddControllers(options =>
+        {
+            options.Filters.Add<ValidationActionFilter>();
+            options.ModelBinderProviders.Insert(0, new TrimStringModelBinderProvider());
+        })
         .AddJsonOptions(opts =>
         {
             var enumConverter = new JsonStringEnumConverter(JsonNamingPolicy.CamelCase);
