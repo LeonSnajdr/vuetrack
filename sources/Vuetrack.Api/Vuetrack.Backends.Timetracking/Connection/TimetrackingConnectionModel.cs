@@ -11,7 +11,6 @@ public class TimetrackingConnectionModel : BaseModelMongo
 
     public required string EncryptedRefreshToken { get; set; }
 
-    /// <summary>The numeric user id in the timetracking system, resolved from its profile endpoint at connect time.</summary>
     public string? ExternalUserId { get; set; }
 
     public bool Enabled { get; set; } = true;

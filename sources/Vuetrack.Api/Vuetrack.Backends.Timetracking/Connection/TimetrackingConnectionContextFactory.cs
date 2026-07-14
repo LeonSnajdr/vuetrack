@@ -7,7 +7,6 @@ namespace Vuetrack.Backends.Timetracking.Connection;
 [Inject]
 public class TimetrackingConnectionContextFactory(ITimetrackingConnectionRepository repository, ITimetrackingOAuthApiClient oauthClient, ISecretProtector secretProtector, ITimetrackingConnectionAccessor accessor, IFusionCache cache) : ITimetrackingConnectionContextFactory
 {
-    // Refresh a little early so a token never expires mid-request.
     private static readonly TimeSpan ExpiryBuffer = TimeSpan.FromSeconds(60);
 
     private ITimetrackingConnectionRepository Repository { get; } = repository;
