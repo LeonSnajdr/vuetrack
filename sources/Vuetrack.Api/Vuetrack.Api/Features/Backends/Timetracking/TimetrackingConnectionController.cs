@@ -11,7 +11,7 @@ namespace Vuetrack.Api.Features.Backends.Timetracking;
 [ApiController]
 [ApiVersion("1")]
 [Route("api/v{version:apiVersion}/backends/timetracking")]
-[Authorize]
+[Authorize(Roles = "User")]
 public class TimetrackingConnectionController(ITimetrackingConnectionService connectionService) : ControllerBase
 {
     private ITimetrackingConnectionService ConnectionService { get; } = connectionService;

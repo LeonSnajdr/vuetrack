@@ -11,7 +11,7 @@ namespace Vuetrack.Api.Features.Suggestions.Core;
 [ApiController]
 [ApiVersion("1")]
 [Route("api/v{version:apiVersion}/suggestions")]
-[Authorize]
+[Authorize(Roles = "User")]
 public class SuggestionsController(ISuggestionService suggestionService) : ControllerBase
 {
     private ISuggestionService SuggestionService { get; } = suggestionService;

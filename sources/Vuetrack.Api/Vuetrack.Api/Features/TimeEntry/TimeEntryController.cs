@@ -12,7 +12,7 @@ namespace Vuetrack.Api.Features.TimeEntry;
 [ApiController]
 [ApiVersion("1")]
 [Route("api/v{version:apiVersion}/timeEntry")]
-[Authorize]
+[Authorize(Roles = "User")]
 public class TimeEntryController(ITimeEntryService timeEntryService) : ControllerBase
 {
     private ITimeEntryService TimeEntryService { get; } = timeEntryService;

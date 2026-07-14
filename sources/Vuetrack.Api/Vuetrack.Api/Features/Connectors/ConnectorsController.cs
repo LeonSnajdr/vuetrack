@@ -8,7 +8,7 @@ namespace Vuetrack.Api.Features.Connectors;
 [ApiController]
 [ApiVersion("1")]
 [Route("api/v{version:apiVersion}/[controller]")]
-[Authorize]
+[Authorize(Roles = "User")]
 public class ConnectorsController(IConnectorRegistry registry) : ControllerBase
 {
     private IConnectorRegistry Registry { get; } = registry;

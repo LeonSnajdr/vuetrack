@@ -11,7 +11,7 @@ namespace Vuetrack.Api.Features.Project;
 [ApiController]
 [ApiVersion("1")]
 [Route("api/v{version:apiVersion}/project")]
-[Authorize]
+[Authorize(Roles = "User")]
 public class ProjectController(IProjectService projectService) : ControllerBase
 {
     private IProjectService ProjectService { get; } = projectService;

@@ -8,7 +8,7 @@ namespace Vuetrack.Api.Features.Backends;
 [ApiController]
 [ApiVersion("1")]
 [Route("api/v{version:apiVersion}/[controller]")]
-[Authorize]
+[Authorize(Roles = "User")]
 public class BackendsController(IBackendRegistry registry) : ControllerBase
 {
     private IBackendRegistry Registry { get; } = registry;

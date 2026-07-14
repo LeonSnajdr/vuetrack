@@ -11,7 +11,7 @@ namespace Vuetrack.Api.Features.Connectors.Jira;
 [ApiController]
 [ApiVersion("1")]
 [Route("api/v{version:apiVersion}/connectors/jira")]
-[Authorize]
+[Authorize(Roles = "User")]
 public class JiraConnectionController(IJiraConnectionService connectionService) : ControllerBase
 {
     private IJiraConnectionService ConnectionService { get; } = connectionService;
