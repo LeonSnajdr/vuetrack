@@ -24,11 +24,4 @@ public class TimetrackingOAuthApiClient(HttpClient httpClient, IOptions<Timetrac
     protected override string Scopes => Options.Value.Scopes;
 }
 
-public interface ITimetrackingOAuthApiClient
-{
-    string BuildAuthorizationUrl(string state, string redirectUri);
-
-    Task<OAuthTokenResponse> ExchangeCodeAsync(string code, string redirectUri, CancellationToken cancellationToken);
-
-    Task<OAuthTokenResponse> RefreshAsync(string refreshToken, CancellationToken cancellationToken);
-}
+public interface ITimetrackingOAuthApiClient : IOAuthApiClientBase;

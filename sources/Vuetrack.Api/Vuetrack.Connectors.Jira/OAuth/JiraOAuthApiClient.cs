@@ -52,13 +52,7 @@ public class JiraOAuthApiClient(HttpClient httpClient, IOptions<JiraOptions> opt
     }
 }
 
-public interface IJiraOAuthApiClient
+public interface IJiraOAuthApiClient : IOAuthApiClientBase
 {
-    string BuildAuthorizationUrl(string state, string redirectUri);
-
-    Task<OAuthTokenResponse> ExchangeCodeAsync(string code, string redirectUri, CancellationToken cancellationToken);
-
-    Task<OAuthTokenResponse> RefreshAsync(string refreshToken, CancellationToken cancellationToken);
-
     Task<IReadOnlyList<JiraAccessibleResourceResponse>> GetAccessibleResourcesAsync(string accessToken, CancellationToken cancellationToken);
 }

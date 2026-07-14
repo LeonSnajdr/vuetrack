@@ -3,11 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Vuetrack.OAuth;
 
-/// <summary>
-/// Shared OAuth2 authorization-code / refresh-token client built on Duende.IdentityModel.
-/// Concrete platforms supply their endpoints and credentials through the abstract members.
-/// </summary>
-public abstract class OAuthApiClientBase(HttpClient httpClient, ILogger logger)
+public abstract class OAuthApiClientBase(HttpClient httpClient, ILogger logger) : IOAuthApiClientBase
 {
     protected HttpClient HttpClient { get; } = httpClient;
 
@@ -73,7 +69,7 @@ public abstract class OAuthApiClientBase(HttpClient httpClient, ILogger logger)
         return MapToken(response);
     }
 
-    protected OAuthTokenResponse MapToken(TokenResponse response)
+    private OAuthTokenResponse MapToken(TokenResponse response)
     {
         if (response.IsError)
         {
@@ -96,4 +92,14 @@ public abstract class OAuthApiClientBase(HttpClient httpClient, ILogger logger)
             TokenType = response.TokenType,
         };
     }
+}
+
+
+public interface IOAuthApiClientBase
+{
+    string BuildAuthorizationUrl(string state, string redirectUri);
+
+    Task<OAuthTokenResponse> ExchangeCodeAsync(string code, string redirectUri, CancellationToken cancellationToken);
+
+    Task<OAuthTokenResponse> RefreshAsync(string refreshToken, CancellationToken cancellationToken);
 }
