@@ -9,17 +9,9 @@ namespace Vuetrack.Api.Features.Suggestions.Core;
 [Inject]
 public class SuggestionRepository : BaseRepositoryMongo<SuggestionModel>, ISuggestionRepository
 {
-    // First compound index in this codebase - Samhammer.Mongo has no established index-creation
-    // convention, so we ensure it once per process here rather than inventing a repo-wide pattern.
-    private static int indexEnsured;
-
-    private readonly ILogger<SuggestionRepository> logger;
-
     public SuggestionRepository(ILogger<SuggestionRepository> logger, IMongoDbConnector connector)
         : base(logger, connector)
     {
-        this.logger = logger;
-        EnsureIndexes();
     }
 
     public async Task<List<SuggestionModel>> ListAsync(string userId, DateTime from, DateTime to)
@@ -84,19 +76,6 @@ public class SuggestionRepository : BaseRepositoryMongo<SuggestionModel>, ISugge
         var result = await Collection.UpdateOneAsync(Filter.And(filters), update);
 
         return result.MatchedCount > 0;
-    }
-
-    private void EnsureIndexes()
-    {
-        if (Interlocked.CompareExchange(ref indexEnsured, 1, 0) != 0)
-        {
-            return;
-        }
-
-        var indexKeys = Builders<SuggestionModel>.IndexKeys.Ascending(x => x.UserId).Ascending(x => x.DateStarted);
-
-        _ = Collection.Indexes.CreateOneAsync(new CreateIndexModel<SuggestionModel>(indexKeys))
-            .ContinueWith(t => logger.LogWarning(t.Exception, "Failed to ensure suggestions index"), TaskContinuationOptions.OnlyOnFaulted);
     }
 }
 
