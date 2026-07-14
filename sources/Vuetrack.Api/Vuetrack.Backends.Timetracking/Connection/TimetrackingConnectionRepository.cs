@@ -3,17 +3,14 @@ using MongoDB.Driver;
 using Samhammer.DependencyInjection.Attributes;
 using Samhammer.Mongo;
 using Samhammer.Mongo.Abstractions;
+using Vuetrack.OAuth;
 
 namespace Vuetrack.Backends.Timetracking.Connection;
 
 [Inject]
-public class TimetrackingConnectionRepository(ILogger<TimetrackingConnectionRepository> logger, IMongoDbConnector connector) : BaseRepositoryMongo<TimetrackingConnectionModel>(logger, connector), ITimetrackingConnectionRepository
+public class TimetrackingConnectionRepository(ILogger<BaseRepositoryMongo<TimetrackingConnectionModel>> logger, IMongoDbConnector connector)
+    : OAuthConnectionRepository<TimetrackingConnectionModel>(logger, connector), ITimetrackingConnectionRepository
 {
-    public async Task<TimetrackingConnectionModel?> GetByUserId(string userId)
-    {
-        return await Collection.Find(x => x.UserId == userId).FirstOrDefaultAsync();
-    }
-
     public async Task UpsertConnectionAsync(string userId, string authMode, string encryptedRefreshToken, string externalUserId)
     {
         var update = Update
@@ -27,14 +24,6 @@ public class TimetrackingConnectionRepository(ILogger<TimetrackingConnectionRepo
         var options = new UpdateOptions { IsUpsert = true };
 
         await Collection.UpdateOneAsync(filter, update, options);
-    }
-
-    public async Task SetRefreshTokenAsync(string userId, string encryptedRefreshToken)
-    {
-        var update = Update.Set(x => x.EncryptedRefreshToken, encryptedRefreshToken);
-        var filter = Filter.Where(x => x.UserId == userId);
-
-        await Collection.UpdateOneAsync(filter, update);
     }
 }
 

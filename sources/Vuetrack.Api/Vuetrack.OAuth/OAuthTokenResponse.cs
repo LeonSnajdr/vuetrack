@@ -1,8 +1,8 @@
 using System.Text.Json.Serialization;
 
-namespace Vuetrack.Backends.Timetracking.OAuth;
+namespace Vuetrack.OAuth;
 
-public sealed record TimetrackingTokenResponse
+public sealed record OAuthTokenResponse
 {
     [JsonPropertyName("access_token")]
     public string AccessToken { get; init; } = string.Empty;

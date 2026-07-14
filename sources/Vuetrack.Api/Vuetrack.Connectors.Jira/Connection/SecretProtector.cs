@@ -1,19 +1,14 @@
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
 using Samhammer.DependencyInjection.Attributes;
+using Vuetrack.OAuth;
 
 namespace Vuetrack.Connectors.Jira.Connection;
 
 [Inject(Target.Matching, ServiceLifetime.Singleton)]
-public class SecretProtector(IDataProtectionProvider provider) : ISecretProtector
+public class SecretProtector(IDataProtectionProvider provider)
+    : SecretProtectorBase(provider, "Vuetrack.Connectors.Jira.RefreshToken.v1"), ISecretProtector
 {
-    private const string Purpose = "Vuetrack.Connectors.Jira.RefreshToken.v1";
-
-    private IDataProtector Protector { get; } = provider.CreateProtector(Purpose);
-
-    public string Protect(string plaintext) => Protector.Protect(plaintext);
-
-    public string Unprotect(string ciphertext) => Protector.Unprotect(ciphertext);
 }
 
 public interface ISecretProtector

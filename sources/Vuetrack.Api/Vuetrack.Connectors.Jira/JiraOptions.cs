@@ -5,7 +5,9 @@ namespace Vuetrack.Connectors.Jira;
 [Option]
 public class JiraOptions
 {
-    public string IdentityBaseUrl { get; init; } = "https://auth.atlassian.com";
+    public string AuthorizeEndpoint { get; init; } = "https://auth.atlassian.com/authorize";
+
+    public string TokenEndpoint { get; init; } = "https://auth.atlassian.com/oauth/token";
 
     public string ApiBaseUrl { get; init; } = "https://api.atlassian.com";
 

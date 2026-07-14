@@ -15,20 +15,12 @@
     <PackageReference Include="Duende.IdentityModel" Version="8.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.DataProtection.Abstractions" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.8" />
-    <PackageReference Include="Samhammer.DependencyInjection" Version="10.0.0" />
     <PackageReference Include="Samhammer.Mongo" Version="10.0.1" />
-    <PackageReference Include="Samhammer.Options.Abstractions" Version="10.0.0" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.406">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="ZiggyCreatures.FusionCache" Version="2.6.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Vuetrack.Connectors.Abstractions\Vuetrack.Connectors.Abstractions.csproj" />
-    <ProjectReference Include="..\Vuetrack.OAuth\Vuetrack.OAuth.csproj" />
   </ItemGroup>
 
 </Project>

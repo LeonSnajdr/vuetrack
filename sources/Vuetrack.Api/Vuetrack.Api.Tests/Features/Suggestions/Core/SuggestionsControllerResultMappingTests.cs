@@ -1,7 +1,9 @@
 using System.Security.Claims;
 using AwesomeAssertions;
+using ErrorOr;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Vuetrack.Api.Features.Suggestions.Core;
 using Vuetrack.Api.Features.Suggestions.Core.Contracts;
 using Vuetrack.Api.Tests.Fakes;
@@ -12,10 +14,10 @@ namespace Vuetrack.Api.Tests.Features.Suggestions.Core;
 public class SuggestionsControllerResultMappingTests
 {
     [Fact]
-    public async Task Update_WhenServiceReturnsUpdated_ReturnsOkWithSuggestion()
+    public async Task Update_WhenServiceReturnsValue_ReturnsOkWithSuggestion()
     {
         var contract = new SuggestionContract("id-1", "Title", null, DateTime.UnixEpoch, DateTime.UnixEpoch.AddMinutes(30), "Edited", [], 0.6, null, null);
-        var controller = CreateController(new StubSuggestionService { OnUpdate = (_, _, _, _) => Task.FromResult<SuggestionUpdateResult>(new SuggestionUpdated(contract)) });
+        var controller = CreateController(new StubSuggestionService { OnUpdate = (_, _, _, _) => Task.FromResult<ErrorOr<SuggestionContract>>(contract) });
 
         var result = await controller.Update("id-1", UpdateContract(), CancellationToken.None);
 
@@ -24,19 +26,21 @@ public class SuggestionsControllerResultMappingTests
     }
 
     [Fact]
-    public async Task Update_WhenServiceReturnsNotFound_ReturnsNotFound()
+    public async Task Update_WhenServiceReturnsNotFound_ReturnsProblemDetailsWith404()
     {
-        var controller = CreateController(new StubSuggestionService { OnUpdate = (_, _, _, _) => Task.FromResult<SuggestionUpdateResult>(new SuggestionNotFound()) });
+        var controller = CreateController(new StubSuggestionService { OnUpdate = (_, _, _, _) => Task.FromResult<ErrorOr<SuggestionContract>>(Error.NotFound()) });
 
         var result = await controller.Update("missing", UpdateContract(), CancellationToken.None);
 
-        result.Should().BeOfType<NotFoundResult>();
+        var objectResult = result.Should().BeOfType<ObjectResult>().Subject;
+        objectResult.StatusCode.Should().Be(StatusCodes.Status404NotFound);
+        objectResult.Value.Should().BeOfType<ProblemDetails>();
     }
 
     [Fact]
-    public async Task Dismiss_WhenServiceReturnsDismissed_ReturnsNoContent()
+    public async Task Dismiss_WhenServiceReturnsDeleted_ReturnsNoContent()
     {
-        var controller = CreateController(new StubSuggestionService { OnDismiss = (_, _, _) => Task.FromResult<SuggestionDismissResult>(new SuggestionDismissed()) });
+        var controller = CreateController(new StubSuggestionService { OnDismiss = (_, _, _) => Task.FromResult<ErrorOr<Deleted>>(Result.Deleted) });
 
         var result = await controller.Dismiss("id-1", CancellationToken.None);
 
@@ -44,13 +48,15 @@ public class SuggestionsControllerResultMappingTests
     }
 
     [Fact]
-    public async Task Dismiss_WhenServiceReturnsNotFound_ReturnsNotFound()
+    public async Task Dismiss_WhenServiceReturnsNotFound_ReturnsProblemDetailsWith404()
     {
-        var controller = CreateController(new StubSuggestionService { OnDismiss = (_, _, _) => Task.FromResult<SuggestionDismissResult>(new SuggestionDismissNotFound()) });
+        var controller = CreateController(new StubSuggestionService { OnDismiss = (_, _, _) => Task.FromResult<ErrorOr<Deleted>>(Error.NotFound()) });
 
         var result = await controller.Dismiss("missing", CancellationToken.None);
 
-        result.Should().BeOfType<NotFoundResult>();
+        var objectResult = result.Should().BeOfType<ObjectResult>().Subject;
+        objectResult.StatusCode.Should().Be(StatusCodes.Status404NotFound);
+        objectResult.Value.Should().BeOfType<ProblemDetails>();
     }
 
     private static SuggestionUpdateContract UpdateContract() => new()
@@ -62,9 +68,20 @@ public class SuggestionsControllerResultMappingTests
 
     private static SuggestionsController CreateController(StubSuggestionService service)
     {
-        var controller = new SuggestionsController(service);
-        var principal = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "user-1")]));
-        controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = principal } };
-        return controller;
+        var provider = new ServiceCollection()
+            .AddLogging()
+            .AddMvcCore()
+            .AddApplicationPart(typeof(SuggestionsController).Assembly)
+            .Services
+            .AddProblemDetails()
+            .BuildServiceProvider();
+
+        var principal = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.Name, "user-1")], "test"));
+        var httpContext = new DefaultHttpContext { User = principal, RequestServices = provider };
+
+        return new SuggestionsController(service)
+        {
+            ControllerContext = new ControllerContext { HttpContext = httpContext },
+        };
     }
 }

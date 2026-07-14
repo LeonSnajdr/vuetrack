@@ -1,17 +1,10 @@
 using Samhammer.Mongo.Abstractions;
+using Vuetrack.OAuth;
 
 namespace Vuetrack.Backends.Timetracking.Connection;
 
 [MongoCollection]
-public class TimetrackingConnectionModel : BaseModelMongo
+public class TimetrackingConnectionModel : OAuthConnectionModel
 {
-    public required string UserId { get; set; }
-
-    public required string AuthMode { get; set; }
-
-    public required string EncryptedRefreshToken { get; set; }
-
     public string? ExternalUserId { get; set; }
-
-    public bool Enabled { get; set; } = true;
 }

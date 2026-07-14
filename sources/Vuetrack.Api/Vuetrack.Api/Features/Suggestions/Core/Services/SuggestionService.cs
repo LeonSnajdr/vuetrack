@@ -1,4 +1,6 @@
+using ErrorOr;
 using Samhammer.DependencyInjection.Attributes;
+using Vuetrack.Api.Features.Connectors;
 using Vuetrack.Api.Features.Suggestions.Core.Contracts;
 using Vuetrack.Api.Features.Suggestions.Engine;
 using Vuetrack.Connectors.Abstractions;
@@ -6,11 +8,11 @@ using Vuetrack.Connectors.Abstractions;
 namespace Vuetrack.Api.Features.Suggestions.Core.Services;
 
 [Inject]
-public class SuggestionService(IConnectorRegistry registry, IEnumerable<IConnectorContextInitializer> contextInitializers, ISuggestionRepository repository, ISuggestionEngine engine, ILogger<SuggestionService> logger) : ISuggestionService
+public class SuggestionService(IConnectorRegistry registry, IConnectorResolver resolver, ISuggestionRepository repository, ISuggestionEngine engine, ILogger<SuggestionService> logger) : ISuggestionService
 {
     private IConnectorRegistry Registry { get; } = registry;
 
-    private IReadOnlyList<IConnectorContextInitializer> ContextInitializers { get; } = contextInitializers.ToList();
+    private IConnectorResolver Resolver { get; } = resolver;
 
     private ISuggestionRepository Repository { get; } = repository;
 
@@ -66,18 +68,28 @@ public class SuggestionService(IConnectorRegistry registry, IEnumerable<IConnect
         return models.Select(m => m.ToContract()).ToList();
     }
 
-    public async Task<SuggestionUpdateResult> UpdateAsync(string userId, string id, SuggestionUpdateContract request, CancellationToken cancellationToken)
+    public async Task<ErrorOr<SuggestionContract>> UpdateAsync(string userId, string id, SuggestionUpdateContract request, CancellationToken cancellationToken)
     {
         var updated = await Repository.UpdateFieldsAsync(id, userId, request.Title, request.Description, request.DateStarted, request.DateEnded, DateTime.UtcNow);
 
-        return updated is null ? new SuggestionNotFound() : new SuggestionUpdated(updated.ToContract());
+        if (updated is null)
+        {
+            return Error.NotFound();
+        }
+
+        return updated.ToContract();
     }
 
-    public async Task<SuggestionDismissResult> DismissAsync(string userId, string id, CancellationToken cancellationToken)
+    public async Task<ErrorOr<Deleted>> DismissAsync(string userId, string id, CancellationToken cancellationToken)
     {
         var found = await Repository.SetStatusAsync(id, userId, SuggestionStatus.Dismissed, DateTime.UtcNow);
 
-        return found ? new SuggestionDismissed() : new SuggestionDismissNotFound();
+        if (!found)
+        {
+            return Error.NotFound();
+        }
+
+        return Result.Deleted;
     }
 
     // TODO could be solved with one mongo query
@@ -98,41 +110,39 @@ public class SuggestionService(IConnectorRegistry registry, IEnumerable<IConnect
     {
         try
         {
-            var initializer = ContextInitializers.FirstOrDefault(i => i.ConnectorKey == descriptor.Key);
-            if (initializer is null)
+            var resolved = await Resolver.ResolveConnectedAsync(descriptor.Key, userId, cancellationToken);
+            if (resolved.IsError)
             {
-                return (new ConnectorOutcomeContract(descriptor.Key, "Error", 0, "No context initializer registered for this connector."), null);
+                var resolveStatus = StatusFor(resolved.FirstError);
+                return (new ConnectorOutcomeContract(descriptor.Key, resolveStatus, 0, resolved.FirstError.Description), null);
             }
 
-            var initialized = await initializer.TryInitializeAsync(userId, cancellationToken);
-            if (!initialized)
+            var container = new ActivityFetchContainer { From = from, To = to };
+            var fetch = await resolved.Value.FetchAsync(container, cancellationToken);
+            if (fetch.IsError)
             {
-                return (new ConnectorOutcomeContract(descriptor.Key, "NotConnected", 0, null), null);
+                var fetchStatus = StatusFor(fetch.FirstError);
+                return (new ConnectorOutcomeContract(descriptor.Key, fetchStatus, 0, fetch.FirstError.Description), null);
             }
 
-            var connector = Registry.Resolve(descriptor.Key);
-            if (connector is null)
-            {
-                return (new ConnectorOutcomeContract(descriptor.Key, "Error", 0, "Connector is not registered."), null);
-            }
-
-            var result = await connector.FetchAsync(new ActivityFetchContainer { From = from, To = to }, cancellationToken);
-
-            return result switch
-            {
-                ActivityFetchSuccess success => (new ConnectorOutcomeContract(descriptor.Key, "Success", success.Signals.Count, null), success.Signals),
-                ActivityFetchNotConnected => (new ConnectorOutcomeContract(descriptor.Key, "NotConnected", 0, null), null),
-                ActivityFetchAuthFailed authFailed => (new ConnectorOutcomeContract(descriptor.Key, "AuthFailed", 0, authFailed.Reason), null),
-                ActivityFetchRateLimited rateLimited => (new ConnectorOutcomeContract(descriptor.Key, "RateLimited", 0, $"Retry after {rateLimited.RetryAfter.TotalSeconds:0}s"), null),
-                ActivityFetchConnectorError error => (new ConnectorOutcomeContract(descriptor.Key, "Error", 0, error.Message), null),
-                _ => throw new InvalidOperationException($"Unhandled {nameof(ActivityFetchResult)} case."),
-            };
+            var fetchedSignals = fetch.Value;
+            return (new ConnectorOutcomeContract(descriptor.Key, "Success", fetchedSignals.Count, null), fetchedSignals);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             Logger.LogWarning(ex, "Connector {ConnectorKey} threw while fetching suggestion signals for user {UserId}", descriptor.Key, userId);
             return (new ConnectorOutcomeContract(descriptor.Key, "Error", 0, ex.Message), null);
         }
+    }
+
+    private static string StatusFor(Error error)
+    {
+        return error.Type switch
+        {
+            ErrorType.Conflict => "NotConnected",
+            ErrorType.Unauthorized => "AuthFailed",
+            _ => "Error",
+        };
     }
 }
 
@@ -142,7 +152,7 @@ public interface ISuggestionService
 
     Task<IReadOnlyList<SuggestionContract>> ListAsync(string userId, DateTime from, DateTime to);
 
-    Task<SuggestionUpdateResult> UpdateAsync(string userId, string id, SuggestionUpdateContract request, CancellationToken cancellationToken);
+    Task<ErrorOr<SuggestionContract>> UpdateAsync(string userId, string id, SuggestionUpdateContract request, CancellationToken cancellationToken);
 
-    Task<SuggestionDismissResult> DismissAsync(string userId, string id, CancellationToken cancellationToken);
+    Task<ErrorOr<Deleted>> DismissAsync(string userId, string id, CancellationToken cancellationToken);
 }

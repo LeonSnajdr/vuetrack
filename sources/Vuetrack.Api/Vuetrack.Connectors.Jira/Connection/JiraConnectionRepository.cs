@@ -3,17 +3,14 @@ using MongoDB.Driver;
 using Samhammer.DependencyInjection.Attributes;
 using Samhammer.Mongo;
 using Samhammer.Mongo.Abstractions;
+using Vuetrack.OAuth;
 
 namespace Vuetrack.Connectors.Jira.Connection;
 
 [Inject]
-public class JiraConnectionRepository(ILogger<JiraConnectionRepository> logger, IMongoDbConnector connector) : BaseRepositoryMongo<JiraConnectionModel>(logger, connector), IJiraConnectionRepository
+public class JiraConnectionRepository(ILogger<BaseRepositoryMongo<JiraConnectionModel>> logger, IMongoDbConnector connector)
+    : OAuthConnectionRepository<JiraConnectionModel>(logger, connector), IJiraConnectionRepository
 {
-    public async Task<JiraConnectionModel?> GetByUserId(string userId)
-    {
-        return await Collection.Find(x => x.UserId == userId).FirstOrDefaultAsync();
-    }
-
     public async Task UpsertConnectionAsync(string userId, string siteUrl, string cloudId, string authMode, string encryptedRefreshToken)
     {
         var update = Update
@@ -28,14 +25,6 @@ public class JiraConnectionRepository(ILogger<JiraConnectionRepository> logger, 
         var options = new UpdateOptions { IsUpsert = true };
 
         await Collection.UpdateOneAsync(filter, update, options);
-    }
-
-    public async Task SetRefreshTokenAsync(string userId, string encryptedRefreshToken)
-    {
-        var update = Update.Set(x => x.EncryptedRefreshToken, encryptedRefreshToken);
-        var filter = Filter.Where(x => x.UserId == userId);
-
-        await Collection.UpdateOneAsync(filter, update);
     }
 }
 

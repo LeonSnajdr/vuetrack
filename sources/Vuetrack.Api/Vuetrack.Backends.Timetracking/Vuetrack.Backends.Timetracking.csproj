@@ -28,6 +28,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Vuetrack.Backends.Abstractions\Vuetrack.Backends.Abstractions.csproj" />
+    <ProjectReference Include="..\Vuetrack.OAuth\Vuetrack.OAuth.csproj" />
   </ItemGroup>
 
 </Project>

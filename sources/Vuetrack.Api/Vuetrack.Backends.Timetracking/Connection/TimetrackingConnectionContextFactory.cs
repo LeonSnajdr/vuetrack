@@ -1,14 +1,19 @@
 using Samhammer.DependencyInjection.Attributes;
 using Vuetrack.Backends.Timetracking.OAuth;
+using Vuetrack.OAuth;
 using ZiggyCreatures.Caching.Fusion;
 
 namespace Vuetrack.Backends.Timetracking.Connection;
 
 [Inject]
-public class TimetrackingConnectionContextFactory(ITimetrackingConnectionRepository repository, ITimetrackingOAuthApiClient oauthClient, ISecretProtector secretProtector, ITimetrackingConnectionAccessor accessor, IFusionCache cache) : ITimetrackingConnectionContextFactory
+public class TimetrackingConnectionContextFactory(
+    ITimetrackingConnectionRepository repository,
+    ITimetrackingOAuthApiClient oauthClient,
+    ISecretProtector secretProtector,
+    ITimetrackingConnectionAccessor accessor,
+    IFusionCache cache)
+    : OAuthConnectionContextFactory<TimetrackingConnectionContainer, TimetrackingConnectionModel>(cache), ITimetrackingConnectionContextFactory
 {
-    private static readonly TimeSpan ExpiryBuffer = TimeSpan.FromSeconds(60);
-
     private ITimetrackingConnectionRepository Repository { get; } = repository;
 
     private ITimetrackingOAuthApiClient OAuthClient { get; } = oauthClient;
@@ -17,52 +22,26 @@ public class TimetrackingConnectionContextFactory(ITimetrackingConnectionReposit
 
     private ITimetrackingConnectionAccessor Accessor { get; } = accessor;
 
-    private IFusionCache Cache { get; } = cache;
+    protected override string CacheKeyPrefix => "tt-at";
 
-    public async Task<TimetrackingConnectionContainer?> CreateAsync(string userId, CancellationToken cancellationToken)
+    protected override Task<TimetrackingConnectionModel?> LoadAsync(string userId, CancellationToken cancellationToken) => Repository.GetByUserId(userId);
+
+    protected override Task<OAuthTokenResponse> RefreshAsync(string refreshToken, CancellationToken cancellationToken) => OAuthClient.RefreshAsync(refreshToken, cancellationToken);
+
+    protected override Task PersistRotatedTokenAsync(string userId, string encryptedRefreshToken) => Repository.SetRefreshTokenAsync(userId, encryptedRefreshToken);
+
+    protected override string Protect(string plaintext) => SecretProtector.Protect(plaintext);
+
+    protected override string Unprotect(string ciphertext) => SecretProtector.Unprotect(ciphertext);
+
+    protected override TimetrackingConnectionContainer BuildContainer(string userId, string accessToken, TimetrackingConnectionModel connection) => new()
     {
-        var cached = await Cache.TryGetAsync<TimetrackingConnectionContainer>(CacheKey(userId), token: cancellationToken);
-        if (cached.HasValue)
-        {
-            Accessor.Current = cached.Value;
-            return cached.Value;
-        }
+        UserId = userId,
+        AccessToken = accessToken,
+        ExternalUserId = connection.ExternalUserId,
+    };
 
-        var connection = await Repository.GetByUserId(userId);
-        if (connection is not { Enabled: true })
-        {
-            return null;
-        }
-
-        var refreshToken = SecretProtector.Unprotect(connection.EncryptedRefreshToken);
-        var token = await OAuthClient.RefreshAsync(refreshToken, cancellationToken);
-
-        if (!string.IsNullOrEmpty(token.RefreshToken) && token.RefreshToken != refreshToken)
-        {
-            var rotatedRefreshToken = SecretProtector.Protect(token.RefreshToken);
-            await Repository.SetRefreshTokenAsync(userId, rotatedRefreshToken);
-        }
-
-        var resolved = new TimetrackingConnectionContainer
-        {
-            UserId = userId,
-            AccessToken = token.AccessToken,
-            ExternalUserId = connection.ExternalUserId,
-        };
-
-        var lifetime = TimeSpan.FromSeconds(token.ExpiresInSeconds) - ExpiryBuffer;
-        if (lifetime > TimeSpan.Zero)
-        {
-            await Cache.SetAsync(CacheKey(userId), resolved, lifetime, token: cancellationToken);
-        }
-
-        Accessor.Current = resolved;
-        return resolved;
-    }
-
-    public void Evict(string userId) => Cache.Remove(CacheKey(userId));
-
-    private static string CacheKey(string userId) => $"tt-at:{userId}";
+    protected override void SetCurrent(TimetrackingConnectionContainer container) => Accessor.Current = container;
 }
 
 public interface ITimetrackingConnectionContextFactory

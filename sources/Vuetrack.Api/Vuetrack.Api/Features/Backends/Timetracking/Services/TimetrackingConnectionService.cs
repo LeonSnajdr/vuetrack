@@ -7,6 +7,7 @@ using Vuetrack.Backends.Timetracking.Api;
 using Vuetrack.Backends.Timetracking.Connection;
 using Vuetrack.Backends.Timetracking.OAuth;
 using Vuetrack.Framework.Errors;
+using Vuetrack.OAuth;
 
 namespace Vuetrack.Api.Features.Backends.Timetracking.Services;
 
@@ -99,7 +100,7 @@ public class TimetrackingConnectionService(
         ContextFactory.Evict(userId);
     }
 
-    private async Task PersistConnection(string userId, string externalUserId, TimetrackingTokenResponse token)
+    private async Task PersistConnection(string userId, string externalUserId, OAuthTokenResponse token)
     {
         if (string.IsNullOrEmpty(token.RefreshToken))
         {

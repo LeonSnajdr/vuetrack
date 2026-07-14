@@ -1,5 +1,6 @@
 using System.Net;
 using AwesomeAssertions;
+using ErrorOr;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Vuetrack.Connectors.Abstractions;
@@ -23,7 +24,7 @@ public class JiraConnectorHttpTests
     private static JiraConnector BuildConnector(Func<HttpRequestMessage, HttpResponseMessage> responder)
     {
         var handler = new StubHttpMessageHandler(responder);
-        var httpClient = new HttpClient(handler);
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("https://api.atlassian.com/") };
         var options = Options.Create(new JiraOptions());
         var accessor = new JiraConnectionAccessor
         {
@@ -46,9 +47,9 @@ public class JiraConnectorHttpTests
 
         var result = await connector.FetchAsync(Container, CancellationToken.None);
 
-        var success = result.Should().BeOfType<ActivityFetchSuccess>().Which;
+        result.IsError.Should().BeFalse();
 
-        var signal = success.Signals.Should().ContainSingle().Which;
+        var signal = result.Value.Should().ContainSingle().Which;
         signal.ExternalId.Should().Be("PROJ-1:worklog:100");
         signal.Link.Should().Be("https://acme.atlassian.net/browse/PROJ-1");
         signal.Description.Should().Be("worked on the fix");
@@ -108,7 +109,8 @@ public class JiraConnectorHttpTests
 
         var result = await connector.FetchAsync(Container, CancellationToken.None);
 
-        var signal = result.Should().BeOfType<ActivityFetchSuccess>().Which.Signals.Should().ContainSingle().Which;
+        result.IsError.Should().BeFalse();
+        var signal = result.Value.Should().ContainSingle().Which;
 
         // The worklog started at 09:00 +02:00, i.e. 07:00 UTC. It must be collapsed to a Kind=Utc instant.
         signal.DateStarted.Should().Be(new DateTime(2026, 7, 1, 7, 0, 0, DateTimeKind.Utc));
@@ -161,11 +163,11 @@ public class JiraConnectorHttpTests
 
         var result = await connector.FetchAsync(Container, CancellationToken.None);
 
-        var success = result.Should().BeOfType<ActivityFetchSuccess>().Which;
+        result.IsError.Should().BeFalse();
 
-        success.Signals.Should().HaveCount(2);
-        success.Signals.Should().Contain(s => s.ExternalId == "PROJ-1:worklog:100");
-        success.Signals.Should().Contain(s => s.ExternalId == "PROJ-2:issue");
+        result.Value.Should().HaveCount(2);
+        result.Value.Should().Contain(s => s.ExternalId == "PROJ-1:worklog:100");
+        result.Value.Should().Contain(s => s.ExternalId == "PROJ-2:issue");
 
         static HttpResponseMessage Respond(HttpRequestMessage request)
         {
@@ -208,17 +210,18 @@ public class JiraConnectorHttpTests
     }
 
     [Fact]
-    public async Task FetchAsync_ReturnsAuthFailed_On401()
+    public async Task FetchAsync_ReturnsUnauthorized_On401()
     {
         var connector = BuildConnector(_ => StubHttpMessageHandler.Json(HttpStatusCode.Unauthorized, "{}"));
 
         var result = await connector.FetchAsync(Container, CancellationToken.None);
 
-        result.Should().BeOfType<ActivityFetchAuthFailed>();
+        result.IsError.Should().BeTrue();
+        result.FirstError.Type.Should().Be(ErrorType.Unauthorized);
     }
 
     [Fact]
-    public async Task FetchAsync_ReturnsRateLimited_On429WithRetryAfter()
+    public async Task FetchAsync_ReturnsFailure_On429()
     {
         var connector = BuildConnector(_ =>
         {
@@ -229,28 +232,28 @@ public class JiraConnectorHttpTests
 
         var result = await connector.FetchAsync(Container, CancellationToken.None);
 
-        var rateLimited = result.Should().BeOfType<ActivityFetchRateLimited>().Which;
-
-        rateLimited.RetryAfter.Should().Be(TimeSpan.FromSeconds(30));
+        result.IsError.Should().BeTrue();
+        result.FirstError.Type.Should().Be(ErrorType.Failure);
     }
 
     [Fact]
-    public async Task ValidateAsync_ReturnsValid_WhenMyselfSucceeds()
+    public async Task ValidateAsync_ReturnsSuccess_WhenMyselfSucceeds()
     {
         var connector = BuildConnector(_ => StubHttpMessageHandler.Json(HttpStatusCode.OK, """{ "accountId": "acc-1" }"""));
 
         var result = await connector.ValidateAsync(CancellationToken.None);
 
-        result.Should().BeOfType<ConnectorValidationValid>();
+        result.IsError.Should().BeFalse();
     }
 
     [Fact]
-    public async Task ValidateAsync_ReturnsInvalid_WhenMyselfRejected()
+    public async Task ValidateAsync_ReturnsUnauthorized_WhenMyselfRejected()
     {
         var connector = BuildConnector(_ => StubHttpMessageHandler.Json(HttpStatusCode.Forbidden, "{}"));
 
         var result = await connector.ValidateAsync(CancellationToken.None);
 
-        result.Should().BeOfType<ConnectorValidationInvalid>();
+        result.IsError.Should().BeTrue();
+        result.FirstError.Type.Should().Be(ErrorType.Unauthorized);
     }
 }

@@ -1,14 +1,15 @@
+using ErrorOr;
 using Vuetrack.Connectors.Abstractions;
 
 namespace Vuetrack.Api.Tests.Fakes;
 
-public sealed class FakeConnector(ConnectorDescriptor descriptor, Func<ActivityFetchContainer, CancellationToken, Task<ActivityFetchResult>> fetch) : IConnector
+public sealed class FakeConnector(ConnectorDescriptor descriptor, Func<ActivityFetchContainer, CancellationToken, Task<ErrorOr<IReadOnlyList<ActivitySignal>>>> fetch) : IConnector
 {
     public ConnectorDescriptor Descriptor { get; } = descriptor;
 
-    public Task<ConnectorValidationResult> ValidateAsync(CancellationToken cancellationToken) =>
-        Task.FromResult<ConnectorValidationResult>(new ConnectorValidationValid());
+    public Task<ErrorOr<Success>> ValidateAsync(CancellationToken cancellationToken) =>
+        Task.FromResult<ErrorOr<Success>>(Result.Success);
 
-    public Task<ActivityFetchResult> FetchAsync(ActivityFetchContainer container, CancellationToken cancellationToken) =>
+    public Task<ErrorOr<IReadOnlyList<ActivitySignal>>> FetchAsync(ActivityFetchContainer container, CancellationToken cancellationToken) =>
         fetch(container, cancellationToken);
 }

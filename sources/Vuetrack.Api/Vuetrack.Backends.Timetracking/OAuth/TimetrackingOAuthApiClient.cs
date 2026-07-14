@@ -1,92 +1,34 @@
-using Duende.IdentityModel.Client;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Samhammer.DependencyInjection.Attributes;
+using Vuetrack.OAuth;
 
 namespace Vuetrack.Backends.Timetracking.OAuth;
 
 [Inject]
-public class TimetrackingOAuthApiClient(HttpClient httpClient, IOptions<TimetrackingOptions> options, ILogger<TimetrackingOAuthApiClient> logger) : ITimetrackingOAuthApiClient
+public class TimetrackingOAuthApiClient(HttpClient httpClient, IOptions<TimetrackingOptions> options, ILogger<TimetrackingOAuthApiClient> logger)
+    : OAuthApiClientBase(httpClient, logger), ITimetrackingOAuthApiClient
 {
-    private HttpClient HttpClient { get; } = httpClient;
-
     private IOptions<TimetrackingOptions> Options { get; } = options;
 
-    private ILogger<TimetrackingOAuthApiClient> Logger { get; } = logger;
+    protected override string ProviderName => "Timetracking";
 
-    public string BuildAuthorizationUrl(string state, string redirectUri)
-    {
-        var request = new RequestUrl(Options.Value.AuthorizeEndpoint);
-        return request.CreateAuthorizeUrl(
-            clientId: Options.Value.ClientId,
-            responseType: "code",
-            scope: Options.Value.Scopes,
-            redirectUri: redirectUri,
-            state: state);
-    }
+    protected override string AuthorizeEndpoint => Options.Value.AuthorizeEndpoint;
 
-    public async Task<TimetrackingTokenResponse> ExchangeCodeAsync(string code, string redirectUri, CancellationToken cancellationToken)
-    {
-        var response = await HttpClient.RequestAuthorizationCodeTokenAsync(
-            new AuthorizationCodeTokenRequest
-            {
-                Address = Options.Value.TokenEndpoint,
-                ClientId = Options.Value.ClientId,
-                ClientSecret = Options.Value.ClientSecret,
-                ClientCredentialStyle = ClientCredentialStyle.PostBody,
-                Code = code,
-                RedirectUri = redirectUri,
-            },
-            cancellationToken);
+    protected override string TokenEndpoint => Options.Value.TokenEndpoint;
 
-        return MapToken(response);
-    }
+    protected override string ClientId => Options.Value.ClientId;
 
-    public async Task<TimetrackingTokenResponse> RefreshAsync(string refreshToken, CancellationToken cancellationToken)
-    {
-        var response = await HttpClient.RequestRefreshTokenAsync(
-            new RefreshTokenRequest
-            {
-                Address = Options.Value.TokenEndpoint,
-                ClientId = Options.Value.ClientId,
-                ClientSecret = Options.Value.ClientSecret,
-                ClientCredentialStyle = ClientCredentialStyle.PostBody,
-                RefreshToken = refreshToken,
-            },
-            cancellationToken);
+    protected override string ClientSecret => Options.Value.ClientSecret;
 
-        return MapToken(response);
-    }
-
-    private TimetrackingTokenResponse MapToken(TokenResponse response)
-    {
-        if (response.IsError)
-        {
-            Logger.LogWarning("Timetracking token endpoint failed: {Error} ({StatusCode})", response.Error, (int)response.HttpStatusCode);
-            throw new InvalidOperationException($"Timetracking token request failed ({response.Error ?? response.HttpStatusCode.ToString()}).");
-        }
-
-        if (string.IsNullOrEmpty(response.AccessToken))
-        {
-            throw new InvalidOperationException("Timetracking token response was empty.");
-        }
-
-        return new TimetrackingTokenResponse
-        {
-            AccessToken = response.AccessToken,
-            RefreshToken = response.RefreshToken,
-            ExpiresInSeconds = response.ExpiresIn,
-            Scope = response.Scope,
-            TokenType = response.TokenType,
-        };
-    }
+    protected override string Scopes => Options.Value.Scopes;
 }
 
 public interface ITimetrackingOAuthApiClient
 {
     string BuildAuthorizationUrl(string state, string redirectUri);
 
-    Task<TimetrackingTokenResponse> ExchangeCodeAsync(string code, string redirectUri, CancellationToken cancellationToken);
+    Task<OAuthTokenResponse> ExchangeCodeAsync(string code, string redirectUri, CancellationToken cancellationToken);
 
-    Task<TimetrackingTokenResponse> RefreshAsync(string refreshToken, CancellationToken cancellationToken);
+    Task<OAuthTokenResponse> RefreshAsync(string refreshToken, CancellationToken cancellationToken);
 }

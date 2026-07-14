@@ -8,18 +8,18 @@ entries the user can review, edit, or dismiss.
 `POST /api/v1/suggestions/generate` (`SuggestionService.GenerateAsync`):
 
 1. For every descriptor in `IConnectorRegistry.Descriptors` (or the subset named
-   in `GenerateSuggestionsRequestContract.ConnectorKeys`), resolve the matching
-   `IConnectorContextInitializer` by `ConnectorKey` and call
-   `TryInitializeAsync(userId, ct)`. This establishes the connector's ambient,
-   per-user connection context (e.g. Jira's OAuth token) without the feature
-   knowing anything connector-specific.
-2. If initialization fails (`false`), record a `NotConnected` outcome and skip.
-   Otherwise resolve the `IConnector` from the registry and call `FetchAsync`.
-3. Match the returned `ActivityFetchResult` exhaustively into a
-   `ConnectorOutcomeContract` (`Success`, `NotConnected`, `AuthFailed`,
-   `RateLimited`, `Error`). A connector throwing an unexpected exception is
-   caught and recorded as `Error` too - one failing source never fails the
-   whole generation request.
+   in `GenerateSuggestionsRequestContract.ConnectorKeys`), call
+   `IConnectorResolver.ResolveConnectedAsync(key, userId, ct)`. The resolver runs
+   the matching `IConnectorContextInitializer` (establishing the connector's
+   ambient, per-user OAuth context) and returns `ErrorOr<IConnector>` — an error
+   (`ConnectorError.NotConnected`) when there is no active connection.
+2. If the resolve errors, record the outcome (`NotConnected`) and skip. Otherwise
+   call `IConnector.FetchAsync`, which returns `ErrorOr<IReadOnlyList<ActivitySignal>>`.
+3. Map the result into a `ConnectorOutcomeContract`: success → `Success` with the
+   signal count; an error is mapped by `Error.Type` (`Conflict` → `NotConnected`,
+   `Unauthorized` → `AuthFailed`, otherwise `Error`). A connector throwing an
+   unexpected exception is caught and recorded as `Error` too — one failing source
+   never fails the whole generation request.
 4. All collected `ActivitySignal`s (across every connector) are passed to
    `ISuggestionEngine.Build(signals, from, to)` - the pure engine in
    `Vuetrack.Suggestions.Engine` that groups/merges them into `TimeSuggestion`s.

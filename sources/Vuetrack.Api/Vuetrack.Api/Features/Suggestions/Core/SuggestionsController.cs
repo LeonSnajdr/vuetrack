@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Vuetrack.Api.Features.Suggestions.Core.Contracts;
 using Vuetrack.Api.Features.Suggestions.Core.Services;
 using Vuetrack.Api.Infrastructure.Authentication;
+using Vuetrack.Api.Infrastructure.Validation;
 
 namespace Vuetrack.Api.Features.Suggestions.Core;
 
@@ -38,12 +39,7 @@ public class SuggestionsController(ISuggestionService suggestionService) : Contr
 
         var result = await SuggestionService.UpdateAsync(userId, id, request, cancellationToken);
 
-        return result switch
-        {
-            SuggestionUpdated updated => Ok(updated.Suggestion),
-            SuggestionNotFound => NotFound(),
-            _ => StatusCode(500),
-        };
+        return this.ToActionResult(result);
     }
 
     [HttpPost("{id}/dismiss")]
@@ -53,11 +49,6 @@ public class SuggestionsController(ISuggestionService suggestionService) : Contr
 
         var result = await SuggestionService.DismissAsync(userId, id, cancellationToken);
 
-        return result switch
-        {
-            SuggestionDismissed => NoContent(),
-            SuggestionDismissNotFound => NotFound(),
-            _ => StatusCode(500),
-        };
+        return this.ToActionResult(result);
     }
 }

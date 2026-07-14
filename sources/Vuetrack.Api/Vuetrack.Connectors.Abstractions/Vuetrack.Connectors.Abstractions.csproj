@@ -18,4 +18,8 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Vuetrack.Framework\Vuetrack.Framework.csproj" />
+  </ItemGroup>
+
 </Project>

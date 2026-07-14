@@ -1,9 +1,11 @@
+using ErrorOr;
 using Samhammer.DependencyInjection.Attributes;
 using Vuetrack.Api.Features.Connectors.Jira.Contracts;
 using Vuetrack.Connectors.Abstractions;
 using Vuetrack.Connectors.Jira;
 using Vuetrack.Connectors.Jira.Connection;
 using Vuetrack.Connectors.Jira.OAuth;
+using Vuetrack.OAuth;
 
 namespace Vuetrack.Api.Features.Connectors.Jira.Services;
 
@@ -37,7 +39,7 @@ public class JiraConnectionService(IConnectorRegistry registry, IJiraOAuthApiCli
         return new JiraStatusContract(connection is { Enabled: true }, connection?.SiteUrl);
     }
 
-    public async Task<JiraConnectResult> ConnectAsync(string userId, JiraConnectCreateContract request, CancellationToken cancellationToken)
+    public async Task<ErrorOr<JiraConnectContract>> ConnectAsync(string userId, JiraConnectCreateContract request, CancellationToken cancellationToken)
     {
         try
         {
@@ -46,7 +48,7 @@ public class JiraConnectionService(IConnectorRegistry registry, IJiraOAuthApiCli
             var site = resources.FirstOrDefault();
             if (site is null)
             {
-                return new JiraConnectNoSite();
+                return Error.Conflict(code: "Jira.NoSite", description: "No accessible Jira site for this account.");
             }
 
             Accessor.Current = new JiraConnectionContainer
@@ -59,24 +61,19 @@ public class JiraConnectionService(IConnectorRegistry registry, IJiraOAuthApiCli
 
             var connector = Registry.Resolve(JiraConnector.Key) ?? throw new InvalidOperationException("Jira connector is not registered.");
 
-            var result = await connector.ValidateAsync(cancellationToken);
-            if (result is ConnectorValidationInvalid invalid)
+            var validation = await connector.ValidateAsync(cancellationToken);
+            if (validation.IsError)
             {
-                return new JiraConnectValidationFailed(invalid.Errors);
+                return validation.Errors;
             }
 
             await PersistConnection(userId, site, token);
-            return new JiraConnectSuccess(site.Url);
+            return new JiraConnectContract(site.Url);
         }
-        catch (JiraApiException ex)
+        catch (Exception ex)
         {
-            Logger.LogWarning("Jira connect failed: {Kind}", ex.Kind);
-            return ex.Kind switch
-            {
-                JiraApiErrorKind.Auth => new JiraConnectAuthFailed(ex.Message),
-                JiraApiErrorKind.RateLimited => new JiraConnectRateLimited(ex.RetryAfter ?? TimeSpan.FromSeconds(60)),
-                _ => new JiraConnectError(ex.Message),
-            };
+            Logger.LogWarning(ex, "Jira connect failed");
+            return Error.Unexpected();
         }
     }
 
@@ -91,7 +88,7 @@ public class JiraConnectionService(IConnectorRegistry registry, IJiraOAuthApiCli
         ContextFactory.Evict(userId);
     }
 
-    private async Task PersistConnection(string userId, JiraAccessibleResourceResponse site, JiraTokenResponse token)
+    private async Task PersistConnection(string userId, JiraAccessibleResourceResponse site, OAuthTokenResponse token)
     {
         if (string.IsNullOrEmpty(token.RefreshToken))
         {
@@ -111,7 +108,7 @@ public interface IJiraConnectionService
 
     Task<JiraStatusContract> GetStatusAsync(string userId);
 
-    Task<JiraConnectResult> ConnectAsync(string userId, JiraConnectCreateContract request, CancellationToken cancellationToken);
+    Task<ErrorOr<JiraConnectContract>> ConnectAsync(string userId, JiraConnectCreateContract request, CancellationToken cancellationToken);
 
     Task DisconnectAsync(string userId);
 }

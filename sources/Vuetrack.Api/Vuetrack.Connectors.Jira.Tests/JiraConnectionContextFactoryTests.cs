@@ -3,6 +3,7 @@ using AwesomeAssertions;
 using Microsoft.Extensions.Options;
 using Vuetrack.Connectors.Jira.Connection;
 using Vuetrack.Connectors.Jira.OAuth;
+using Vuetrack.OAuth;
 using Xunit;
 using ZiggyCreatures.Caching.Fusion;
 
@@ -80,12 +81,12 @@ public class JiraConnectionContextFactoryTests
 
         public string BuildAuthorizationUrl(string state, string redirectUri) => string.Empty;
 
-        public Task<JiraTokenResponse> ExchangeCodeAsync(string code, string redirectUri, CancellationToken cancellationToken)
+        public Task<OAuthTokenResponse> ExchangeCodeAsync(string code, string redirectUri, CancellationToken cancellationToken)
             => throw new NotSupportedException();
 
-        public Task<JiraTokenResponse> RefreshAsync(string refreshToken, CancellationToken cancellationToken)
+        public Task<OAuthTokenResponse> RefreshAsync(string refreshToken, CancellationToken cancellationToken)
         {
-            var response = new JiraTokenResponse
+            var response = new OAuthTokenResponse
             {
                 AccessToken = $"access-{RefreshCalls}",
                 RefreshToken = refreshToken,

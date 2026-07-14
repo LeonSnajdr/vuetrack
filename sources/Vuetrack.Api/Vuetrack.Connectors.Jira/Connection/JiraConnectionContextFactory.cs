@@ -1,15 +1,19 @@
 using Samhammer.DependencyInjection.Attributes;
 using Vuetrack.Connectors.Jira.OAuth;
+using Vuetrack.OAuth;
 using ZiggyCreatures.Caching.Fusion;
 
 namespace Vuetrack.Connectors.Jira.Connection;
 
 [Inject]
-public class JiraConnectionContextFactory(IJiraConnectionRepository repository, IJiraOAuthApiClient oauthClient, ISecretProtector secretProtector, IJiraConnectionAccessor accessor, IFusionCache cache) : IJiraConnectionContextFactory
+public class JiraConnectionContextFactory(
+    IJiraConnectionRepository repository,
+    IJiraOAuthApiClient oauthClient,
+    ISecretProtector secretProtector,
+    IJiraConnectionAccessor accessor,
+    IFusionCache cache)
+    : OAuthConnectionContextFactory<JiraConnectionContainer, JiraConnectionModel>(cache), IJiraConnectionContextFactory
 {
-    // Refresh a little early so a token never expires mid-request.
-    private static readonly TimeSpan ExpiryBuffer = TimeSpan.FromSeconds(60);
-
     private IJiraConnectionRepository Repository { get; } = repository;
 
     private IJiraOAuthApiClient OAuthClient { get; } = oauthClient;
@@ -18,53 +22,27 @@ public class JiraConnectionContextFactory(IJiraConnectionRepository repository, 
 
     private IJiraConnectionAccessor Accessor { get; } = accessor;
 
-    private IFusionCache Cache { get; } = cache;
+    protected override string CacheKeyPrefix => "jira-at";
 
-    public async Task<JiraConnectionContainer?> CreateAsync(string userId, CancellationToken cancellationToken)
+    protected override Task<JiraConnectionModel?> LoadAsync(string userId, CancellationToken cancellationToken) => Repository.GetByUserId(userId);
+
+    protected override Task<OAuthTokenResponse> RefreshAsync(string refreshToken, CancellationToken cancellationToken) => OAuthClient.RefreshAsync(refreshToken, cancellationToken);
+
+    protected override Task PersistRotatedTokenAsync(string userId, string encryptedRefreshToken) => Repository.SetRefreshTokenAsync(userId, encryptedRefreshToken);
+
+    protected override string Protect(string plaintext) => SecretProtector.Protect(plaintext);
+
+    protected override string Unprotect(string ciphertext) => SecretProtector.Unprotect(ciphertext);
+
+    protected override JiraConnectionContainer BuildContainer(string userId, string accessToken, JiraConnectionModel connection) => new()
     {
-        var cached = await Cache.TryGetAsync<JiraConnectionContainer>(CacheKey(userId), token: cancellationToken);
-        if (cached.HasValue)
-        {
-            Accessor.Current = cached.Value;
-            return cached.Value;
-        }
+        UserId = userId,
+        AccessToken = accessToken,
+        CloudId = connection.CloudId,
+        SiteUrl = connection.SiteUrl,
+    };
 
-        var connection = await Repository.GetByUserId(userId);
-        if (connection is not { Enabled: true })
-        {
-            return null;
-        }
-
-        var refreshToken = SecretProtector.Unprotect(connection.EncryptedRefreshToken);
-        var token = await OAuthClient.RefreshAsync(refreshToken, cancellationToken);
-
-        if (!string.IsNullOrEmpty(token.RefreshToken) && token.RefreshToken != refreshToken)
-        {
-            var rotatedRefreshToken = SecretProtector.Protect(token.RefreshToken);
-            await Repository.SetRefreshTokenAsync(userId, rotatedRefreshToken);
-        }
-
-        var resolved = new JiraConnectionContainer
-        {
-            UserId = userId,
-            AccessToken = token.AccessToken,
-            CloudId = connection.CloudId,
-            SiteUrl = connection.SiteUrl,
-        };
-
-        var lifetime = TimeSpan.FromSeconds(token.ExpiresInSeconds) - ExpiryBuffer;
-        if (lifetime > TimeSpan.Zero)
-        {
-            await Cache.SetAsync(CacheKey(userId), resolved, lifetime, token: cancellationToken);
-        }
-
-        Accessor.Current = resolved;
-        return resolved;
-    }
-
-    public void Evict(string userId) => Cache.Remove(CacheKey(userId));
-
-    private static string CacheKey(string userId) => $"jira-at:{userId}";
+    protected override void SetCurrent(JiraConnectionContainer container) => Accessor.Current = container;
 }
 
 public interface IJiraConnectionContextFactory

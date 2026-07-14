@@ -5,10 +5,6 @@ using Vuetrack.Framework.Errors;
 
 namespace Vuetrack.Api.Features.Backends;
 
-/// <summary>
-/// Resolves the backend for a user, running its per-user OAuth context initialization first.
-/// Returns null when the user has no active connection, so callers can surface a "not connected" state.
-/// </summary>
 [Inject]
 public class BackendResolver(IBackendRegistry registry, IEnumerable<IBackendContextInitializer> contextInitializers) : IBackendResolver
 {

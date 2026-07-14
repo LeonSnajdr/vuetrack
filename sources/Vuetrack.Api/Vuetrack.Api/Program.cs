@@ -18,6 +18,8 @@ using Vuetrack.Api.Infrastructure.ModelBinding;
 using Vuetrack.Api.Infrastructure.Validation;
 using Vuetrack.Backends.Timetracking;
 using Vuetrack.Backends.Timetracking.Api;
+using Vuetrack.Connectors.Jira;
+using Vuetrack.Connectors.Jira.Activity;
 using Vuetrack.Logging;
 using ZiggyCreatures.Caching.Fusion;
 
@@ -79,6 +81,12 @@ try
     builder.Services.AddHttpClient<ITimetrackingApiClient, TimetrackingApiClient>((sp, client) =>
     {
         var options = sp.GetRequiredService<IOptions<TimetrackingOptions>>().Value;
+        var baseUrl = options.ApiBaseUrl.TrimEnd('/') + "/";
+        client.BaseAddress = new Uri(baseUrl);
+    });
+    builder.Services.AddHttpClient<IJiraApiClient, JiraApiClient>((sp, client) =>
+    {
+        var options = sp.GetRequiredService<IOptions<JiraOptions>>().Value;
         var baseUrl = options.ApiBaseUrl.TrimEnd('/') + "/";
         client.BaseAddress = new Uri(baseUrl);
     });

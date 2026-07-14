@@ -4,13 +4,11 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Samhammer.DependencyInjection.Attributes;
 using Vuetrack.Connectors.Jira.Connection;
 using Vuetrack.Connectors.Jira.Internal;
 
 namespace Vuetrack.Connectors.Jira.Activity;
 
-[Inject]
 public class JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor accessor, IOptions<JiraOptions> options, ILogger<JiraApiClient> logger) : IJiraApiClient
 {
     private HttpClient HttpClient { get; } = httpClient;
@@ -164,7 +162,7 @@ public class JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor access
     {
         var connection = Accessor.Current ?? throw new JiraApiException(JiraApiErrorKind.Auth, "No active Jira connection for this request.");
 
-        var uri = $"{Options.Value.ApiBaseUrl.TrimEnd('/')}/ex/jira/{connection.CloudId}/rest/api/3/{path}";
+        var uri = $"ex/jira/{connection.CloudId}/rest/api/3/{path}";
 
         using var request = new HttpRequestMessage(HttpMethod.Get, uri);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", connection.AccessToken);

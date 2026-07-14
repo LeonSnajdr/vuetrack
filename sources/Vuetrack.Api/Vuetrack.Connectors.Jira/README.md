@@ -5,10 +5,11 @@ weaker "issues you touched" fallback) for a time range and returns normalized
 `ActivitySignal`s that the suggestion engine consumes. It is the reference implementation
 of the connector platform seam in `Vuetrack.Connectors.Abstractions`.
 
-Targets `net10.0`, consistent with the rest of the solution. Result types (`ActivityFetchResult`,
-`ValidationOutcome`) are sealed-record hierarchies matched with pattern matching; they live
-only transiently between produce-and-match and never appear in a Mongo document, a DTO, or
-the API contract.
+Targets `net10.0`, consistent with the rest of the solution. `IConnector` methods return
+`ErrorOr<T>` (`ErrorOr<Success>` for validate, `ErrorOr<IReadOnlyList<ActivitySignal>>` for
+fetch); there are no custom result unions. Shared OAuth 3LO plumbing (token client, refresh /
+rotate / cache context factory, secret protection, token response) lives in `Vuetrack.OAuth`
+and is subclassed here.
 
 ## Configuration
 
@@ -17,7 +18,8 @@ non-secret defaults; real secrets come from environment/config substitution.
 
 | Key | Meaning | Default |
 | --- | --- | --- |
-| `IdentityBaseUrl` | Atlassian OAuth host | `https://auth.atlassian.com` |
+| `AuthorizeEndpoint` | Atlassian OAuth authorize endpoint | `https://auth.atlassian.com/authorize` |
+| `TokenEndpoint` | Atlassian OAuth token endpoint | `https://auth.atlassian.com/oauth/token` |
 | `ApiBaseUrl` | Atlassian API gateway | `https://api.atlassian.com` |
 | `ClientId` | OAuth app client id | `""` (set via env) |
 | `ClientSecret` | OAuth app client secret | `""` (set via env) |
@@ -74,8 +76,9 @@ resolves the account (`GET /myself`), finds worklogs authored by the user in ran
 and maps everything to `ActivitySignal`s (`JiraActivityMapper`), deduping so a worklog supersedes
 the weaker issue signal for the same issue.
 
-HTTP failures never throw out of the connector: 401/403 map to `AuthFailed`, 429 to
-`RateLimited` (honoring `Retry-After`), anything else to `ConnectorError`.
+HTTP failures never throw out of the connector: 401/403 map to `Error.Unauthorized()`, anything
+else (including 429) to `Error.Failure()`. The caller (`ConnectorResolver`/`SuggestionService`)
+turns those into RFC 9457 problem details or per-connector outcome statuses.
 
 ## Project layout
 
@@ -103,10 +106,11 @@ Registration is mostly attribute-driven via the Samhammer packages already wired
   `ISuggestionConnector`. `ConnectorRegistry` collects `IEnumerable<ISuggestionConnector>` and
   resolves by `Descriptor.Key`, so `GET /api/v1/connectors` picks up every connector automatically.
 
-Both `JiraApiClient` and `JiraOAuthApiClient` are `[Inject]` and inject the default `HttpClient`
-(resolved from the `AddHttpClient()` factory already registered in `Program.cs`), so no explicit
-`IServiceCollection` wiring or delegating handler is needed. `JiraApiClient` attaches the `Bearer`
-header itself per request, and the token endpoint used by `JiraOAuthApiClient` must not receive one.
+`JiraApiClient` is registered in `Program.cs` as a typed `HttpClient` (`AddHttpClient<IJiraApiClient,
+JiraApiClient>`) with its `BaseAddress` set to `ApiBaseUrl`, so it issues relative
+`ex/jira/{cloudId}/rest/api/3/...` paths — mirroring `TimetrackingApiClient`. `JiraOAuthApiClient`
+is `[Inject]` and uses the default `HttpClient` (its token requests use absolute endpoint URLs).
+`JiraApiClient` attaches the `Bearer` header itself per request; the token endpoint must not receive one.
 
 ## Adding the next connector
 

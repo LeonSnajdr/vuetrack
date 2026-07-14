@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Vuetrack.Api.Features.Connectors.Jira.Contracts;
 using Vuetrack.Api.Features.Connectors.Jira.Services;
 using Vuetrack.Api.Infrastructure.Authentication;
+using Vuetrack.Api.Infrastructure.Validation;
 
 namespace Vuetrack.Api.Features.Connectors.Jira;
 
@@ -20,7 +21,8 @@ public class JiraConnectionController(IJiraConnectionService connectionService) 
     {
         if (!Uri.TryCreate(redirectUri, UriKind.Absolute, out _))
         {
-            return BadRequest(new { errors = new[] { "redirectUri must be a valid absolute URI." } });
+            ModelState.AddModelError(nameof(redirectUri), "redirectUri must be a valid absolute URI.");
+            return ValidationProblem();
         }
 
         return Ok(ConnectionService.BuildAuthorization(redirectUri));
@@ -41,16 +43,7 @@ public class JiraConnectionController(IJiraConnectionService connectionService) 
 
         var result = await ConnectionService.ConnectAsync(userId, request, cancellationToken);
 
-        return result switch
-        {
-            JiraConnectSuccess success => Ok(new JiraConnectContract(success.SiteUrl)),
-            JiraConnectNoSite => Conflict(new { errors = new[] { "No accessible Jira site for this account." } }),
-            JiraConnectValidationFailed invalid => BadRequest(new { errors = invalid.Errors }),
-            JiraConnectAuthFailed authFailed => Unauthorized(new { errors = new[] { authFailed.Reason } }),
-            JiraConnectRateLimited rateLimited => StatusCode(429, new { retryAfterSeconds = rateLimited.RetryAfter.TotalSeconds }),
-            JiraConnectError error => StatusCode(502, new { errors = new[] { error.Message } }),
-            _ => StatusCode(500),
-        };
+        return this.ToActionResult(result);
     }
 
     [HttpDelete]

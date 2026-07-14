@@ -1,3 +1,4 @@
+using ErrorOr;
 using Samhammer.DependencyInjection.Attributes;
 using Vuetrack.Connectors.Abstractions;
 using Vuetrack.Connectors.Jira.Activity;
@@ -21,7 +22,7 @@ public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor access
         Capabilities = ConnectorCapabilities.Worklogs | ConnectorCapabilities.IssueActivity | ConnectorCapabilities.OAuth,
     };
 
-    public async Task<ConnectorValidationResult> ValidateAsync(CancellationToken cancellationToken)
+    public async Task<ErrorOr<Success>> ValidateAsync(CancellationToken cancellationToken)
     {
         try
         {
@@ -29,18 +30,18 @@ public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor access
 
             if (string.IsNullOrEmpty(accountId))
             {
-                return new ConnectorValidationInvalid(["Jira did not return an account for these credentials."]);
+                return Error.Validation(description: "Jira did not return an account for these credentials.");
             }
 
-            return new ConnectorValidationValid();
+            return Result.Success;
         }
         catch (JiraApiException ex)
         {
-            return new ConnectorValidationInvalid([ex.Message]);
+            return MapError(ex);
         }
     }
 
-    public async Task<ActivityFetchResult> FetchAsync(ActivityFetchContainer container, CancellationToken cancellationToken)
+    public async Task<ErrorOr<IReadOnlyList<ActivitySignal>>> FetchAsync(ActivityFetchContainer container, CancellationToken cancellationToken)
     {
         try
         {
@@ -51,17 +52,21 @@ public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor access
             var siteUrl = Accessor.Current?.SiteUrl ?? string.Empty;
             var mapperContext = new JiraMapperContext(Key, siteUrl);
             var signals = MergeSignals(worklogs, issues, mapperContext);
-            return new ActivityFetchSuccess(signals);
+            return signals.ToErrorOr();
         }
         catch (JiraApiException ex)
         {
-            return ex.Kind switch
-            {
-                JiraApiErrorKind.Auth => new ActivityFetchAuthFailed(ex.Message),
-                JiraApiErrorKind.RateLimited => new ActivityFetchRateLimited(ex.RetryAfter ?? TimeSpan.FromSeconds(60)),
-                _ => new ActivityFetchConnectorError(ex.Message),
-            };
+            return MapError(ex);
         }
+    }
+
+    private static Error MapError(JiraApiException ex)
+    {
+        return ex.Kind switch
+        {
+            JiraApiErrorKind.Auth => Error.Unauthorized(description: ex.Message),
+            _ => Error.Failure(description: ex.Message),
+        };
     }
 
     private static IReadOnlyList<ActivitySignal> MergeSignals(IReadOnlyList<JiraWorklogContainer> worklogs, IReadOnlyList<JiraIssueActivityContainer> issues, JiraMapperContext context)
