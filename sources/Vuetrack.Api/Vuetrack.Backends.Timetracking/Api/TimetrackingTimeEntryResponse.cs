@@ -8,9 +8,9 @@ public sealed class TimetrackingTimeEntryResponse
 
     public long? CreatedByUserId { get; set; }
 
-    public TimetrackingRefResponse Project { get; set; } = new();
+    public TimetrackingActivityResponse Project { get; set; } = new();
 
-    public TimetrackingRefResponse Activity { get; set; } = new();
+    public TimetrackingActivityResponse Activity { get; set; } = new();
 
     public TimetrackingBreakResponse? BreakDetails { get; set; }
 

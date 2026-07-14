@@ -31,12 +31,12 @@ internal static class TimetrackingMapper
         };
     }
 
-    public static ProjectContract ToProjectContract(this TimetrackingRefResponse response)
+    public static ProjectContract ToProjectContract(this TimetrackingActivityResponse response)
     {
         return new ProjectContract(response.Id.ToString(CultureInfo.InvariantCulture), response.Name);
     }
 
-    public static ActivityContract ToActivityContract(this TimetrackingRefResponse response)
+    public static ActivityContract ToActivityContract(this TimetrackingActivityResponse response)
     {
         return new ActivityContract(response.Id.ToString(CultureInfo.InvariantCulture), response.Name);
     }

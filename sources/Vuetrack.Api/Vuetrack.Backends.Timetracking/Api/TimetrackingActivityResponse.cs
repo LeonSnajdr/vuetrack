@@ -1,6 +1,6 @@
 namespace Vuetrack.Backends.Timetracking.Api;
 
-public sealed class TimetrackingRefResponse
+public sealed class TimetrackingActivityResponse
 {
     public long Id { get; set; }
 

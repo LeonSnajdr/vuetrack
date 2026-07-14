@@ -20,22 +20,22 @@ public class TimetrackingApiClient(HttpClient httpClient, ITimetrackingConnectio
         return await response.Content.ReadFromJsonAsync<List<TimetrackingTimeEntryResponse>>(cancellationToken) ?? [];
     }
 
-    public async Task<IReadOnlyList<TimetrackingRefResponse>> GetProjectsAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<TimetrackingActivityResponse>> GetProjectsAsync(CancellationToken cancellationToken)
     {
         using var request = BuildRequest(HttpMethod.Get, "project");
         using var response = await HttpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
 
-        return await response.Content.ReadFromJsonAsync<List<TimetrackingRefResponse>>(cancellationToken) ?? [];
+        return await response.Content.ReadFromJsonAsync<List<TimetrackingActivityResponse>>(cancellationToken) ?? [];
     }
 
-    public async Task<IReadOnlyList<TimetrackingRefResponse>> GetActivitiesAsync(string projectId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<TimetrackingActivityResponse>> GetActivitiesAsync(string projectId, CancellationToken cancellationToken)
     {
         using var request = BuildRequest(HttpMethod.Get, $"project/{Uri.EscapeDataString(projectId)}/activity");
         using var response = await HttpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
 
-        return await response.Content.ReadFromJsonAsync<List<TimetrackingRefResponse>>(cancellationToken) ?? [];
+        return await response.Content.ReadFromJsonAsync<List<TimetrackingActivityResponse>>(cancellationToken) ?? [];
     }
 
     public async Task<string?> FindProjectIdByTaskIdAsync(string taskId, CancellationToken cancellationToken)
@@ -96,9 +96,9 @@ public interface ITimetrackingApiClient
 {
     Task<IReadOnlyList<TimetrackingTimeEntryResponse>> GetTimeEntriesAsync(string from, string to, CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<TimetrackingRefResponse>> GetProjectsAsync(CancellationToken cancellationToken);
+    Task<IReadOnlyList<TimetrackingActivityResponse>> GetProjectsAsync(CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<TimetrackingRefResponse>> GetActivitiesAsync(string projectId, CancellationToken cancellationToken);
+    Task<IReadOnlyList<TimetrackingActivityResponse>> GetActivitiesAsync(string projectId, CancellationToken cancellationToken);
 
     Task<string?> FindProjectIdByTaskIdAsync(string taskId, CancellationToken cancellationToken);
 
