@@ -1,22 +1,15 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using Microsoft.Extensions.Options;
-using Samhammer.DependencyInjection.Attributes;
 using Vuetrack.Backends.Timetracking.Connection;
 
 namespace Vuetrack.Backends.Timetracking.Api;
 
-[Inject]
-public class TimetrackingApiClient(HttpClient httpClient, ITimetrackingConnectionAccessor accessor, IOptions<TimetrackingOptions> options) : ITimetrackingApiClient
+public class TimetrackingApiClient(HttpClient httpClient, ITimetrackingConnectionAccessor accessor) : ITimetrackingApiClient
 {
     private HttpClient HttpClient { get; } = httpClient;
 
     private ITimetrackingConnectionAccessor Accessor { get; } = accessor;
-
-    private IOptions<TimetrackingOptions> Options { get; } = options;
-
-    private string BaseUrl => $"{Options.Value.ApiBaseUrl.TrimEnd('/')}/api/v1";
 
     public async Task<IReadOnlyList<TimetrackingTimeEntryResponse>> GetTimeEntriesAsync(string from, string to, CancellationToken cancellationToken)
     {
@@ -77,8 +70,7 @@ public class TimetrackingApiClient(HttpClient httpClient, ITimetrackingConnectio
         using var response = await HttpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
 
-        return await response.Content.ReadFromJsonAsync<TimetrackingTimeEntryResponse>(cancellationToken)
-            ?? throw new InvalidOperationException("Timetracking upsert returned an empty response.");
+        return await response.Content.ReadFromJsonAsync<TimetrackingTimeEntryResponse>(cancellationToken) ?? throw new InvalidOperationException("Timetracking upsert returned an empty response.");
     }
 
     public async Task DeleteTimeEntriesAsync(string idsToDelete, CancellationToken cancellationToken)
@@ -93,7 +85,7 @@ public class TimetrackingApiClient(HttpClient httpClient, ITimetrackingConnectio
     {
         var connection = Accessor.Current ?? throw new InvalidOperationException("No active timetracking connection for this request.");
 
-        var request = new HttpRequestMessage(method, $"{BaseUrl}/{path}");
+        var request = new HttpRequestMessage(method, path);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", connection.AccessToken);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         return request;

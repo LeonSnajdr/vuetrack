@@ -5,9 +5,11 @@ namespace Vuetrack.Backends.Timetracking;
 [Option]
 public class TimetrackingOptions
 {
-    public string IdentityBaseUrl { get; init; } = "https://auth-test.cloud.samhammer.de/auth/realms/timetracking-dev";
-
     public string ApiBaseUrl { get; init; } = string.Empty;
+
+    public string AuthorizeEndpoint { get; init; } = "https://auth-test.cloud.samhammer.de/auth/realms/timetracking-dev/protocol/openid-connect/auth";
+
+    public string TokenEndpoint { get; init; } = "https://auth-test.cloud.samhammer.de/auth/realms/timetracking-dev/protocol/openid-connect/token";
 
     public string ClientId { get; init; } = string.Empty;
 

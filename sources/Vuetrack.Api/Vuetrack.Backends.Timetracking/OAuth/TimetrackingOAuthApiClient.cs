@@ -14,13 +14,9 @@ public class TimetrackingOAuthApiClient(HttpClient httpClient, IOptions<Timetrac
 
     private ILogger<TimetrackingOAuthApiClient> Logger { get; } = logger;
 
-    private string AuthorizeEndpoint => $"{Options.Value.IdentityBaseUrl.TrimEnd('/')}/protocol/openid-connect/auth";
-
-    private string TokenEndpoint => $"{Options.Value.IdentityBaseUrl.TrimEnd('/')}/protocol/openid-connect/token";
-
     public string BuildAuthorizationUrl(string state, string redirectUri)
     {
-        var request = new RequestUrl(AuthorizeEndpoint);
+        var request = new RequestUrl(Options.Value.AuthorizeEndpoint);
         return request.CreateAuthorizeUrl(
             clientId: Options.Value.ClientId,
             responseType: "code",
@@ -34,7 +30,7 @@ public class TimetrackingOAuthApiClient(HttpClient httpClient, IOptions<Timetrac
         var response = await HttpClient.RequestAuthorizationCodeTokenAsync(
             new AuthorizationCodeTokenRequest
             {
-                Address = TokenEndpoint,
+                Address = Options.Value.TokenEndpoint,
                 ClientId = Options.Value.ClientId,
                 ClientSecret = Options.Value.ClientSecret,
                 ClientCredentialStyle = ClientCredentialStyle.PostBody,
@@ -51,7 +47,7 @@ public class TimetrackingOAuthApiClient(HttpClient httpClient, IOptions<Timetrac
         var response = await HttpClient.RequestRefreshTokenAsync(
             new RefreshTokenRequest
             {
-                Address = TokenEndpoint,
+                Address = Options.Value.TokenEndpoint,
                 ClientId = Options.Value.ClientId,
                 ClientSecret = Options.Value.ClientSecret,
                 ClientCredentialStyle = ClientCredentialStyle.PostBody,

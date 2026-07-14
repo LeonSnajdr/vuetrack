@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Asp.Versioning;
+using Microsoft.Extensions.Options;
 using Samhammer.Authentication.Api.Jwt;
 using Samhammer.Authentication.Api.Keycloak;
 using Samhammer.DependencyInjection;
@@ -14,6 +15,8 @@ using Vuetrack.Api.Features.Suggestions.Engine;
 using Vuetrack.Api.Infrastructure.Config;
 using Vuetrack.Api.Infrastructure.Cors;
 using Vuetrack.Api.Infrastructure.Validation;
+using Vuetrack.Backends.Timetracking;
+using Vuetrack.Backends.Timetracking.Api;
 using Vuetrack.Logging;
 using ZiggyCreatures.Caching.Fusion;
 
@@ -68,6 +71,12 @@ try
     builder.Services.AddSwaggerVersionedApi();
 
     builder.Services.AddHttpClient();
+    builder.Services.AddHttpClient<ITimetrackingApiClient, TimetrackingApiClient>((sp, client) =>
+    {
+        var options = sp.GetRequiredService<IOptions<TimetrackingOptions>>().Value;
+        var baseUrl = options.ApiBaseUrl.TrimEnd('/') + "/";
+        client.BaseAddress = new Uri(baseUrl);
+    });
     builder.Services.AddHttpContextAccessor();
 
     var app = builder.Build();
