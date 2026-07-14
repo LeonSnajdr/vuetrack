@@ -25,7 +25,17 @@ public class JiraConnectorHttpTests
     {
         var handler = new StubHttpMessageHandler(responder);
         var httpClient = new HttpClient(handler) { BaseAddress = new Uri("https://api.atlassian.com/") };
-        var options = Options.Create(new JiraOptions());
+        var options = Options.Create(new JiraOptions
+        {
+            ApiBaseUrl = "https://api.atlassian.com",
+            AuthorizeEndpoint = "https://auth.atlassian.com/authorize",
+            TokenEndpoint = "https://auth.atlassian.com/oauth/token",
+            ClientId = "client-id",
+            ClientSecret = "client-secret",
+            Scopes = "read:jira-work read:jira-user offline_access",
+            PageSize = 50,
+            MaxPages = 20,
+        });
         var accessor = new JiraConnectionAccessor
         {
             Current = new JiraConnectionContainer

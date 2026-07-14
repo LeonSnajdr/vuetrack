@@ -1,25 +1,18 @@
 using Duende.IdentityModel.Client;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Vuetrack.OAuth;
 
-public abstract class OAuthApiClientBase(HttpClient httpClient, ILogger logger) : IOAuthApiClientBase
+public abstract class OAuthApiClientBase(HttpClient httpClient, ILogger logger, IOptions<OAuthOptions> oAuthOptions) : IOAuthApiClientBase
 {
     protected HttpClient HttpClient { get; } = httpClient;
 
     private ILogger Logger { get; } = logger;
 
+    private IOptions<OAuthOptions> OAuthOptions { get; } = oAuthOptions;
+
     protected abstract string ProviderName { get; }
-
-    protected abstract string AuthorizeEndpoint { get; }
-
-    protected abstract string TokenEndpoint { get; }
-
-    protected abstract string ClientId { get; }
-
-    protected abstract string ClientSecret { get; }
-
-    protected abstract string Scopes { get; }
 
     protected virtual string? AuthorizePrompt => null;
 
@@ -27,11 +20,11 @@ public abstract class OAuthApiClientBase(HttpClient httpClient, ILogger logger) 
 
     public string BuildAuthorizationUrl(string state, string redirectUri)
     {
-        var request = new RequestUrl(AuthorizeEndpoint);
+        var request = new RequestUrl(OAuthOptions.Value.AuthorizeEndpoint);
         return request.CreateAuthorizeUrl(
-            clientId: ClientId,
+            clientId: OAuthOptions.Value.ClientId,
             responseType: "code",
-            scope: Scopes,
+            scope: OAuthOptions.Value.Scopes,
             redirectUri: redirectUri,
             state: state,
             prompt: AuthorizePrompt,
@@ -42,9 +35,9 @@ public abstract class OAuthApiClientBase(HttpClient httpClient, ILogger logger) 
     {
         var tokenRequest = new AuthorizationCodeTokenRequest
         {
-            Address = TokenEndpoint,
-            ClientId = ClientId,
-            ClientSecret = ClientSecret,
+            Address = OAuthOptions.Value.TokenEndpoint,
+            ClientId = OAuthOptions.Value.ClientId,
+            ClientSecret = OAuthOptions.Value.ClientSecret,
             ClientCredentialStyle = ClientCredentialStyle.PostBody,
             Code = code,
             RedirectUri = redirectUri,
@@ -58,9 +51,9 @@ public abstract class OAuthApiClientBase(HttpClient httpClient, ILogger logger) 
     {
         var tokenRequest = new RefreshTokenRequest
         {
-            Address = TokenEndpoint,
-            ClientId = ClientId,
-            ClientSecret = ClientSecret,
+            Address = OAuthOptions.Value.TokenEndpoint,
+            ClientId = OAuthOptions.Value.ClientId,
+            ClientSecret = OAuthOptions.Value.ClientSecret,
             ClientCredentialStyle = ClientCredentialStyle.PostBody,
             RefreshToken = refreshToken,
         };

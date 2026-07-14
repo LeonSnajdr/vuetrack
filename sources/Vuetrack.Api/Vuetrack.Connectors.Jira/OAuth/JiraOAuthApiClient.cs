@@ -5,31 +5,21 @@ using Duende.IdentityModel.Client;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Samhammer.DependencyInjection.Attributes;
+using Vuetrack.Connectors.Abstractions;
 using Vuetrack.OAuth;
 
 namespace Vuetrack.Connectors.Jira.OAuth;
 
 [Inject]
-public class JiraOAuthApiClient(HttpClient httpClient, IOptions<JiraOptions> options, ILogger<JiraOAuthApiClient> logger)
-    : OAuthApiClientBase(httpClient, logger), IJiraOAuthApiClient
+public class JiraOAuthApiClient(HttpClient httpClient, IOptions<JiraOptions> options, ILogger<JiraOAuthApiClient> logger) : OAuthApiClientBase(httpClient, logger, options), IJiraOAuthApiClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     private IOptions<JiraOptions> Options { get; } = options;
 
-    protected override string ProviderName => "Jira";
+    protected override string ProviderName => nameof(ConnectorKey.Jira);
 
-    protected override string AuthorizeEndpoint => Options.Value.AuthorizeEndpoint;
-
-    protected override string TokenEndpoint => Options.Value.TokenEndpoint;
-
-    protected override string ClientId => Options.Value.ClientId;
-
-    protected override string ClientSecret => Options.Value.ClientSecret;
-
-    protected override string Scopes => Options.Value.Scopes;
-
-    protected override string? AuthorizePrompt => "consent";
+    protected override string AuthorizePrompt => "consent";
 
     protected override Parameters ExtraAuthorizeParameters => new() { { "audience", "api.atlassian.com" } };
 
