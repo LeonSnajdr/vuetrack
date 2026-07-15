@@ -1,4 +1,4 @@
-namespace Vuetrack.Connectors.Abstractions.Metadata;
+namespace Vuetrack.Connectors.Abstractions;
 
 public enum ActivityKind
 {

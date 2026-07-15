@@ -1,7 +1,6 @@
 using AwesomeAssertions;
 using ErrorOr;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 using Vuetrack.Api.Features.Connectors;
 using Vuetrack.Api.Features.Suggestions.Core;
 using Vuetrack.Api.Features.Suggestions.Core.Contracts;
@@ -11,7 +10,6 @@ using Vuetrack.Api.Features.TimeEntry.Services;
 using Vuetrack.Api.Tests.Fakes;
 using Vuetrack.Backends.Abstractions.Contracts;
 using Vuetrack.Connectors.Abstractions;
-using Vuetrack.Connectors.Abstractions.Metadata;
 using Xunit;
 
 namespace Vuetrack.Api.Tests.Features.Suggestions.Core;
@@ -263,7 +261,7 @@ public class SuggestionServiceTests
 
     private static SuggestionService CreateService(FakeConnectorRegistry registry, IEnumerable<IConnectorContextInitializer> initializers, FakeSuggestionRepository repository, ITimeEntryService? timeEntryService = null)
     {
-        var engine = new SuggestionEngine(Options.Create(new SuggestionEngineOptions()));
+        var engine = new SuggestionEngine(new EchoSuggestionProvider());
         var resolver = new ConnectorResolver(registry, initializers);
         timeEntryService ??= new StubTimeEntryService { ListResult = ((IReadOnlyList<TimeEntryContract>)Array.Empty<TimeEntryContract>()).ToErrorOr() };
         return new SuggestionService(registry, resolver, repository, engine, timeEntryService, NullLogger<SuggestionService>.Instance);
@@ -308,18 +306,14 @@ public class SuggestionServiceTests
 
     private static ActivitySignal Signal(ConnectorKey connectorKey, string externalId, string subject, DateTime start, DateTime? end = null)
     {
-        var builder = new SignalMetadataBuilder();
-        builder.Set(MetadataKeys.ActivityKind, end.HasValue ? ActivityKind.Worklog : ActivityKind.Comment);
-        builder.Set(MetadataKeys.SubjectWorkItemId, subject);
-        builder.Set(MetadataKeys.CorrelationKeys, new List<string> { subject });
-
         return new ActivitySignal
         {
             ConnectorKey = connectorKey,
             ExternalId = externalId,
             DateStarted = start,
             DateEnded = end,
-            Metadata = builder.Build(),
+            Kind = end.HasValue ? ActivityKind.Worklog : ActivityKind.Comment,
+            Detail = new FakeSignalDetail(subject, null, null),
         };
     }
 }

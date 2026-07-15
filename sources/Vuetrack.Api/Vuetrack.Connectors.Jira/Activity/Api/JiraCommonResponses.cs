@@ -1,12 +1,11 @@
-using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Vuetrack.Connectors.Jira.Activity.Dtos;
+namespace Vuetrack.Connectors.Jira.Activity.Api;
 
 // Shared fragments used across several Jira REST responses. All Jira Cloud v3 responses are camelCase,
 // so web-default deserialization matches; JsonPropertyName is added only where the CLR name would differ.
 
-public sealed record JiraUserDto
+public sealed record JiraUserResponse
 {
     [JsonPropertyName("accountId")]
     public string? AccountId { get; init; }
@@ -15,13 +14,13 @@ public sealed record JiraUserDto
     public string? DisplayName { get; init; }
 }
 
-public sealed record JiraNamedDto
+public sealed record JiraNamedResponse
 {
     [JsonPropertyName("name")]
     public string? Name { get; init; }
 }
 
-public sealed record JiraProjectDto
+public sealed record JiraProjectResponse
 {
     [JsonPropertyName("key")]
     public string? Key { get; init; }
@@ -30,46 +29,46 @@ public sealed record JiraProjectDto
     public string? Name { get; init; }
 }
 
-public sealed record JiraParentDto
+public sealed record JiraParentResponse
 {
     [JsonPropertyName("key")]
     public string? Key { get; init; }
 }
 
-public sealed record JiraComponentDto
+public sealed record JiraComponentResponse
 {
     [JsonPropertyName("name")]
     public string? Name { get; init; }
 }
 
-public sealed record JiraIssueFieldsDto
+public sealed record JiraIssueFieldsResponse
 {
     [JsonPropertyName("summary")]
     public string? Summary { get; init; }
 
     [JsonPropertyName("issuetype")]
-    public JiraNamedDto? IssueType { get; init; }
+    public JiraNamedResponse? IssueType { get; init; }
 
     [JsonPropertyName("status")]
-    public JiraNamedDto? Status { get; init; }
+    public JiraNamedResponse? Status { get; init; }
 
     [JsonPropertyName("project")]
-    public JiraProjectDto? Project { get; init; }
+    public JiraProjectResponse? Project { get; init; }
 
     [JsonPropertyName("parent")]
-    public JiraParentDto? Parent { get; init; }
+    public JiraParentResponse? Parent { get; init; }
 
     [JsonPropertyName("labels")]
     public IReadOnlyList<string>? Labels { get; init; }
 
     [JsonPropertyName("components")]
-    public IReadOnlyList<JiraComponentDto>? Components { get; init; }
+    public IReadOnlyList<JiraComponentResponse>? Components { get; init; }
 
     [JsonPropertyName("updated")]
     public DateTimeOffset? Updated { get; init; }
 }
 
-public sealed record JiraSearchIssueDto
+public sealed record JiraSearchIssueResponse
 {
     [JsonPropertyName("id")]
     public string? Id { get; init; }
@@ -78,13 +77,13 @@ public sealed record JiraSearchIssueDto
     public string? Key { get; init; }
 
     [JsonPropertyName("fields")]
-    public JiraIssueFieldsDto? Fields { get; init; }
+    public JiraIssueFieldsResponse? Fields { get; init; }
 }
 
-public sealed record JiraSearchResponseDto
+public sealed record JiraSearchResponse
 {
     [JsonPropertyName("issues")]
-    public IReadOnlyList<JiraSearchIssueDto>? Issues { get; init; }
+    public IReadOnlyList<JiraSearchIssueResponse>? Issues { get; init; }
 
     [JsonPropertyName("nextPageToken")]
     public string? NextPageToken { get; init; }

@@ -1,40 +1,42 @@
-using System.Text.Json;
-using Microsoft.Extensions.Options;
+using ErrorOr;
 using Samhammer.DependencyInjection.Attributes;
-using Vuetrack.Api.Features.Suggestions.Engine.Rules;
+using Vuetrack.Api.Features.Suggestions.Engine.Provider;
 using Vuetrack.Connectors.Abstractions;
 
 namespace Vuetrack.Api.Features.Suggestions.Engine;
 
 [Inject]
-public sealed class SuggestionEngine(IOptions<SuggestionEngineOptions> options) : ISuggestionEngine
+public sealed class SuggestionEngine(ISuggestionProvider provider) : ISuggestionEngine
 {
-    private static readonly IReadOnlyList<IEvidenceRule> Rules =
-    [
-        new ExplicitDurationRule(),
-        new CommitRule(),
-        new StatusTransitionRule(),
-        new CorroboratingRule(),
-        new ContextRule(),
-    ];
+    private ISuggestionProvider Provider { get; } = provider;
 
-    private SuggestionEngineOptions Options { get; } = options.Value;
-
-    public IReadOnlyList<TimeSuggestion> Build(IReadOnlyList<ActivitySignal> signals, DateTime from, DateTime to)
+    public async Task<ErrorOr<IReadOnlyList<SuggestionEngineResult>>> BuildAsync(IReadOnlyList<ActivitySignal> signals, DateTime from, DateTime to, CancellationToken cancellationToken)
     {
-        var normalized = Normalize(signals);
-        var deduplicated = Deduplicate(normalized);
-        var candidates = ToCandidates(deduplicated, from, to);
-        var blocks = GroupIntoBlocks(candidates);
-
-        var suggestions = new List<TimeSuggestion>();
-        foreach (var block in blocks)
+        var deduplicated = Deduplicate(signals);
+        if (deduplicated.Count == 0)
         {
-            var suggestion = TryBuildSuggestion(block);
-            if (suggestion is not null)
+            IReadOnlyList<SuggestionEngineResult> none = [];
+            return none.ToErrorOr();
+        }
+
+        var context = BuildContext(deduplicated, from, to);
+        var candidates = await Provider.ProvideAsync(context, cancellationToken);
+        if (candidates.IsError)
+        {
+            return candidates.Errors;
+        }
+
+        var byExternalId = IndexByExternalId(deduplicated);
+        var suggestions = new List<SuggestionEngineResult>();
+        foreach (var candidate in candidates.Value)
+        {
+            var mapped = MapCandidate(candidate, byExternalId, from, to);
+            if (mapped.IsError)
             {
-                suggestions.Add(suggestion);
+                continue;
             }
+
+            suggestions.Add(mapped.Value);
         }
 
         var ordered = suggestions
@@ -42,24 +44,13 @@ public sealed class SuggestionEngine(IOptions<SuggestionEngineOptions> options) 
             .ThenBy(s => s.Sources.Count > 0 ? s.Sources[0].ExternalId : string.Empty, StringComparer.Ordinal)
             .ToList();
 
-        return ordered;
+        IReadOnlyList<SuggestionEngineResult> result = ordered;
+        return result.ToErrorOr();
     }
 
-    private static List<NormalizedSignal> Normalize(IReadOnlyList<ActivitySignal> signals)
+    private static List<ActivitySignal> Deduplicate(IReadOnlyList<ActivitySignal> signals)
     {
-        var result = new List<NormalizedSignal>(signals.Count);
-        foreach (var signal in signals)
-        {
-            var normalized = SignalNormalizer.Normalize(signal);
-            result.Add(normalized);
-        }
-
-        return result;
-    }
-
-    private static List<NormalizedSignal> Deduplicate(List<NormalizedSignal> signals)
-    {
-        var byKey = new Dictionary<(ConnectorKey ConnectorKey, string ExternalId), NormalizedSignal>();
+        var byKey = new Dictionary<(ConnectorKey ConnectorKey, string ExternalId), ActivitySignal>();
 
         foreach (var signal in signals)
         {
@@ -93,208 +84,106 @@ public sealed class SuggestionEngine(IOptions<SuggestionEngineOptions> options) 
         return left > right ? left : right;
     }
 
-    private List<CandidateEvidence> ToCandidates(List<NormalizedSignal> signals, DateTime from, DateTime to)
+    private static Dictionary<string, ActivitySignal> IndexByExternalId(List<ActivitySignal> signals)
     {
-        var candidates = new List<CandidateEvidence>();
-
+        var byExternalId = new Dictionary<string, ActivitySignal>(StringComparer.Ordinal);
         foreach (var signal in signals)
         {
-            var rule = FindRule(signal);
-            if (rule is null)
-            {
-                continue;
-            }
-
-            var candidate = rule.Create(signal, Options);
-            var clamped = Clamp(candidate, from, to);
-            if (clamped is not null)
-            {
-                candidates.Add(clamped);
-            }
+            byExternalId[signal.ExternalId] = signal;
         }
 
-        return candidates;
+        return byExternalId;
     }
 
-    private static IEvidenceRule? FindRule(NormalizedSignal signal)
+    private static SuggestionProviderContext BuildContext(List<ActivitySignal> signals, DateTime from, DateTime to)
     {
-        foreach (var rule in Rules)
+        return new SuggestionProviderContext
         {
-            if (rule.AppliesTo(signal))
-            {
-                return rule;
-            }
-        }
-
-        return null;
+            From = from,
+            To = to,
+            Signals = signals,
+        };
     }
 
-    private static CandidateEvidence? Clamp(CandidateEvidence candidate, DateTime from, DateTime to)
+    private static ErrorOr<SuggestionEngineResult> MapCandidate(SuggestionProviderCandidate candidate, Dictionary<string, ActivitySignal> byExternalId, DateTime from, DateTime to)
     {
+        var sources = ResolveSources(candidate.SourceExternalIds, byExternalId);
+        if (sources.Count == 0)
+        {
+            return Error.Validation();
+        }
+
         var start = candidate.DateStarted < from ? from : candidate.DateStarted;
         var end = candidate.DateEnded > to ? to : candidate.DateEnded;
         if (end <= start)
         {
-            return null;
+            return Error.Validation();
         }
 
-        return candidate with { DateStarted = start, DateEnded = end };
+        var confidence = Math.Min(1.0, candidate.Confidence);
+        var evidence = BuildEvidence(sources, confidence);
+
+        return new SuggestionEngineResult
+        {
+            TaskId = candidate.TaskId,
+            Comment = candidate.Comment,
+            DateStarted = start,
+            DateEnded = end,
+            Confidence = confidence,
+            Sources = evidence,
+        };
     }
 
-    private List<Block> GroupIntoBlocks(List<CandidateEvidence> candidates)
+    private static List<ActivitySignal> ResolveSources(IReadOnlyList<string> externalIds, Dictionary<string, ActivitySignal> byExternalId)
     {
-        var blocks = new List<Block>();
+        var resolved = new List<ActivitySignal>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
 
-        var groups = candidates
-            .GroupBy(c => c.Signal.PartitionKey, StringComparer.Ordinal)
-            .OrderBy(g => g.Key, StringComparer.Ordinal);
-
-        foreach (var group in groups)
+        foreach (var externalId in externalIds)
         {
-            var ordered = group
-                .OrderBy(c => c.DateStarted)
-                .ThenBy(c => c.Signal.ExternalId, StringComparer.Ordinal)
-                .ToList();
-
-            List<CandidateEvidence>? current = null;
-            var blockEnd = default(DateTime);
-
-            foreach (var candidate in ordered)
+            if (!seen.Add(externalId))
             {
-                if (current is null)
-                {
-                    current = [candidate];
-                    blockEnd = candidate.DateEnded;
-                    continue;
-                }
-
-                var gap = candidate.DateStarted - blockEnd;
-                if (gap <= Options.MergeGap)
-                {
-                    current.Add(candidate);
-                    if (candidate.DateEnded > blockEnd)
-                    {
-                        blockEnd = candidate.DateEnded;
-                    }
-
-                    continue;
-                }
-
-                blocks.Add(new Block(current));
-                current = [candidate];
-                blockEnd = candidate.DateEnded;
+                continue;
             }
 
-            if (current is not null)
+            if (byExternalId.TryGetValue(externalId, out var signal))
             {
-                blocks.Add(new Block(current));
+                resolved.Add(signal);
             }
         }
 
-        return blocks;
-    }
-
-    private TimeSuggestion? TryBuildSuggestion(Block block)
-    {
-        var contributors = block.Candidates;
-        var rawStart = contributors.Min(c => c.DateStarted);
-        var rawEnd = contributors.Max(c => c.DateEnded);
-        var start = RoundDown(rawStart, Options.RoundTo);
-        var end = RoundUp(rawEnd, Options.RoundTo);
-
-        if (end - start < Options.MinimumBlock)
-        {
-            return null;
-        }
-
-        var totalWeight = contributors.Sum(c => c.Weight);
-        var hasExplicit = contributors.Any(c => c.HasExplicitDuration);
-        var canCreateAlone = contributors.Any(c => c.CanCreateAlone);
-        var canPromote = hasExplicit || canCreateAlone || totalWeight >= Options.ConfidenceThreshold;
-        if (!canPromote)
-        {
-            return null;
-        }
-
-        var ordered = contributors
-            .OrderByDescending(c => c.Weight)
-            .ThenBy(c => c.DateStarted)
-            .ThenBy(c => c.Signal.ExternalId, StringComparer.Ordinal)
+        var ordered = resolved
+            .OrderBy(s => s.DateStarted)
+            .ThenBy(s => s.ExternalId, StringComparer.Ordinal)
             .ToList();
 
-        var taskId = ordered.Select(c => c.Signal.SubjectWorkItemId).FirstOrDefault(v => !string.IsNullOrEmpty(v));
-        var projectName = ordered.Select(c => c.Signal.DisplayProject).FirstOrDefault(v => !string.IsNullOrEmpty(v));
-        var comment = ordered.Select(c => c.Signal.DisplayComment).FirstOrDefault(v => !string.IsNullOrEmpty(v));
-        var confidence = Math.Min(1.0, totalWeight);
-        var canonical = BuildCanonicalMetadata(ordered);
-        var sources = ordered.Select(ToEvidence).ToList();
-
-        return new TimeSuggestion(taskId, projectName, comment, start, end, confidence, canonical, sources);
+        return ordered;
     }
 
-    private static IReadOnlyDictionary<string, JsonElement> BuildCanonicalMetadata(IReadOnlyList<CandidateEvidence> orderedByStrength)
+    private static List<SuggestionEngineEvidence> BuildEvidence(List<ActivitySignal> sources, double confidence)
     {
-        var canonical = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
-
-        foreach (var candidate in orderedByStrength)
+        var evidence = new List<SuggestionEngineEvidence>(sources.Count);
+        foreach (var signal in sources)
         {
-            foreach (var pair in candidate.Signal.Metadata)
+            var end = signal.DateEnded ?? signal.DateStarted;
+            var item = new SuggestionEngineEvidence
             {
-                if (!canonical.ContainsKey(pair.Key))
-                {
-                    canonical[pair.Key] = pair.Value;
-                }
-            }
+                ConnectorKey = signal.ConnectorKey,
+                ExternalId = signal.ExternalId,
+                Kind = signal.Kind,
+                DateStarted = signal.DateStarted,
+                DateEnded = end,
+                Confidence = confidence,
+            };
+
+            evidence.Add(item);
         }
 
-        return canonical;
+        return evidence;
     }
-
-    private static SuggestionEvidence ToEvidence(CandidateEvidence candidate)
-    {
-        var signal = candidate.Signal;
-        return new SuggestionEvidence(
-            signal.ConnectorKey,
-            signal.ExternalId,
-            signal.Kind,
-            candidate.DateStarted,
-            candidate.DateEnded,
-            candidate.Weight,
-            signal.Metadata);
-    }
-
-    private static DateTime RoundDown(DateTime value, TimeSpan step)
-    {
-        if (step <= TimeSpan.Zero)
-        {
-            return value;
-        }
-
-        var ticks = value.Ticks - (value.Ticks % step.Ticks);
-        return new DateTime(ticks, DateTimeKind.Utc);
-    }
-
-    private static DateTime RoundUp(DateTime value, TimeSpan step)
-    {
-        if (step <= TimeSpan.Zero)
-        {
-            return value;
-        }
-
-        var remainder = value.Ticks % step.Ticks;
-        if (remainder == 0)
-        {
-            return value;
-        }
-
-        var ticks = value.Ticks - remainder + step.Ticks;
-        return new DateTime(ticks, DateTimeKind.Utc);
-    }
-
-    private sealed record Block(IReadOnlyList<CandidateEvidence> Candidates);
 }
 
 public interface ISuggestionEngine
 {
-    IReadOnlyList<TimeSuggestion> Build(IReadOnlyList<ActivitySignal> signals, DateTime from, DateTime to);
+    Task<ErrorOr<IReadOnlyList<SuggestionEngineResult>>> BuildAsync(IReadOnlyList<ActivitySignal> signals, DateTime from, DateTime to, CancellationToken cancellationToken);
 }

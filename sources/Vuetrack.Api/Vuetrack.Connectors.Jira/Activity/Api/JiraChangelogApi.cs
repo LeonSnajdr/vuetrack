@@ -1,11 +1,11 @@
 using System.Text.Json.Serialization;
 
-namespace Vuetrack.Connectors.Jira.Activity.Dtos;
+namespace Vuetrack.Connectors.Jira.Activity.Api;
 
 // Request/response for POST /rest/api/3/changelog/bulkfetch — fetches changelogs for many issues at
 // once, filtered to a small set of field ids, paged by nextPageToken.
 
-public sealed record JiraBulkChangelogRequestDto
+public sealed record JiraBulkChangelogRequest
 {
     [JsonPropertyName("issueIdsOrKeys")]
     public required IReadOnlyList<string> IssueIdsOrKeys { get; init; }
@@ -20,7 +20,7 @@ public sealed record JiraBulkChangelogRequestDto
     public string? NextPageToken { get; init; }
 }
 
-public sealed record JiraChangelogItemDto
+public sealed record JiraChangelogItemResponse
 {
     [JsonPropertyName("field")]
     public string? Field { get; init; }
@@ -41,35 +41,35 @@ public sealed record JiraChangelogItemDto
     public string? ToDisplay { get; init; }
 }
 
-public sealed record JiraChangelogDto
+public sealed record JiraChangelogResponse
 {
     [JsonPropertyName("id")]
     public string? Id { get; init; }
 
     [JsonPropertyName("author")]
-    public JiraUserDto? Author { get; init; }
+    public JiraUserResponse? Author { get; init; }
 
     [JsonPropertyName("created")]
     public DateTimeOffset? Created { get; init; }
 
     [JsonPropertyName("items")]
-    public IReadOnlyList<JiraChangelogItemDto>? Items { get; init; }
+    public IReadOnlyList<JiraChangelogItemResponse>? Items { get; init; }
 }
 
-public sealed record JiraIssueChangeLogDto
+public sealed record JiraIssueChangeLogResponse
 {
     [JsonPropertyName("issueId")]
     public string? IssueId { get; init; }
 
     [JsonPropertyName("changeHistories")]
-    public IReadOnlyList<JiraChangelogDto>? ChangeHistories { get; init; }
+    public IReadOnlyList<JiraChangelogResponse>? ChangeHistories { get; init; }
 }
 
-public sealed record JiraBulkChangelogResponseDto
+public sealed record JiraBulkChangelogResponse
 {
     [JsonPropertyName("nextPageToken")]
     public string? NextPageToken { get; init; }
 
     [JsonPropertyName("issueChangeLogs")]
-    public IReadOnlyList<JiraIssueChangeLogDto>? IssueChangeLogs { get; init; }
+    public IReadOnlyList<JiraIssueChangeLogResponse>? IssueChangeLogs { get; init; }
 }

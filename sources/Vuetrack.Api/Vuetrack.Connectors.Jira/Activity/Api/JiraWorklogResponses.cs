@@ -1,15 +1,15 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Vuetrack.Connectors.Jira.Activity.Dtos;
+namespace Vuetrack.Connectors.Jira.Activity.Api;
 
-public sealed record JiraWorklogDto
+public sealed record JiraWorklogResponse
 {
     [JsonPropertyName("id")]
     public string? Id { get; init; }
 
     [JsonPropertyName("author")]
-    public JiraUserDto? Author { get; init; }
+    public JiraUserResponse? Author { get; init; }
 
     [JsonPropertyName("started")]
     public DateTimeOffset? Started { get; init; }
@@ -22,7 +22,7 @@ public sealed record JiraWorklogDto
     public JsonElement? Comment { get; init; }
 }
 
-public sealed record JiraWorklogResponseDto
+public sealed record JiraWorklogPageResponse
 {
     [JsonPropertyName("startAt")]
     public int StartAt { get; init; }
@@ -34,5 +34,5 @@ public sealed record JiraWorklogResponseDto
     public int Total { get; init; }
 
     [JsonPropertyName("worklogs")]
-    public IReadOnlyList<JiraWorklogDto>? Worklogs { get; init; }
+    public IReadOnlyList<JiraWorklogResponse>? Worklogs { get; init; }
 }

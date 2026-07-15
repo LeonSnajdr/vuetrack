@@ -13,9 +13,6 @@ public class SuggestionModel : BaseModelMongo
 
     public string? ProjectId { get; set; }
 
-    // Display project name resolved from the contributing signals (used by the UI when no taskId).
-    public string? ProjectName { get; set; }
-
     public string? ActivityId { get; set; }
 
     public string? Comment { get; set; }
@@ -26,9 +23,6 @@ public class SuggestionModel : BaseModelMongo
 
     [BsonRepresentation(BsonType.String)]
     public SuggestionStatus Status { get; set; } = SuggestionStatus.Pending;
-
-    // Canonical merged metadata, stored as a JSON string (see SuggestionMetadataJson).
-    public string? MetadataJson { get; set; }
 
     public List<SuggestionEvidenceModel> Sources { get; set; } = [];
 

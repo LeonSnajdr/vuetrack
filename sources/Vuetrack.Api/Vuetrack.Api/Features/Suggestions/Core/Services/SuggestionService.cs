@@ -129,7 +129,14 @@ public class SuggestionService(IConnectorRegistry registry, IConnectorResolver r
     private async Task<IReadOnlyList<SuggestionContract>> BuildAndInsertAsync(string userId, DateTime from, DateTime to, IReadOnlyList<ActivitySignal> signals, CancellationToken cancellationToken)
     {
         var existingTaskIds = await GetExistingTaskIdsAsync(userId, from, to, cancellationToken);
-        var suggestions = Engine.Build(signals, from, to);
+        var built = await Engine.BuildAsync(signals, from, to, cancellationToken);
+        if (built.IsError)
+        {
+            Logger.LogWarning("Suggestion engine failed to build suggestions for user {UserId}: {Errors}", userId, built.Errors);
+            return [];
+        }
+
+        var suggestions = built.Value;
         var now = DateTime.UtcNow;
         var toInsert = new List<SuggestionModel>();
 
@@ -154,6 +161,7 @@ public class SuggestionService(IConnectorRegistry registry, IConnectorResolver r
         var entries = await TimeEntryService.ListAsync(userId, from, to, cancellationToken);
         if (entries.IsError)
         {
+            // TODO should also return ErrorOr and fail at this point already
             Logger.LogWarning("Could not load time entries for suggestion deduplication for user {UserId}: {Errors}", userId, entries.Errors);
             return [];
         }
@@ -166,9 +174,9 @@ public class SuggestionService(IConnectorRegistry registry, IConnectorResolver r
     }
 
     // TODO could be solved with one mongo query
-    private async Task<bool> IsAlreadyGeneratedAsync(string userId, TimeSuggestion suggestion)
+    private async Task<bool> IsAlreadyGeneratedAsync(string userId, SuggestionEngineResult result)
     {
-        foreach (var source in suggestion.Sources)
+        foreach (var source in result.Sources)
         {
             if (await Repository.ExistsBySourceAsync(userId, source.ConnectorKey, source.ExternalId))
             {

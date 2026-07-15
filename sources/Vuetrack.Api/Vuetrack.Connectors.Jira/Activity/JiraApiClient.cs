@@ -5,7 +5,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Vuetrack.Connectors.Jira.Activity.Dtos;
+using Vuetrack.Connectors.Jira.Activity.Api;
 using Vuetrack.Connectors.Jira.Connection;
 
 namespace Vuetrack.Connectors.Jira.Activity;
@@ -29,15 +29,15 @@ public class JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor access
 
     public async Task<string> GetMyAccountIdAsync(CancellationToken cancellationToken)
     {
-        var me = await GetAsync<JiraUserDto>("myself", cancellationToken);
+        var me = await GetAsync<JiraUserResponse>("myself", cancellationToken);
         return me.AccountId ?? string.Empty;
     }
 
-    public async Task<IReadOnlyList<JiraSearchIssueDto>> SearchCandidateIssuesAsync(DateTime from, DateTime to, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<JiraSearchIssueResponse>> SearchCandidateIssuesAsync(DateTime from, DateTime to, CancellationToken cancellationToken)
     {
         var jql = $"(worklogAuthor = currentUser() OR assignee was currentUser() OR status changed by currentUser()) AND updated >= \"{IsoDateTime(from)}\" AND updated <= \"{IsoDateTime(to)}\" ORDER BY updated ASC";
 
-        var results = new List<JiraSearchIssueDto>();
+        var results = new List<JiraSearchIssueResponse>();
         string? pageToken = null;
 
         for (var page = 0; page < Options.Value.MaxPages; page++)
@@ -48,7 +48,7 @@ public class JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor access
                 path += $"&nextPageToken={Uri.EscapeDataString(pageToken)}";
             }
 
-            var response = await GetAsync<JiraSearchResponseDto>(path, cancellationToken);
+            var response = await GetAsync<JiraSearchResponse>(path, cancellationToken);
             if (response.Issues is { Count: > 0 })
             {
                 results.AddRange(response.Issues);
@@ -64,16 +64,16 @@ public class JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor access
         return results;
     }
 
-    public async Task<IReadOnlyList<JiraWorklogDto>> GetWorklogsAsync(string issueKey, DateTime startedAfter, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<JiraWorklogResponse>> GetWorklogsAsync(string issueKey, DateTime startedAfter, CancellationToken cancellationToken)
     {
         var startedAfterMs = new DateTimeOffset(startedAfter, TimeSpan.Zero).ToUnixTimeMilliseconds();
-        var entries = new List<JiraWorklogDto>();
+        var entries = new List<JiraWorklogResponse>();
         var startAt = 0;
 
         for (var page = 0; page < Options.Value.MaxPages; page++)
         {
             var path = $"issue/{Uri.EscapeDataString(issueKey)}/worklog?startedAfter={startedAfterMs}&startAt={startAt}&maxResults={Options.Value.PageSize}";
-            var response = await GetAsync<JiraWorklogResponseDto>(path, cancellationToken);
+            var response = await GetAsync<JiraWorklogPageResponse>(path, cancellationToken);
 
             var worklogs = response.Worklogs;
             if (worklogs is not { Count: > 0 })
@@ -92,15 +92,15 @@ public class JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor access
         return entries;
     }
 
-    public async Task<IReadOnlyList<JiraCommentDto>> GetCommentsAsync(string issueKey, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<JiraCommentResponse>> GetCommentsAsync(string issueKey, CancellationToken cancellationToken)
     {
-        var comments = new List<JiraCommentDto>();
+        var comments = new List<JiraCommentResponse>();
         var startAt = 0;
 
         for (var page = 0; page < Options.Value.MaxPages; page++)
         {
             var path = $"issue/{Uri.EscapeDataString(issueKey)}/comment?startAt={startAt}&maxResults={Options.Value.PageSize}";
-            var response = await GetAsync<JiraCommentResponseDto>(path, cancellationToken);
+            var response = await GetAsync<JiraCommentPageResponse>(path, cancellationToken);
 
             var pageComments = response.Comments;
             if (pageComments is not { Count: > 0 })
@@ -119,19 +119,19 @@ public class JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor access
         return comments;
     }
 
-    public async Task<IReadOnlyList<JiraIssueChangeLogDto>> GetChangelogsAsync(IReadOnlyList<string> issueIdsOrKeys, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<JiraIssueChangeLogResponse>> GetChangelogsAsync(IReadOnlyList<string> issueIdsOrKeys, CancellationToken cancellationToken)
     {
         if (issueIdsOrKeys.Count == 0)
         {
             return [];
         }
 
-        var logs = new List<JiraIssueChangeLogDto>();
+        var logs = new List<JiraIssueChangeLogResponse>();
         string? pageToken = null;
 
         for (var page = 0; page < Options.Value.MaxPages; page++)
         {
-            var request = new JiraBulkChangelogRequestDto
+            var request = new JiraBulkChangelogRequest
             {
                 IssueIdsOrKeys = issueIdsOrKeys,
                 FieldIds = ChangelogFieldIds,
@@ -139,7 +139,7 @@ public class JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor access
                 NextPageToken = pageToken,
             };
 
-            var response = await PostAsync<JiraBulkChangelogResponseDto>("changelog/bulkfetch", request, cancellationToken);
+            var response = await PostAsync<JiraBulkChangelogResponse>("changelog/bulkfetch", request, cancellationToken);
             if (response.IssueChangeLogs is { Count: > 0 })
             {
                 logs.AddRange(response.IssueChangeLogs);
@@ -255,11 +255,11 @@ public interface IJiraApiClient
 {
     Task<string> GetMyAccountIdAsync(CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<JiraSearchIssueDto>> SearchCandidateIssuesAsync(DateTime from, DateTime to, CancellationToken cancellationToken);
+    Task<IReadOnlyList<JiraSearchIssueResponse>> SearchCandidateIssuesAsync(DateTime from, DateTime to, CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<JiraWorklogDto>> GetWorklogsAsync(string issueKey, DateTime startedAfter, CancellationToken cancellationToken);
+    Task<IReadOnlyList<JiraWorklogResponse>> GetWorklogsAsync(string issueKey, DateTime startedAfter, CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<JiraCommentDto>> GetCommentsAsync(string issueKey, CancellationToken cancellationToken);
+    Task<IReadOnlyList<JiraCommentResponse>> GetCommentsAsync(string issueKey, CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<JiraIssueChangeLogDto>> GetChangelogsAsync(IReadOnlyList<string> issueIdsOrKeys, CancellationToken cancellationToken);
+    Task<IReadOnlyList<JiraIssueChangeLogResponse>> GetChangelogsAsync(IReadOnlyList<string> issueIdsOrKeys, CancellationToken cancellationToken);
 }

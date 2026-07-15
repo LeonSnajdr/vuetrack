@@ -4,7 +4,6 @@ using ErrorOr;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Vuetrack.Connectors.Abstractions;
-using Vuetrack.Connectors.Abstractions.Metadata;
 using Vuetrack.Connectors.Jira;
 using Vuetrack.Connectors.Jira.Activity;
 using Vuetrack.Connectors.Jira.Connection;
@@ -69,10 +68,11 @@ public class JiraConnectorHttpTests
         result.IsError.Should().BeFalse();
         var signal = result.Value.Should().ContainSingle().Which;
         signal.ExternalId.Should().Be("PROJ-1:worklog:100");
-        Kind(signal).Should().Be(ActivityKind.Worklog);
-        Get(signal, MetadataKeys.SubjectWorkItemId).Should().Be("PROJ-1");
-        Get(signal, MetadataKeys.DisplayComment).Should().Be("worked on the fix");
-        Get(signal, MetadataKeys.SourceUrl).Should().Be("https://acme.atlassian.net/browse/PROJ-1");
+        signal.Kind.Should().Be(ActivityKind.Worklog);
+        var detail = Detail(signal);
+        detail.IssueKey.Should().Be("PROJ-1");
+        detail.CommentText.Should().Be("worked on the fix");
+        detail.SourceUrl.Should().Be("https://acme.atlassian.net/browse/PROJ-1");
     }
 
     [Fact]
@@ -163,7 +163,7 @@ public class JiraConnectorHttpTests
         result.IsError.Should().BeFalse();
         var signal = result.Value.Should().ContainSingle().Which;
         signal.ExternalId.Should().Be("PROJ-1:changelog:5000:0");
-        Kind(signal).Should().Be(ActivityKind.StatusTransition);
+        signal.Kind.Should().Be(ActivityKind.StatusTransition);
     }
 
     [Fact]
@@ -195,7 +195,7 @@ public class JiraConnectorHttpTests
         result.IsError.Should().BeFalse();
         var signal = result.Value.Should().ContainSingle().Which;
         signal.ExternalId.Should().Be("PROJ-1:changelog:5000:0");
-        Kind(signal).Should().Be(ActivityKind.StatusTransition);
+        signal.Kind.Should().Be(ActivityKind.StatusTransition);
     }
 
     [Fact]
@@ -303,16 +303,9 @@ public class JiraConnectorHttpTests
         };
     }
 
-    private static ActivityKind Kind(ActivitySignal signal)
+    private static JiraSignalDetail Detail(ActivitySignal signal)
     {
-        signal.Metadata.TryGet(MetadataKeys.ActivityKind, out var kind).Should().BeTrue();
-        return kind;
-    }
-
-    private static string? Get(ActivitySignal signal, MetadataKey<string> key)
-    {
-        signal.Metadata.TryGet(key, out var value);
-        return value;
+        return signal.Detail.Should().BeOfType<JiraSignalDetail>().Which;
     }
 
     private static JiraConnector BuildConnector(Func<HttpRequestMessage, HttpResponseMessage> responder)

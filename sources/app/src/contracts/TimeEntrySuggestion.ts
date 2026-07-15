@@ -11,7 +11,6 @@ export type TimeEntrySuggestionEvidenceContract = {
     dateStarted: Date;
     dateEnded: Date;
     weight: number;
-    metadata: Record<string, unknown>;
 };
 
 export type TimeEntrySuggestionContract = {
@@ -24,7 +23,6 @@ export type TimeEntrySuggestionContract = {
     dateEnded: Date;
     comment: string | null;
     status: "Pending" | "Edited" | "Dismissed" | "Confirmed";
-    metadata: Record<string, unknown>;
     sources: TimeEntrySuggestionEvidenceContract[];
     confidence: number;
 };

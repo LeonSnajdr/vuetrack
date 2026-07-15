@@ -1,12 +1,9 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using Vuetrack.Connectors.Abstractions;
-using Vuetrack.Connectors.Abstractions.Metadata;
 
 namespace Vuetrack.Api.Features.Suggestions.Core;
 
-// Per-source evidence behind a persisted suggestion: which connector event contributed, its normalized
-// interval, activity kind, weight, and the original raw metadata (as JSON) for explainability.
 public sealed class SuggestionEvidenceModel
 {
     [BsonRepresentation(BsonType.String)]
@@ -21,7 +18,5 @@ public sealed class SuggestionEvidenceModel
 
     public DateTime DateEnded { get; set; }
 
-    public double Weight { get; set; }
-
-    public string? MetadataJson { get; set; }
+    public double Confidence { get; set; }
 }

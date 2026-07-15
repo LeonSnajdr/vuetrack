@@ -1,4 +1,4 @@
-using Vuetrack.Connectors.Jira.Activity.Dtos;
+using Vuetrack.Connectors.Jira.Activity.Api;
 
 namespace Vuetrack.Connectors.Jira.Activity;
 
@@ -26,15 +26,15 @@ public sealed record JiraIssueContext
 
     public IReadOnlyList<string> Components { get; init; } = [];
 
-    public static JiraIssueContext FromDto(JiraSearchIssueDto dto)
+    public static JiraIssueContext FromResponse(JiraSearchIssueResponse response)
     {
-        var fields = dto.Fields;
+        var fields = response.Fields;
         var components = MapComponents(fields?.Components);
 
         return new JiraIssueContext
         {
-            Key = dto.Key ?? string.Empty,
-            Id = dto.Id,
+            Key = response.Key ?? string.Empty,
+            Id = response.Id,
             Summary = fields?.Summary,
             ProjectKey = fields?.Project?.Key,
             ProjectName = fields?.Project?.Name,
@@ -46,7 +46,7 @@ public sealed record JiraIssueContext
         };
     }
 
-    private static IReadOnlyList<string> MapComponents(IReadOnlyList<JiraComponentDto>? components)
+    private static IReadOnlyList<string> MapComponents(IReadOnlyList<JiraComponentResponse>? components)
     {
         if (components is null)
         {

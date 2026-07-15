@@ -1,9 +1,8 @@
 using System.Text.Json;
 using AwesomeAssertions;
 using Vuetrack.Connectors.Abstractions;
-using Vuetrack.Connectors.Abstractions.Metadata;
 using Vuetrack.Connectors.Jira.Activity;
-using Vuetrack.Connectors.Jira.Activity.Dtos;
+using Vuetrack.Connectors.Jira.Activity.Api;
 using Xunit;
 
 namespace Vuetrack.Connectors.Jira.Tests;
@@ -26,10 +25,10 @@ public class JiraActivityMapperTests
     [Fact]
     public void ToWorklogSignal_ProducesTimedSignalWithTypedMetadata()
     {
-        var worklog = new JiraWorklogDto
+        var worklog = new JiraWorklogResponse
         {
             Id = "100",
-            Author = new JiraUserDto { AccountId = "acc-1" },
+            Author = new JiraUserResponse { AccountId = "acc-1" },
             Started = new DateTimeOffset(2026, 7, 1, 9, 0, 0, TimeSpan.Zero),
             TimeSpentSeconds = 3600,
             Comment = Adf("worked on it"),
@@ -42,28 +41,29 @@ public class JiraActivityMapperTests
         signal.DateStarted.Should().Be(new DateTime(2026, 7, 1, 9, 0, 0, DateTimeKind.Utc));
         signal.DateEnded.Should().Be(new DateTime(2026, 7, 1, 10, 0, 0, DateTimeKind.Utc));
 
-        Kind(signal).Should().Be(ActivityKind.Worklog);
-        Get(signal, MetadataKeys.SubjectWorkItemId).Should().Be("PROJ-1");
-        Get(signal, MetadataKeys.ActorId).Should().Be("acc-1");
-        Get(signal, MetadataKeys.DisplayTitle).Should().Be("PROJ-1 Fix login");
-        Get(signal, MetadataKeys.DisplayComment).Should().Be("worked on it");
-        Get(signal, MetadataKeys.SourceUrl).Should().Be("https://acme.atlassian.net/browse/PROJ-1");
-        Get(signal, MetadataKeys.DisplayProject).Should().Be("Project");
-        Get(signal, JiraMetadataKeys.IssueType).Should().Be("Bug");
-        Get(signal, JiraMetadataKeys.WorklogId).Should().Be("100");
+        signal.Kind.Should().Be(ActivityKind.Worklog);
+        var detail = Detail(signal);
+        detail.IssueKey.Should().Be("PROJ-1");
+        detail.Summary.Should().Be("Fix login");
+        detail.ActorId.Should().Be("acc-1");
+        detail.CommentText.Should().Be("worked on it");
+        detail.SourceUrl.Should().Be("https://acme.atlassian.net/browse/PROJ-1");
+        detail.ProjectName.Should().Be("Project");
+        detail.IssueType.Should().Be("Bug");
+        detail.WorklogId.Should().Be("100");
     }
 
     [Fact]
     public void ToChangeSignal_ClassifiesStatusTransitionAndCapturesTypedTransition()
     {
-        var changelog = new JiraChangelogDto
+        var changelog = new JiraChangelogResponse
         {
             Id = "5000",
-            Author = new JiraUserDto { AccountId = "acc-1" },
+            Author = new JiraUserResponse { AccountId = "acc-1" },
             Created = new DateTimeOffset(2026, 7, 1, 11, 0, 0, TimeSpan.Zero),
             Items =
             [
-                new JiraChangelogItemDto { Field = "status", FieldId = "status", From = "1", FromString = "To Do", To = "3", ToDisplay = "In Progress" },
+                new JiraChangelogItemResponse { Field = "status", FieldId = "status", From = "1", FromString = "To Do", To = "3", ToDisplay = "In Progress" },
             ],
         };
 
@@ -72,19 +72,18 @@ public class JiraActivityMapperTests
         signal.ExternalId.Should().Be("PROJ-1:changelog:5000:0");
         signal.DateStarted.Should().Be(new DateTime(2026, 7, 1, 11, 0, 0, DateTimeKind.Utc));
         signal.DateEnded.Should().BeNull();
-        Kind(signal).Should().Be(ActivityKind.StatusTransition);
+        signal.Kind.Should().Be(ActivityKind.StatusTransition);
 
-        signal.Metadata.TryGet(JiraMetadataKeys.Transition, out var transition).Should().BeTrue();
-        transition.Should().Be(new JiraFieldTransition("1", "To Do", "3", "In Progress"));
+        Detail(signal).Transition.Should().Be(new JiraFieldTransition("1", "To Do", "3", "In Progress"));
     }
 
     [Fact]
     public void ToCommentSignal_ProducesPointEventWithCommentText()
     {
-        var comment = new JiraCommentDto
+        var comment = new JiraCommentResponse
         {
             Id = "9000",
-            Author = new JiraUserDto { AccountId = "acc-1" },
+            Author = new JiraUserResponse { AccountId = "acc-1" },
             Created = new DateTimeOffset(2026, 7, 1, 12, 0, 0, TimeSpan.Zero),
             Body = Adf("looks good"),
         };
@@ -93,20 +92,13 @@ public class JiraActivityMapperTests
 
         signal.ExternalId.Should().Be("PROJ-1:comment:9000");
         signal.DateEnded.Should().BeNull();
-        Kind(signal).Should().Be(ActivityKind.Comment);
-        Get(signal, MetadataKeys.DisplayComment).Should().Be("looks good");
+        signal.Kind.Should().Be(ActivityKind.Comment);
+        Detail(signal).CommentText.Should().Be("looks good");
     }
 
-    private static ActivityKind Kind(ActivitySignal signal)
+    private static JiraSignalDetail Detail(ActivitySignal signal)
     {
-        signal.Metadata.TryGet(MetadataKeys.ActivityKind, out var kind).Should().BeTrue();
-        return kind;
-    }
-
-    private static string? Get(ActivitySignal signal, MetadataKey<string> key)
-    {
-        signal.Metadata.TryGet(key, out var value);
-        return value;
+        return signal.Detail.Should().BeOfType<JiraSignalDetail>().Which;
     }
 
     private static JsonElement Adf(string text)

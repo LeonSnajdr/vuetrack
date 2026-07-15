@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using System.Text.Json;
 using AwesomeAssertions;
 using ErrorOr;
 using Microsoft.AspNetCore.Http;
@@ -85,13 +84,11 @@ public class SuggestionsControllerResultMappingTests
         "id-1",
         "T-1",
         null,
-        "Project",
         null,
         DateTime.UnixEpoch,
         DateTime.UnixEpoch.AddMinutes(30),
         null,
         "Edited",
-        new Dictionary<string, JsonElement>(),
         [],
         0.6);
 

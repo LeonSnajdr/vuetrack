@@ -1,15 +1,15 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Vuetrack.Connectors.Jira.Activity.Dtos;
+namespace Vuetrack.Connectors.Jira.Activity.Api;
 
-public sealed record JiraCommentDto
+public sealed record JiraCommentResponse
 {
     [JsonPropertyName("id")]
     public string? Id { get; init; }
 
     [JsonPropertyName("author")]
-    public JiraUserDto? Author { get; init; }
+    public JiraUserResponse? Author { get; init; }
 
     [JsonPropertyName("created")]
     public DateTimeOffset? Created { get; init; }
@@ -22,7 +22,7 @@ public sealed record JiraCommentDto
     public JsonElement? Body { get; init; }
 }
 
-public sealed record JiraCommentResponseDto
+public sealed record JiraCommentPageResponse
 {
     [JsonPropertyName("startAt")]
     public int StartAt { get; init; }
@@ -34,5 +34,5 @@ public sealed record JiraCommentResponseDto
     public int Total { get; init; }
 
     [JsonPropertyName("comments")]
-    public IReadOnlyList<JiraCommentDto>? Comments { get; init; }
+    public IReadOnlyList<JiraCommentResponse>? Comments { get; init; }
 }

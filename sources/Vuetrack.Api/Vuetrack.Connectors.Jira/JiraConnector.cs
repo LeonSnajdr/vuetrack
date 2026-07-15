@@ -2,7 +2,7 @@ using ErrorOr;
 using Samhammer.DependencyInjection.Attributes;
 using Vuetrack.Connectors.Abstractions;
 using Vuetrack.Connectors.Jira.Activity;
-using Vuetrack.Connectors.Jira.Activity.Dtos;
+using Vuetrack.Connectors.Jira.Activity.Api;
 using Vuetrack.Connectors.Jira.Connection;
 
 namespace Vuetrack.Connectors.Jira;
@@ -49,10 +49,10 @@ public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor access
             var accountId = await Client.GetMyAccountIdAsync(cancellationToken);
             var siteUrl = Accessor.Current?.SiteUrl ?? string.Empty;
 
-            var issueDtos = await Client.SearchCandidateIssuesAsync(container.From, container.To, cancellationToken);
-            var contexts = issueDtos
+            var issueResponses = await Client.SearchCandidateIssuesAsync(container.From, container.To, cancellationToken);
+            var contexts = issueResponses
                 .Where(i => !string.IsNullOrEmpty(i.Key))
-                .Select(JiraIssueContext.FromDto)
+                .Select(JiraIssueContext.FromResponse)
                 .ToList();
 
             // Keyed by ExternalId so overlapping fetch windows collapse deterministically before the engine.
@@ -172,7 +172,7 @@ public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor access
         }
     }
 
-    private static void AddHistorySignals(Dictionary<string, ActivitySignal> signals, JiraIssueContext context, JiraChangelogDto history, string accountId, string siteUrl, ActivityFetchContainer window)
+    private static void AddHistorySignals(Dictionary<string, ActivitySignal> signals, JiraIssueContext context, JiraChangelogResponse history, string accountId, string siteUrl, ActivityFetchContainer window)
     {
         if (!IsAuthor(history.Author, accountId) || string.IsNullOrEmpty(history.Id) || history.Items is null)
         {
@@ -198,7 +198,7 @@ public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor access
         }
     }
 
-    private static bool IsAuthor(JiraUserDto? author, string accountId)
+    private static bool IsAuthor(JiraUserResponse? author, string accountId)
     {
         return author?.AccountId is { } id && string.Equals(id, accountId, StringComparison.Ordinal);
     }
