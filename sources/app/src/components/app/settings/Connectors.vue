@@ -10,13 +10,22 @@
             <VCardText>
                 <template v-if="connector.key === 'jira'">
                     <template v-if="jiraStatus.connected">
-                        <VAlert :icon="mdiCheckCircle" type="success" variant="tonal">
+                        <VAlert v-if="jiraStatus.healthy" :icon="mdiCheckCircle" type="success" variant="tonal">
                             {{ $t("settings.connectors.jira.connected") }}
                             <template v-if="jiraStatus.siteUrl"> — {{ jiraStatus.siteUrl }}</template>
                         </VAlert>
-                        <VBtn @click="disconnect" :loading="isDisconnecting" :prependIcon="mdiLinkOff" class="mt-3" color="error" variant="tonal">
-                            {{ $t("settings.connectors.jira.disconnect") }}
-                        </VBtn>
+                        <VAlert v-else :icon="mdiAlert" type="warning" variant="tonal">
+                            {{ $t("settings.connectors.jira.reconnectRequired") }}
+                            <template v-if="jiraStatus.siteUrl"> — {{ jiraStatus.siteUrl }}</template>
+                        </VAlert>
+                        <div class="mt-3 d-flex ga-2">
+                            <VBtn v-if="!jiraStatus.healthy" @click="connect" :loading="isConnecting" :prependIcon="mdiJira" color="primary" variant="flat">
+                                {{ $t("settings.connectors.jira.reconnect") }}
+                            </VBtn>
+                            <VBtn @click="disconnect" :loading="isDisconnecting" :prependIcon="mdiLinkOff" color="error" variant="tonal">
+                                {{ $t("settings.connectors.jira.disconnect") }}
+                            </VBtn>
+                        </div>
                         <VAlert v-if="error" class="mt-3" type="error" variant="tonal">{{ error }}</VAlert>
                     </template>
                     <template v-else>

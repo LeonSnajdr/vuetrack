@@ -4,6 +4,7 @@ using ErrorOr;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Vuetrack.Connectors.Abstractions;
+using Vuetrack.Connectors.Abstractions.Metadata;
 using Vuetrack.Connectors.Jira;
 using Vuetrack.Connectors.Jira.Activity;
 using Vuetrack.Connectors.Jira.Connection;
@@ -15,208 +16,206 @@ public class JiraConnectorHttpTests
 {
     private const string SiteUrl = "https://acme.atlassian.net";
 
+    private const string Myself = """{ "accountId": "acc-1" }""";
+
+    private const string EmptyWorklogs = """{ "worklogs": [], "total": 0 }""";
+
+    private const string EmptyComments = """{ "comments": [], "total": 0 }""";
+
+    private const string EmptyChangelog = """{ "issueChangeLogs": [] }""";
+
+    private const string SearchProj1 = """
+    {
+      "issues": [
+        { "id": "1001", "key": "PROJ-1", "fields": {
+          "summary": "Fix login",
+          "issuetype": { "name": "Bug" },
+          "status": { "name": "In Progress" },
+          "project": { "key": "PROJ", "name": "Project" }
+        } }
+      ],
+      "isLast": true
+    }
+    """;
+
     private static readonly ActivityFetchContainer Container = new()
     {
         From = new DateTime(2026, 7, 1, 0, 0, 0, DateTimeKind.Utc),
         To = new DateTime(2026, 7, 2, 0, 0, 0, DateTimeKind.Utc),
     };
 
-    private static JiraConnector BuildConnector(Func<HttpRequestMessage, HttpResponseMessage> responder)
-    {
-        var handler = new StubHttpMessageHandler(responder);
-        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("https://api.atlassian.com/") };
-        var options = Options.Create(new JiraOptions
-        {
-            ApiBaseUrl = "https://api.atlassian.com",
-            AuthorizeEndpoint = "https://auth.atlassian.com/authorize",
-            TokenEndpoint = "https://auth.atlassian.com/oauth/token",
-            ClientId = "client-id",
-            ClientSecret = "client-secret",
-            Scopes = "read:jira-work read:jira-user offline_access",
-            PageSize = 50,
-            MaxPages = 20,
-        });
-        var accessor = new JiraConnectionAccessor
-        {
-            Current = new JiraConnectionContainer
-            {
-                UserId = "user-1",
-                AccessToken = "access-token",
-                CloudId = "cloud-1",
-                SiteUrl = SiteUrl,
-            },
-        };
-        var client = new JiraApiClient(httpClient, accessor, options, NullLogger<JiraApiClient>.Instance);
-        return new JiraConnector(client, accessor);
-    }
-
     [Fact]
-    public async Task FetchAsync_ReturnsSuccessWithSignals_OnHappyPath()
+    public async Task FetchAsync_HappyPath_ReturnsWorklogSignalWithTypedMetadata()
     {
-        var connector = BuildConnector(Respond);
+        const string worklog = """
+        {
+          "worklogs": [
+            {
+              "id": "100",
+              "author": { "accountId": "acc-1" },
+              "started": "2026-07-01T09:00:00.000+00:00",
+              "timeSpentSeconds": 3600,
+              "comment": { "type": "doc", "content": [ { "type": "paragraph", "content": [ { "type": "text", "text": "worked on the fix" } ] } ] }
+            }
+          ],
+          "total": 1
+        }
+        """;
+
+        var connector = BuildConnector(Responder(SearchProj1, worklog));
 
         var result = await connector.FetchAsync(Container, CancellationToken.None);
 
         result.IsError.Should().BeFalse();
-
         var signal = result.Value.Should().ContainSingle().Which;
         signal.ExternalId.Should().Be("PROJ-1:worklog:100");
-        signal.Link.Should().Be("https://acme.atlassian.net/browse/PROJ-1");
-        signal.Description.Should().Be("worked on the fix");
-
-        static HttpResponseMessage Respond(HttpRequestMessage request)
-        {
-            // The client (not a delegating handler) attaches the ambient access token.
-            request.Headers.Authorization?.Scheme.Should().Be("Bearer");
-            request.Headers.Authorization?.Parameter.Should().Be("access-token");
-
-            var uri = request.RequestUri!.ToString();
-            if (uri.Contains("/myself"))
-            {
-                return StubHttpMessageHandler.Json(HttpStatusCode.OK, """{ "accountId": "acc-1" }""");
-            }
-
-            if (uri.Contains("/search/jql"))
-            {
-                return StubHttpMessageHandler.Json(HttpStatusCode.OK, """
-                {
-                  "issues": [
-                    { "key": "PROJ-1", "fields": {
-                      "summary": "Fix login",
-                      "issuetype": { "name": "Bug" },
-                      "status": { "name": "In Progress" },
-                      "project": { "key": "PROJ" },
-                      "updated": "2026-07-01T15:00:00.000+00:00"
-                    } }
-                  ],
-                  "isLast": true
-                }
-                """);
-            }
-
-            return StubHttpMessageHandler.Json(HttpStatusCode.OK, """
-            {
-              "worklogs": [
-                {
-                  "id": "100",
-                  "author": { "accountId": "acc-1" },
-                  "started": "2026-07-01T09:00:00.000+00:00",
-                  "timeSpentSeconds": 3600,
-                  "comment": { "type": "doc", "content": [
-                    { "type": "paragraph", "content": [ { "type": "text", "text": "worked on the fix" } ] }
-                  ] }
-                }
-              ]
-            }
-            """);
-        }
+        Kind(signal).Should().Be(ActivityKind.Worklog);
+        Get(signal, MetadataKeys.SubjectWorkItemId).Should().Be("PROJ-1");
+        Get(signal, MetadataKeys.DisplayComment).Should().Be("worked on the fix");
+        Get(signal, MetadataKeys.SourceUrl).Should().Be("https://acme.atlassian.net/browse/PROJ-1");
     }
 
     [Fact]
     public async Task FetchAsync_NormalizesOffsetTimestampsToUtc()
     {
-        var connector = BuildConnector(Respond);
+        const string worklog = """
+        {
+          "worklogs": [
+            { "id": "100", "author": { "accountId": "acc-1" }, "started": "2026-07-01T09:00:00.000+02:00", "timeSpentSeconds": 3600 }
+          ],
+          "total": 1
+        }
+        """;
+
+        var connector = BuildConnector(Responder(SearchProj1, worklog));
 
         var result = await connector.FetchAsync(Container, CancellationToken.None);
 
         result.IsError.Should().BeFalse();
         var signal = result.Value.Should().ContainSingle().Which;
-
-        // The worklog started at 09:00 +02:00, i.e. 07:00 UTC. It must be collapsed to a Kind=Utc instant.
         signal.DateStarted.Should().Be(new DateTime(2026, 7, 1, 7, 0, 0, DateTimeKind.Utc));
         signal.DateStarted.Kind.Should().Be(DateTimeKind.Utc);
         signal.DateEnded!.Value.Kind.Should().Be(DateTimeKind.Utc);
-
-        static HttpResponseMessage Respond(HttpRequestMessage request)
-        {
-            var uri = request.RequestUri!.ToString();
-            if (uri.Contains("/myself"))
-            {
-                return StubHttpMessageHandler.Json(HttpStatusCode.OK, """{ "accountId": "acc-1" }""");
-            }
-
-            if (uri.Contains("/search/jql"))
-            {
-                // Same issue key as the worklog, so the issue fallback is deduped and a single signal remains.
-                return StubHttpMessageHandler.Json(HttpStatusCode.OK, """
-                {
-                  "issues": [
-                    { "key": "PROJ-1", "fields": {
-                      "summary": "Fix login",
-                      "updated": "2026-07-01T17:00:00.000+02:00"
-                    } }
-                  ],
-                  "isLast": true
-                }
-                """);
-            }
-
-            return StubHttpMessageHandler.Json(HttpStatusCode.OK, """
-            {
-              "worklogs": [
-                {
-                  "id": "100",
-                  "author": { "accountId": "acc-1" },
-                  "started": "2026-07-01T09:00:00.000+02:00",
-                  "timeSpentSeconds": 3600
-                }
-              ]
-            }
-            """);
-        }
     }
 
     [Fact]
-    public async Task FetchAsync_MergesWorklogAndUnrelatedIssueFallback()
+    public async Task FetchAsync_ParsesColonlessRfc822Offset()
     {
-        var connector = BuildConnector(Respond);
+        // Jira Cloud v3 returns a colonless offset ("+0000") that the built-in ISO parser rejects.
+        const string search = """
+        {
+          "issues": [
+            { "id": "1001", "key": "PROJ-1", "fields": {
+              "summary": "Fix login",
+              "issuetype": { "name": "Bug" },
+              "status": { "name": "In Progress" },
+              "project": { "key": "PROJ", "name": "Project" },
+              "updated": "2026-07-01T12:34:56.789+0000"
+            } }
+          ],
+          "isLast": true
+        }
+        """;
+        const string worklog = """
+        {
+          "worklogs": [
+            { "id": "100", "author": { "accountId": "acc-1" }, "started": "2026-07-01T09:00:00.000+0000", "timeSpentSeconds": 3600 }
+          ],
+          "total": 1
+        }
+        """;
+
+        var connector = BuildConnector(Responder(search, worklog));
 
         var result = await connector.FetchAsync(Container, CancellationToken.None);
 
         result.IsError.Should().BeFalse();
+        var signal = result.Value.Should().ContainSingle().Which;
+        signal.ExternalId.Should().Be("PROJ-1:worklog:100");
+        signal.DateStarted.Should().Be(new DateTime(2026, 7, 1, 9, 0, 0, DateTimeKind.Utc));
+    }
 
-        result.Value.Should().HaveCount(2);
-        result.Value.Should().Contain(s => s.ExternalId == "PROJ-1:worklog:100");
-        result.Value.Should().Contain(s => s.ExternalId == "PROJ-2:issue");
-
-        static HttpResponseMessage Respond(HttpRequestMessage request)
+    [Fact]
+    public async Task FetchAsync_ProducesStatusTransitionSignalFromChangelog()
+    {
+        const string changelog = """
         {
-            var uri = request.RequestUri!.ToString();
-            if (uri.Contains("/myself"))
+          "issueChangeLogs": [
             {
-                return StubHttpMessageHandler.Json(HttpStatusCode.OK, """{ "accountId": "acc-1" }""");
-            }
-
-            // The worklog search and the issue-activity search both hit /search/jql; tell them apart by JQL.
-            if (uri.Contains("/search/jql"))
-            {
-                var issueKey = uri.Contains("worklogAuthor") ? "PROJ-1" : "PROJ-2";
-                return StubHttpMessageHandler.Json(HttpStatusCode.OK, $$"""
+              "issueId": "1001",
+              "changeHistories": [
                 {
-                  "issues": [
-                    { "key": "{{issueKey}}", "fields": {
-                      "summary": "Some work",
-                      "updated": "2026-07-01T15:00:00.000+00:00"
-                    } }
-                  ],
-                  "isLast": true
-                }
-                """);
-            }
-
-            return StubHttpMessageHandler.Json(HttpStatusCode.OK, """
-            {
-              "worklogs": [
-                {
-                  "id": "100",
+                  "id": "5000",
                   "author": { "accountId": "acc-1" },
-                  "started": "2026-07-01T09:00:00.000+00:00",
-                  "timeSpentSeconds": 3600
+                  "created": "2026-07-01T11:00:00.000+00:00",
+                  "items": [ { "field": "status", "fieldId": "status", "from": "1", "fromString": "To Do", "to": "3", "toString": "In Progress" } ]
                 }
               ]
             }
-            """);
+          ]
         }
+        """;
+
+        var connector = BuildConnector(Responder(SearchProj1, EmptyWorklogs, EmptyComments, changelog));
+
+        var result = await connector.FetchAsync(Container, CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        var signal = result.Value.Should().ContainSingle().Which;
+        signal.ExternalId.Should().Be("PROJ-1:changelog:5000:0");
+        Kind(signal).Should().Be(ActivityKind.StatusTransition);
+    }
+
+    [Fact]
+    public async Task FetchAsync_ParsesEpochMillisChangelogCreated()
+    {
+        // changelog/bulkfetch returns "created" as epoch milliseconds (a JSON number), not an ISO string.
+        const string changelog = """
+        {
+          "issueChangeLogs": [
+            {
+              "issueId": "1001",
+              "changeHistories": [
+                {
+                  "id": "5000",
+                  "author": { "accountId": "acc-1" },
+                  "created": 1782039600000,
+                  "items": [ { "field": "status", "fieldId": "status", "from": "1", "fromString": "To Do", "to": "3", "toString": "In Progress" } ]
+                }
+              ]
+            }
+          ]
+        }
+        """;
+
+        var connector = BuildConnector(Responder(SearchProj1, EmptyWorklogs, EmptyComments, changelog));
+
+        var result = await connector.FetchAsync(Container, CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        var signal = result.Value.Should().ContainSingle().Which;
+        signal.ExternalId.Should().Be("PROJ-1:changelog:5000:0");
+        Kind(signal).Should().Be(ActivityKind.StatusTransition);
+    }
+
+    [Fact]
+    public async Task FetchAsync_ExcludesEventsFromOtherAuthors()
+    {
+        const string worklog = """
+        {
+          "worklogs": [
+            { "id": "100", "author": { "accountId": "someone-else" }, "started": "2026-07-01T09:00:00.000+00:00", "timeSpentSeconds": 3600 }
+          ],
+          "total": 1
+        }
+        """;
+
+        var connector = BuildConnector(Responder(SearchProj1, worklog));
+
+        var result = await connector.FetchAsync(Container, CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Should().BeEmpty();
     }
 
     [Fact]
@@ -249,7 +248,7 @@ public class JiraConnectorHttpTests
     [Fact]
     public async Task ValidateAsync_ReturnsSuccess_WhenMyselfSucceeds()
     {
-        var connector = BuildConnector(_ => StubHttpMessageHandler.Json(HttpStatusCode.OK, """{ "accountId": "acc-1" }"""));
+        var connector = BuildConnector(_ => StubHttpMessageHandler.Json(HttpStatusCode.OK, Myself));
 
         var result = await connector.ValidateAsync(CancellationToken.None);
 
@@ -265,5 +264,83 @@ public class JiraConnectorHttpTests
 
         result.IsError.Should().BeTrue();
         result.FirstError.Type.Should().Be(ErrorType.Unauthorized);
+    }
+
+    private static Func<HttpRequestMessage, HttpResponseMessage> Responder(string search, string worklog, string comments = EmptyComments, string changelog = EmptyChangelog)
+    {
+        return request =>
+        {
+            request.Headers.Authorization?.Scheme.Should().Be("Bearer");
+            request.Headers.Authorization?.Parameter.Should().Be("access-token");
+
+            var uri = request.RequestUri!.ToString();
+            if (uri.Contains("/myself"))
+            {
+                return StubHttpMessageHandler.Json(HttpStatusCode.OK, Myself);
+            }
+
+            if (uri.Contains("/search/jql"))
+            {
+                return StubHttpMessageHandler.Json(HttpStatusCode.OK, search);
+            }
+
+            if (uri.Contains("changelog/bulkfetch"))
+            {
+                return StubHttpMessageHandler.Json(HttpStatusCode.OK, changelog);
+            }
+
+            if (uri.Contains("/worklog"))
+            {
+                return StubHttpMessageHandler.Json(HttpStatusCode.OK, worklog);
+            }
+
+            if (uri.Contains("/comment"))
+            {
+                return StubHttpMessageHandler.Json(HttpStatusCode.OK, comments);
+            }
+
+            return StubHttpMessageHandler.Json(HttpStatusCode.OK, "{}");
+        };
+    }
+
+    private static ActivityKind Kind(ActivitySignal signal)
+    {
+        signal.Metadata.TryGet(MetadataKeys.ActivityKind, out var kind).Should().BeTrue();
+        return kind;
+    }
+
+    private static string? Get(ActivitySignal signal, MetadataKey<string> key)
+    {
+        signal.Metadata.TryGet(key, out var value);
+        return value;
+    }
+
+    private static JiraConnector BuildConnector(Func<HttpRequestMessage, HttpResponseMessage> responder)
+    {
+        var handler = new StubHttpMessageHandler(responder);
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("https://api.atlassian.com/") };
+        var options = Options.Create(new JiraOptions
+        {
+            ApiBaseUrl = "https://api.atlassian.com",
+            AuthorizeEndpoint = "https://auth.atlassian.com/authorize",
+            TokenEndpoint = "https://auth.atlassian.com/oauth/token",
+            ClientId = "client-id",
+            ClientSecret = "client-secret",
+            Scopes = "read:jira-work read:jira-user offline_access",
+            PageSize = 50,
+            MaxPages = 20,
+        });
+        var accessor = new JiraConnectionAccessor
+        {
+            Current = new JiraConnectionContainer
+            {
+                UserId = "user-1",
+                AccessToken = "access-token",
+                CloudId = "cloud-1",
+                SiteUrl = SiteUrl,
+            },
+        };
+        var client = new JiraApiClient(httpClient, accessor, options, NullLogger<JiraApiClient>.Instance);
+        return new JiraConnector(client, accessor);
     }
 }

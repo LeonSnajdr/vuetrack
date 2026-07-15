@@ -69,6 +69,8 @@
   "settings.connectors.jira.disconnect": "Trennen",
   "settings.connectors.jira.error": "Dein Jira-Konto konnte nicht verbunden werden. Bitte versuche es erneut.",
   "settings.connectors.jira.popupBlocked": "Das Login-Fenster wurde blockiert. Bitte erlaube Popups und versuche es erneut.",
+  "settings.connectors.jira.reconnect": "Jira neu verbinden",
+  "settings.connectors.jira.reconnectRequired": "Deine Jira-Verbindung ist abgelaufen. Bitte verbinde dich neu.",
   "settings.general": "Allgemein",
   "settings.general.overlayType": "Overlay-Darstellung",
   "settings.general.overlayType.dialog": "Dialog",

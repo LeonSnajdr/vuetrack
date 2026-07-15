@@ -72,11 +72,16 @@ const timeEntry = computed(() => {
 const displayTitle = computed(() => {
     const event = state.value.event;
     if (event?.kind === "existing") return event.timeEntry.taskId ?? event.timeEntry.project.name;
-    if (event?.kind === "suggestion") return event.timeEntry.taskId ?? event.timeEntry.title;
+    if (event?.kind === "suggestion") return event.timeEntry.taskId ?? event.timeEntry.projectName;
     return null;
 });
 
-const projectName = computed(() => (state.value.event?.kind === "existing" ? state.value.event.timeEntry.project.name : null));
+const projectName = computed(() => {
+    const event = state.value.event;
+    if (event?.kind === "existing") return event.timeEntry.project.name;
+    if (event?.kind === "suggestion") return event.timeEntry.projectName;
+    return null;
+});
 const activityName = computed(() => (state.value.event?.kind === "existing" ? state.value.event.timeEntry.activity.name : null));
 
 const issue = useAsyncState((id: string) => IssueDetailsService.get(id));

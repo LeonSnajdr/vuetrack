@@ -12,12 +12,14 @@ public sealed class StubSuggestionService : ISuggestionService
 
     public Func<string, string, CancellationToken, Task<ErrorOr<Success>>>? OnAccept { get; set; }
 
-    public Func<string, GenerateSuggestionsRequestContract, CancellationToken, Task<GenerateSuggestionsResultContract>>? OnReload { get; set; }
+    public Func<string, GenerateSuggestionsRequestContract, CancellationToken, Task<IReadOnlyList<SuggestionContract>>>? OnGenerate { get; set; }
 
-    public Task<GenerateSuggestionsResultContract> GenerateAsync(string userId, GenerateSuggestionsRequestContract request, CancellationToken cancellationToken) =>
-        throw new NotImplementedException();
+    public Func<string, GenerateSuggestionsRequestContract, CancellationToken, Task<IReadOnlyList<SuggestionContract>>>? OnReload { get; set; }
 
-    public Task<GenerateSuggestionsResultContract> ReloadAsync(string userId, GenerateSuggestionsRequestContract request, CancellationToken cancellationToken) =>
+    public Task<IReadOnlyList<SuggestionContract>> GenerateAsync(string userId, GenerateSuggestionsRequestContract request, CancellationToken cancellationToken) =>
+        OnGenerate!.Invoke(userId, request, cancellationToken);
+
+    public Task<IReadOnlyList<SuggestionContract>> ReloadAsync(string userId, GenerateSuggestionsRequestContract request, CancellationToken cancellationToken) =>
         OnReload!.Invoke(userId, request, cancellationToken);
 
     public Task<IReadOnlyList<SuggestionContract>> ListAsync(string userId, DateTime from, DateTime to) =>

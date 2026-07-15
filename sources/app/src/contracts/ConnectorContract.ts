@@ -21,5 +21,6 @@ export type JiraConnectResponse = {
 
 export type JiraStatusResponse = {
     connected: boolean;
+    healthy: boolean;
     siteUrl: string | null;
 };

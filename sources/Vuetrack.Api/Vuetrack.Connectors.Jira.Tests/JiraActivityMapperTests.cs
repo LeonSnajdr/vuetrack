@@ -1,6 +1,9 @@
+using System.Text.Json;
 using AwesomeAssertions;
 using Vuetrack.Connectors.Abstractions;
+using Vuetrack.Connectors.Abstractions.Metadata;
 using Vuetrack.Connectors.Jira.Activity;
+using Vuetrack.Connectors.Jira.Activity.Dtos;
 using Xunit;
 
 namespace Vuetrack.Connectors.Jira.Tests;
@@ -9,60 +12,107 @@ public class JiraActivityMapperTests
 {
     private const string SiteUrl = "https://acme.atlassian.net";
 
-    private static readonly JiraMapperContext Context = new(ConnectorKey.Jira, SiteUrl);
-
-    private static JiraWorklogContainer Worklog(string issueKey = "PROJ-1", string worklogId = "100") => new()
+    private static readonly JiraIssueContext Context = new()
     {
-        IssueKey = issueKey,
-        IssueSummary = "Fix login",
-        WorklogId = worklogId,
-        Started = new DateTime(2026, 7, 1, 9, 0, 0, DateTimeKind.Utc),
-        TimeSpentSeconds = 3600,
-        Comment = "worked on it",
-        Project = "PROJ",
+        Key = "PROJ-1",
+        Id = "1001",
+        Summary = "Fix login",
+        ProjectKey = "PROJ",
+        ProjectName = "Project",
         IssueType = "Bug",
         Status = "In Progress",
     };
 
-    private static JiraIssueActivityContainer Issue(string issueKey = "PROJ-2") => new()
-    {
-        IssueKey = issueKey,
-        Summary = "Some other issue",
-        Updated = new DateTime(2026, 7, 1, 15, 0, 0, DateTimeKind.Utc),
-        Project = "PROJ",
-        IssueType = "Task",
-        Status = "Done",
-    };
-
     [Fact]
-    public void ToActivitySignal_Worklog_ProducesTimedSignalWithMetadataAndLink()
+    public void ToWorklogSignal_ProducesTimedSignalWithTypedMetadata()
     {
-        var signal = Worklog().ToActivitySignal(Context);
+        var worklog = new JiraWorklogDto
+        {
+            Id = "100",
+            Author = new JiraUserDto { AccountId = "acc-1" },
+            Started = new DateTimeOffset(2026, 7, 1, 9, 0, 0, TimeSpan.Zero),
+            TimeSpentSeconds = 3600,
+            Comment = Adf("worked on it"),
+        };
+
+        var signal = JiraActivityMapper.ToWorklogSignal(Context, worklog, SiteUrl);
 
         signal.ConnectorKey.Should().Be(ConnectorKey.Jira);
         signal.ExternalId.Should().Be("PROJ-1:worklog:100");
-        signal.Title.Should().Be("PROJ-1 Fix login");
-        signal.Description.Should().Be("worked on it");
-        signal.Metadata[ActivityMetadataKeys.TaskId].Should().Be("PROJ-1");
         signal.DateStarted.Should().Be(new DateTime(2026, 7, 1, 9, 0, 0, DateTimeKind.Utc));
         signal.DateEnded.Should().Be(new DateTime(2026, 7, 1, 10, 0, 0, DateTimeKind.Utc));
-        signal.Link.Should().Be("https://acme.atlassian.net/browse/PROJ-1");
-        signal.Metadata["issueKey"].Should().Be("PROJ-1");
-        signal.Metadata["worklogId"].Should().Be("100");
-        signal.Metadata["project"].Should().Be("PROJ");
-        signal.Metadata["issueType"].Should().Be("Bug");
-        signal.Metadata["status"].Should().Be("In Progress");
+
+        Kind(signal).Should().Be(ActivityKind.Worklog);
+        Get(signal, MetadataKeys.SubjectWorkItemId).Should().Be("PROJ-1");
+        Get(signal, MetadataKeys.ActorId).Should().Be("acc-1");
+        Get(signal, MetadataKeys.DisplayTitle).Should().Be("PROJ-1 Fix login");
+        Get(signal, MetadataKeys.DisplayComment).Should().Be("worked on it");
+        Get(signal, MetadataKeys.SourceUrl).Should().Be("https://acme.atlassian.net/browse/PROJ-1");
+        Get(signal, MetadataKeys.DisplayProject).Should().Be("Project");
+        Get(signal, JiraMetadataKeys.IssueType).Should().Be("Bug");
+        Get(signal, JiraMetadataKeys.WorklogId).Should().Be("100");
     }
 
     [Fact]
-    public void ToActivitySignal_Issue_ProducesDerivedSignalWithNoEnd()
+    public void ToChangeSignal_ClassifiesStatusTransitionAndCapturesTypedTransition()
     {
-        var signal = Issue().ToActivitySignal(Context);
+        var changelog = new JiraChangelogDto
+        {
+            Id = "5000",
+            Author = new JiraUserDto { AccountId = "acc-1" },
+            Created = new DateTimeOffset(2026, 7, 1, 11, 0, 0, TimeSpan.Zero),
+            Items =
+            [
+                new JiraChangelogItemDto { Field = "status", FieldId = "status", From = "1", FromString = "To Do", To = "3", ToDisplay = "In Progress" },
+            ],
+        };
 
-        signal.ExternalId.Should().Be("PROJ-2:issue");
-        signal.DateStarted.Should().Be(new DateTime(2026, 7, 1, 15, 0, 0, DateTimeKind.Utc));
+        var signal = JiraActivityMapper.ToChangeSignal(Context, changelog, changelog.Items[0], 0, SiteUrl);
+
+        signal.ExternalId.Should().Be("PROJ-1:changelog:5000:0");
+        signal.DateStarted.Should().Be(new DateTime(2026, 7, 1, 11, 0, 0, DateTimeKind.Utc));
         signal.DateEnded.Should().BeNull();
-        signal.Description.Should().BeNull();
-        signal.Metadata[ActivityMetadataKeys.TaskId].Should().Be("PROJ-2");
+        Kind(signal).Should().Be(ActivityKind.StatusTransition);
+
+        signal.Metadata.TryGet(JiraMetadataKeys.Transition, out var transition).Should().BeTrue();
+        transition.Should().Be(new JiraFieldTransition("1", "To Do", "3", "In Progress"));
+    }
+
+    [Fact]
+    public void ToCommentSignal_ProducesPointEventWithCommentText()
+    {
+        var comment = new JiraCommentDto
+        {
+            Id = "9000",
+            Author = new JiraUserDto { AccountId = "acc-1" },
+            Created = new DateTimeOffset(2026, 7, 1, 12, 0, 0, TimeSpan.Zero),
+            Body = Adf("looks good"),
+        };
+
+        var signal = JiraActivityMapper.ToCommentSignal(Context, comment, SiteUrl);
+
+        signal.ExternalId.Should().Be("PROJ-1:comment:9000");
+        signal.DateEnded.Should().BeNull();
+        Kind(signal).Should().Be(ActivityKind.Comment);
+        Get(signal, MetadataKeys.DisplayComment).Should().Be("looks good");
+    }
+
+    private static ActivityKind Kind(ActivitySignal signal)
+    {
+        signal.Metadata.TryGet(MetadataKeys.ActivityKind, out var kind).Should().BeTrue();
+        return kind;
+    }
+
+    private static string? Get(ActivitySignal signal, MetadataKey<string> key)
+    {
+        signal.Metadata.TryGet(key, out var value);
+        return value;
+    }
+
+    private static JsonElement Adf(string text)
+    {
+        var json = $$"""{ "type": "doc", "content": [ { "type": "paragraph", "content": [ { "type": "text", "text": "{{text}}" } ] } ] }""";
+        using var document = JsonDocument.Parse(json);
+        return document.RootElement.Clone();
     }
 }

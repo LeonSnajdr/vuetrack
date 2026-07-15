@@ -2,8 +2,6 @@ namespace Vuetrack.Api.Features.Suggestions.Core.Contracts;
 
 public sealed record SuggestionUpdateContract
 {
-    public required string Title { get; init; }
-
     public string? TaskId { get; init; }
 
     public string? ProjectId { get; init; }

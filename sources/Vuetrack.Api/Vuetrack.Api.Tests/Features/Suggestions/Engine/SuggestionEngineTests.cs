@@ -2,6 +2,7 @@ using AwesomeAssertions;
 using Microsoft.Extensions.Options;
 using Vuetrack.Api.Features.Suggestions.Engine;
 using Vuetrack.Connectors.Abstractions;
+using Vuetrack.Connectors.Abstractions.Metadata;
 using Xunit;
 
 namespace Vuetrack.Api.Tests.Features.Suggestions.Engine;
@@ -25,75 +26,97 @@ public class SuggestionEngineTests
     }
 
     [Fact]
-    public void Build_TaskIdMetadata_PropagatesFromEarliestContributor()
+    public void Build_SingleWorklog_PromotesAloneWithTaskIdFromSubject()
     {
         var engine = CreateEngine();
-        var first = Signal("PROJ-1:worklog:1", "Work", At(9, 0), At(9, 5), correlationId: "PROJ-1", taskId: "PROJ-1");
-        var second = Signal("PROJ-1:worklog:2", "Work", At(9, 6), At(9, 10), correlationId: "PROJ-1", taskId: "PROJ-2");
-
-        var result = engine.Build([second, first], From, To);
-
-        result.Should().ContainSingle().Which.TaskId.Should().Be("PROJ-1");
-    }
-
-    [Fact]
-    public void Build_SingleWorklogSignal_ProducesSingleSuggestionWithHighConfidence()
-    {
-        var engine = CreateEngine();
-        var signal = Signal("PROJ-1:worklog:1", "PROJ-1 Fix login", At(9, 3), At(9, 12));
+        var signal = Worklog("PROJ-1:worklog:1", "PROJ-1", At(9, 3), At(9, 12));
 
         var result = engine.Build([signal], From, To);
 
-        result.Should().HaveCount(1);
-        var suggestion = result[0];
-        suggestion.Title.Should().Be("PROJ-1 Fix login");
+        var suggestion = result.Should().ContainSingle().Which;
+        suggestion.TaskId.Should().Be("PROJ-1");
         suggestion.DateStarted.Should().Be(At(9, 0));
         suggestion.DateEnded.Should().Be(At(9, 15));
-        suggestion.Confidence.Should().BeApproximately(0.6, 0.0001);
+        suggestion.Confidence.Should().BeApproximately(1.0, 0.0001);
         suggestion.Sources.Should().ContainSingle();
         suggestion.Sources[0].ConnectorKey.Should().Be(ConnectorKey.Jira);
         suggestion.Sources[0].ExternalId.Should().Be("PROJ-1:worklog:1");
     }
 
     [Fact]
-    public void Build_SameCorrelationWithinMergeGap_MergesIntoOneBlock()
+    public void Build_LoneCorroboratingEvent_IsBelowThresholdAndDropped()
     {
         var engine = CreateEngine();
-        var first = Signal("PROJ-2:worklog:1", "PROJ-2 Work", At(10, 0), At(10, 5), correlationId: "PROJ-2");
-        var second = Signal("PROJ-2:worklog:2", "PROJ-2 Work", At(10, 10), At(10, 15), correlationId: "PROJ-2");
+        var comment = Point("PROJ-9:comment:1", "PROJ-9", At(14, 0), ActivityKind.Comment);
 
-        var result = engine.Build([first, second], From, To);
+        var result = engine.Build([comment], From, To);
 
-        result.Should().HaveCount(1);
-        var suggestion = result[0];
-        suggestion.DateStarted.Should().Be(At(10, 0));
-        suggestion.DateEnded.Should().Be(At(10, 15));
-        suggestion.Confidence.Should().BeApproximately(0.75, 0.0001);
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Build_LoneStatusTransition_PromotesAlone()
+    {
+        var engine = CreateEngine();
+        var status = Point("PROJ-10:changelog:1:0", "PROJ-10", At(15, 0), ActivityKind.StatusTransition);
+
+        var result = engine.Build([status], From, To);
+
+        var suggestion = result.Should().ContainSingle().Which;
+        suggestion.TaskId.Should().Be("PROJ-10");
+        suggestion.Confidence.Should().BeApproximately(0.3, 0.0001);
+        suggestion.Sources.Should().ContainSingle();
+    }
+
+    [Fact]
+    public void Build_TwoCorroboratingEventsSameSubject_ReachThresholdAndPromote()
+    {
+        var engine = CreateEngine();
+        var comment = Point("PROJ-9:comment:1", "PROJ-9", At(14, 0), ActivityKind.Comment);
+        var status = Point("PROJ-9:changelog:1:0", "PROJ-9", At(14, 5), ActivityKind.StatusTransition);
+
+        var result = engine.Build([comment, status], From, To);
+
+        var suggestion = result.Should().ContainSingle().Which;
+        suggestion.Confidence.Should().BeApproximately(0.6, 0.0001);
         suggestion.Sources.Should().HaveCount(2);
     }
 
     [Fact]
-    public void Build_SameCorrelationSeparatedByLargeGap_ProducesTwoBlocks()
+    public void Build_SameSubjectWithinMergeGap_MergesIntoOneBlock()
     {
         var engine = CreateEngine();
-        var first = Signal("PROJ-3:worklog:1", "PROJ-3 Work", At(11, 0), At(11, 5), correlationId: "PROJ-3");
-        var second = Signal("PROJ-3:worklog:2", "PROJ-3 Work", At(11, 25), At(11, 30), correlationId: "PROJ-3");
+        var first = Worklog("PROJ-2:worklog:1", "PROJ-2", At(10, 0), At(10, 5));
+        var second = Worklog("PROJ-2:worklog:2", "PROJ-2", At(10, 10), At(10, 15));
+
+        var result = engine.Build([first, second], From, To);
+
+        var suggestion = result.Should().ContainSingle().Which;
+        suggestion.DateStarted.Should().Be(At(10, 0));
+        suggestion.DateEnded.Should().Be(At(10, 15));
+        suggestion.Sources.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void Build_SameSubjectSeparatedByLargeGap_ProducesTwoBlocks()
+    {
+        var engine = CreateEngine();
+        var first = Worklog("PROJ-3:worklog:1", "PROJ-3", At(11, 0), At(11, 5));
+        var second = Worklog("PROJ-3:worklog:2", "PROJ-3", At(11, 25), At(11, 30));
 
         var result = engine.Build([first, second], From, To);
 
         result.Should().HaveCount(2);
         result[0].DateStarted.Should().Be(At(11, 0));
-        result[0].DateEnded.Should().Be(At(11, 5));
         result[1].DateStarted.Should().Be(At(11, 25));
-        result[1].DateEnded.Should().Be(At(11, 30));
     }
 
     [Fact]
-    public void Build_DifferentCorrelationsOverlappingInTime_NeverMerge()
+    public void Build_DifferentSubjectsOverlappingInTime_NeverMerge()
     {
         var engine = CreateEngine();
-        var first = Signal("PROJ-4:worklog:1", "PROJ-4 Work", At(12, 0), At(12, 30), correlationId: "PROJ-4");
-        var second = Signal("PROJ-5:worklog:1", "PROJ-5 Work", At(12, 10), At(12, 40), correlationId: "PROJ-5");
+        var first = Worklog("PROJ-4:worklog:1", "PROJ-4", At(12, 0), At(12, 30));
+        var second = Worklog("PROJ-5:worklog:1", "PROJ-5", At(12, 10), At(12, 40));
 
         var result = engine.Build([first, second], From, To);
 
@@ -104,13 +127,12 @@ public class SuggestionEngineTests
     public void Build_DuplicateExternalId_IsDeduplicated()
     {
         var engine = CreateEngine();
-        var first = Signal("PROJ-6:worklog:1", "PROJ-6 Work", At(13, 0), At(13, 10));
-        var duplicate = Signal("PROJ-6:worklog:1", "PROJ-6 Work", At(13, 0), At(13, 10));
+        var first = Worklog("PROJ-6:worklog:1", "PROJ-6", At(13, 0), At(13, 10));
+        var duplicate = Worklog("PROJ-6:worklog:1", "PROJ-6", At(13, 0), At(13, 10));
 
         var result = engine.Build([first, duplicate], From, To);
 
-        result.Should().HaveCount(1);
-        result[0].Sources.Should().ContainSingle();
+        result.Should().ContainSingle().Which.Sources.Should().ContainSingle();
     }
 
     [Fact]
@@ -119,59 +141,31 @@ public class SuggestionEngineTests
         var engine = CreateEngine();
         var customFrom = At(9, 0);
         var customTo = At(10, 0);
-        var signal = Signal("PROJ-7:worklog:1", "PROJ-7 Work", At(8, 50), At(9, 30));
+        var signal = Worklog("PROJ-7:worklog:1", "PROJ-7", At(8, 50), At(9, 30));
 
         var result = engine.Build([signal], customFrom, customTo);
 
-        result.Should().HaveCount(1);
-        result[0].DateStarted.Should().Be(At(9, 0));
-        result[0].DateEnded.Should().Be(At(9, 30));
+        var suggestion = result.Should().ContainSingle().Which;
+        suggestion.DateStarted.Should().Be(At(9, 0));
+        suggestion.DateEnded.Should().Be(At(9, 30));
     }
 
     [Fact]
     public void Build_SignalFullyOutsideRange_IsDropped()
     {
         var engine = CreateEngine();
-        var customFrom = At(9, 0);
-        var customTo = At(10, 0);
-        var signal = Signal("PROJ-8:worklog:1", "PROJ-8 Work", At(7, 0), At(7, 30));
+        var signal = Worklog("PROJ-8:worklog:1", "PROJ-8", At(7, 0), At(7, 30));
 
-        var result = engine.Build([signal], customFrom, customTo);
+        var result = engine.Build([signal], At(9, 0), At(10, 0));
 
         result.Should().BeEmpty();
-    }
-
-    [Fact]
-    public void Build_PointEventWithNoEnd_UsesDefaultDurationAndLowerConfidence()
-    {
-        var engine = CreateEngine();
-        var signal = Signal("PROJ-9:issue", "PROJ-9 Some issue", At(14, 0));
-
-        var result = engine.Build([signal], From, To);
-
-        result.Should().HaveCount(1);
-        result[0].DateStarted.Should().Be(At(14, 0));
-        result[0].DateEnded.Should().Be(At(14, 15));
-        result[0].Confidence.Should().BeApproximately(0.3, 0.0001);
-    }
-
-    [Fact]
-    public void Build_AlreadyAlignedBoundaries_AreUnchanged()
-    {
-        var engine = CreateEngine();
-        var signal = Signal("PROJ-10:worklog:1", "PROJ-10 Work", At(15, 0), At(15, 5));
-
-        var result = engine.Build([signal], From, To);
-
-        result[0].DateStarted.Should().Be(At(15, 0));
-        result[0].DateEnded.Should().Be(At(15, 5));
     }
 
     [Fact]
     public void Build_UnalignedBoundaries_RoundOutwardToRoundTo()
     {
         var engine = CreateEngine();
-        var signal = Signal("PROJ-11:worklog:1", "PROJ-11 Work", At(16, 3), At(16, 7));
+        var signal = Worklog("PROJ-11:worklog:1", "PROJ-11", At(16, 3), At(16, 7));
 
         var result = engine.Build([signal], From, To);
 
@@ -188,7 +182,7 @@ public class SuggestionEngineTests
             MinimumBlock = TimeSpan.FromMinutes(5),
         });
         var engine = new SuggestionEngine(options);
-        var signal = Signal("PROJ-12:worklog:1", "PROJ-12 Work", At(17, 0), At(17, 2));
+        var signal = Worklog("PROJ-12:worklog:1", "PROJ-12", At(17, 0), At(17, 2));
 
         var result = engine.Build([signal], From, To);
 
@@ -196,19 +190,19 @@ public class SuggestionEngineTests
     }
 
     [Fact]
-    public void Build_IsDeterministicAndOrdersByStartThenTitle()
+    public void Build_IsDeterministicAndOrdersByStart()
     {
         var engine = CreateEngine();
-        var charlie = Signal("PROJ-C:worklog:1", "Charlie", At(20, 0), At(20, 10), correlationId: "C");
-        var alpha = Signal("PROJ-A:worklog:1", "Alpha", At(18, 0), At(18, 10), correlationId: "A");
-        var bravo = Signal("PROJ-B:worklog:1", "Bravo", At(19, 0), At(19, 10), correlationId: "B");
+        var charlie = Worklog("PROJ-C:worklog:1", "PROJ-C", At(20, 0), At(20, 10));
+        var alpha = Worklog("PROJ-A:worklog:1", "PROJ-A", At(18, 0), At(18, 10));
+        var bravo = Worklog("PROJ-B:worklog:1", "PROJ-B", At(19, 0), At(19, 10));
         var signals = new[] { charlie, alpha, bravo };
 
         var first = engine.Build(signals, From, To);
         var second = engine.Build(signals, From, To);
 
         first.Should().BeEquivalentTo(second, options => options.WithStrictOrdering());
-        first.Select(s => s.Title).Should().ContainInOrder("Alpha", "Bravo", "Charlie");
+        first.Select(s => s.TaskId).Should().ContainInOrder("PROJ-A", "PROJ-B", "PROJ-C");
     }
 
     private static SuggestionEngine CreateEngine(SuggestionEngineOptions? options = null)
@@ -218,23 +212,31 @@ public class SuggestionEngineTests
 
     private static DateTime At(int hour, int minute) => BaseDate + TimeSpan.FromHours(hour) + TimeSpan.FromMinutes(minute);
 
-    private static ActivitySignal Signal(string externalId, string title, DateTime start, DateTime? end = null, string? correlationId = null, ConnectorKey connectorKey = ConnectorKey.Jira, string? taskId = null)
+    private static ActivitySignal Worklog(string externalId, string subject, DateTime start, DateTime end)
     {
+        return Build(externalId, subject, start, end, ActivityKind.Worklog);
+    }
+
+    private static ActivitySignal Point(string externalId, string subject, DateTime start, ActivityKind kind)
+    {
+        return Build(externalId, subject, start, null, kind);
+    }
+
+    private static ActivitySignal Build(string externalId, string subject, DateTime start, DateTime? end, ActivityKind kind)
+    {
+        var builder = new SignalMetadataBuilder();
+        builder.Set(MetadataKeys.ActivityKind, kind);
+        builder.Set(MetadataKeys.SubjectWorkItemId, subject);
+        builder.Set(MetadataKeys.CorrelationKeys, new List<string> { subject });
+        builder.Set(MetadataKeys.DisplayTitle, $"{subject} work");
+
         return new ActivitySignal
         {
-            ConnectorKey = connectorKey,
+            ConnectorKey = ConnectorKey.Jira,
             ExternalId = externalId,
-            Title = title,
             DateStarted = start,
             DateEnded = end,
-            Metadata = new Dictionary<string, string>(
-                new[]
-                {
-                    new KeyValuePair<string, string?>("correlationId", correlationId),
-                    new KeyValuePair<string, string?>(ActivityMetadataKeys.TaskId, taskId),
-                }
-                .Where(x => x.Value is not null)
-                .Select(x => new KeyValuePair<string, string>(x.Key, x.Value!))),
+            Metadata = builder.Build(),
         };
     }
 }

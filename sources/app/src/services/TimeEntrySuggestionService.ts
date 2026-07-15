@@ -1,9 +1,4 @@
-import type {
-    GenerateSuggestionsResultContract,
-    TimeEntrySuggestionContract,
-    TimeEntrySuggestionId,
-    TimeEntrySuggestionUpdateContract
-} from "@/contracts/TimeEntrySuggestion";
+import type { TimeEntrySuggestionContract, TimeEntrySuggestionId, TimeEntrySuggestionUpdateContract } from "@/contracts/TimeEntrySuggestion";
 import type { TrackingFilter } from "@/models/TrackingFilter";
 import axios from "@/plugins/axios";
 import { formatISO } from "date-fns";
@@ -38,13 +33,13 @@ class TimeEntrySuggestionService {
         await axios.api.post(`suggestions/${id}/accept`);
     };
 
-    public generate = async (filter: TrackingFilter, signal?: AbortSignal): Promise<GenerateSuggestionsResultContract> => {
-        const result = await axios.api.post<GenerateSuggestionsResultContract>("suggestions/generate", this.buildRangeRequest(filter), { signal });
+    public generate = async (filter: TrackingFilter, signal?: AbortSignal): Promise<TimeEntrySuggestionContract[]> => {
+        const result = await axios.api.post<TimeEntrySuggestionContract[]>("suggestions/generate", this.buildRangeRequest(filter), { signal });
         return result.data;
     };
 
-    public reload = async (filter: TrackingFilter): Promise<GenerateSuggestionsResultContract> => {
-        const result = await axios.api.post<GenerateSuggestionsResultContract>("suggestions/reload", this.buildRangeRequest(filter));
+    public reload = async (filter: TrackingFilter): Promise<TimeEntrySuggestionContract[]> => {
+        const result = await axios.api.post<TimeEntrySuggestionContract[]>("suggestions/reload", this.buildRangeRequest(filter));
         return result.data;
     };
 

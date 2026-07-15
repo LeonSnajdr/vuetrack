@@ -1,0 +1,38 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+namespace Vuetrack.Connectors.Jira.Activity.Dtos;
+
+public sealed record JiraWorklogDto
+{
+    [JsonPropertyName("id")]
+    public string? Id { get; init; }
+
+    [JsonPropertyName("author")]
+    public JiraUserDto? Author { get; init; }
+
+    [JsonPropertyName("started")]
+    public DateTimeOffset? Started { get; init; }
+
+    [JsonPropertyName("timeSpentSeconds")]
+    public long TimeSpentSeconds { get; init; }
+
+    // Atlassian Document Format; kept as a raw element and flattened to text via AdfTextExtractor.
+    [JsonPropertyName("comment")]
+    public JsonElement? Comment { get; init; }
+}
+
+public sealed record JiraWorklogResponseDto
+{
+    [JsonPropertyName("startAt")]
+    public int StartAt { get; init; }
+
+    [JsonPropertyName("maxResults")]
+    public int MaxResults { get; init; }
+
+    [JsonPropertyName("total")]
+    public int Total { get; init; }
+
+    [JsonPropertyName("worklogs")]
+    public IReadOnlyList<JiraWorklogDto>? Worklogs { get; init; }
+}

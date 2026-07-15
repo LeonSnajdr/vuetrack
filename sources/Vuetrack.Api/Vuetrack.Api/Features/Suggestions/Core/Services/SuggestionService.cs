@@ -23,49 +23,37 @@ public class SuggestionService(IConnectorRegistry registry, IConnectorResolver r
 
     private ILogger<SuggestionService> Logger { get; } = logger;
 
-    public async Task<GenerateSuggestionsResultContract> GenerateAsync(string userId, GenerateSuggestionsRequestContract request, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<SuggestionContract>> GenerateAsync(string userId, GenerateSuggestionsRequestContract request, CancellationToken cancellationToken)
     {
-        var descriptors = Registry.Descriptors
-            .Where(d => request.ConnectorKeys is null || request.ConnectorKeys.Contains(d.Key))
-            .ToList();
-
+        var descriptors = SelectDescriptors(request);
         var signals = new List<ActivitySignal>();
-        var outcomes = new List<ConnectorOutcomeContract>();
 
         foreach (var descriptor in descriptors)
         {
-            var (outcome, fetchedSignals) = await FetchFromConnectorAsync(descriptor, userId, request.From, request.To, cancellationToken);
-            outcomes.Add(outcome);
-
-            if (fetchedSignals is not null)
+            var fetched = await FetchFromConnectorAsync(descriptor, userId, request.From, request.To, cancellationToken);
+            if (fetched is not null)
             {
-                signals.AddRange(fetchedSignals);
+                signals.AddRange(fetched);
             }
         }
 
-        var generatedCount = await BuildAndInsertAsync(userId, request.From, request.To, signals, cancellationToken);
-        return new GenerateSuggestionsResultContract(generatedCount, outcomes);
+        var inserted = await BuildAndInsertAsync(userId, request.From, request.To, signals, cancellationToken);
+        return inserted;
     }
 
-    public async Task<GenerateSuggestionsResultContract> ReloadAsync(string userId, GenerateSuggestionsRequestContract request, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<SuggestionContract>> ReloadAsync(string userId, GenerateSuggestionsRequestContract request, CancellationToken cancellationToken)
     {
-        var descriptors = Registry.Descriptors
-            .Where(d => request.ConnectorKeys is null || request.ConnectorKeys.Contains(d.Key))
-            .ToList();
-
+        var descriptors = SelectDescriptors(request);
         var signals = new List<ActivitySignal>();
-        var outcomes = new List<ConnectorOutcomeContract>();
         var successfulConnectorKeys = new List<ConnectorKey>();
 
         foreach (var descriptor in descriptors)
         {
-            var (outcome, fetchedSignals) = await FetchFromConnectorAsync(descriptor, userId, request.From, request.To, cancellationToken);
-            outcomes.Add(outcome);
-
-            if (fetchedSignals is not null)
+            var fetched = await FetchFromConnectorAsync(descriptor, userId, request.From, request.To, cancellationToken);
+            if (fetched is not null)
             {
                 successfulConnectorKeys.Add(descriptor.Key);
-                signals.AddRange(fetchedSignals);
+                signals.AddRange(fetched);
             }
         }
 
@@ -74,8 +62,8 @@ public class SuggestionService(IConnectorRegistry registry, IConnectorResolver r
             await Repository.DeleteResettableAsync(userId, request.From, request.To, successfulConnectorKeys);
         }
 
-        var generatedCount = await BuildAndInsertAsync(userId, request.From, request.To, signals, cancellationToken);
-        return new GenerateSuggestionsResultContract(generatedCount, outcomes);
+        var inserted = await BuildAndInsertAsync(userId, request.From, request.To, signals, cancellationToken);
+        return inserted;
     }
 
     public async Task<IReadOnlyList<SuggestionContract>> ListAsync(string userId, DateTime from, DateTime to)
@@ -89,7 +77,6 @@ public class SuggestionService(IConnectorRegistry registry, IConnectorResolver r
         var updated = await Repository.UpdateFieldsAsync(
             id,
             userId,
-            request.Title,
             request.TaskId,
             request.ProjectId,
             request.ActivityId,
@@ -130,7 +117,16 @@ public class SuggestionService(IConnectorRegistry registry, IConnectorResolver r
         return Result.Success;
     }
 
-    private async Task<int> BuildAndInsertAsync(string userId, DateTime from, DateTime to, IReadOnlyList<ActivitySignal> signals, CancellationToken cancellationToken)
+    private List<ConnectorDescriptor> SelectDescriptors(GenerateSuggestionsRequestContract request)
+    {
+        var descriptors = Registry.Descriptors
+            .Where(d => request.ConnectorKeys is null || request.ConnectorKeys.Contains(d.Key))
+            .ToList();
+
+        return descriptors;
+    }
+
+    private async Task<IReadOnlyList<SuggestionContract>> BuildAndInsertAsync(string userId, DateTime from, DateTime to, IReadOnlyList<ActivitySignal> signals, CancellationToken cancellationToken)
     {
         var existingTaskIds = await GetExistingTaskIdsAsync(userId, from, to, cancellationToken);
         var suggestions = Engine.Build(signals, from, to);
@@ -148,7 +144,9 @@ public class SuggestionService(IConnectorRegistry registry, IConnectorResolver r
         }
 
         await Repository.InsertManyAsync(toInsert);
-        return toInsert.Count;
+
+        var contracts = toInsert.Select(m => m.ToContract()).ToList();
+        return contracts;
     }
 
     private async Task<HashSet<string>> GetExistingTaskIdsAsync(string userId, DateTime from, DateTime to, CancellationToken cancellationToken)
@@ -181,51 +179,40 @@ public class SuggestionService(IConnectorRegistry registry, IConnectorResolver r
         return false;
     }
 
-    private async Task<(ConnectorOutcomeContract Outcome, IReadOnlyList<ActivitySignal>? Signals)> FetchFromConnectorAsync(ConnectorDescriptor descriptor, string userId, DateTime from, DateTime to, CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<ActivitySignal>?> FetchFromConnectorAsync(ConnectorDescriptor descriptor, string userId, DateTime from, DateTime to, CancellationToken cancellationToken)
     {
         try
         {
             var resolved = await Resolver.ResolveConnectedAsync(descriptor.Key, userId, cancellationToken);
             if (resolved.IsError)
             {
-                var resolveStatus = StatusFor(resolved.FirstError);
-                return (new ConnectorOutcomeContract(descriptor.Key, resolveStatus, 0, resolved.FirstError.Description), null);
+                Logger.LogInformation("Connector {ConnectorKey} unavailable for user {UserId}: {Error}", descriptor.Key, userId, resolved.FirstError.Description);
+                return null;
             }
 
             var container = new ActivityFetchContainer { From = from, To = to };
             var fetch = await resolved.Value.FetchAsync(container, cancellationToken);
             if (fetch.IsError)
             {
-                var fetchStatus = StatusFor(fetch.FirstError);
-                return (new ConnectorOutcomeContract(descriptor.Key, fetchStatus, 0, fetch.FirstError.Description), null);
+                Logger.LogWarning("Connector {ConnectorKey} failed to fetch signals for user {UserId}: {Error}", descriptor.Key, userId, fetch.FirstError.Description);
+                return null;
             }
 
-            var fetchedSignals = fetch.Value;
-            return (new ConnectorOutcomeContract(descriptor.Key, "Success", fetchedSignals.Count, null), fetchedSignals);
+            return fetch.Value;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             Logger.LogWarning(ex, "Connector {ConnectorKey} threw while fetching suggestion signals for user {UserId}", descriptor.Key, userId);
-            return (new ConnectorOutcomeContract(descriptor.Key, "Error", 0, ex.Message), null);
+            return null;
         }
-    }
-
-    private static string StatusFor(Error error)
-    {
-        return error.Type switch
-        {
-            ErrorType.Conflict => "NotConnected",
-            ErrorType.Unauthorized => "AuthFailed",
-            _ => "Error",
-        };
     }
 }
 
 public interface ISuggestionService
 {
-    Task<GenerateSuggestionsResultContract> GenerateAsync(string userId, GenerateSuggestionsRequestContract request, CancellationToken cancellationToken);
+    Task<IReadOnlyList<SuggestionContract>> GenerateAsync(string userId, GenerateSuggestionsRequestContract request, CancellationToken cancellationToken);
 
-    Task<GenerateSuggestionsResultContract> ReloadAsync(string userId, GenerateSuggestionsRequestContract request, CancellationToken cancellationToken);
+    Task<IReadOnlyList<SuggestionContract>> ReloadAsync(string userId, GenerateSuggestionsRequestContract request, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<SuggestionContract>> ListAsync(string userId, DateTime from, DateTime to);
 

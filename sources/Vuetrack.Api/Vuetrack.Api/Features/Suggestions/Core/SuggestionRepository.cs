@@ -39,10 +39,9 @@ public class SuggestionRepository : BaseRepositoryMongo<SuggestionModel>, ISugge
             .AnyAsync();
     }
 
-    public async Task<SuggestionModel?> UpdateFieldsAsync(string id, string userId, string title, string? taskId, string? projectId, string? activityId, DateTime start, DateTime end, string? comment, DateTime updatedAt)
+    public async Task<SuggestionModel?> UpdateFieldsAsync(string id, string userId, string? taskId, string? projectId, string? activityId, DateTime start, DateTime end, string? comment, DateTime updatedAt)
     {
         var update = Update
-            .Set(x => x.Title, title)
             .Set(x => x.TaskId, taskId)
             .Set(x => x.ProjectId, projectId)
             .Set(x => x.ActivityId, activityId)
@@ -103,7 +102,7 @@ public interface ISuggestionRepository : IBaseRepositoryMongo<SuggestionModel>
 
     Task<bool> ExistsBySourceAsync(string userId, ConnectorKey connectorKey, string externalId);
 
-    Task<SuggestionModel?> UpdateFieldsAsync(string id, string userId, string title, string? taskId, string? projectId, string? activityId, DateTime start, DateTime end, string? comment, DateTime updatedAt);
+    Task<SuggestionModel?> UpdateFieldsAsync(string id, string userId, string? taskId, string? projectId, string? activityId, DateTime start, DateTime end, string? comment, DateTime updatedAt);
 
     Task<bool> SetStatusAsync(string id, string userId, SuggestionStatus status, DateTime updatedAt);
 

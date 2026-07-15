@@ -1,16 +1,24 @@
 using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Vuetrack.Connectors.Jira.Activity.Dtos;
 using Vuetrack.Connectors.Jira.Connection;
-using Vuetrack.Connectors.Jira.Internal;
 
 namespace Vuetrack.Connectors.Jira.Activity;
 
 public class JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor accessor, IOptions<JiraOptions> options, ILogger<JiraApiClient> logger) : IJiraApiClient
 {
+    private static readonly JsonSerializerOptions JsonOptions = BuildJsonOptions();
+
+    // Fields whose changelog transitions we care about; bulkfetch allows up to 10 field ids.
+    private static readonly string[] ChangelogFieldIds = ["status", "summary", "description", "priority", "assignee", "resolution", "parent", "labels"];
+
+    private const string SearchFields = "summary,issuetype,status,project,parent,labels,components,updated";
+
     private HttpClient HttpClient { get; } = httpClient;
 
     private IJiraConnectionAccessor Accessor { get; } = accessor;
@@ -21,117 +29,33 @@ public class JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor access
 
     public async Task<string> GetMyAccountIdAsync(CancellationToken cancellationToken)
     {
-        using var document = await GetJsonAsync("myself", cancellationToken);
-        return document.RootElement.TryGetProperty("accountId", out var accountId)
-            ? accountId.GetString() ?? string.Empty
-            : string.Empty;
+        var me = await GetAsync<JiraUserDto>("myself", cancellationToken);
+        return me.AccountId ?? string.Empty;
     }
 
-    public async Task<IReadOnlyList<JiraWorklogContainer>> GetWorklogEntriesAsync(string accountId, DateTime from, DateTime to, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<JiraSearchIssueDto>> SearchCandidateIssuesAsync(DateTime from, DateTime to, CancellationToken cancellationToken)
     {
-        var jql = $"worklogAuthor = currentUser() AND worklogDate >= \"{IsoDate(from)}\" AND worklogDate <= \"{IsoDate(to)}\" ORDER BY updated DESC";
-        var issues = await SearchIssuesAsync(jql, "summary,issuetype,status,project", cancellationToken);
+        var jql = $"(worklogAuthor = currentUser() OR assignee was currentUser() OR status changed by currentUser()) AND updated >= \"{IsoDateTime(from)}\" AND updated <= \"{IsoDateTime(to)}\" ORDER BY updated ASC";
 
-        var startedAfterMs = new DateTimeOffset(from, TimeSpan.Zero).ToUnixTimeMilliseconds();
-        var entries = new List<JiraWorklogContainer>();
-
-        foreach (var issue in issues)
-        {
-            var path = $"issue/{Uri.EscapeDataString(issue.Key)}/worklog?startedAfter={startedAfterMs}";
-            using var document = await GetJsonAsync(path, cancellationToken);
-
-            if (!document.RootElement.TryGetProperty("worklogs", out var worklogs) || worklogs.ValueKind != JsonValueKind.Array)
-            {
-                continue;
-            }
-
-            foreach (var worklog in worklogs.EnumerateArray())
-            {
-                var authorId = worklog.GetPropertyPath("author", "accountId")?.GetString();
-                if (!string.Equals(authorId, accountId, StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                if (!TryGetDate(worklog, "started", out var started) || started < from || started >= to)
-                {
-                    continue;
-                }
-
-                var comment = worklog.TryGetProperty("comment", out var commentNode) && commentNode.ValueKind == JsonValueKind.Object
-                    ? AdfTextExtractor.Extract(commentNode)
-                    : null;
-
-                entries.Add(new JiraWorklogContainer
-                {
-                    IssueKey = issue.Key,
-                    IssueSummary = issue.Summary,
-                    WorklogId = worklog.TryGetProperty("id", out var id) ? id.GetString() ?? string.Empty : string.Empty,
-                    Started = started,
-                    TimeSpentSeconds = worklog.TryGetProperty("timeSpentSeconds", out var secs) && secs.TryGetInt64(out var s) ? s : 0,
-                    Comment = comment,
-                    Project = issue.Project,
-                    IssueType = issue.IssueType,
-                    Status = issue.Status,
-                });
-            }
-        }
-
-        return entries;
-    }
-
-    public async Task<IReadOnlyList<JiraIssueActivityContainer>> GetIssueActivityAsync(DateTime from, DateTime to, CancellationToken cancellationToken)
-    {
-        var jql = $"(assignee was currentUser() OR status changed by currentUser()) AND updated >= \"{IsoDateTime(from)}\" AND updated <= \"{IsoDateTime(to)}\" ORDER BY updated DESC";
-        var issues = await SearchIssuesAsync(jql, "summary,issuetype,status,project,updated", cancellationToken);
-
-        return issues
-            .Where(i => i.Updated is not null)
-            .Select(i => new JiraIssueActivityContainer
-            {
-                IssueKey = i.Key,
-                Summary = i.Summary,
-                Updated = i.Updated!.Value,
-                Project = i.Project,
-                IssueType = i.IssueType,
-                Status = i.Status,
-            })
-            .ToList();
-    }
-
-    private async Task<IReadOnlyList<SearchIssueContainer>> SearchIssuesAsync(
-        string jql,
-        string fields,
-        CancellationToken cancellationToken)
-    {
-        var results = new List<SearchIssueContainer>();
+        var results = new List<JiraSearchIssueDto>();
         string? pageToken = null;
 
         for (var page = 0; page < Options.Value.MaxPages; page++)
         {
-            var path = $"search/jql?jql={Uri.EscapeDataString(jql)}&fields={Uri.EscapeDataString(fields)}&maxResults={Options.Value.PageSize}";
+            var path = $"search/jql?jql={Uri.EscapeDataString(jql)}&fields={Uri.EscapeDataString(SearchFields)}&maxResults={Options.Value.PageSize}";
             if (pageToken is not null)
             {
                 path += $"&nextPageToken={Uri.EscapeDataString(pageToken)}";
             }
 
-            using var document = await GetJsonAsync(path, cancellationToken);
-            var root = document.RootElement;
-
-            if (root.TryGetProperty("issues", out var issues) && issues.ValueKind == JsonValueKind.Array)
+            var response = await GetAsync<JiraSearchResponseDto>(path, cancellationToken);
+            if (response.Issues is { Count: > 0 })
             {
-                foreach (var issue in issues.EnumerateArray())
-                {
-                    results.Add(ParseSearchIssue(issue));
-                }
+                results.AddRange(response.Issues);
             }
 
-            pageToken = root.TryGetProperty("nextPageToken", out var next) && next.ValueKind == JsonValueKind.String
-                ? next.GetString()
-                : null;
-
-            var isLast = root.TryGetProperty("isLast", out var last) && last.ValueKind is JsonValueKind.True;
-            if (isLast || string.IsNullOrEmpty(pageToken))
+            pageToken = response.NextPageToken;
+            if (response.IsLast is true || string.IsNullOrEmpty(pageToken))
             {
                 break;
             }
@@ -140,34 +64,126 @@ public class JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor access
         return results;
     }
 
-    private static SearchIssueContainer ParseSearchIssue(JsonElement issue)
+    public async Task<IReadOnlyList<JiraWorklogDto>> GetWorklogsAsync(string issueKey, DateTime startedAfter, CancellationToken cancellationToken)
     {
-        var key = issue.TryGetProperty("key", out var k) ? k.GetString() ?? string.Empty : string.Empty;
-        var summary = issue.GetPropertyPath("fields", "summary")?.GetString() ?? string.Empty;
-        var issueType = issue.GetPropertyPath("fields", "issuetype", "name")?.GetString();
-        var status = issue.GetPropertyPath("fields", "status", "name")?.GetString();
-        var project = issue.GetPropertyPath("fields", "project", "key")?.GetString();
+        var startedAfterMs = new DateTimeOffset(startedAfter, TimeSpan.Zero).ToUnixTimeMilliseconds();
+        var entries = new List<JiraWorklogDto>();
+        var startAt = 0;
 
-        DateTime? updated = null;
-        var fields = issue.TryGetProperty("fields", out var f) ? f : default;
-        if (fields.ValueKind == JsonValueKind.Object && TryGetDate(fields, "updated", out var parsed))
+        for (var page = 0; page < Options.Value.MaxPages; page++)
         {
-            updated = parsed;
+            var path = $"issue/{Uri.EscapeDataString(issueKey)}/worklog?startedAfter={startedAfterMs}&startAt={startAt}&maxResults={Options.Value.PageSize}";
+            var response = await GetAsync<JiraWorklogResponseDto>(path, cancellationToken);
+
+            var worklogs = response.Worklogs;
+            if (worklogs is not { Count: > 0 })
+            {
+                break;
+            }
+
+            entries.AddRange(worklogs);
+            startAt += worklogs.Count;
+            if (startAt >= response.Total)
+            {
+                break;
+            }
         }
 
-        return new SearchIssueContainer(key, summary, issueType, status, project, updated);
+        return entries;
     }
 
-    private async Task<JsonDocument> GetJsonAsync(string path, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<JiraCommentDto>> GetCommentsAsync(string issueKey, CancellationToken cancellationToken)
+    {
+        var comments = new List<JiraCommentDto>();
+        var startAt = 0;
+
+        for (var page = 0; page < Options.Value.MaxPages; page++)
+        {
+            var path = $"issue/{Uri.EscapeDataString(issueKey)}/comment?startAt={startAt}&maxResults={Options.Value.PageSize}";
+            var response = await GetAsync<JiraCommentResponseDto>(path, cancellationToken);
+
+            var pageComments = response.Comments;
+            if (pageComments is not { Count: > 0 })
+            {
+                break;
+            }
+
+            comments.AddRange(pageComments);
+            startAt += pageComments.Count;
+            if (startAt >= response.Total)
+            {
+                break;
+            }
+        }
+
+        return comments;
+    }
+
+    public async Task<IReadOnlyList<JiraIssueChangeLogDto>> GetChangelogsAsync(IReadOnlyList<string> issueIdsOrKeys, CancellationToken cancellationToken)
+    {
+        if (issueIdsOrKeys.Count == 0)
+        {
+            return [];
+        }
+
+        var logs = new List<JiraIssueChangeLogDto>();
+        string? pageToken = null;
+
+        for (var page = 0; page < Options.Value.MaxPages; page++)
+        {
+            var request = new JiraBulkChangelogRequestDto
+            {
+                IssueIdsOrKeys = issueIdsOrKeys,
+                FieldIds = ChangelogFieldIds,
+                MaxResults = Options.Value.PageSize,
+                NextPageToken = pageToken,
+            };
+
+            var response = await PostAsync<JiraBulkChangelogResponseDto>("changelog/bulkfetch", request, cancellationToken);
+            if (response.IssueChangeLogs is { Count: > 0 })
+            {
+                logs.AddRange(response.IssueChangeLogs);
+            }
+
+            pageToken = response.NextPageToken;
+            if (string.IsNullOrEmpty(pageToken))
+            {
+                break;
+            }
+        }
+
+        return logs;
+    }
+
+    private async Task<T> GetAsync<T>(string path, CancellationToken cancellationToken)
+    {
+        using var request = BuildRequest(HttpMethod.Get, path);
+        var value = await SendAsync<T>(request, cancellationToken);
+        return value;
+    }
+
+    private async Task<T> PostAsync<T>(string path, object body, CancellationToken cancellationToken)
+    {
+        using var request = BuildRequest(HttpMethod.Post, path);
+        request.Content = JsonContent.Create(body, options: JsonOptions);
+        var value = await SendAsync<T>(request, cancellationToken);
+        return value;
+    }
+
+    private HttpRequestMessage BuildRequest(HttpMethod method, string path)
     {
         var connection = Accessor.Current ?? throw new JiraApiException(JiraApiErrorKind.Auth, "No active Jira connection for this request.");
 
         var uri = $"ex/jira/{connection.CloudId}/rest/api/3/{path}";
 
-        using var request = new HttpRequestMessage(HttpMethod.Get, uri);
+        var request = new HttpRequestMessage(method, uri);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", connection.AccessToken);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        return request;
+    }
 
+    private async Task<T> SendAsync<T>(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
         HttpResponseMessage response;
         try
         {
@@ -180,13 +196,19 @@ public class JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor access
 
         using (response)
         {
-            if (response.IsSuccessStatusCode)
+            if (!response.IsSuccessStatusCode)
             {
-                var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-                return await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+                var error = ToException(response);
+                throw error;
             }
 
-            throw ToException(response);
+            var value = await response.Content.ReadFromJsonAsync<T>(JsonOptions, cancellationToken);
+            if (value is null)
+            {
+                throw new JiraApiException(JiraApiErrorKind.Transport, "Jira returned an empty response.");
+            }
+
+            return value;
         }
     }
 
@@ -219,37 +241,25 @@ public class JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor access
         return TimeSpan.FromSeconds(60);
     }
 
-    private static string IsoDate(DateTime value) => value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-
     private static string IsoDateTime(DateTime value) => value.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
 
-    private static bool TryGetDate(JsonElement element, string property, out DateTime value)
+    private static JsonSerializerOptions BuildJsonOptions()
     {
-        value = default;
-        if (!element.TryGetProperty(property, out var prop) || prop.ValueKind != JsonValueKind.String)
-        {
-            return false;
-        }
-
-        // Jira returns ISO-8601 timestamps with an offset; collapse to UTC so everything downstream
-        // is a Kind=Utc DateTime.
-        if (!DateTimeOffset.TryParse(prop.GetString(), CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed))
-        {
-            return false;
-        }
-
-        value = parsed.UtcDateTime;
-        return true;
+        var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        jsonOptions.Converters.Add(new JiraDateTimeOffsetConverter());
+        return jsonOptions;
     }
-
-    private sealed record SearchIssueContainer(string Key, string Summary, string? IssueType, string? Status, string? Project, DateTime? Updated);
 }
 
 public interface IJiraApiClient
 {
     Task<string> GetMyAccountIdAsync(CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<JiraWorklogContainer>> GetWorklogEntriesAsync(string accountId, DateTime from, DateTime to, CancellationToken cancellationToken);
+    Task<IReadOnlyList<JiraSearchIssueDto>> SearchCandidateIssuesAsync(DateTime from, DateTime to, CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<JiraIssueActivityContainer>> GetIssueActivityAsync(DateTime from, DateTime to, CancellationToken cancellationToken);
+    Task<IReadOnlyList<JiraWorklogDto>> GetWorklogsAsync(string issueKey, DateTime startedAfter, CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<JiraCommentDto>> GetCommentsAsync(string issueKey, CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<JiraIssueChangeLogDto>> GetChangelogsAsync(IReadOnlyList<string> issueIdsOrKeys, CancellationToken cancellationToken);
 }

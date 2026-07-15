@@ -148,7 +148,6 @@ export const useCalendarHelper = () => {
 
     const buildTimeEntrySuggestionUpdate = (source: TimeEntrySuggestionContract): TimeEntrySuggestionUpdateContract => {
         return withProxy({
-            title: source.title,
             taskId: source.taskId,
             projectId: source.projectId,
             activityId: source.activityId,

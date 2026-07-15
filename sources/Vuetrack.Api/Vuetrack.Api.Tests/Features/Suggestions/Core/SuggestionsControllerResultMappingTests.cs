@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.Json;
 using AwesomeAssertions;
 using ErrorOr;
 using Microsoft.AspNetCore.Http;
@@ -16,7 +17,7 @@ public class SuggestionsControllerResultMappingTests
     [Fact]
     public async Task Update_WhenServiceReturnsValue_ReturnsOkWithSuggestion()
     {
-        var contract = new SuggestionContract("id-1", "Title", null, null, null, DateTime.UnixEpoch, DateTime.UnixEpoch.AddMinutes(30), null, "Edited", [], 0.6);
+        var contract = Contract();
         var controller = CreateController(new StubSuggestionService { OnUpdate = (_, _, _, _) => Task.FromResult<ErrorOr<SuggestionContract>>(contract) });
 
         var result = await controller.Update("id-1", UpdateContract(), CancellationToken.None);
@@ -70,9 +71,9 @@ public class SuggestionsControllerResultMappingTests
     }
 
     [Fact]
-    public async Task Reload_ReturnsGenerationResult()
+    public async Task Reload_ReturnsPersistedSuggestionList()
     {
-        var expected = new GenerateSuggestionsResultContract(1, []);
+        IReadOnlyList<SuggestionContract> expected = [Contract()];
         var controller = CreateController(new StubSuggestionService { OnReload = (_, _, _) => Task.FromResult(expected) });
 
         var result = await controller.Reload(new GenerateSuggestionsRequestContract { From = DateTime.UnixEpoch, To = DateTime.UnixEpoch.AddDays(1) }, CancellationToken.None);
@@ -80,9 +81,23 @@ public class SuggestionsControllerResultMappingTests
         result.Should().BeOfType<OkObjectResult>().Which.Value.Should().Be(expected);
     }
 
+    private static SuggestionContract Contract() => new(
+        "id-1",
+        "T-1",
+        null,
+        "Project",
+        null,
+        DateTime.UnixEpoch,
+        DateTime.UnixEpoch.AddMinutes(30),
+        null,
+        "Edited",
+        new Dictionary<string, JsonElement>(),
+        [],
+        0.6);
+
     private static SuggestionUpdateContract UpdateContract() => new()
     {
-        Title = "Title",
+        TaskId = "T-1",
         DateStarted = DateTime.UnixEpoch,
         DateEnded = DateTime.UnixEpoch.AddMinutes(30),
     };

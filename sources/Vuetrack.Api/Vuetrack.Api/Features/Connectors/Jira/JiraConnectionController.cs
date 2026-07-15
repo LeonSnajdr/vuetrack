@@ -29,11 +29,11 @@ public class JiraConnectionController(IJiraConnectionService connectionService) 
     }
 
     [HttpGet("status")]
-    public async Task<IActionResult> Status()
+    public async Task<IActionResult> Status(CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
 
-        return Ok(await ConnectionService.GetStatusAsync(userId));
+        return Ok(await ConnectionService.GetStatusAsync(userId, cancellationToken));
     }
 
     [HttpPost("callback")]

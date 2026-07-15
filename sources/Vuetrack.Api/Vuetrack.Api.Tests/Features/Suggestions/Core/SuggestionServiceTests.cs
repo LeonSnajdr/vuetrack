@@ -11,6 +11,7 @@ using Vuetrack.Api.Features.TimeEntry.Services;
 using Vuetrack.Api.Tests.Fakes;
 using Vuetrack.Backends.Abstractions.Contracts;
 using Vuetrack.Connectors.Abstractions;
+using Vuetrack.Connectors.Abstractions.Metadata;
 using Xunit;
 
 namespace Vuetrack.Api.Tests.Features.Suggestions.Core;
@@ -29,8 +30,8 @@ public class SuggestionServiceTests
         var registry = new FakeConnectorRegistry();
         registry.Add(new FakeConnector(Descriptor(ConnectorKey.Jira), (_, _) => Signals(
         [
-            Signal(ConnectorKey.Jira, "J-1:worklog:1", "J-1 work", At(9, 0), At(9, 10)),
-            Signal(ConnectorKey.Jira, "J-2:worklog:1", "J-2 work", At(11, 0), At(11, 10)),
+            Signal(ConnectorKey.Jira, "J-1:worklog:1", "J-1", At(9, 0), At(9, 10)),
+            Signal(ConnectorKey.Jira, "J-2:worklog:1", "J-2", At(11, 0), At(11, 10)),
         ])));
 
         var initializers = new IConnectorContextInitializer[] { new FakeConnectorContextInitializer(ConnectorKey.Jira, true) };
@@ -40,54 +41,39 @@ public class SuggestionServiceTests
 
         var result = await service.GenerateAsync("user-1", Request(), CancellationToken.None);
 
-        result.GeneratedCount.Should().Be(2);
-        var outcome = result.ConnectorOutcomes.Should().ContainSingle().Subject;
-        outcome.Status.Should().Be("Success");
-        outcome.SignalCount.Should().Be(2);
+        result.Should().HaveCount(2);
         repository.Items.Should().HaveCount(2);
     }
 
-    public enum OutcomeScenario
+    [Fact]
+    public async Task GenerateAsync_ConnectorFails_IsSwallowedAndReturnsEmpty()
     {
-        Success,
-        AuthFailed,
-        ConnectorError,
-        Throws,
-        NotConnected,
-    }
-
-    [Theory]
-    [InlineData(OutcomeScenario.Success, "Success")]
-    [InlineData(OutcomeScenario.AuthFailed, "AuthFailed")]
-    [InlineData(OutcomeScenario.ConnectorError, "Error")]
-    [InlineData(OutcomeScenario.Throws, "Error")]
-    [InlineData(OutcomeScenario.NotConnected, "NotConnected")]
-    public async Task GenerateAsync_ConnectorOutcome_IsRecordedWithoutThrowing(OutcomeScenario scenario, string expectedStatus)
-    {
-        var connected = scenario != OutcomeScenario.NotConnected;
-
-        Func<ActivityFetchContainer, CancellationToken, Task<ErrorOr<IReadOnlyList<ActivitySignal>>>> fetch = (_, _) => scenario switch
-        {
-            OutcomeScenario.Success => Signals([Signal(ConnectorKey.Jira, "J-1:worklog:1", "J-1 work", At(9, 0), At(9, 10))]),
-            OutcomeScenario.AuthFailed => Fail(Error.Unauthorized()),
-            OutcomeScenario.ConnectorError => Fail(Error.Failure()),
-            OutcomeScenario.Throws => throw new InvalidOperationException("boom"),
-            OutcomeScenario.NotConnected => throw new InvalidOperationException("should never be called"),
-            _ => throw new ArgumentOutOfRangeException(nameof(scenario), scenario, null),
-        };
-
         var registry = new FakeConnectorRegistry();
-        registry.Add(new FakeConnector(Descriptor(ConnectorKey.Jira), fetch));
+        registry.Add(new FakeConnector(Descriptor(ConnectorKey.Jira), (_, _) => Fail(Error.Failure())));
 
-        var initializers = new IConnectorContextInitializer[] { new FakeConnectorContextInitializer(ConnectorKey.Jira, connected) };
+        var initializers = new IConnectorContextInitializer[] { new FakeConnectorContextInitializer(ConnectorKey.Jira, true) };
         var repository = new FakeSuggestionRepository();
         var service = CreateService(registry, initializers, repository);
 
         var result = await service.GenerateAsync("user-1", Request(), CancellationToken.None);
 
-        var outcome = result.ConnectorOutcomes.Should().ContainSingle().Subject;
-        outcome.ConnectorKey.Should().Be(ConnectorKey.Jira);
-        outcome.Status.Should().Be(expectedStatus);
+        result.Should().BeEmpty();
+        repository.Items.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GenerateAsync_ConnectorNotConnected_IsSwallowedAndReturnsEmpty()
+    {
+        var registry = new FakeConnectorRegistry();
+        registry.Add(new FakeConnector(Descriptor(ConnectorKey.Jira), (_, _) => throw new InvalidOperationException("should never be called")));
+
+        var initializers = new IConnectorContextInitializer[] { new FakeConnectorContextInitializer(ConnectorKey.Jira, false) };
+        var repository = new FakeSuggestionRepository();
+        var service = CreateService(registry, initializers, repository);
+
+        var result = await service.GenerateAsync("user-1", Request(), CancellationToken.None);
+
+        result.Should().BeEmpty();
     }
 
     [Fact]
@@ -96,8 +82,8 @@ public class SuggestionServiceTests
         var registry = new FakeConnectorRegistry();
         registry.Add(new FakeConnector(Descriptor(ConnectorKey.Jira), (_, _) => Signals(
         [
-            Signal(ConnectorKey.Jira, "J-1:worklog:1", "J-1 work", At(9, 0), At(9, 10)),
-            Signal(ConnectorKey.Jira, "J-2:worklog:1", "J-2 work", At(12, 0), At(12, 10)),
+            Signal(ConnectorKey.Jira, "J-1:worklog:1", "J-1", At(9, 0), At(9, 10)),
+            Signal(ConnectorKey.Jira, "J-2:worklog:1", "J-2", At(12, 0), At(12, 10)),
         ])));
 
         var initializers = new IConnectorContextInitializer[] { new FakeConnectorContextInitializer(ConnectorKey.Jira, true) };
@@ -105,14 +91,14 @@ public class SuggestionServiceTests
         var service = CreateService(registry, initializers, repository);
 
         var first = await service.GenerateAsync("user-1", Request(), CancellationToken.None);
-        first.GeneratedCount.Should().Be(2);
+        first.Should().HaveCount(2);
         repository.Items.Should().HaveCount(2);
 
         repository.Items[0].Status = SuggestionStatus.Edited;
 
         var second = await service.GenerateAsync("user-1", Request(), CancellationToken.None);
 
-        second.GeneratedCount.Should().Be(0);
+        second.Should().BeEmpty();
         repository.Items.Should().HaveCount(2);
         repository.Items[0].Status.Should().Be(SuggestionStatus.Edited);
         repository.Items[1].Status.Should().Be(SuggestionStatus.Pending);
@@ -122,42 +108,27 @@ public class SuggestionServiceTests
     public async Task ListAsync_NeverReturnsAnotherUsersSuggestions()
     {
         var repository = new FakeSuggestionRepository();
-        await repository.Save(BuildModel("user-a", "Mine", At(9, 0), At(9, 30)));
-        await repository.Save(BuildModel("user-b", "NotMine", At(9, 0), At(9, 30)));
+        await repository.Save(BuildModel("user-a", "MINE", At(9, 0), At(9, 30)));
+        await repository.Save(BuildModel("user-b", "OTHER", At(9, 0), At(9, 30)));
 
         var service = CreateService(new FakeConnectorRegistry(), [], repository);
 
         var result = await service.ListAsync("user-a", From, To);
 
         result.Should().ContainSingle();
-        result[0].Title.Should().Be("Mine");
+        result[0].TaskId.Should().Be("MINE");
     }
 
     [Fact]
     public async Task UpdateAsync_AnotherUsersSuggestion_ReturnsNotFound()
     {
         var repository = new FakeSuggestionRepository();
-        var model = BuildModel("user-a", "Mine", At(9, 0), At(9, 30));
+        var model = BuildModel("user-a", "MINE", At(9, 0), At(9, 30));
         await repository.Save(model);
 
         var service = CreateService(new FakeConnectorRegistry(), [], repository);
 
-        var result = await service.UpdateAsync("user-b", model.Id, UpdateContract("Changed", At(9, 0), At(10, 0)), CancellationToken.None);
-
-        result.IsError.Should().BeTrue();
-        result.FirstError.Type.Should().Be(ErrorType.NotFound);
-    }
-
-    [Fact]
-    public async Task DismissAsync_AnotherUsersSuggestion_ReturnsNotFound()
-    {
-        var repository = new FakeSuggestionRepository();
-        var model = BuildModel("user-a", "Mine", At(9, 0), At(9, 30));
-        await repository.Save(model);
-
-        var service = CreateService(new FakeConnectorRegistry(), [], repository);
-
-        var result = await service.DismissAsync("user-b", model.Id, CancellationToken.None);
+        var result = await service.UpdateAsync("user-b", model.Id, UpdateContract("CHANGED", At(9, 0), At(10, 0)), CancellationToken.None);
 
         result.IsError.Should().BeTrue();
         result.FirstError.Type.Should().Be(ErrorType.NotFound);
@@ -167,16 +138,16 @@ public class SuggestionServiceTests
     public async Task UpdateAsync_ExistingSuggestion_UpdatesFieldsAndSetsEditedStatus()
     {
         var repository = new FakeSuggestionRepository();
-        var model = BuildModel("user-a", "Original", At(9, 0), At(9, 30));
+        var model = BuildModel("user-a", "ORIGINAL", At(9, 0), At(9, 30));
         await repository.Save(model);
 
         var service = CreateService(new FakeConnectorRegistry(), [], repository);
 
-        var result = await service.UpdateAsync("user-a", model.Id, UpdateContract("Changed", At(10, 0), At(11, 0)), CancellationToken.None);
+        var result = await service.UpdateAsync("user-a", model.Id, UpdateContract("CHANGED", At(10, 0), At(11, 0)), CancellationToken.None);
 
         result.IsError.Should().BeFalse();
         var updated = result.Value;
-        updated.Title.Should().Be("Changed");
+        updated.TaskId.Should().Be("CHANGED");
         updated.DateStarted.Should().Be(At(10, 0));
         updated.DateEnded.Should().Be(At(11, 0));
         updated.Status.Should().Be(nameof(SuggestionStatus.Edited));
@@ -188,7 +159,7 @@ public class SuggestionServiceTests
         var repository = new FakeSuggestionRepository();
         var service = CreateService(new FakeConnectorRegistry(), [], repository);
 
-        var result = await service.UpdateAsync("user-a", "missing-id", UpdateContract("Changed", At(9, 0), At(10, 0)), CancellationToken.None);
+        var result = await service.UpdateAsync("user-a", "missing-id", UpdateContract("CHANGED", At(9, 0), At(10, 0)), CancellationToken.None);
 
         result.IsError.Should().BeTrue();
         result.FirstError.Type.Should().Be(ErrorType.NotFound);
@@ -198,7 +169,7 @@ public class SuggestionServiceTests
     public async Task DismissAsync_ExistingSuggestion_SetsDismissedStatus()
     {
         var repository = new FakeSuggestionRepository();
-        var model = BuildModel("user-a", "Original", At(9, 0), At(9, 30));
+        var model = BuildModel("user-a", "ORIGINAL", At(9, 0), At(9, 30));
         await repository.Save(model);
 
         var service = CreateService(new FakeConnectorRegistry(), [], repository);
@@ -210,22 +181,10 @@ public class SuggestionServiceTests
     }
 
     [Fact]
-    public async Task DismissAsync_MissingSuggestion_ReturnsNotFound()
-    {
-        var repository = new FakeSuggestionRepository();
-        var service = CreateService(new FakeConnectorRegistry(), [], repository);
-
-        var result = await service.DismissAsync("user-a", "missing-id", CancellationToken.None);
-
-        result.IsError.Should().BeTrue();
-        result.FirstError.Type.Should().Be(ErrorType.NotFound);
-    }
-
-    [Fact]
     public async Task AcceptAsync_ExistingSuggestion_ConfirmsAndExcludesFromList()
     {
         var repository = new FakeSuggestionRepository();
-        var model = BuildModel("user-a", "Original", At(9, 0), At(9, 30));
+        var model = BuildModel("user-a", "ORIGINAL", At(9, 0), At(9, 30));
         await repository.Save(model);
         var service = CreateService(new FakeConnectorRegistry(), [], repository);
 
@@ -243,7 +202,7 @@ public class SuggestionServiceTests
         var registry = new FakeConnectorRegistry();
         registry.Add(new FakeConnector(Descriptor(ConnectorKey.Jira), (_, _) => Signals(
         [
-            Signal(ConnectorKey.Jira, "J-1:worklog:1", "J-1 work", At(9, 0), At(9, 10), "J-1"),
+            Signal(ConnectorKey.Jira, "J-1:worklog:1", "J-1", At(9, 0), At(9, 10)),
         ])));
         var timeEntries = new StubTimeEntryService
         {
@@ -257,7 +216,7 @@ public class SuggestionServiceTests
 
         var result = await service.GenerateAsync("user-1", Request(), CancellationToken.None);
 
-        result.GeneratedCount.Should().Be(0);
+        result.Should().BeEmpty();
         repository.Items.Should().BeEmpty();
     }
 
@@ -267,13 +226,13 @@ public class SuggestionServiceTests
         var registry = new FakeConnectorRegistry();
         registry.Add(new FakeConnector(Descriptor(ConnectorKey.Jira), (_, _) => Signals(
         [
-            Signal(ConnectorKey.Jira, "J-1:worklog:1", "Original", At(9, 0), At(9, 10), "J-1"),
-            Signal(ConnectorKey.Jira, "J-2:worklog:1", "Accepted", At(10, 0), At(10, 10), "J-2"),
+            Signal(ConnectorKey.Jira, "J-1:worklog:1", "J-1", At(9, 0), At(9, 10)),
+            Signal(ConnectorKey.Jira, "J-2:worklog:1", "J-2", At(10, 0), At(10, 10)),
         ])));
         var repository = new FakeSuggestionRepository();
-        var edited = BuildModel("user-1", "Edited", At(9, 0), At(9, 30), "J-1:worklog:1");
+        var edited = BuildModel("user-1", "J-1", At(9, 0), At(9, 30), "J-1:worklog:1");
         edited.Status = SuggestionStatus.Edited;
-        var confirmed = BuildModel("user-1", "Accepted", At(10, 0), At(10, 30), "J-2:worklog:1");
+        var confirmed = BuildModel("user-1", "J-2", At(10, 0), At(10, 30), "J-2:worklog:1");
         confirmed.Status = SuggestionStatus.Confirmed;
         await repository.Save(edited);
         await repository.Save(confirmed);
@@ -281,10 +240,10 @@ public class SuggestionServiceTests
 
         var result = await service.ReloadAsync("user-1", Request(), CancellationToken.None);
 
-        result.GeneratedCount.Should().Be(1);
+        result.Should().ContainSingle();
         repository.Items.Should().HaveCount(2);
-        repository.Items.Should().ContainSingle(x => x.Status == SuggestionStatus.Confirmed && x.Title == "Accepted");
-        repository.Items.Should().ContainSingle(x => x.Status == SuggestionStatus.Pending && x.Title == "Original");
+        repository.Items.Should().ContainSingle(x => x.Status == SuggestionStatus.Confirmed && x.TaskId == "J-2");
+        repository.Items.Should().ContainSingle(x => x.Status == SuggestionStatus.Pending && x.TaskId == "J-1");
     }
 
     [Fact]
@@ -293,13 +252,13 @@ public class SuggestionServiceTests
         var registry = new FakeConnectorRegistry();
         registry.Add(new FakeConnector(Descriptor(ConnectorKey.Jira), (_, _) => Fail(Error.Failure())));
         var repository = new FakeSuggestionRepository();
-        await repository.Save(BuildModel("user-1", "Keep", At(9, 0), At(9, 30), "J-1"));
+        await repository.Save(BuildModel("user-1", "KEEP", At(9, 0), At(9, 30), "J-1"));
         var service = CreateService(registry, [new FakeConnectorContextInitializer(ConnectorKey.Jira, true)], repository);
 
         var result = await service.ReloadAsync("user-1", Request(), CancellationToken.None);
 
-        result.GeneratedCount.Should().Be(0);
-        repository.Items.Should().ContainSingle(x => x.Title == "Keep");
+        result.Should().BeEmpty();
+        repository.Items.Should().ContainSingle(x => x.TaskId == "KEEP");
     }
 
     private static SuggestionService CreateService(FakeConnectorRegistry registry, IEnumerable<IConnectorContextInitializer> initializers, FakeSuggestionRepository repository, ITimeEntryService? timeEntryService = null)
@@ -318,21 +277,21 @@ public class SuggestionServiceTests
 
     private static GenerateSuggestionsRequestContract Request() => new() { From = From, To = To };
 
-    private static SuggestionUpdateContract UpdateContract(string title, DateTime start, DateTime end) => new()
+    private static SuggestionUpdateContract UpdateContract(string taskId, DateTime start, DateTime end) => new()
     {
-        Title = title,
+        TaskId = taskId,
         DateStarted = start,
         DateEnded = end,
     };
 
-    private static SuggestionModel BuildModel(string userId, string title, DateTime start, DateTime end, string? externalId = null) => new()
+    private static SuggestionModel BuildModel(string userId, string taskId, DateTime start, DateTime end, string? externalId = null) => new()
     {
         UserId = userId,
-        Title = title,
+        TaskId = taskId,
         DateStarted = start,
         DateEnded = end,
         Status = SuggestionStatus.Pending,
-        Sources = externalId is null ? [] : [new SuggestionSourceModel { ConnectorKey = ConnectorKey.Jira, ExternalId = externalId }],
+        Sources = externalId is null ? [] : [new SuggestionEvidenceModel { ConnectorKey = ConnectorKey.Jira, ExternalId = externalId }],
         Confidence = 0.5,
         DateCreated = start,
         DateUpdated = start,
@@ -347,13 +306,20 @@ public class SuggestionServiceTests
 
     private static DateTime At(int hour, int minute) => BaseDate + TimeSpan.FromHours(hour) + TimeSpan.FromMinutes(minute);
 
-    private static ActivitySignal Signal(ConnectorKey connectorKey, string externalId, string title, DateTime start, DateTime? end = null, string? taskId = null) => new()
+    private static ActivitySignal Signal(ConnectorKey connectorKey, string externalId, string subject, DateTime start, DateTime? end = null)
     {
-        ConnectorKey = connectorKey,
-        ExternalId = externalId,
-        Title = title,
-        DateStarted = start,
-        DateEnded = end,
-        Metadata = taskId is null ? new Dictionary<string, string>() : new Dictionary<string, string> { [ActivityMetadataKeys.TaskId] = taskId },
-    };
+        var builder = new SignalMetadataBuilder();
+        builder.Set(MetadataKeys.ActivityKind, end.HasValue ? ActivityKind.Worklog : ActivityKind.Comment);
+        builder.Set(MetadataKeys.SubjectWorkItemId, subject);
+        builder.Set(MetadataKeys.CorrelationKeys, new List<string> { subject });
+
+        return new ActivitySignal
+        {
+            ConnectorKey = connectorKey,
+            ExternalId = externalId,
+            DateStarted = start,
+            DateEnded = end,
+            Metadata = builder.Build(),
+        };
+    }
 }

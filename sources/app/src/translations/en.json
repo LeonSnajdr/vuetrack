@@ -69,6 +69,8 @@
   "settings.connectors.jira.disconnect": "Disconnect",
   "settings.connectors.jira.error": "Could not connect your Jira account. Please try again.",
   "settings.connectors.jira.popupBlocked": "The login window was blocked. Please allow popups and try again.",
+  "settings.connectors.jira.reconnect": "Reconnect Jira",
+  "settings.connectors.jira.reconnectRequired": "Your Jira connection has expired. Please reconnect.",
   "settings.general": "General",
   "settings.general.overlayType": "Overlay style",
   "settings.general.overlayType.dialog": "Dialog",

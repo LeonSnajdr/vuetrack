@@ -40,7 +40,7 @@ public sealed class FakeSuggestionRepository : ISuggestionRepository
         return Task.FromResult(exists);
     }
 
-    public Task<SuggestionModel?> UpdateFieldsAsync(string id, string userId, string title, string? taskId, string? projectId, string? activityId, DateTime start, DateTime end, string? comment, DateTime updatedAt)
+    public Task<SuggestionModel?> UpdateFieldsAsync(string id, string userId, string? taskId, string? projectId, string? activityId, DateTime start, DateTime end, string? comment, DateTime updatedAt)
     {
         var model = items.FirstOrDefault(x => x.Id == id && x.UserId == userId);
         if (model is null)
@@ -48,7 +48,6 @@ public sealed class FakeSuggestionRepository : ISuggestionRepository
             return Task.FromResult<SuggestionModel?>(null);
         }
 
-        model.Title = title;
         model.TaskId = taskId;
         model.ProjectId = projectId;
         model.ActivityId = activityId;

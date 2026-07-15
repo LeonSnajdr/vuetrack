@@ -10,9 +10,11 @@ using Vuetrack.OAuth;
 namespace Vuetrack.Api.Features.Connectors.Jira.Services;
 
 [Inject]
-public class JiraConnectionService(IConnectorRegistry registry, IJiraOAuthApiClient oauthClient, IJiraConnectionRepository repository, ISecretProtector secretProtector, IJiraConnectionAccessor accessor, IJiraConnectionContextFactory contextFactory, ILogger<JiraConnectionService> logger) : IJiraConnectionService
+public class JiraConnectionService(IConnectorRegistry registry, IConnectorResolver resolver, IJiraOAuthApiClient oauthClient, IJiraConnectionRepository repository, ISecretProtector secretProtector, IJiraConnectionAccessor accessor, IJiraConnectionContextFactory contextFactory, ILogger<JiraConnectionService> logger) : IJiraConnectionService
 {
     private IConnectorRegistry Registry { get; } = registry;
+
+    private IConnectorResolver Resolver { get; } = resolver;
 
     private IJiraOAuthApiClient OAuthClient { get; } = oauthClient;
 
@@ -33,10 +35,38 @@ public class JiraConnectionService(IConnectorRegistry registry, IJiraOAuthApiCli
         return new JiraAuthorizeContract(url, state);
     }
 
-    public async Task<JiraStatusContract> GetStatusAsync(string userId)
+    public async Task<JiraStatusContract> GetStatusAsync(string userId, CancellationToken cancellationToken)
     {
         var connection = await Repository.GetByUserId(userId);
-        return new JiraStatusContract(connection is { Enabled: true }, connection?.SiteUrl);
+        if (connection is not { Enabled: true })
+        {
+            return new JiraStatusContract(false, false, connection?.SiteUrl);
+        }
+
+        var healthy = await CheckHealthAsync(userId, cancellationToken);
+        return new JiraStatusContract(true, healthy, connection.SiteUrl);
+    }
+
+    // Resolves the stored connection (refreshing the token) and validates it against Jira so the UI can
+    // tell "connected" from "connected but the token no longer works, please reconnect".
+    private async Task<bool> CheckHealthAsync(string userId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var resolved = await Resolver.ResolveConnectedAsync(JiraConnector.Key, userId, cancellationToken);
+            if (resolved.IsError)
+            {
+                return false;
+            }
+
+            var validation = await resolved.Value.ValidateAsync(cancellationToken);
+            return !validation.IsError;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            Logger.LogWarning(ex, "Jira status health check failed for user {UserId}", userId);
+            return false;
+        }
     }
 
     public async Task<ErrorOr<JiraConnectContract>> ConnectAsync(string userId, JiraConnectCreateContract request, CancellationToken cancellationToken)
@@ -106,7 +136,7 @@ public interface IJiraConnectionService
 {
     JiraAuthorizeContract BuildAuthorization(string redirectUri);
 
-    Task<JiraStatusContract> GetStatusAsync(string userId);
+    Task<JiraStatusContract> GetStatusAsync(string userId, CancellationToken cancellationToken);
 
     Task<ErrorOr<JiraConnectContract>> ConnectAsync(string userId, JiraConnectCreateContract request, CancellationToken cancellationToken);
 
