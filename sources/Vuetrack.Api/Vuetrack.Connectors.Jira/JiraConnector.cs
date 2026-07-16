@@ -207,8 +207,8 @@ public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor access
     {
         return ex.Kind switch
         {
-            JiraApiErrorKind.Auth => Error.Unauthorized(description: ex.Message),
-            _ => Error.Failure(description: ex.Message),
+            JiraApiErrorKind.Auth => Error.Unauthorized(),
+            _ => Error.Failure(),
         };
     }
 }

@@ -1,19 +1,139 @@
+using System.ClientModel;
+using System.Text.Json;
 using ErrorOr;
+using Microsoft.Extensions.Options;
+using OpenAI;
+using OpenAI.Chat;
 using Samhammer.DependencyInjection.Attributes;
+using Vuetrack.Connectors.Abstractions;
 
 namespace Vuetrack.Api.Features.Suggestions.Engine.Provider;
 
 [InjectAs(typeof(ISuggestionProvider))]
-public sealed class SuggestionProvider(ILogger<SuggestionProvider> logger) : ISuggestionProvider
+public sealed class SuggestionProvider : ISuggestionProvider
 {
-    private ILogger<SuggestionProvider> Logger { get; } = logger;
+    private const string CandidatesSchema =
+        """
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["candidates"],
+          "properties": {
+            "candidates": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["taskId", "dateStarted", "dateEnded", "confidence", "sourceExternalIds"],
+                "properties": {
+                  "taskId": { "type": ["string", "null"] },
+                  "dateStarted": { "type": "string" },
+                  "dateEnded": { "type": "string" },
+                  "confidence": { "type": "number" },
+                  "sourceExternalIds": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+        """;
 
-    public Task<ErrorOr<IReadOnlyList<SuggestionProviderCandidate>>> ProvideAsync(SuggestionProviderContext context, CancellationToken cancellationToken)
+    private static readonly JsonSerializerOptions JsonOptions = BuildJsonOptions();
+
+    public SuggestionProvider(IOptions<ProviderOpenAiOptions> options, ILogger<SuggestionProvider> logger)
     {
-        Logger.LogWarning("Suggestion provider is not configured; returning no suggestions for {SignalCount} signals in [{From}, {To}]", context.Signals.Count, context.From, context.To);
+        Options = options.Value;
+        Logger = logger;
+        ChatClient = BuildChatClient(Options);
+    }
 
-        IReadOnlyList<SuggestionProviderCandidate> empty = [];
-        var result = empty.ToErrorOr();
-        return Task.FromResult(result);
+    private ProviderOpenAiOptions Options { get; }
+
+    private ILogger<SuggestionProvider> Logger { get; }
+
+    private ChatClient ChatClient { get; }
+
+    public async Task<ErrorOr<IReadOnlyList<SuggestionProviderCandidate>>> ProvideAsync(SuggestionProviderContext context, CancellationToken cancellationToken)
+    {
+        var payload = JsonSerializer.Serialize(context, JsonOptions);
+
+        var systemMessage = ChatMessage.CreateSystemMessage(Options.SystemPrompt);
+        var userMessage = ChatMessage.CreateUserMessage(payload);
+        List<ChatMessage> messages = [systemMessage, userMessage];
+
+        var completionOptions = BuildCompletionOptions();
+
+        ChatCompletion completion;
+        try
+        {
+            completion = await ChatClient.CompleteChatAsync(messages, completionOptions, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "OpenAI suggestion provider failed for {SignalCount} signals in [{From}, {To}]", context.Signals.Count, context.From, context.To);
+            return Error.Failure();
+        }
+
+        var text = ExtractText(completion);
+        if (!string.IsNullOrWhiteSpace(text))
+        {
+            return ParseCandidates(text, Logger);
+        }
+
+        Logger.LogWarning("OpenAI suggestion provider returned empty content for {SignalCount} signals", context.Signals.Count);
+
+        return [];
+    }
+
+    private static ChatCompletionOptions BuildCompletionOptions()
+    {
+        var schema = BinaryData.FromString(CandidatesSchema);
+        var format = ChatResponseFormat.CreateJsonSchemaFormat("suggestion_candidates", schema, jsonSchemaIsStrict: true);
+        return new ChatCompletionOptions { ResponseFormat = format };
+    }
+
+    private static ChatClient BuildChatClient(ProviderOpenAiOptions options)
+    {
+        var credential = new ApiKeyCredential(options.ApiKey);
+        var endpoint = new Uri(options.Endpoint);
+        var clientOptions = new OpenAIClientOptions { Endpoint = endpoint };
+        return new ChatClient(options.Model, credential, clientOptions);
+    }
+
+    private static string? ExtractText(ChatCompletion completion)
+    {
+        return completion.Content.Count == 0 ? null : completion.Content[0].Text;
+    }
+
+    private static ErrorOr<IReadOnlyList<SuggestionProviderCandidate>> ParseCandidates(string text, ILogger logger)
+    {
+        CandidatesResponse? response;
+        try
+        {
+            response = JsonSerializer.Deserialize<CandidatesResponse>(text, JsonOptions);
+        }
+        catch (JsonException ex)
+        {
+            logger.LogWarning(ex, "OpenAI suggestion provider returned unparseable content");
+            return [];
+        }
+
+        var result = response?.Candidates ?? [];
+        return result.ToErrorOr();
+    }
+
+    private static JsonSerializerOptions BuildJsonOptions()
+    {
+        var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        jsonOptions.Converters.Add(new ActivityConnectorSignalDetailJsonConverter());
+        return jsonOptions;
+    }
+
+    private sealed record CandidatesResponse
+    {
+        public IReadOnlyList<SuggestionProviderCandidate> Candidates { get; init; } = [];
     }
 }
