@@ -27,11 +27,7 @@ public class JiraConnectionRepository(ILogger<BaseRepositoryMongo<JiraConnection
     }
 }
 
-public interface IJiraConnectionRepository : IBaseRepositoryMongo<JiraConnectionModel>
+public interface IJiraConnectionRepository : IOAuthConnectionRepository<JiraConnectionModel>
 {
-    Task<JiraConnectionModel?> GetByUserId(string userId);
-
     Task UpsertConnectionAsync(string userId, string siteUrl, string cloudId, string authMode, string encryptedRefreshToken);
-
-    Task SetRefreshTokenAsync(string userId, string encryptedRefreshToken);
 }

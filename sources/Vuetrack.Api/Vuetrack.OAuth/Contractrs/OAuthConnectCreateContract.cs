@@ -1,6 +1,6 @@
-namespace Vuetrack.Api.Features.Backends.Timetracking.Contracts;
+namespace Vuetrack.OAuth.Contractrs;
 
-public sealed record TimetrackingConnectCreateContract
+public sealed record OAuthConnectCreateContract
 {
     public string Code { get; init; } = string.Empty;
 

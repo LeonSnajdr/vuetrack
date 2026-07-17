@@ -5,7 +5,7 @@ using Samhammer.Mongo.Abstractions;
 
 namespace Vuetrack.OAuth;
 
-public abstract class OAuthConnectionRepository<TModel>(ILogger<BaseRepositoryMongo<TModel>> logger, IMongoDbConnector connector) : BaseRepositoryMongo<TModel>(logger, connector) where TModel : OAuthConnectionModel
+public abstract class OAuthConnectionRepository<TModel>(ILogger<BaseRepositoryMongo<TModel>> logger, IMongoDbConnector connector) : BaseRepositoryMongo<TModel>(logger, connector), IOAuthConnectionRepository<TModel> where TModel : OAuthConnectionModel
 {
     public async Task<TModel?> GetByUserId(string userId)
     {
@@ -19,4 +19,11 @@ public abstract class OAuthConnectionRepository<TModel>(ILogger<BaseRepositoryMo
 
         await Collection.UpdateOneAsync(filter, update);
     }
+}
+
+public interface IOAuthConnectionRepository<TModel> : IBaseRepositoryMongo<TModel> where TModel : OAuthConnectionModel
+{
+    Task<TModel?> GetByUserId(string userId);
+
+    Task SetRefreshTokenAsync(string userId, string encryptedRefreshToken);
 }

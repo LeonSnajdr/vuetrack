@@ -1,5 +1,6 @@
 namespace Vuetrack.Connectors.Jira.Connection;
 
+// Request-scoped, decrypted view of the connection published by the context factory.
 public sealed record JiraConnectionContainer
 {
     public required string UserId { get; init; }

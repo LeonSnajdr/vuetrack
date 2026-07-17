@@ -72,7 +72,7 @@ public class JiraConnectionContextFactoryTests
         });
 
         var cache = new FusionCache(Options.Create(new FusionCacheOptions()));
-        return new JiraConnectionContextFactory(repository, oauth, new PassthroughSecretProtector(), accessor ?? new JiraConnectionAccessor(), cache);
+        return new JiraConnectionContextFactory(repository, oauth, new PassthroughIoAuthSecretProtectorBase(), accessor ?? new JiraConnectionAccessor(), cache);
     }
 
     private sealed class FakeOAuthClient(int expiresInSeconds) : IJiraOAuthApiClient
@@ -100,7 +100,7 @@ public class JiraConnectionContextFactoryTests
             => throw new NotSupportedException();
     }
 
-    private sealed class PassthroughSecretProtector : ISecretProtector
+    private sealed class PassthroughIoAuthSecretProtectorBase : IJiraConnectorSecretProtector
     {
         public string Protect(string plaintext) => plaintext;
 

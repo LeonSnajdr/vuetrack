@@ -1,10 +1,11 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Vuetrack.Api.Features.Connectors.Jira.Contracts;
 using Vuetrack.Api.Features.Connectors.Jira.Services;
 using Vuetrack.Api.Infrastructure.Authentication;
 using Vuetrack.Api.Infrastructure.Validation;
+using Vuetrack.OAuth;
+using Vuetrack.OAuth.Contractrs;
 
 namespace Vuetrack.Api.Features.Connectors.Jira;
 
@@ -37,7 +38,7 @@ public class JiraConnectionController(IJiraConnectionService connectionService) 
     }
 
     [HttpPost("callback")]
-    public async Task<IActionResult> Callback([FromBody] JiraConnectCreateContract request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Callback([FromBody] OAuthConnectCreateContract request, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
 

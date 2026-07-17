@@ -1,13 +1,14 @@
 using FluentValidation;
 using Samhammer.DependencyInjection.Attributes;
-using Vuetrack.Api.Features.Backends.Timetracking.Contracts;
+using Vuetrack.OAuth;
+using Vuetrack.OAuth.Contractrs;
 
-namespace Vuetrack.Api.Features.Backends.Timetracking.Validation;
+namespace Vuetrack.Api.Features.OAuth.Validation;
 
-[InjectAs(typeof(IValidator<TimetrackingConnectCreateContract>))]
-public class TimetrackingConnectCreateContractValidator : AbstractValidator<TimetrackingConnectCreateContract>
+[InjectAs(typeof(IValidator<OAuthConnectCreateContract>))]
+public class OAuthConnectCreateContractValidator : AbstractValidator<OAuthConnectCreateContract>
 {
-    public TimetrackingConnectCreateContractValidator()
+    public OAuthConnectCreateContractValidator()
     {
         RuleFor(x => x.Code).NotEmpty();
         RuleFor(x => x.State).NotEmpty();

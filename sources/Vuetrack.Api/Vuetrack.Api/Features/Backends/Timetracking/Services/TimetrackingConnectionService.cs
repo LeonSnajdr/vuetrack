@@ -1,65 +1,49 @@
+using System.Globalization;
 using ErrorOr;
 using Samhammer.DependencyInjection.Attributes;
-using Vuetrack.Api.Features.Backends.Timetracking.Contracts;
 using Vuetrack.Backends.Abstractions;
 using Vuetrack.Backends.Timetracking;
 using Vuetrack.Backends.Timetracking.Api;
 using Vuetrack.Backends.Timetracking.Connection;
 using Vuetrack.Backends.Timetracking.OAuth;
-using Vuetrack.Framework.Errors;
 using Vuetrack.OAuth;
+using Vuetrack.OAuth.Contractrs;
 
 namespace Vuetrack.Api.Features.Backends.Timetracking.Services;
 
 [Inject]
 public class TimetrackingConnectionService(
     IBackendRegistry registry,
+    IBackendResolver resolver,
     ITimetrackingOAuthApiClient oauthClient,
     ITimetrackingApiClient apiClient,
     ITimetrackingConnectionRepository repository,
-    ISecretProtector secretProtector,
+    ITimetrackingSecretProtector secretProtector,
     ITimetrackingConnectionAccessor accessor,
     ITimetrackingConnectionContextFactory contextFactory,
-    ILogger<TimetrackingConnectionService> logger) : ITimetrackingConnectionService
+    ILogger<TimetrackingConnectionService> logger)
+    : OAuthConnectionServiceBase<TimetrackingConnectionModel>(oauthClient, repository, contextFactory, secretProtector, logger), ITimetrackingConnectionService
 {
     private const string AuthMode = "oauth2-3lo";
 
     private IBackendRegistry Registry { get; } = registry;
 
-    private ITimetrackingOAuthApiClient OAuthClient { get; } = oauthClient;
+    private IBackendResolver Resolver { get; } = resolver;
 
     private ITimetrackingApiClient ApiClient { get; } = apiClient;
 
     private ITimetrackingConnectionRepository Repository { get; } = repository;
 
-    private ISecretProtector SecretProtector { get; } = secretProtector;
-
     private ITimetrackingConnectionAccessor Accessor { get; } = accessor;
 
-    private ITimetrackingConnectionContextFactory ContextFactory { get; } = contextFactory;
+    protected override string ProviderName => nameof(BackendKey.Timetracking);
 
-    private ILogger<TimetrackingConnectionService> Logger { get; } = logger;
-
-    public TimetrackingAuthorizeContract BuildAuthorization(string redirectUri)
-    {
-        var state = Guid.NewGuid().ToString("N");
-        var url = OAuthClient.BuildAuthorizationUrl(state, redirectUri);
-        return new TimetrackingAuthorizeContract(url, state);
-    }
-
-    public async Task<TimetrackingStatusContract> GetStatusAsync(string userId)
-    {
-        var connection = await Repository.GetByUserId(userId);
-        return new TimetrackingStatusContract(connection is { Enabled: true });
-    }
-
-    public async Task<ErrorOr<TimetrackingConnectContract>> ConnectAsync(string userId, TimetrackingConnectCreateContract request, CancellationToken cancellationToken)
+    public async Task<ErrorOr<OAuthConnectContract>> ConnectAsync(string userId, OAuthConnectCreateContract request, CancellationToken cancellationToken)
     {
         try
         {
             var token = await OAuthClient.ExchangeCodeAsync(request.Code, request.RedirectUri, cancellationToken);
 
-            // Publish the freshly-minted access token so the api client can resolve the profile + validate.
             Accessor.Current = new TimetrackingConnectionContainer
             {
                 UserId = userId,
@@ -67,7 +51,7 @@ public class TimetrackingConnectionService(
             };
 
             var profile = await ApiClient.GetProfileAsync(cancellationToken);
-            var externalUserId = profile.Id.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var externalUserId = profile.Id.ToString(CultureInfo.InvariantCulture);
 
             Accessor.Current = Accessor.Current with { ExternalUserId = externalUserId };
 
@@ -80,7 +64,7 @@ public class TimetrackingConnectionService(
             }
 
             await PersistConnection(userId, externalUserId, token);
-            return new TimetrackingConnectContract(true);
+            return new OAuthConnectContract(true);
         }
         catch (Exception ex)
         {
@@ -89,26 +73,33 @@ public class TimetrackingConnectionService(
         }
     }
 
-    public async Task DisconnectAsync(string userId)
+    protected override async Task<bool> CheckHealthAsync(string userId, CancellationToken cancellationToken)
     {
-        var connection = await Repository.GetByUserId(userId);
-        if (connection is not null)
+        try
         {
-            await Repository.Delete(connection);
-        }
+            var resolved = await Resolver.ResolveConnectedAsync(TimetrackingBackend.Key, userId, cancellationToken);
+            if (resolved.IsError)
+            {
+                return false;
+            }
 
-        ContextFactory.Evict(userId);
+            var validation = await resolved.Value.ValidateAsync(cancellationToken);
+            return !validation.IsError;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            Logger.LogWarning(ex, "Timetracking status health check failed for user {UserId}", userId);
+            return false;
+        }
     }
 
     private async Task PersistConnection(string userId, string externalUserId, OAuthTokenResponse token)
     {
-        if (string.IsNullOrEmpty(token.RefreshToken))
+        var encryptedRefreshToken = ProtectRefreshToken(token);
+        if (encryptedRefreshToken is null)
         {
-            Logger.LogWarning("Timetracking token response had no refresh token; connection not persisted");
             return;
         }
-
-        var encryptedRefreshToken = SecretProtector.Protect(token.RefreshToken);
 
         await Repository.UpsertConnectionAsync(userId, AuthMode, encryptedRefreshToken, externalUserId);
     }
@@ -116,11 +107,11 @@ public class TimetrackingConnectionService(
 
 public interface ITimetrackingConnectionService
 {
-    TimetrackingAuthorizeContract BuildAuthorization(string redirectUri);
+    OAuthAuthorizeContract BuildAuthorization(string redirectUri);
 
-    Task<TimetrackingStatusContract> GetStatusAsync(string userId);
+    Task<OAuthStatusContract> GetStatusAsync(string userId, CancellationToken cancellationToken);
 
-    Task<ErrorOr<TimetrackingConnectContract>> ConnectAsync(string userId, TimetrackingConnectCreateContract request, CancellationToken cancellationToken);
+    Task<ErrorOr<OAuthConnectContract>> ConnectAsync(string userId, OAuthConnectCreateContract request, CancellationToken cancellationToken);
 
     Task DisconnectAsync(string userId);
 }

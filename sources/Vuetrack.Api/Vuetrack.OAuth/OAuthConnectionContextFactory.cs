@@ -2,12 +2,25 @@ using ZiggyCreatures.Caching.Fusion;
 
 namespace Vuetrack.OAuth;
 
-public abstract class OAuthConnectionContextFactory<TContainer, TConnection>(IFusionCache cache) where TContainer : class where TConnection : OAuthConnectionModel
+public abstract class OAuthConnectionContextFactory<TContainer, TConnection>(
+    IFusionCache cache,
+    IOAuthConnectionRepository<TConnection> repository,
+    IOAuthApiClientBase oauthClient,
+    IOAuthSecretProtectorBase secretProtector)
+    : IOAuthConnectionContextFactory<TContainer>
+    where TContainer : class
+    where TConnection : OAuthConnectionModel
 {
     // Refresh a little early so a token never expires mid-request.
     private static readonly TimeSpan ExpiryBuffer = TimeSpan.FromSeconds(60);
 
     private IFusionCache Cache { get; } = cache;
+
+    private IOAuthConnectionRepository<TConnection> Repository { get; } = repository;
+
+    private IOAuthApiClientBase OAuthClient { get; } = oauthClient;
+
+    private IOAuthSecretProtectorBase SecretProtector { get; } = secretProtector;
 
     protected abstract string CacheKeyPrefix { get; }
 
@@ -20,19 +33,19 @@ public abstract class OAuthConnectionContextFactory<TContainer, TConnection>(IFu
             return cached.Value;
         }
 
-        var connection = await LoadAsync(userId, cancellationToken);
+        var connection = await Repository.GetByUserId(userId);
         if (connection is not { Enabled: true })
         {
             return null;
         }
 
-        var refreshToken = Unprotect(connection.EncryptedRefreshToken);
-        var token = await RefreshAsync(refreshToken, cancellationToken);
+        var refreshToken = SecretProtector.Unprotect(connection.EncryptedRefreshToken);
+        var token = await OAuthClient.RefreshAsync(refreshToken, cancellationToken);
 
         if (!string.IsNullOrEmpty(token.RefreshToken) && token.RefreshToken != refreshToken)
         {
-            var rotatedRefreshToken = Protect(token.RefreshToken);
-            await PersistRotatedTokenAsync(userId, rotatedRefreshToken);
+            var rotatedRefreshToken = SecretProtector.Protect(token.RefreshToken);
+            await Repository.SetRefreshTokenAsync(userId, rotatedRefreshToken);
         }
 
         var resolved = BuildContainer(userId, token.AccessToken, connection);
@@ -48,16 +61,6 @@ public abstract class OAuthConnectionContextFactory<TContainer, TConnection>(IFu
     }
 
     public void Evict(string userId) => Cache.Remove(CacheKey(userId));
-
-    protected abstract Task<TConnection?> LoadAsync(string userId, CancellationToken cancellationToken);
-
-    protected abstract Task<OAuthTokenResponse> RefreshAsync(string refreshToken, CancellationToken cancellationToken);
-
-    protected abstract Task PersistRotatedTokenAsync(string userId, string encryptedRefreshToken);
-
-    protected abstract string Protect(string plaintext);
-
-    protected abstract string Unprotect(string ciphertext);
 
     protected abstract TContainer BuildContainer(string userId, string accessToken, TConnection connection);
 

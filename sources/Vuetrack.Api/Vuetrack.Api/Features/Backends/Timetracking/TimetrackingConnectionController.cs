@@ -1,10 +1,11 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Vuetrack.Api.Features.Backends.Timetracking.Contracts;
 using Vuetrack.Api.Features.Backends.Timetracking.Services;
 using Vuetrack.Api.Infrastructure.Authentication;
 using Vuetrack.Api.Infrastructure.Validation;
+using Vuetrack.OAuth;
+using Vuetrack.OAuth.Contractrs;
 
 namespace Vuetrack.Api.Features.Backends.Timetracking;
 
@@ -29,15 +30,15 @@ public class TimetrackingConnectionController(ITimetrackingConnectionService con
     }
 
     [HttpGet("status")]
-    public async Task<IActionResult> Status()
+    public async Task<IActionResult> Status(CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
 
-        return Ok(await ConnectionService.GetStatusAsync(userId));
+        return Ok(await ConnectionService.GetStatusAsync(userId, cancellationToken));
     }
 
     [HttpPost("callback")]
-    public async Task<IActionResult> Callback([FromBody] TimetrackingConnectCreateContract request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Callback([FromBody] OAuthConnectCreateContract request, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
 

@@ -26,11 +26,7 @@ public class TimetrackingConnectionRepository(ILogger<BaseRepositoryMongo<Timetr
     }
 }
 
-public interface ITimetrackingConnectionRepository : IBaseRepositoryMongo<TimetrackingConnectionModel>
+public interface ITimetrackingConnectionRepository : IOAuthConnectionRepository<TimetrackingConnectionModel>
 {
-    Task<TimetrackingConnectionModel?> GetByUserId(string userId);
-
     Task UpsertConnectionAsync(string userId, string authMode, string encryptedRefreshToken, string externalUserId);
-
-    Task SetRefreshTokenAsync(string userId, string encryptedRefreshToken);
 }
