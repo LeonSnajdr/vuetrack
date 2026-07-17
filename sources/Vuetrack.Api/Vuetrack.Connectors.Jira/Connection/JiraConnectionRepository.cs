@@ -8,8 +8,7 @@ using Vuetrack.OAuth;
 namespace Vuetrack.Connectors.Jira.Connection;
 
 [Inject]
-public class JiraConnectionRepository(ILogger<BaseRepositoryMongo<JiraConnectionModel>> logger, IMongoDbConnector connector)
-    : OAuthConnectionRepository<JiraConnectionModel>(logger, connector), IJiraConnectionRepository
+public class JiraConnectionRepository(ILogger<BaseRepositoryMongo<JiraConnectionModel>> logger, IMongoDbConnector connector) : OAuthConnectionRepository<JiraConnectionModel>(logger, connector), IJiraConnectionRepository
 {
     public async Task UpsertConnectionAsync(string userId, string siteUrl, string cloudId, string authMode, string encryptedRefreshToken)
     {

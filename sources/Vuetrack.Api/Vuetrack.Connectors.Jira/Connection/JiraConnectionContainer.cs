@@ -1,10 +1,5 @@
 namespace Vuetrack.Connectors.Jira.Connection;
 
-/// <summary>
-/// The resolved Jira connection for the current operation: the live access token plus the
-/// site identifiers needed to address the Jira Cloud API. Held ambiently via
-/// <see cref="IJiraConnectionAccessor"/> rather than threaded through method calls.
-/// </summary>
 public sealed record JiraConnectionContainer
 {
     public required string UserId { get; init; }

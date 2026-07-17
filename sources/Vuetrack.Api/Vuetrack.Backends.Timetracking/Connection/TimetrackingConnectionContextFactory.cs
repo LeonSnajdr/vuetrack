@@ -6,13 +6,7 @@ using ZiggyCreatures.Caching.Fusion;
 namespace Vuetrack.Backends.Timetracking.Connection;
 
 [Inject]
-public class TimetrackingConnectionContextFactory(
-    ITimetrackingConnectionRepository repository,
-    ITimetrackingOAuthApiClient oauthClient,
-    ISecretProtector secretProtector,
-    ITimetrackingConnectionAccessor accessor,
-    IFusionCache cache)
-    : OAuthConnectionContextFactory<TimetrackingConnectionContainer, TimetrackingConnectionModel>(cache), ITimetrackingConnectionContextFactory
+public class TimetrackingConnectionContextFactory(ITimetrackingConnectionRepository repository, ITimetrackingOAuthApiClient oauthClient, ISecretProtector secretProtector, ITimetrackingConnectionAccessor accessor, IFusionCache cache) : OAuthConnectionContextFactory<TimetrackingConnectionContainer, TimetrackingConnectionModel>(cache), ITimetrackingConnectionContextFactory
 {
     private ITimetrackingConnectionRepository Repository { get; } = repository;
 

@@ -6,13 +6,7 @@ using ZiggyCreatures.Caching.Fusion;
 namespace Vuetrack.Connectors.Jira.Connection;
 
 [Inject]
-public class JiraConnectionContextFactory(
-    IJiraConnectionRepository repository,
-    IJiraOAuthApiClient oauthClient,
-    ISecretProtector secretProtector,
-    IJiraConnectionAccessor accessor,
-    IFusionCache cache)
-    : OAuthConnectionContextFactory<JiraConnectionContainer, JiraConnectionModel>(cache), IJiraConnectionContextFactory
+public class JiraConnectionContextFactory(IJiraConnectionRepository repository, IJiraOAuthApiClient oauthClient, ISecretProtector secretProtector, IJiraConnectionAccessor accessor, IFusionCache cache) : OAuthConnectionContextFactory<JiraConnectionContainer, JiraConnectionModel>(cache), IJiraConnectionContextFactory
 {
     private IJiraConnectionRepository Repository { get; } = repository;
 

@@ -8,8 +8,7 @@ using Vuetrack.OAuth;
 namespace Vuetrack.Backends.Timetracking.Connection;
 
 [Inject]
-public class TimetrackingConnectionRepository(ILogger<BaseRepositoryMongo<TimetrackingConnectionModel>> logger, IMongoDbConnector connector)
-    : OAuthConnectionRepository<TimetrackingConnectionModel>(logger, connector), ITimetrackingConnectionRepository
+public class TimetrackingConnectionRepository(ILogger<BaseRepositoryMongo<TimetrackingConnectionModel>> logger, IMongoDbConnector connector) : OAuthConnectionRepository<TimetrackingConnectionModel>(logger, connector), ITimetrackingConnectionRepository
 {
     public async Task UpsertConnectionAsync(string userId, string authMode, string encryptedRefreshToken, string externalUserId)
     {

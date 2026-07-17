@@ -6,7 +6,7 @@ namespace Vuetrack.Connectors.Jira.Connection;
 [MongoCollection]
 public class JiraConnectionModel : OAuthConnectionModel
 {
-    public required string SiteUrl { get; set; }
+    public required string SiteUrl { get; init; }
 
-    public required string CloudId { get; set; }
+    public required string CloudId { get; init; }
 }

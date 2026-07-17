@@ -2,16 +2,7 @@ using ZiggyCreatures.Caching.Fusion;
 
 namespace Vuetrack.OAuth;
 
-/// <summary>
-/// Shared per-user OAuth2 3LO runtime flow: serve a cached access token, otherwise load the stored
-/// connection, refresh the access token, rotate + persist the refresh token when it changes, cache the
-/// result until shortly before expiry and publish it to the ambient accessor.
-/// Concrete platforms wire their repository, OAuth client, secret protector, accessor and container
-/// through the abstract members.
-/// </summary>
-public abstract class OAuthConnectionContextFactory<TContainer, TConnection>(IFusionCache cache)
-    where TContainer : class
-    where TConnection : OAuthConnectionModel
+public abstract class OAuthConnectionContextFactory<TContainer, TConnection>(IFusionCache cache) where TContainer : class where TConnection : OAuthConnectionModel
 {
     // Refresh a little early so a token never expires mid-request.
     private static readonly TimeSpan ExpiryBuffer = TimeSpan.FromSeconds(60);
