@@ -211,7 +211,7 @@ public class SuggestionServiceTests
         {
             ListResult = ((IReadOnlyList<TimeEntryContract>)new List<TimeEntryContract>
             {
-                new() { UserId = "user-1", TaskId = "J-1", Project = new ProjectContract("p", "P"), Activity = new ActivityContract("a", "A"), DateStarted = At(8, 0), DateEnded = At(8, 30) },
+                new() { UserId = "user-1", TaskId = "J-1", Project = new ProjectContract("p", "P"), Activity = new ActivityContract("a", "A"), DateStarted = At(8, 30), DateEnded = At(9, 5) },
             }).ToErrorOr(),
         };
         var repository = new FakeSuggestionRepository();
@@ -222,6 +222,60 @@ public class SuggestionServiceTests
         result.IsError.Should().BeFalse();
         result.Value.Should().BeEmpty();
         repository.Items.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GenerateAsync_ManualEntryOnDifferentDayInRange_DoesNotSkipSuggestion()
+    {
+        var thursdayStart = BaseDate.AddDays(3) + TimeSpan.FromHours(9);
+        var thursdayEnd = BaseDate.AddDays(3) + TimeSpan.FromHours(9.5);
+
+        var registry = new FakeConnectorRegistry();
+        registry.Add(new FakeConnector(Descriptor(ConnectorKey.Jira), (_, _) => Signals(
+        [
+            Signal(ConnectorKey.Jira, "J-1:worklog:2", "J-1", thursdayStart, thursdayEnd),
+        ])));
+        var timeEntries = new StubTimeEntryService
+        {
+            ListResult = ((IReadOnlyList<TimeEntryContract>)new List<TimeEntryContract>
+            {
+                new() { UserId = "user-1", TaskId = "J-1", Project = new ProjectContract("p", "P"), Activity = new ActivityContract("a", "A"), DateStarted = At(8, 0), DateEnded = At(8, 30) },
+            }).ToErrorOr(),
+        };
+        var repository = new FakeSuggestionRepository();
+        var service = CreateService(registry, [new FakeConnectorContextInitializer(ConnectorKey.Jira, true)], repository, timeEntries);
+
+        var request = new GenerateSuggestionsRequestContract { From = BaseDate, To = BaseDate.AddDays(4) };
+        var result = await service.GenerateAsync("user-1", request, CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Should().HaveCount(1);
+        repository.Items.Should().ContainSingle(x => x.TaskId == "J-1" && x.DateStarted == thursdayStart);
+    }
+
+    [Fact]
+    public async Task GenerateAsync_ManualEntrySameDayNonOverlappingTime_DoesNotSkipSuggestion()
+    {
+        var registry = new FakeConnectorRegistry();
+        registry.Add(new FakeConnector(Descriptor(ConnectorKey.Jira), (_, _) => Signals(
+        [
+            Signal(ConnectorKey.Jira, "J-1:worklog:2", "J-1", At(17, 0), At(18, 0)),
+        ])));
+        var timeEntries = new StubTimeEntryService
+        {
+            ListResult = ((IReadOnlyList<TimeEntryContract>)new List<TimeEntryContract>
+            {
+                new() { UserId = "user-1", TaskId = "J-1", Project = new ProjectContract("p", "P"), Activity = new ActivityContract("a", "A"), DateStarted = At(13, 0), DateEnded = At(14, 0) },
+            }).ToErrorOr(),
+        };
+        var repository = new FakeSuggestionRepository();
+        var service = CreateService(registry, [new FakeConnectorContextInitializer(ConnectorKey.Jira, true)], repository, timeEntries);
+
+        var result = await service.GenerateAsync("user-1", Request(), CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Should().HaveCount(1);
+        repository.Items.Should().ContainSingle(x => x.TaskId == "J-1" && x.DateStarted == At(17, 0));
     }
 
     [Fact]

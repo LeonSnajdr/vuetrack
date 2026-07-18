@@ -135,10 +135,10 @@ public class SuggestionService(IConnectorRegistry registry, IConnectorResolver r
 
     private async Task<ErrorOr<IReadOnlyList<SuggestionContract>>> BuildAndInsertAsync(string userId, DateTime from, DateTime to, IReadOnlyList<ActivitySignal> signals, CancellationToken cancellationToken)
     {
-        var existingTaskIds = await GetExistingTaskIdsAsync(userId, from, to, cancellationToken);
-        if (existingTaskIds.IsError)
+        var existingTaskEntries = await GetExistingTaskEntriesAsync(userId, from, to, cancellationToken);
+        if (existingTaskEntries.IsError)
         {
-            return existingTaskIds.Errors;
+            return existingTaskEntries.Errors;
         }
 
         var built = await Engine.BuildAsync(signals, from, to, cancellationToken);
@@ -149,7 +149,7 @@ public class SuggestionService(IConnectorRegistry registry, IConnectorResolver r
         }
 
         var suggestions = built.Value;
-        var existingIds = existingTaskIds.Value;
+        var existingEntries = existingTaskEntries.Value;
         var now = DateTime.UtcNow;
         var toInsert = new List<SuggestionModel>();
 
@@ -159,8 +159,9 @@ public class SuggestionService(IConnectorRegistry registry, IConnectorResolver r
 
         foreach (var suggestion in suggestions)
         {
-            // TODO: Check For whole week? should be just for this day
-            var taskAlreadyExists = suggestion.TaskId is not null && existingIds.Contains(suggestion.TaskId);
+            var taskAlreadyExists = suggestion.TaskId is not null
+                && existingEntries.TryGetValue(suggestion.TaskId, out var existingRanges)
+                && existingRanges.Any(r => r.Start < suggestion.DateEnded && suggestion.DateStarted < r.End);
             if (taskAlreadyExists)
             {
                 continue;
@@ -182,7 +183,7 @@ public class SuggestionService(IConnectorRegistry registry, IConnectorResolver r
         return contracts.ToErrorOr();
     }
 
-    private async Task<ErrorOr<HashSet<string>>> GetExistingTaskIdsAsync(string userId, DateTime from, DateTime to, CancellationToken cancellationToken)
+    private async Task<ErrorOr<Dictionary<string, List<(DateTime Start, DateTime End)>>>> GetExistingTaskEntriesAsync(string userId, DateTime from, DateTime to, CancellationToken cancellationToken)
     {
         var entries = await TimeEntryService.ListAsync(userId, from, to, cancellationToken);
         if (entries.IsError)
@@ -191,13 +192,12 @@ public class SuggestionService(IConnectorRegistry registry, IConnectorResolver r
             return entries.Errors;
         }
 
-        var taskIds = entries.Value
-            .Select(x => x.TaskId)
-            .OfType<string>()
-            .Where(x => x.Length > 0)
-            .ToHashSet(StringComparer.Ordinal);
+        var byTask = entries.Value
+            .Where(x => x.TaskId is { Length: > 0 })
+            .GroupBy(x => x.TaskId!, StringComparer.Ordinal)
+            .ToDictionary(g => g.Key, g => g.Select(x => (x.DateStarted, x.DateEnded)).ToList(), StringComparer.Ordinal);
 
-        return taskIds;
+        return byTask;
     }
 
     private async Task<ErrorOr<IReadOnlyList<ActivitySignal>>> FetchFromConnectorAsync(ConnectorDescriptor descriptor, string userId, DateTime from, DateTime to, CancellationToken cancellationToken)
