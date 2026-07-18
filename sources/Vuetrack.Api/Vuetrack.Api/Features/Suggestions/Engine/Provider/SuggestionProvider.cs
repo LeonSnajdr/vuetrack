@@ -92,7 +92,7 @@ public sealed class SuggestionProvider : ISuggestionProvider
     {
         var schema = BinaryData.FromString(CandidatesSchema);
         var format = ChatResponseFormat.CreateJsonSchemaFormat("suggestion_candidates", schema, jsonSchemaIsStrict: true);
-        return new ChatCompletionOptions { ResponseFormat = format, MaxOutputTokenCount = options.MaxOutputTokens };
+        return new ChatCompletionOptions { ResponseFormat = format };
     }
 
     private static ChatClient BuildChatClient(ProviderOpenAiOptions options)

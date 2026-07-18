@@ -14,11 +14,6 @@ public class JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor access
 {
     private static readonly JsonSerializerOptions JsonOptions = BuildJsonOptions();
 
-    // Fields whose changelog transitions we care about; bulkfetch allows up to 10 field ids.
-    private static readonly string[] ChangelogFieldIds = ["status", "summary", "description", "priority", "assignee", "resolution", "parent", "labels"];
-
-    private const string SearchFields = "summary,issuetype,status,project,parent,labels,components,updated";
-
     private HttpClient HttpClient { get; } = httpClient;
 
     private IJiraConnectionAccessor Accessor { get; } = accessor;
@@ -35,33 +30,19 @@ public class JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor access
 
     public async Task<IReadOnlyList<JiraSearchIssueResponse>> SearchCandidateIssuesAsync(DateTime from, DateTime to, CancellationToken cancellationToken)
     {
-        var jql = $"(worklogAuthor = currentUser() OR assignee was currentUser() OR status changed by currentUser()) AND updated >= \"{IsoDateTime(from)}\" AND updated <= \"{IsoDateTime(to)}\" ORDER BY updated ASC";
+        var fromIso = IsoDateTime(from);
+        var toIso = IsoDateTime(to);
+        var jql = $"(worklogAuthor = currentUser() OR assignee was currentUser() OR status changed by currentUser()) AND updated >= \"{fromIso}\" AND updated <= \"{toIso}\" ORDER BY updated ASC";
 
-        var results = new List<JiraSearchIssueResponse>();
-        string? pageToken = null;
-
-        for (var page = 0; page < Options.Value.MaxPages; page++)
+        var request = new JiraSearchRequest
         {
-            var path = $"search/jql?jql={Uri.EscapeDataString(jql)}&fields={Uri.EscapeDataString(SearchFields)}&maxResults={Options.Value.PageSize}";
-            if (pageToken is not null)
-            {
-                path += $"&nextPageToken={Uri.EscapeDataString(pageToken)}";
-            }
+            Jql = jql,
+            Fields = ["summary", "issuetype", "status", "project", "parent", "labels", "components", "updated"],
+            MaxResults = 5000,
+        };
 
-            var response = await GetAsync<JiraSearchResponse>(path, cancellationToken);
-            if (response.Issues is { Count: > 0 })
-            {
-                results.AddRange(response.Issues);
-            }
-
-            pageToken = response.NextPageToken;
-            if (response.IsLast is true || string.IsNullOrEmpty(pageToken))
-            {
-                break;
-            }
-        }
-
-        return results;
+        var response = await PostAsync<JiraSearchResponse>("search/jql", request, cancellationToken);
+        return response.Issues ?? [];
     }
 
     public async Task<IReadOnlyList<JiraWorklogResponse>> GetWorklogsAsync(string issueKey, DateTime startedAfter, CancellationToken cancellationToken)
@@ -134,7 +115,7 @@ public class JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor access
             var request = new JiraBulkChangelogRequest
             {
                 IssueIdsOrKeys = issueIdsOrKeys,
-                FieldIds = ChangelogFieldIds,
+                FieldIds = ["status", "summary", "description", "priority", "assignee", "resolution", "parent", "labels"],
                 MaxResults = Options.Value.PageSize,
                 NextPageToken = pageToken,
             };

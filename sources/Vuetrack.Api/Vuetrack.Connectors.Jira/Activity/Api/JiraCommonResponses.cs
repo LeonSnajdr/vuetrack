@@ -80,14 +80,20 @@ public sealed record JiraSearchIssueResponse
     public JiraIssueFieldsResponse? Fields { get; init; }
 }
 
+public sealed record JiraSearchRequest
+{
+    [JsonPropertyName("jql")]
+    public required string Jql { get; init; }
+
+    [JsonPropertyName("fields")]
+    public required IReadOnlyList<string> Fields { get; init; }
+
+    [JsonPropertyName("maxResults")]
+    public required int MaxResults { get; init; }
+}
+
 public sealed record JiraSearchResponse
 {
     [JsonPropertyName("issues")]
     public IReadOnlyList<JiraSearchIssueResponse>? Issues { get; init; }
-
-    [JsonPropertyName("nextPageToken")]
-    public string? NextPageToken { get; init; }
-
-    [JsonPropertyName("isLast")]
-    public bool? IsLast { get; init; }
 }

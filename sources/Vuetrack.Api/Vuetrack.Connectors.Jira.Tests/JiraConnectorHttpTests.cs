@@ -281,6 +281,10 @@ public class JiraConnectorHttpTests
 
             if (uri.Contains("/search/jql"))
             {
+                request.Method.Should().Be(HttpMethod.Post);
+                var body = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
+                body.Should().Contain("\"maxResults\":5000");
+                body.Should().Contain("\"fields\":[");
                 return StubHttpMessageHandler.Json(HttpStatusCode.OK, search);
             }
 
