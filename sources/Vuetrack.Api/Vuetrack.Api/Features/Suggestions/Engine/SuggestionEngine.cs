@@ -15,8 +15,8 @@ public sealed class SuggestionEngine(ISuggestionProvider provider) : ISuggestion
         var deduplicated = Deduplicate(signals);
         if (deduplicated.Count == 0)
         {
-            IReadOnlyList<SuggestionEngineResult> none = [];
-            return none.ToErrorOr();
+            IReadOnlyList<SuggestionEngineResult> empty = [];
+            return empty.ToErrorOr();
         }
 
         var context = BuildContext(deduplicated, from, to);
@@ -44,8 +44,7 @@ public sealed class SuggestionEngine(ISuggestionProvider provider) : ISuggestion
             .ThenBy(s => s.Sources.Count > 0 ? s.Sources[0].ExternalId : string.Empty, StringComparer.Ordinal)
             .ToList();
 
-        IReadOnlyList<SuggestionEngineResult> result = ordered;
-        return result.ToErrorOr();
+        return ordered;
     }
 
     private static List<ActivitySignal> Deduplicate(IReadOnlyList<ActivitySignal> signals)

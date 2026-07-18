@@ -1,4 +1,6 @@
+using System.Collections.Concurrent;
 using ErrorOr;
+using Microsoft.Extensions.Options;
 using Samhammer.DependencyInjection.Attributes;
 using Vuetrack.Connectors.Abstractions;
 using Vuetrack.Connectors.Jira.Activity;
@@ -8,13 +10,15 @@ using Vuetrack.Connectors.Jira.Connection;
 namespace Vuetrack.Connectors.Jira;
 
 [InjectAs(typeof(IConnector))]
-public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor accessor) : IConnector
+public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor accessor, IOptions<JiraOptions> options) : IConnector
 {
     public const ConnectorKey Key = ConnectorKey.Jira;
 
     private IJiraApiClient Client { get; } = client;
 
     private IJiraConnectionAccessor Accessor { get; } = accessor;
+
+    private IOptions<JiraOptions> Options { get; } = options;
 
     public ConnectorDescriptor Descriptor { get; } = new()
     {
@@ -56,13 +60,17 @@ public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor access
                 .ToList();
 
             // Keyed by ExternalId so overlapping fetch windows collapse deterministically before the engine.
-            var signals = new Dictionary<string, ActivitySignal>(StringComparer.Ordinal);
+            var signals = new ConcurrentDictionary<string, ActivitySignal>(StringComparer.Ordinal);
 
-            foreach (var context in contexts)
+            var maxConcurrency = Math.Max(1, Options.Value.MaxConcurrency);
+            var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = maxConcurrency, CancellationToken = cancellationToken };
+
+            await Parallel.ForEachAsync(contexts, parallelOptions, async (context, ct) =>
             {
-                await AddWorklogSignalsAsync(signals, context, accountId, siteUrl, container, cancellationToken);
-                await AddCommentSignalsAsync(signals, context, accountId, siteUrl, container, cancellationToken);
-            }
+                var worklogTask = AddWorklogSignalsAsync(signals, context, accountId, siteUrl, container, ct);
+                var commentTask = AddCommentSignalsAsync(signals, context, accountId, siteUrl, container, ct);
+                await Task.WhenAll(worklogTask, commentTask);
+            });
 
             await AddChangeSignalsAsync(signals, contexts, accountId, siteUrl, container, cancellationToken);
 
@@ -76,7 +84,7 @@ public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor access
         }
     }
 
-    private async Task AddWorklogSignalsAsync(Dictionary<string, ActivitySignal> signals, JiraIssueContext context, string accountId, string siteUrl, ActivityFetchContainer window, CancellationToken cancellationToken)
+    private async Task AddWorklogSignalsAsync(ConcurrentDictionary<string, ActivitySignal> signals, JiraIssueContext context, string accountId, string siteUrl, ActivityFetchContainer window, CancellationToken cancellationToken)
     {
         var worklogs = await Client.GetWorklogsAsync(context.Key, window.From, cancellationToken);
 
@@ -103,7 +111,7 @@ public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor access
         }
     }
 
-    private async Task AddCommentSignalsAsync(Dictionary<string, ActivitySignal> signals, JiraIssueContext context, string accountId, string siteUrl, ActivityFetchContainer window, CancellationToken cancellationToken)
+    private async Task AddCommentSignalsAsync(ConcurrentDictionary<string, ActivitySignal> signals, JiraIssueContext context, string accountId, string siteUrl, ActivityFetchContainer window, CancellationToken cancellationToken)
     {
         var comments = await Client.GetCommentsAsync(context.Key, cancellationToken);
 
@@ -130,7 +138,7 @@ public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor access
         }
     }
 
-    private async Task AddChangeSignalsAsync(Dictionary<string, ActivitySignal> signals, IReadOnlyList<JiraIssueContext> contexts, string accountId, string siteUrl, ActivityFetchContainer window, CancellationToken cancellationToken)
+    private async Task AddChangeSignalsAsync(ConcurrentDictionary<string, ActivitySignal> signals, IReadOnlyList<JiraIssueContext> contexts, string accountId, string siteUrl, ActivityFetchContainer window, CancellationToken cancellationToken)
     {
         var contextById = new Dictionary<string, JiraIssueContext>(StringComparer.Ordinal);
         var issueIds = new List<string>();
@@ -172,7 +180,7 @@ public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor access
         }
     }
 
-    private static void AddHistorySignals(Dictionary<string, ActivitySignal> signals, JiraIssueContext context, JiraChangelogResponse history, string accountId, string siteUrl, ActivityFetchContainer window)
+    private static void AddHistorySignals(ConcurrentDictionary<string, ActivitySignal> signals, JiraIssueContext context, JiraChangelogResponse history, string accountId, string siteUrl, ActivityFetchContainer window)
     {
         if (!IsAuthor(history.Author, accountId) || string.IsNullOrEmpty(history.Id) || history.Items is null)
         {

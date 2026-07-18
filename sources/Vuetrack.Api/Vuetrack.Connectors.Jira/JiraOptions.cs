@@ -11,4 +11,6 @@ public class JiraOptions : OAuthOptions
     public required int PageSize { get; init; }
 
     public required int MaxPages { get; init; }
+
+    public required int MaxConcurrency { get; init; }
 }

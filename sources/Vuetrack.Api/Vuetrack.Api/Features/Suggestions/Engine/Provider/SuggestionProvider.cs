@@ -64,7 +64,7 @@ public sealed class SuggestionProvider : ISuggestionProvider
         var userMessage = ChatMessage.CreateUserMessage(payload);
         List<ChatMessage> messages = [systemMessage, userMessage];
 
-        var completionOptions = BuildCompletionOptions();
+        var completionOptions = BuildCompletionOptions(Options);
 
         ChatCompletion completion;
         try
@@ -88,18 +88,18 @@ public sealed class SuggestionProvider : ISuggestionProvider
         return [];
     }
 
-    private static ChatCompletionOptions BuildCompletionOptions()
+    private static ChatCompletionOptions BuildCompletionOptions(ProviderOpenAiOptions options)
     {
         var schema = BinaryData.FromString(CandidatesSchema);
         var format = ChatResponseFormat.CreateJsonSchemaFormat("suggestion_candidates", schema, jsonSchemaIsStrict: true);
-        return new ChatCompletionOptions { ResponseFormat = format };
+        return new ChatCompletionOptions { ResponseFormat = format, MaxOutputTokenCount = options.MaxOutputTokens };
     }
 
     private static ChatClient BuildChatClient(ProviderOpenAiOptions options)
     {
         var credential = new ApiKeyCredential(options.ApiKey);
         var endpoint = new Uri(options.Endpoint);
-        var clientOptions = new OpenAIClientOptions { Endpoint = endpoint };
+        var clientOptions = new OpenAIClientOptions { Endpoint = endpoint, NetworkTimeout = TimeSpan.FromSeconds(60) };
         return new ChatClient(options.Model, credential, clientOptions);
     }
 

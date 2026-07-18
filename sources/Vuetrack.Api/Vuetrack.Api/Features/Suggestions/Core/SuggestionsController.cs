@@ -29,7 +29,9 @@ public class SuggestionsController(ISuggestionService suggestionService) : Contr
     {
         var userId = User.GetUserId();
 
-        return Ok(await SuggestionService.GenerateAsync(userId, request, cancellationToken));
+        var result = await SuggestionService.GenerateAsync(userId, request, cancellationToken);
+
+        return this.ToActionResult(result);
     }
 
     [HttpPost("reload")]
@@ -37,7 +39,9 @@ public class SuggestionsController(ISuggestionService suggestionService) : Contr
     {
         var userId = User.GetUserId();
 
-        return Ok(await SuggestionService.ReloadAsync(userId, request, cancellationToken));
+        var result = await SuggestionService.ReloadAsync(userId, request, cancellationToken);
+
+        return this.ToActionResult(result);
     }
 
     [HttpPatch("{id}")]

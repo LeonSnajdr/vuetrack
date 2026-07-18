@@ -32,11 +32,19 @@ public class SuggestionRepository : BaseRepositoryMongo<SuggestionModel>, ISugge
         await Collection.InsertManyAsync(items);
     }
 
-    public async Task<bool> ExistsBySourceAsync(string userId, ConnectorKey connectorKey, string externalId)
+    public async Task<IReadOnlyList<SuggestionEvidenceModel>> GetSourcesByExternalIdsAsync(string userId, IReadOnlyList<string> externalIds)
     {
-        return await Collection
-            .Find(x => x.UserId == userId && x.Sources.Any(s => s.ConnectorKey == connectorKey && s.ExternalId == externalId))
-            .AnyAsync();
+        if (externalIds.Count == 0)
+        {
+            return [];
+        }
+
+        var sourceLists = await Collection
+            .Find(x => x.UserId == userId && x.Sources.Any(s => externalIds.Contains(s.ExternalId)))
+            .Project(x => x.Sources)
+            .ToListAsync();
+
+        return sourceLists.SelectMany(sources => sources).ToList();
     }
 
     public async Task<SuggestionModel?> UpdateFieldsAsync(string id, string userId, string? taskId, string? projectId, string? activityId, DateTime start, DateTime end, string? comment, DateTime updatedAt)
@@ -100,7 +108,7 @@ public interface ISuggestionRepository : IBaseRepositoryMongo<SuggestionModel>
 
     Task InsertManyAsync(IReadOnlyList<SuggestionModel> items);
 
-    Task<bool> ExistsBySourceAsync(string userId, ConnectorKey connectorKey, string externalId);
+    Task<IReadOnlyList<SuggestionEvidenceModel>> GetSourcesByExternalIdsAsync(string userId, IReadOnlyList<string> externalIds);
 
     Task<SuggestionModel?> UpdateFieldsAsync(string id, string userId, string? taskId, string? projectId, string? activityId, DateTime start, DateTime end, string? comment, DateTime updatedAt);
 

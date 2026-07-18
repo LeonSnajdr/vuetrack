@@ -322,6 +322,7 @@ public class JiraConnectorHttpTests
             Scopes = "read:jira-work read:jira-user offline_access",
             PageSize = 50,
             MaxPages = 20,
+            MaxConcurrency = 8,
         });
         var accessor = new JiraConnectionAccessor
         {
@@ -334,6 +335,6 @@ public class JiraConnectorHttpTests
             },
         };
         var client = new JiraApiClient(httpClient, accessor, options, NullLogger<JiraApiClient>.Instance);
-        return new JiraConnector(client, accessor);
+        return new JiraConnector(client, accessor, options);
     }
 }

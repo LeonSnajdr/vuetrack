@@ -39,7 +39,8 @@ public class SuggestionServiceTests
 
         var result = await service.GenerateAsync("user-1", Request(), CancellationToken.None);
 
-        result.Should().HaveCount(2);
+        result.IsError.Should().BeFalse();
+        result.Value.Should().HaveCount(2);
         repository.Items.Should().HaveCount(2);
     }
 
@@ -55,7 +56,8 @@ public class SuggestionServiceTests
 
         var result = await service.GenerateAsync("user-1", Request(), CancellationToken.None);
 
-        result.Should().BeEmpty();
+        result.IsError.Should().BeFalse();
+        result.Value.Should().BeEmpty();
         repository.Items.Should().BeEmpty();
     }
 
@@ -71,7 +73,8 @@ public class SuggestionServiceTests
 
         var result = await service.GenerateAsync("user-1", Request(), CancellationToken.None);
 
-        result.Should().BeEmpty();
+        result.IsError.Should().BeFalse();
+        result.Value.Should().BeEmpty();
     }
 
     [Fact]
@@ -89,14 +92,16 @@ public class SuggestionServiceTests
         var service = CreateService(registry, initializers, repository);
 
         var first = await service.GenerateAsync("user-1", Request(), CancellationToken.None);
-        first.Should().HaveCount(2);
+        first.IsError.Should().BeFalse();
+        first.Value.Should().HaveCount(2);
         repository.Items.Should().HaveCount(2);
 
         repository.Items[0].Status = SuggestionStatus.Edited;
 
         var second = await service.GenerateAsync("user-1", Request(), CancellationToken.None);
 
-        second.Should().BeEmpty();
+        second.IsError.Should().BeFalse();
+        second.Value.Should().BeEmpty();
         repository.Items.Should().HaveCount(2);
         repository.Items[0].Status.Should().Be(SuggestionStatus.Edited);
         repository.Items[1].Status.Should().Be(SuggestionStatus.Pending);
@@ -214,7 +219,8 @@ public class SuggestionServiceTests
 
         var result = await service.GenerateAsync("user-1", Request(), CancellationToken.None);
 
-        result.Should().BeEmpty();
+        result.IsError.Should().BeFalse();
+        result.Value.Should().BeEmpty();
         repository.Items.Should().BeEmpty();
     }
 
@@ -238,7 +244,8 @@ public class SuggestionServiceTests
 
         var result = await service.ReloadAsync("user-1", Request(), CancellationToken.None);
 
-        result.Should().ContainSingle();
+        result.IsError.Should().BeFalse();
+        result.Value.Should().ContainSingle();
         repository.Items.Should().HaveCount(2);
         repository.Items.Should().ContainSingle(x => x.Status == SuggestionStatus.Confirmed && x.TaskId == "J-2");
         repository.Items.Should().ContainSingle(x => x.Status == SuggestionStatus.Pending && x.TaskId == "J-1");
@@ -255,7 +262,8 @@ public class SuggestionServiceTests
 
         var result = await service.ReloadAsync("user-1", Request(), CancellationToken.None);
 
-        result.Should().BeEmpty();
+        result.IsError.Should().BeFalse();
+        result.Value.Should().BeEmpty();
         repository.Items.Should().ContainSingle(x => x.TaskId == "KEEP");
     }
 

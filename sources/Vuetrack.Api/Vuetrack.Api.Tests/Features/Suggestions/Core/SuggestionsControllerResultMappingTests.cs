@@ -73,7 +73,7 @@ public class SuggestionsControllerResultMappingTests
     public async Task Reload_ReturnsPersistedSuggestionList()
     {
         IReadOnlyList<SuggestionContract> expected = [Contract()];
-        var controller = CreateController(new StubSuggestionService { OnReload = (_, _, _) => Task.FromResult(expected) });
+        var controller = CreateController(new StubSuggestionService { OnReload = (_, _, _) => Task.FromResult<ErrorOr<IReadOnlyList<SuggestionContract>>>(expected.ToErrorOr()) });
 
         var result = await controller.Reload(new GenerateSuggestionsRequestContract { From = DateTime.UnixEpoch, To = DateTime.UnixEpoch.AddDays(1) }, CancellationToken.None);
 

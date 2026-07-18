@@ -1,18 +1,20 @@
 using Vuetrack.Connectors.Abstractions;
 using Vuetrack.Connectors.Jira.Activity.Api;
 using Vuetrack.Connectors.Jira.Internal;
+using Vuetrack.Framework.Extensions;
 
 namespace Vuetrack.Connectors.Jira.Activity;
 
-// Maps already-filtered, typed Jira DTOs (plus their issue context) to ActivitySignals carrying a typed
-// JiraSignalDetail. No JSON traversal or string date parsing happens here — that is the DTO layer's job.
 public static class JiraActivityMapper
 {
+    private const int MaxCommentLength = 500;
+
     public static ActivitySignal ToWorklogSignal(JiraIssueContext context, JiraWorklogResponse worklog, string siteUrl)
     {
         var started = worklog.Started!.Value.UtcDateTime;
         var ended = started.AddSeconds(worklog.TimeSpentSeconds);
-        var commentText = AdfTextExtractor.Extract(worklog.Comment);
+        var extracted = AdfTextExtractor.Extract(worklog.Comment);
+        var commentText = extracted.Truncate(MaxCommentLength);
 
         var detail = BaseDetail(context, siteUrl) with
         {
@@ -37,7 +39,8 @@ public static class JiraActivityMapper
     public static ActivitySignal ToCommentSignal(JiraIssueContext context, JiraCommentResponse comment, string siteUrl)
     {
         var created = comment.Created!.Value.UtcDateTime;
-        var text = AdfTextExtractor.Extract(comment.Body);
+        var extracted = AdfTextExtractor.Extract(comment.Body);
+        var text = extracted.Truncate(MaxCommentLength);
 
         var detail = BaseDetail(context, siteUrl) with
         {

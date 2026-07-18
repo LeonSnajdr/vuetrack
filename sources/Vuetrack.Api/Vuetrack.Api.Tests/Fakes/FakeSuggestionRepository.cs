@@ -34,10 +34,16 @@ public sealed class FakeSuggestionRepository : ISuggestionRepository
         return Task.CompletedTask;
     }
 
-    public Task<bool> ExistsBySourceAsync(string userId, ConnectorKey connectorKey, string externalId)
+    public Task<IReadOnlyList<SuggestionEvidenceModel>> GetSourcesByExternalIdsAsync(string userId, IReadOnlyList<string> externalIds)
     {
-        var exists = items.Any(x => x.UserId == userId && x.Sources.Any(s => s.ConnectorKey == connectorKey && s.ExternalId == externalId));
-        return Task.FromResult(exists);
+        var idSet = externalIds.ToHashSet(StringComparer.Ordinal);
+        IReadOnlyList<SuggestionEvidenceModel> sources = items
+            .Where(x => x.UserId == userId)
+            .SelectMany(x => x.Sources)
+            .Where(s => idSet.Contains(s.ExternalId))
+            .ToList();
+
+        return Task.FromResult(sources);
     }
 
     public Task<SuggestionModel?> UpdateFieldsAsync(string id, string userId, string? taskId, string? projectId, string? activityId, DateTime start, DateTime end, string? comment, DateTime updatedAt)

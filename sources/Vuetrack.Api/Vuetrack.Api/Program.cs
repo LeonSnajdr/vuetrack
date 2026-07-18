@@ -11,7 +11,6 @@ using Samhammer.Swagger.Authentication;
 using Samhammer.Swagger.Versioning;
 using Samhammer.Web.Common.Extensions;
 using Serilog;
-using Vuetrack.Api.Features.Suggestions.Engine;
 using Vuetrack.Api.Infrastructure.Config;
 using Vuetrack.Api.Infrastructure.Cors;
 using Vuetrack.Api.Infrastructure.ModelBinding;
@@ -21,7 +20,6 @@ using Vuetrack.Backends.Timetracking.Api;
 using Vuetrack.Connectors.Jira;
 using Vuetrack.Connectors.Jira.Activity;
 using Vuetrack.Logging;
-using ZiggyCreatures.Caching.Fusion;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console(outputTemplate: SerilogConfig.ConsoleTemplate)
@@ -89,6 +87,7 @@ try
         var options = sp.GetRequiredService<IOptions<JiraOptions>>().Value;
         var baseUrl = options.ApiBaseUrl.TrimEnd('/') + "/";
         client.BaseAddress = new Uri(baseUrl);
+        client.Timeout = TimeSpan.FromSeconds(30);
     });
     builder.Services.AddHttpContextAccessor();
 
