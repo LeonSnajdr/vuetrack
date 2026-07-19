@@ -1,0 +1,48 @@
+using AwesomeAssertions;
+using Vuetrack.Connectors.Abstractions;
+using Vuetrack.Connectors.Github.Activity;
+using Vuetrack.Connectors.Github.Activity.Api;
+using Vuetrack.Connectors.Github.OAuth;
+using Xunit;
+
+namespace Vuetrack.Connectors.Github.Tests;
+
+public class GithubActivityMapperTests
+{
+    [Fact]
+    public void ToCommitSignal_MapsCommitToSignal()
+    {
+        var item = new GithubCommitItemResponse
+        {
+            Sha = "abcdef1234567890",
+            HtmlUrl = "https://github.com/acme/widgets/commit/abcdef1234567890",
+            Commit = new GithubCommitResponse
+            {
+                Message = "feat: add thing\n\ndetails",
+                Author = new GithubCommitAuthorResponse
+                {
+                    Name = "Octo",
+                    Date = new DateTimeOffset(2026, 7, 1, 9, 0, 0, TimeSpan.FromHours(2)),
+                },
+            },
+            Author = new GithubUserResponse { Login = "octocat", Id = 42 },
+            Repository = new GithubRepoResponse { Name = "widgets", FullName = "acme/widgets" },
+        };
+
+        var signal = GithubActivityMapper.ToCommitSignal(item);
+
+        signal.ConnectorKey.Should().Be(ConnectorKey.Github);
+        signal.Kind.Should().Be(ActivityKind.Commit);
+        signal.ExternalId.Should().Be("acme/widgets:commit:abcdef1234567890");
+        signal.DateStarted.Should().Be(new DateTime(2026, 7, 1, 7, 0, 0, DateTimeKind.Utc));
+        signal.DateStarted.Kind.Should().Be(DateTimeKind.Utc);
+        signal.DateEnded.Should().BeNull();
+
+        var detail = signal.Detail.Should().BeOfType<GithubSignalDetail>().Which;
+        detail.Owner.Should().Be("acme");
+        detail.RepoName.Should().Be("widgets");
+        detail.ShortSha.Should().Be("abcdef1");
+        detail.MessageTitle.Should().Be("feat: add thing");
+        detail.AuthorLogin.Should().Be("octocat");
+    }
+}

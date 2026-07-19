@@ -17,6 +17,8 @@ using Vuetrack.Api.Infrastructure.ModelBinding;
 using Vuetrack.Api.Infrastructure.Validation;
 using Vuetrack.Backends.Timetracking;
 using Vuetrack.Backends.Timetracking.Api;
+using Vuetrack.Connectors.Github;
+using Vuetrack.Connectors.Github.Activity;
 using Vuetrack.Connectors.Jira;
 using Vuetrack.Connectors.Jira.Activity;
 using Vuetrack.Logging;
@@ -87,6 +89,14 @@ try
         var options = sp.GetRequiredService<IOptions<JiraOptions>>().Value;
         var baseUrl = options.ApiBaseUrl.TrimEnd('/') + "/";
         client.BaseAddress = new Uri(baseUrl);
+        client.Timeout = TimeSpan.FromSeconds(30);
+    });
+    builder.Services.AddHttpClient<IGithubApiClient, GithubApiClient>((sp, client) =>
+    {
+        var options = sp.GetRequiredService<IOptions<GithubOptions>>().Value;
+        var baseUrl = options.ApiBaseUrl.TrimEnd('/') + "/";
+        client.BaseAddress = new Uri(baseUrl);
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("Vuetrack");
         client.Timeout = TimeSpan.FromSeconds(30);
     });
     builder.Services.AddHttpContextAccessor();
