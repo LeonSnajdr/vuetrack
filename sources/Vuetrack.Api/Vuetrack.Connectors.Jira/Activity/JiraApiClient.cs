@@ -200,26 +200,8 @@ public class JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor access
         return response.StatusCode switch
         {
             HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden => new JiraApiException(JiraApiErrorKind.Auth, $"Jira rejected the credentials ({(int)response.StatusCode})."),
-            HttpStatusCode.TooManyRequests => new JiraApiException(JiraApiErrorKind.RateLimited, "Jira rate limit exceeded.", GetRetryAfter(response)),
             _ => new JiraApiException(JiraApiErrorKind.Transport, $"Jira request failed ({(int)response.StatusCode})."),
         };
-    }
-
-    private static TimeSpan GetRetryAfter(HttpResponseMessage response)
-    {
-        var retryAfter = response.Headers.RetryAfter;
-        if (retryAfter?.Delta is { } delta)
-        {
-            return delta;
-        }
-
-        if (retryAfter?.Date is { } date)
-        {
-            var wait = date - DateTimeOffset.UtcNow;
-            return wait > TimeSpan.Zero ? wait : TimeSpan.Zero;
-        }
-
-        return TimeSpan.FromSeconds(60);
     }
 
     private static string IsoDateTime(DateTime value) => value.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);

@@ -113,45 +113,11 @@ public class GithubApiClient(HttpClient httpClient, IGithubConnectionAccessor ac
     {
         Logger.LogWarning("GitHub API returned {StatusCode}", (int)response.StatusCode);
 
-        if (response.StatusCode is HttpStatusCode.Forbidden && IsRateLimited(response))
-        {
-            return new GithubApiException(GithubApiErrorKind.RateLimited, "GitHub rate limit exceeded.", GetRetryAfter(response));
-        }
-
         return response.StatusCode switch
         {
             HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden => new GithubApiException(GithubApiErrorKind.Auth, $"GitHub rejected the credentials ({(int)response.StatusCode})."),
-            HttpStatusCode.TooManyRequests => new GithubApiException(GithubApiErrorKind.RateLimited, "GitHub rate limit exceeded.", GetRetryAfter(response)),
             _ => new GithubApiException(GithubApiErrorKind.Transport, $"GitHub request failed ({(int)response.StatusCode})."),
         };
-    }
-
-    private static bool IsRateLimited(HttpResponseMessage response)
-    {
-        if (response.Headers.TryGetValues("X-RateLimit-Remaining", out var values))
-        {
-            var remaining = values.FirstOrDefault();
-            return remaining == "0";
-        }
-
-        return false;
-    }
-
-    private static TimeSpan GetRetryAfter(HttpResponseMessage response)
-    {
-        var retryAfter = response.Headers.RetryAfter;
-        if (retryAfter?.Delta is { } delta)
-        {
-            return delta;
-        }
-
-        if (retryAfter?.Date is { } date)
-        {
-            var wait = date - DateTimeOffset.UtcNow;
-            return wait > TimeSpan.Zero ? wait : TimeSpan.Zero;
-        }
-
-        return TimeSpan.FromSeconds(60);
     }
 
     private static string IsoDate(DateTime value) => value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
