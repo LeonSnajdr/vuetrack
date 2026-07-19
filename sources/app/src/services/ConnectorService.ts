@@ -1,4 +1,4 @@
-import type { ConnectorDescriptorContract, JiraAuthorizeResponse, JiraConnectRequest, JiraConnectResponse, JiraStatusResponse } from "@/contracts/ConnectorContract";
+import type { ConnectorAuthorizeResponse, ConnectorConnectRequest, ConnectorDescriptorContract, ConnectorStatusResponse } from "@/contracts/ConnectorContract";
 import axios from "@/plugins/axios";
 
 class ConnectorService {
@@ -7,23 +7,22 @@ class ConnectorService {
         return result.data;
     };
 
-    public jiraStatus = async (): Promise<JiraStatusResponse> => {
-        const result = await axios.api.get<JiraStatusResponse>("connectors/jira/status");
+    public status = async (key: string): Promise<ConnectorStatusResponse> => {
+        const result = await axios.api.get<ConnectorStatusResponse>(`connectors/${key}/status`);
         return result.data;
     };
 
-    public authorizeJira = async (redirectUri: string): Promise<JiraAuthorizeResponse> => {
-        const result = await axios.api.get<JiraAuthorizeResponse>("connectors/jira/authorize", { params: { redirectUri } });
+    public authorize = async (key: string, redirectUri: string): Promise<ConnectorAuthorizeResponse> => {
+        const result = await axios.api.get<ConnectorAuthorizeResponse>(`connectors/${key}/authorize`, { params: { redirectUri } });
         return result.data;
     };
 
-    public connectJira = async (request: JiraConnectRequest): Promise<JiraConnectResponse> => {
-        const result = await axios.api.post<JiraConnectResponse>("connectors/jira/callback", request);
-        return result.data;
+    public connect = async (key: string, request: ConnectorConnectRequest): Promise<void> => {
+        await axios.api.post(`connectors/${key}/callback`, request);
     };
 
-    public disconnectJira = async (): Promise<void> => {
-        await axios.api.delete("connectors/jira");
+    public disconnect = async (key: string): Promise<void> => {
+        await axios.api.delete(`connectors/${key}`);
     };
 }
 

@@ -4,23 +4,18 @@ export type ConnectorDescriptorContract = {
     capabilities: string;
 };
 
-export type JiraAuthorizeResponse = {
+export type ConnectorAuthorizeResponse = {
     authorizationUrl: string;
     state: string;
 };
 
-export type JiraConnectRequest = {
+export type ConnectorConnectRequest = {
     code: string;
     state: string;
     redirectUri: string;
 };
 
-export type JiraConnectResponse = {
-    siteUrl: string;
-};
-
-export type JiraStatusResponse = {
+export type ConnectorStatusResponse = {
     connected: boolean;
     healthy: boolean;
-    siteUrl: string | null;
 };
