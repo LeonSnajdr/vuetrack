@@ -28,6 +28,13 @@ public class JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor access
         return me.AccountId ?? string.Empty;
     }
 
+    public async Task<JiraSearchIssueResponse> GetIssueAsync(string issueKey, CancellationToken cancellationToken)
+    {
+        var path = $"issue/{Uri.EscapeDataString(issueKey)}?fields=summary,issuetype,status";
+        var issue = await GetAsync<JiraSearchIssueResponse>(path, cancellationToken);
+        return issue;
+    }
+
     public async Task<IReadOnlyList<JiraSearchIssueResponse>> SearchCandidateIssuesAsync(DateTime from, DateTime to, CancellationToken cancellationToken)
     {
         var fromIso = IsoDateTime(from);
@@ -217,6 +224,8 @@ public class JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor access
 public interface IJiraApiClient
 {
     Task<string> GetMyAccountIdAsync(CancellationToken cancellationToken);
+
+    Task<JiraSearchIssueResponse> GetIssueAsync(string issueKey, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<JiraSearchIssueResponse>> SearchCandidateIssuesAsync(DateTime from, DateTime to, CancellationToken cancellationToken);
 

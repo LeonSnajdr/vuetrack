@@ -15,19 +15,24 @@
                     {{ displayTitle }}
                 </div>
 
-                <div v-if="issue.isLoading.value" class="d-flex align-center ga-2 text-medium-emphasis">
+                <div v-if="details.isLoading.value" class="d-flex align-center ga-2 text-medium-emphasis">
                     <VProgressCircular size="16" width="2" indeterminate />
                     <span>{{ $t("calendar.event.details.loading") }}</span>
                 </div>
-                <template v-else-if="issue.data.value?.summary">
-                    <div>{{ issue.data.value.summary }}</div>
-                    <div class="v-chip-group">
-                        <VChip v-if="issue.data.value.type" density="comfortable" size="small">
-                            {{ issue.data.value.type }}
+                <template v-for="(group, groupIndex) in detailGroups" v-else :key="`${group.connectorKey}-${groupIndex}`">
+                    <div v-if="group.chips.length" class="v-chip-group">
+                        <VChip v-for="(chip, chipIndex) in group.chips" :key="chipIndex" density="comfortable" size="small">
+                            {{ chip.value }}
                         </VChip>
-                        <VChip v-if="issue.data.value.status" density="comfortable" size="small">
-                            {{ issue.data.value.status }}
-                        </VChip>
+                    </div>
+                    <div v-for="(row, rowIndex) in group.rows" :key="rowIndex" class="d-flex ga-3">
+                        <span class="text-medium-emphasis flex-shrink-0 text-no-wrap" style="width: 84px">{{ $t(`detail.field.${row.label}`) }}</span>
+                        <span v-if="row.kind === 'text'">{{ row.value }}</span>
+                        <span v-else-if="row.kind === 'date'">{{ dateFormatter.format(row.value, "fullDate") }}</span>
+                        <a v-else-if="row.kind === 'link'" :href="row.url" class="d-inline-flex align-center ga-1" rel="noopener" style="pointer-events: auto" target="_blank">
+                            {{ row.text }}
+                            <VIcon :icon="mdiOpenInNew" size="14" />
+                        </a>
                     </div>
                 </template>
             </div>
@@ -56,8 +61,15 @@
 
 <script setup lang="ts">
 import { useEventDetails } from "./composables/useEventDetails";
+import type { ChipDetailField, DetailField } from "@/contracts/DetailsContract";
 import { useAsyncState } from "@/composables/useAsyncState";
-import IssueDetailsService, { isIssueKey } from "@/services/IssueDetailsService";
+import DetailsService from "@/services/DetailsService";
+
+type DetailFieldGroup = {
+    connectorKey: string;
+    chips: ChipDetailField[];
+    rows: Exclude<DetailField, ChipDetailField>[];
+};
 
 const { state } = useEventDetails();
 
@@ -84,14 +96,23 @@ const projectName = computed(() => {
 });
 const activityName = computed(() => (state.value.event?.kind === "existing" ? state.value.event.timeEntry.activity.name : null));
 
-const issue = useAsyncState((id: string) => IssueDetailsService.get(id));
+const details = useAsyncState((taskId: string) => DetailsService.get(taskId));
+
+const detailGroups = computed<DetailFieldGroup[]>(() => {
+    const groups = details.data.value?.groups ?? [];
+    return groups.map((group) => ({
+        connectorKey: group.connectorKey,
+        chips: group.fields.filter((field): field is ChipDetailField => field.kind === "chip"),
+        rows: group.fields.filter((field): field is Exclude<DetailField, ChipDetailField> => field.kind !== "chip"),
+    }));
+});
 
 whenever(
     () => state.value.show && state.value.event,
     () => {
         const taskId = timeEntry.value?.taskId;
-        if (isIssueKey(taskId)) issue.execute(taskId!);
-        else issue.data.value = null;
+        if (taskId) details.execute(taskId);
+        else details.data.value = null;
     }
 );
 </script>

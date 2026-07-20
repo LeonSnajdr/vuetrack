@@ -74,6 +74,12 @@ public class GithubConnector(IGithubApiClient client) : IConnector
         }
     }
 
+    public Task<ErrorOr<IReadOnlyList<DetailField>>> GetDetailsAsync(DetailQuery query, CancellationToken cancellationToken)
+    {
+        IReadOnlyList<DetailField> empty = [];
+        return Task.FromResult(empty.ToErrorOr());
+    }
+
     private static Error MapError(GithubApiException ex)
     {
         return ex.Kind switch

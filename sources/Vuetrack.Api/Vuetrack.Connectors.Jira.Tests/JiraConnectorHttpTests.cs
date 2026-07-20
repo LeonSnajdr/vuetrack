@@ -338,6 +338,6 @@ public class JiraConnectorHttpTests
             },
         };
         var client = new JiraApiClient(httpClient, accessor, options, NullLogger<JiraApiClient>.Instance);
-        return new JiraConnector(client, options);
+        return new JiraConnector(client, accessor, options);
     }
 }

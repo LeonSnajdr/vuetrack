@@ -12,4 +12,10 @@ public sealed class FakeConnector(ConnectorDescriptor descriptor, Func<ActivityF
 
     public Task<ErrorOr<IReadOnlyList<ActivitySignal>>> FetchAsync(ActivityFetchContainer container, CancellationToken cancellationToken) =>
         fetch(container, cancellationToken);
+
+    public Task<ErrorOr<IReadOnlyList<DetailField>>> GetDetailsAsync(DetailQuery query, CancellationToken cancellationToken)
+    {
+        IReadOnlyList<DetailField> empty = [];
+        return Task.FromResult(empty.ToErrorOr());
+    }
 }

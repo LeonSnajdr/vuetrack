@@ -25,6 +25,9 @@ public sealed record JiraParentResponse
 
 public sealed record JiraIssueFieldsResponse
 {
+    [JsonPropertyName("summary")]
+    public string? Summary { get; init; }
+
     [JsonPropertyName("issuetype")]
     public JiraNamedResponse? IssueType { get; init; }
 

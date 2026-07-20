@@ -1,21 +1,28 @@
 using System.Collections.Concurrent;
+using System.Text.RegularExpressions;
 using ErrorOr;
 using Microsoft.Extensions.Options;
 using Samhammer.DependencyInjection.Attributes;
 using Vuetrack.Connectors.Abstractions;
 using Vuetrack.Connectors.Jira.Activity;
 using Vuetrack.Connectors.Jira.Activity.Api;
+using Vuetrack.Connectors.Jira.Connection;
 
 namespace Vuetrack.Connectors.Jira;
 
 [InjectAs(typeof(IConnector))]
-public class JiraConnector(IJiraApiClient client, IOptions<JiraOptions> options) : IConnector
+public partial class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor accessor, IOptions<JiraOptions> options) : IConnector
 {
     public const ConnectorKey Key = ConnectorKey.Jira;
 
     private IJiraApiClient Client { get; } = client;
 
+    private IJiraConnectionAccessor Accessor { get; } = accessor;
+
     private IOptions<JiraOptions> Options { get; } = options;
+
+    [GeneratedRegex(@"^[A-Za-z][A-Za-z0-9]+-\d+$")]
+    private static partial Regex IssueKeyRegex();
 
     public ConnectorDescriptor Descriptor { get; } = new()
     {
@@ -72,6 +79,29 @@ public class JiraConnector(IJiraApiClient client, IOptions<JiraOptions> options)
             IReadOnlyList<ActivitySignal> result = signals.Values.ToList();
             var errorOr = result.ToErrorOr();
             return errorOr;
+        }
+        catch (JiraApiException ex)
+        {
+            return MapError(ex);
+        }
+    }
+
+    public async Task<ErrorOr<IReadOnlyList<DetailField>>> GetDetailsAsync(DetailQuery query, CancellationToken cancellationToken)
+    {
+        var issueKey = query.TaskId?.Trim();
+
+        if (string.IsNullOrEmpty(issueKey) || !IssueKeyRegex().IsMatch(issueKey))
+        {
+            IReadOnlyList<DetailField> empty = [];
+            return empty.ToErrorOr();
+        }
+
+        try
+        {
+            var issue = await Client.GetIssueAsync(issueKey, cancellationToken);
+            var siteUrl = Accessor.Current?.SiteUrl ?? string.Empty;
+            var fields = JiraDetailMapper.ToDetailFields(issue, issueKey, siteUrl);
+            return fields.ToErrorOr();
         }
         catch (JiraApiException ex)
         {
