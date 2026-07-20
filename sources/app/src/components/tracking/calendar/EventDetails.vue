@@ -2,7 +2,7 @@
     <VMenu
         v-model="state.show"
         :closeOnContentClick="false"
-        :contentProps="{ style: 'pointer-events: none' }"
+        :contentProps="{ style: `pointer-events: ${state.pinned ? 'auto' : 'none'}` }"
         :offset="12"
         :openOnHover="false"
         :target="[state.x, state.y]"
@@ -11,8 +11,11 @@
     >
         <VCard v-if="timeEntry" class="pa-3" width="360">
             <div class="d-flex flex-column ga-1">
-                <div class="font-weight-bold">
-                    {{ displayTitle }}
+                <div class="d-flex align-center ga-2 font-weight-bold">
+                    <span class="text-truncate">{{ displayTitle }}</span>
+                    <VSpacer />
+                    <VHotkey class="mr-n2" keys="alt" />
+                    <VIcon :icon="state.pinned ? mdiPinOff : mdiPin" size="small" />
                 </div>
 
                 <div v-if="details.isLoading.value" class="d-flex align-center ga-2 text-medium-emphasis">
@@ -29,7 +32,7 @@
                         <span class="text-medium-emphasis flex-shrink-0 text-no-wrap" style="width: 84px">{{ $t(`detail.field.${row.label}`) }}</span>
                         <span v-if="row.kind === 'text'">{{ row.value }}</span>
                         <span v-else-if="row.kind === 'date'">{{ dateFormatter.format(row.value, "fullDate") }}</span>
-                        <a v-else-if="row.kind === 'link'" :href="row.url" class="d-inline-flex align-center ga-1" rel="noopener" style="pointer-events: auto" target="_blank">
+                        <a v-else-if="row.kind === 'link'" :href="row.url" class="d-inline-flex align-center ga-1" rel="noopener" target="_blank">
                             {{ row.text }}
                             <VIcon :icon="mdiOpenInNew" size="14" />
                         </a>
@@ -71,9 +74,15 @@ type DetailFieldGroup = {
     rows: Exclude<DetailField, ChipDetailField>[];
 };
 
-const { state } = useEventDetails();
+const { state, togglePin } = useEventDetails();
 
 const dateFormatter = useDate();
+
+onKeyStroke("Alt", (nativeEvent) => {
+    if (nativeEvent.repeat || !state.value.show) return;
+    nativeEvent.preventDefault();
+    togglePin();
+});
 
 const timeEntry = computed(() => {
     const event = state.value.event;
@@ -103,7 +112,7 @@ const detailGroups = computed<DetailFieldGroup[]>(() => {
     return groups.map((group) => ({
         connectorKey: group.connectorKey,
         chips: group.fields.filter((field): field is ChipDetailField => field.kind === "chip"),
-        rows: group.fields.filter((field): field is Exclude<DetailField, ChipDetailField> => field.kind !== "chip"),
+        rows: group.fields.filter((field): field is Exclude<DetailField, ChipDetailField> => field.kind !== "chip")
     }));
 });
 
