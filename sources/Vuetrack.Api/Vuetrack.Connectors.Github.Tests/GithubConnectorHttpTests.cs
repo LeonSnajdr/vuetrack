@@ -33,12 +33,10 @@ public class GithubConnectorHttpTests
           "items": [
             {
               "sha": "abc1234def5678",
-              "html_url": "https://github.com/acme/widgets/commit/abc1234def5678",
               "commit": {
-                "author": { "name": "Octo Cat", "date": "2026-07-01T09:00:00Z" },
+                "author": { "date": "2026-07-01T09:00:00Z" },
                 "message": "fix: correct the widget\n\nlong body here"
               },
-              "author": { "login": "octocat", "id": 42 },
               "repository": { "name": "widgets", "full_name": "acme/widgets" }
             }
           ]
@@ -55,12 +53,8 @@ public class GithubConnectorHttpTests
         signal.Kind.Should().Be(ActivityKind.Commit);
         signal.DateEnded.Should().BeNull();
         var detail = Detail(signal);
-        detail.RepoFullName.Should().Be("acme/widgets");
-        detail.Owner.Should().Be("acme");
-        detail.ShortSha.Should().Be("abc1234");
-        detail.MessageTitle.Should().Be("fix: correct the widget");
-        detail.AuthorLogin.Should().Be("octocat");
-        detail.SourceUrl.Should().Be("https://github.com/acme/widgets/commit/abc1234def5678");
+        detail.RepoName.Should().Be("widgets");
+        detail.Message.Should().Be("fix: correct the widget\n\nlong body here");
     }
 
     [Fact]
@@ -72,9 +66,7 @@ public class GithubConnectorHttpTests
           "items": [
             {
               "sha": "abc",
-              "html_url": "https://github.com/acme/widgets/commit/abc",
               "commit": { "author": { "date": "2026-07-01T09:00:00+02:00" }, "message": "chore" },
-              "author": { "login": "octocat", "id": 42 },
               "repository": { "name": "widgets", "full_name": "acme/widgets" }
             }
           ]
@@ -98,8 +90,8 @@ public class GithubConnectorHttpTests
         {
           "total_count": 3,
           "items": [
-            { "sha": "s1", "html_url": "u1", "commit": { "author": { "date": "2026-07-01T09:00:00Z" }, "message": "one" }, "author": { "login": "octocat" }, "repository": { "name": "widgets", "full_name": "acme/widgets" } },
-            { "sha": "s2", "html_url": "u2", "commit": { "author": { "date": "2026-07-01T10:00:00Z" }, "message": "two" }, "author": { "login": "octocat" }, "repository": { "name": "widgets", "full_name": "acme/widgets" } }
+            { "sha": "s1", "commit": { "author": { "date": "2026-07-01T09:00:00Z" }, "message": "one" }, "repository": { "name": "widgets", "full_name": "acme/widgets" } },
+            { "sha": "s2", "commit": { "author": { "date": "2026-07-01T10:00:00Z" }, "message": "two" }, "repository": { "name": "widgets", "full_name": "acme/widgets" } }
           ]
         }
         """;
@@ -107,7 +99,7 @@ public class GithubConnectorHttpTests
         {
           "total_count": 3,
           "items": [
-            { "sha": "s3", "html_url": "u3", "commit": { "author": { "date": "2026-07-01T11:00:00Z" }, "message": "three" }, "author": { "login": "octocat" }, "repository": { "name": "widgets", "full_name": "acme/widgets" } }
+            { "sha": "s3", "commit": { "author": { "date": "2026-07-01T11:00:00Z" }, "message": "three" }, "repository": { "name": "widgets", "full_name": "acme/widgets" } }
           ]
         }
         """;

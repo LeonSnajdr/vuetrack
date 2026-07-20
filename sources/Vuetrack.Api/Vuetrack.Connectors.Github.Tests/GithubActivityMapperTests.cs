@@ -2,7 +2,6 @@ using AwesomeAssertions;
 using Vuetrack.Connectors.Abstractions;
 using Vuetrack.Connectors.Github.Activity;
 using Vuetrack.Connectors.Github.Activity.Api;
-using Vuetrack.Connectors.Github.OAuth;
 using Xunit;
 
 namespace Vuetrack.Connectors.Github.Tests;
@@ -15,17 +14,14 @@ public class GithubActivityMapperTests
         var item = new GithubCommitItemResponse
         {
             Sha = "abcdef1234567890",
-            HtmlUrl = "https://github.com/acme/widgets/commit/abcdef1234567890",
             Commit = new GithubCommitResponse
             {
                 Message = "feat: add thing\n\ndetails",
                 Author = new GithubCommitAuthorResponse
                 {
-                    Name = "Octo",
                     Date = new DateTime(2026, 7, 1, 7, 0, 0, DateTimeKind.Utc),
                 },
             },
-            Author = new GithubUserResponse { Login = "octocat", Id = 42 },
             Repository = new GithubRepoResponse { Name = "widgets", FullName = "acme/widgets" },
         };
 
@@ -39,10 +35,7 @@ public class GithubActivityMapperTests
         signal.DateEnded.Should().BeNull();
 
         var detail = signal.Detail.Should().BeOfType<GithubSignalDetail>().Which;
-        detail.Owner.Should().Be("acme");
         detail.RepoName.Should().Be("widgets");
-        detail.ShortSha.Should().Be("abcdef1");
-        detail.MessageTitle.Should().Be("feat: add thing");
-        detail.AuthorLogin.Should().Be("octocat");
+        detail.Message.Should().Be("feat: add thing\n\ndetails");
     }
 }

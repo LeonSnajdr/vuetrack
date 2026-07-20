@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using Vuetrack.Connectors.Github.OAuth;
 
 namespace Vuetrack.Connectors.Github.Activity.Api;
 
@@ -17,14 +16,8 @@ public sealed record GithubCommitItemResponse
     [JsonPropertyName("sha")]
     public string? Sha { get; init; }
 
-    [JsonPropertyName("html_url")]
-    public string? HtmlUrl { get; init; }
-
     [JsonPropertyName("commit")]
     public GithubCommitResponse? Commit { get; init; }
-
-    [JsonPropertyName("author")]
-    public GithubUserResponse? Author { get; init; }
 
     [JsonPropertyName("repository")]
     public GithubRepoResponse? Repository { get; init; }
@@ -41,9 +34,6 @@ public sealed record GithubCommitResponse
 
 public sealed record GithubCommitAuthorResponse
 {
-    [JsonPropertyName("name")]
-    public string? Name { get; init; }
-
     [JsonPropertyName("date")]
     public DateTime? Date { get; init; }
 }
