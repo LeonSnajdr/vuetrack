@@ -1,28 +1,52 @@
 <template>
     <div class="h-100 d-flex flex-column ga-4">
-        <p class="text-medium-emphasis">{{ $t("settings.backends.description") }}</p>
-
-        <VCard class="border" variant="outlined">
+        <VCard v-for="backend in backends" :key="backend.key" class="border" variant="outlined">
             <VCardTitle>
-                <VIcon :icon="mdiClockOutline" />
-                Timetracking
+                <VIcon :icon="iconMap[backend.key]" />
+                {{ nameFor(backend.key) }}
+                <VSpacer />
+                <VChip :color="chipFor(backend.key).color" variant="tonal">
+                    <template #prepend>
+                        <VIcon :color="chipFor(backend.key).color" :icon="chipFor(backend.key).icon" class="mr-2" />
+                    </template>
+                    {{ chipFor(backend.key).text }}
+                </VChip>
             </VCardTitle>
             <VCardText>
-                <template v-if="timetrackingStatus.connected">
-                    <VAlert :icon="mdiCheckCircle" type="success" variant="tonal">
-                        {{ $t("settings.backends.timetracking.connected") }}
-                    </VAlert>
-                    <VBtn @click="disconnect" :loading="isDisconnecting" :prependIcon="mdiLinkOff" class="mt-3" color="error" variant="tonal">
-                        {{ $t("settings.backends.timetracking.disconnect") }}
+                <template v-if="isOAuth(backend)">
+                    <div v-if="statusFor(backend.key).connected" class="d-flex ga-2">
+                        <VBtn
+                            v-if="!statusFor(backend.key).healthy"
+                            @click="connect(backend.key)"
+                            :loading="isConnecting(backend.key)"
+                            :prependIcon="iconMap[backend.key]"
+                            color="primary"
+                            variant="flat"
+                        >
+                            {{ $t("settings.backends.reconnect", { name: nameFor(backend.key) }) }}
+                        </VBtn>
+                        <VBtn
+                            @click="disconnect(backend.key)"
+                            :loading="isDisconnecting(backend.key)"
+                            :prependIcon="mdiLinkOff"
+                            color="error"
+                            variant="tonal"
+                        >
+                            {{ $t("settings.backends.disconnect") }}
+                        </VBtn>
+                    </div>
+                    <VBtn
+                        v-else
+                        @click="connect(backend.key)"
+                        :loading="isConnecting(backend.key)"
+                        :prependIcon="iconMap[backend.key]"
+                        color="primary"
+                        variant="flat"
+                    >
+                        {{ $t("settings.backends.connect", { name: nameFor(backend.key) }) }}
                     </VBtn>
-                    <VAlert v-if="error" class="mt-3" type="error" variant="tonal">{{ error }}</VAlert>
                 </template>
-                <template v-else>
-                    <VBtn @click="connect" :loading="isConnecting" :prependIcon="mdiClockOutline" color="primary" variant="flat">
-                        {{ $t("settings.backends.timetracking.connect") }}
-                    </VBtn>
-                    <VAlert v-if="error" class="mt-3" type="error" variant="tonal">{{ error }}</VAlert>
-                </template>
+                <span v-else class="text-medium-emphasis">{{ nameFor(backend.key) }}</span>
             </VCardText>
         </VCard>
     </div>
@@ -32,110 +56,21 @@
 const { t } = useI18n();
 
 const backendStore = useBackendStore();
-const { timetrackingStatus } = storeToRefs(backendStore);
+const { backends } = storeToRefs(backendStore);
+const { statusFor, isConnecting, isDisconnecting, isOAuth, nameFor, connect, disconnect } = backendStore;
 
-const isConnecting = ref(false);
-const isDisconnecting = ref(false);
-const error = ref("");
+const iconMap: Record<string, string> = { timetracking: mdiClockOutline };
 
-const errorMessage = (e: unknown): string => {
-    const errors = (e as { response?: { data?: { errors?: unknown } } })?.response?.data?.errors;
-    if (Array.isArray(errors) && errors.length) return errors.join(" ");
-    return t("settings.backends.timetracking.error");
+const chipFor = (key: string) => {
+    const status = statusFor(key);
+    if (status.connected && status.healthy) {
+        return { color: "success", icon: mdiCircle, text: t("settings.backends.connected") };
+    }
+    if (status.connected) {
+        return { color: "warning", icon: mdiAlert, text: t("settings.backends.reconnectRequired") };
+    }
+    return { color: "", icon: mdiCircleOutline, text: t("settings.backends.notConnected") };
 };
 
-onBeforeMount(() => {
-    backendStore.executeLoad();
-    backendStore.executeLoadTimetrackingStatus();
-});
-
-// Popup OAuth: the settings dialog stays open; the consent runs in a popup that relays the
-// result back via postMessage from the static /timetracking-callback.html relay page.
-let activePopup: Window | null = null;
-let activeListener: ((event: MessageEvent) => void) | null = null;
-let closedTimer = 0;
-
-const stopListening = () => {
-    if (activeListener) {
-        window.removeEventListener("message", activeListener);
-        activeListener = null;
-    }
-    if (closedTimer) {
-        window.clearInterval(closedTimer);
-        closedTimer = 0;
-    }
-};
-
-const handleResult = async (data: { code?: string; state?: string; error?: string }, expectedState: string, redirectUri: string) => {
-    stopListening();
-    activePopup?.close();
-    activePopup = null;
-
-    try {
-        if (data.error || !data.code || !data.state || data.state !== expectedState) {
-            error.value = t("settings.backends.timetracking.error");
-            return;
-        }
-
-        await BackendService.connectTimetracking({ code: data.code, state: data.state, redirectUri });
-        await backendStore.executeLoadTimetrackingStatus();
-    } catch (e) {
-        console.error("timetracking callback failed", e);
-        error.value = errorMessage(e);
-    } finally {
-        isConnecting.value = false;
-    }
-};
-
-const disconnect = async () => {
-    error.value = "";
-    isDisconnecting.value = true;
-
-    try {
-        await BackendService.disconnectTimetracking();
-        await backendStore.executeLoadTimetrackingStatus();
-    } catch (e) {
-        console.error("timetracking disconnect failed", e);
-        error.value = errorMessage(e);
-    } finally {
-        isDisconnecting.value = false;
-    }
-};
-
-const connect = async () => {
-    error.value = "";
-    isConnecting.value = true;
-
-    try {
-        const redirectUri = `${window.location.origin}/timetracking-callback.html`;
-        const { authorizationUrl, state } = await BackendService.authorizeTimetracking(redirectUri);
-
-        activePopup = window.open(authorizationUrl, "timetracking-oauth", "width=600,height=800");
-        if (!activePopup) {
-            error.value = t("settings.backends.timetracking.popupBlocked");
-            isConnecting.value = false;
-            return;
-        }
-
-        activeListener = (event: MessageEvent) => {
-            if (event.origin !== window.location.origin || event.data?.source !== "timetracking-oauth") return;
-            void handleResult(event.data, state, redirectUri);
-        };
-        window.addEventListener("message", activeListener);
-
-        // Stop the spinner if the user closes the popup without finishing.
-        closedTimer = window.setInterval(() => {
-            if (activePopup?.closed) {
-                stopListening();
-                isConnecting.value = false;
-            }
-        }, 500);
-    } catch (e) {
-        console.error("timetracking authorize failed", e);
-        error.value = t("settings.backends.timetracking.error");
-        isConnecting.value = false;
-    }
-};
-
-onBeforeUnmount(stopListening);
+onBeforeUnmount(backendStore.cancelPending);
 </script>

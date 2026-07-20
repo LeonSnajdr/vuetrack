@@ -9,7 +9,7 @@ using Vuetrack.OAuth.Contractrs;
 
 namespace Vuetrack.Api.Features.Connectors.Github.Services;
 
-[Inject]
+[Inject(Target.All)]
 public class GithubConnectionService(
     IConnectorRegistry registry,
     IConnectorResolver resolver,
@@ -32,6 +32,8 @@ public class GithubConnectionService(
     private IGithubConnectionAccessor Accessor { get; } = accessor;
 
     protected override string ProviderName => nameof(ConnectorKey.Github);
+
+    public ConnectorKey Key => ConnectorKey.Github;
 
     public async Task<ErrorOr<OAuthConnectContract>> ConnectAsync(string userId, OAuthConnectCreateContract request, CancellationToken cancellationToken)
     {
@@ -101,11 +103,9 @@ public class GithubConnectionService(
     }
 }
 
-public interface IGithubConnectionService
+public interface IGithubConnectionService : IConnectorConnectionService
 {
     OAuthAuthorizeContract BuildAuthorization(string redirectUri);
-
-    Task<OAuthStatusContract> GetStatusAsync(string userId, CancellationToken cancellationToken);
 
     Task<ErrorOr<OAuthConnectContract>> ConnectAsync(string userId, OAuthConnectCreateContract request, CancellationToken cancellationToken);
 

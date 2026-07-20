@@ -1,7 +1,14 @@
+export enum ConnectorCapability {
+    Worklogs = "worklogs",
+    IssueActivity = "issueActivity",
+    OAuth = "oAuth"
+}
+
 export type ConnectorDescriptorContract = {
     key: string;
-    displayName: string;
-    capabilities: string;
+    capabilities: ConnectorCapability[];
+    connected: boolean;
+    healthy: boolean;
 };
 
 export type ConnectorAuthorizeResponse = {

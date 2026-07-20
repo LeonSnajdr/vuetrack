@@ -360,8 +360,7 @@ public class SuggestionServiceTests
     private static ConnectorDescriptor Descriptor(ConnectorKey key) => new()
     {
         Key = key,
-        DisplayName = key.ToString(),
-        Capabilities = ConnectorCapabilities.None,
+        Capabilities = [],
     };
 
     private static DateTime At(int hour, int minute) => BaseDate + TimeSpan.FromHours(hour) + TimeSpan.FromMinutes(minute);

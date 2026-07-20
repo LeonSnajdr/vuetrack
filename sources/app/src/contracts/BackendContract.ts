@@ -1,24 +1,28 @@
+export enum BackendCapability {
+    TimeEntries = "timeEntries",
+    Projects = "projects",
+    OAuth = "oAuth"
+}
+
 export type BackendDescriptorContract = {
     key: string;
-    displayName: string;
-    capabilities: string;
+    capabilities: BackendCapability[];
+    connected: boolean;
+    healthy: boolean;
 };
 
-export type TimetrackingAuthorizeResponse = {
+export type BackendAuthorizeResponse = {
     authorizationUrl: string;
     state: string;
 };
 
-export type TimetrackingConnectRequest = {
+export type BackendConnectRequest = {
     code: string;
     state: string;
     redirectUri: string;
 };
 
-export type TimetrackingConnectResponse = {
+export type BackendStatusResponse = {
     connected: boolean;
-};
-
-export type TimetrackingStatusResponse = {
-    connected: boolean;
+    healthy: boolean;
 };

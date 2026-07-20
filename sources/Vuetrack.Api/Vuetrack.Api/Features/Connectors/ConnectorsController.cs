@@ -1,7 +1,8 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Vuetrack.Connectors.Abstractions;
+using Vuetrack.Api.Features.Connectors.Services;
+using Vuetrack.Api.Infrastructure.Authentication;
 
 namespace Vuetrack.Api.Features.Connectors;
 
@@ -9,13 +10,17 @@ namespace Vuetrack.Api.Features.Connectors;
 [ApiVersion("1")]
 [Route("api/v{version:apiVersion}/[controller]")]
 [Authorize(Roles = "User")]
-public class ConnectorsController(IConnectorRegistry registry) : ControllerBase
+public class ConnectorsController(IConnectorService connectorService) : ControllerBase
 {
-    private IConnectorRegistry Registry { get; } = registry;
+    private IConnectorService ConnectorService { get; } = connectorService;
 
     [HttpGet]
-    public IActionResult Get()
+    public async Task<IActionResult> Get(CancellationToken cancellationToken)
     {
-        return Ok(Registry.Descriptors);
+        var userId = User.GetUserId();
+
+        var connectors = await ConnectorService.GetConnectorsAsync(userId, cancellationToken);
+
+        return Ok(connectors);
     }
 }

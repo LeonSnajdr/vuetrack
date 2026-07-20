@@ -1,14 +1,9 @@
-import type { ConnectorAuthorizeResponse, ConnectorConnectRequest, ConnectorDescriptorContract, ConnectorStatusResponse } from "@/contracts/ConnectorContract";
+import type { ConnectorAuthorizeResponse, ConnectorConnectRequest, ConnectorDescriptorContract } from "@/contracts/ConnectorContract";
 import axios from "@/plugins/axios";
 
 class ConnectorService {
     public list = async (): Promise<ConnectorDescriptorContract[]> => {
         const result = await axios.api.get<ConnectorDescriptorContract[]>("connectors");
-        return result.data;
-    };
-
-    public status = async (key: string): Promise<ConnectorStatusResponse> => {
-        const result = await axios.api.get<ConnectorStatusResponse>(`connectors/${key}/status`);
         return result.data;
     };
 

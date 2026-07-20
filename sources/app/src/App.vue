@@ -14,7 +14,15 @@ import { useTheme } from "vuetify";
 const settingsStore = useSettingsStore();
 const { generalSettings } = storeToRefs(settingsStore);
 
+const connectorStore = useConnectorStore();
+const backendStore = useBackendStore();
+
 const theme = useTheme();
+
+onMounted(() => {
+    connectorStore.executeLoad();
+    backendStore.executeLoad();
+});
 
 watch(
     () => generalSettings.value.theme,

@@ -9,7 +9,7 @@ using Vuetrack.OAuth.Contractrs;
 
 namespace Vuetrack.Api.Features.Connectors.Jira.Services;
 
-[Inject]
+[Inject(Target.All)]
 public class JiraConnectionService(
     IConnectorRegistry registry,
     IConnectorResolver resolver,
@@ -32,6 +32,8 @@ public class JiraConnectionService(
     private IJiraConnectionAccessor Accessor { get; } = accessor;
 
     protected override string ProviderName => nameof(ConnectorKey.Jira);
+
+    public ConnectorKey Key => ConnectorKey.Jira;
 
     public async Task<ErrorOr<OAuthConnectContract>> ConnectAsync(string userId, OAuthConnectCreateContract request, CancellationToken cancellationToken)
     {
@@ -103,11 +105,9 @@ public class JiraConnectionService(
     }
 }
 
-public interface IJiraConnectionService
+public interface IJiraConnectionService : IConnectorConnectionService
 {
     OAuthAuthorizeContract BuildAuthorization(string redirectUri);
-
-    Task<OAuthStatusContract> GetStatusAsync(string userId, CancellationToken cancellationToken);
 
     Task<ErrorOr<OAuthConnectContract>> ConnectAsync(string userId, OAuthConnectCreateContract request, CancellationToken cancellationToken);
 

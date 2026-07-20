@@ -38,6 +38,8 @@ public class TimetrackingConnectionService(
 
     protected override string ProviderName => nameof(BackendKey.Timetracking);
 
+    public BackendKey Key => BackendKey.Timetracking;
+
     public async Task<ErrorOr<OAuthConnectContract>> ConnectAsync(string userId, OAuthConnectCreateContract request, CancellationToken cancellationToken)
     {
         try
@@ -105,11 +107,9 @@ public class TimetrackingConnectionService(
     }
 }
 
-public interface ITimetrackingConnectionService
+public interface ITimetrackingConnectionService : IBackendConnectionService
 {
     OAuthAuthorizeContract BuildAuthorization(string redirectUri);
-
-    Task<OAuthStatusContract> GetStatusAsync(string userId, CancellationToken cancellationToken);
 
     Task<ErrorOr<OAuthConnectContract>> ConnectAsync(string userId, OAuthConnectCreateContract request, CancellationToken cancellationToken);
 

@@ -27,8 +27,7 @@ public partial class JiraConnector(IJiraApiClient client, IJiraConnectionAccesso
     public ConnectorDescriptor Descriptor { get; } = new()
     {
         Key = Key,
-        DisplayName = "Jira",
-        Capabilities = ConnectorCapabilities.Worklogs | ConnectorCapabilities.IssueActivity | ConnectorCapabilities.OAuth,
+        Capabilities = [ConnectorCapabilities.Worklogs, ConnectorCapabilities.IssueActivity, ConnectorCapabilities.OAuth],
     };
 
     public async Task<ErrorOr<Success>> ValidateAsync(CancellationToken cancellationToken)

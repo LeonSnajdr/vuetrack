@@ -1,7 +1,8 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Vuetrack.Backends.Abstractions;
+using Vuetrack.Api.Features.Backends.Services;
+using Vuetrack.Api.Infrastructure.Authentication;
 
 namespace Vuetrack.Api.Features.Backends;
 
@@ -9,13 +10,17 @@ namespace Vuetrack.Api.Features.Backends;
 [ApiVersion("1")]
 [Route("api/v{version:apiVersion}/[controller]")]
 [Authorize(Roles = "User")]
-public class BackendsController(IBackendRegistry registry) : ControllerBase
+public class BackendsController(IBackendService backendService) : ControllerBase
 {
-    private IBackendRegistry Registry { get; } = registry;
+    private IBackendService BackendService { get; } = backendService;
 
     [HttpGet]
-    public IActionResult Get()
+    public async Task<IActionResult> Get(CancellationToken cancellationToken)
     {
-        return Ok(Registry.Descriptors);
+        var userId = User.GetUserId();
+
+        var backends = await BackendService.GetBackendsAsync(userId, cancellationToken);
+
+        return Ok(backends);
     }
 }

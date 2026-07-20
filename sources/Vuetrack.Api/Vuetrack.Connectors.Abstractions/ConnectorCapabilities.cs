@@ -1,13 +1,10 @@
 namespace Vuetrack.Connectors.Abstractions;
 
-[Flags]
 public enum ConnectorCapabilities
 {
-    None = 0,
+    Worklogs,
 
-    Worklogs = 1 << 0,
+    IssueActivity,
 
-    IssueActivity = 1 << 1,
-
-    OAuth = 1 << 2,
+    OAuth,
 }

@@ -4,7 +4,5 @@ public sealed record ConnectorDescriptor
 {
     public required ConnectorKey Key { get; init; }
 
-    public required string DisplayName { get; init; }
-
-    public required ConnectorCapabilities Capabilities { get; init; }
+    public required IReadOnlyList<ConnectorCapabilities> Capabilities { get; init; }
 }

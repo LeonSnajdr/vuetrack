@@ -23,8 +23,7 @@ public class TimetrackingBackend(ITimetrackingApiClient client, ITimetrackingCon
     public BackendDescriptor Descriptor { get; } = new()
     {
         Key = Key,
-        DisplayName = "Timetracking",
-        Capabilities = BackendCapabilities.TimeEntries | BackendCapabilities.Projects | BackendCapabilities.OAuth,
+        Capabilities = [BackendCapabilities.TimeEntries, BackendCapabilities.Projects, BackendCapabilities.OAuth],
     };
 
     public async Task<ErrorOr<Success>> ValidateAsync(CancellationToken cancellationToken)

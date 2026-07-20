@@ -65,7 +65,6 @@
 <script setup lang="ts">
 import { useEventDetails } from "./composables/useEventDetails";
 import type { ChipDetailField, DetailField } from "@/contracts/DetailsContract";
-import { useAsyncState } from "@/composables/useAsyncState";
 import DetailsService from "@/services/DetailsService";
 
 type DetailFieldGroup = {

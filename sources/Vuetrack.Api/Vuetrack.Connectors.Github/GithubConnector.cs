@@ -15,8 +15,7 @@ public class GithubConnector(IGithubApiClient client) : IConnector
     public ConnectorDescriptor Descriptor { get; } = new()
     {
         Key = Key,
-        DisplayName = "GitHub",
-        Capabilities = ConnectorCapabilities.IssueActivity | ConnectorCapabilities.OAuth,
+        Capabilities = [ConnectorCapabilities.IssueActivity, ConnectorCapabilities.OAuth],
     };
 
     public async Task<ErrorOr<Success>> ValidateAsync(CancellationToken cancellationToken)
