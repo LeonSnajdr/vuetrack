@@ -1,4 +1,3 @@
-using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Vuetrack.Connectors.Jira.Activity.Api;
@@ -17,9 +16,6 @@ public sealed record JiraWorklogResponse
     [JsonPropertyName("timeSpentSeconds")]
     public long TimeSpentSeconds { get; init; }
 
-    // Atlassian Document Format; kept as a raw element and flattened to text via AdfTextExtractor.
-    [JsonPropertyName("comment")]
-    public JsonElement? Comment { get; init; }
 }
 
 public sealed record JiraWorklogPageResponse

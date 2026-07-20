@@ -5,18 +5,15 @@ using Samhammer.DependencyInjection.Attributes;
 using Vuetrack.Connectors.Abstractions;
 using Vuetrack.Connectors.Jira.Activity;
 using Vuetrack.Connectors.Jira.Activity.Api;
-using Vuetrack.Connectors.Jira.Connection;
 
 namespace Vuetrack.Connectors.Jira;
 
 [InjectAs(typeof(IConnector))]
-public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor accessor, IOptions<JiraOptions> options) : IConnector
+public class JiraConnector(IJiraApiClient client, IOptions<JiraOptions> options) : IConnector
 {
     public const ConnectorKey Key = ConnectorKey.Jira;
 
     private IJiraApiClient Client { get; } = client;
-
-    private IJiraConnectionAccessor Accessor { get; } = accessor;
 
     private IOptions<JiraOptions> Options { get; } = options;
 
@@ -51,8 +48,6 @@ public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor access
         try
         {
             var accountId = await Client.GetMyAccountIdAsync(cancellationToken);
-            var siteUrl = Accessor.Current?.SiteUrl ?? string.Empty;
-
             var issueResponses = await Client.SearchCandidateIssuesAsync(container.From, container.To, cancellationToken);
             var contexts = issueResponses
                 .Where(i => !string.IsNullOrEmpty(i.Key))
@@ -67,12 +62,12 @@ public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor access
 
             await Parallel.ForEachAsync(contexts, parallelOptions, async (context, ct) =>
             {
-                var worklogTask = AddWorklogSignalsAsync(signals, context, accountId, siteUrl, container, ct);
-                var commentTask = AddCommentSignalsAsync(signals, context, accountId, siteUrl, container, ct);
+                var worklogTask = AddWorklogSignalsAsync(signals, context, accountId, container, ct);
+                var commentTask = AddCommentSignalsAsync(signals, context, accountId, container, ct);
                 await Task.WhenAll(worklogTask, commentTask);
             });
 
-            await AddChangeSignalsAsync(signals, contexts, accountId, siteUrl, container, cancellationToken);
+            await AddChangeSignalsAsync(signals, contexts, accountId, container, cancellationToken);
 
             IReadOnlyList<ActivitySignal> result = signals.Values.ToList();
             var errorOr = result.ToErrorOr();
@@ -84,7 +79,7 @@ public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor access
         }
     }
 
-    private async Task AddWorklogSignalsAsync(ConcurrentDictionary<string, ActivitySignal> signals, JiraIssueContext context, string accountId, string siteUrl, ActivityFetchContainer window, CancellationToken cancellationToken)
+    private async Task AddWorklogSignalsAsync(ConcurrentDictionary<string, ActivitySignal> signals, JiraIssueContext context, string accountId, ActivityFetchContainer window, CancellationToken cancellationToken)
     {
         var worklogs = await Client.GetWorklogsAsync(context.Key, window.From, cancellationToken);
 
@@ -105,12 +100,12 @@ public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor access
                 continue;
             }
 
-            var signal = JiraActivityMapper.ToWorklogSignal(context, worklog, siteUrl);
+            var signal = JiraActivityMapper.ToWorklogSignal(context, worklog);
             signals[signal.ExternalId] = signal;
         }
     }
 
-    private async Task AddCommentSignalsAsync(ConcurrentDictionary<string, ActivitySignal> signals, JiraIssueContext context, string accountId, string siteUrl, ActivityFetchContainer window, CancellationToken cancellationToken)
+    private async Task AddCommentSignalsAsync(ConcurrentDictionary<string, ActivitySignal> signals, JiraIssueContext context, string accountId, ActivityFetchContainer window, CancellationToken cancellationToken)
     {
         var comments = await Client.GetCommentsAsync(context.Key, cancellationToken);
 
@@ -131,12 +126,12 @@ public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor access
                 continue;
             }
 
-            var signal = JiraActivityMapper.ToCommentSignal(context, comment, siteUrl);
+            var signal = JiraActivityMapper.ToCommentSignal(context, comment);
             signals[signal.ExternalId] = signal;
         }
     }
 
-    private async Task AddChangeSignalsAsync(ConcurrentDictionary<string, ActivitySignal> signals, IReadOnlyList<JiraIssueContext> contexts, string accountId, string siteUrl, ActivityFetchContainer window, CancellationToken cancellationToken)
+    private async Task AddChangeSignalsAsync(ConcurrentDictionary<string, ActivitySignal> signals, IReadOnlyList<JiraIssueContext> contexts, string accountId, ActivityFetchContainer window, CancellationToken cancellationToken)
     {
         var contextById = new Dictionary<string, JiraIssueContext>(StringComparer.Ordinal);
         var issueIds = new List<string>();
@@ -173,12 +168,12 @@ public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor access
 
             foreach (var history in changeLog.ChangeHistories)
             {
-                AddHistorySignals(signals, context, history, accountId, siteUrl, window);
+                AddHistorySignals(signals, context, history, accountId, window);
             }
         }
     }
 
-    private static void AddHistorySignals(ConcurrentDictionary<string, ActivitySignal> signals, JiraIssueContext context, JiraChangelogResponse history, string accountId, string siteUrl, ActivityFetchContainer window)
+    private static void AddHistorySignals(ConcurrentDictionary<string, ActivitySignal> signals, JiraIssueContext context, JiraChangelogResponse history, string accountId, ActivityFetchContainer window)
     {
         if (!IsAuthor(history.Author, accountId) || string.IsNullOrEmpty(history.Id) || history.Items is null)
         {
@@ -198,7 +193,7 @@ public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor access
         for (var index = 0; index < history.Items.Count; index++)
         {
             var item = history.Items[index];
-            var signal = JiraActivityMapper.ToChangeSignal(context, history, item, index, siteUrl);
+            var signal = JiraActivityMapper.ToChangeSignal(context, history, item, index);
             signals[signal.ExternalId] = signal;
         }
     }

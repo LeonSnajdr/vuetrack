@@ -1,4 +1,3 @@
-using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Vuetrack.Connectors.Jira.Activity.Api;
@@ -14,12 +13,6 @@ public sealed record JiraCommentResponse
     [JsonPropertyName("created")]
     public DateTime? Created { get; init; }
 
-    [JsonPropertyName("updated")]
-    public DateTime? Updated { get; init; }
-
-    // Atlassian Document Format; flattened to text via AdfTextExtractor.
-    [JsonPropertyName("body")]
-    public JsonElement? Body { get; init; }
 }
 
 public sealed record JiraCommentPageResponse

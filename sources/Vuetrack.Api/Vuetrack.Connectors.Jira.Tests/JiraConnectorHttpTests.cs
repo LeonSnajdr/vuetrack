@@ -71,8 +71,7 @@ public class JiraConnectorHttpTests
         signal.Kind.Should().Be(ActivityKind.Worklog);
         var detail = Detail(signal);
         detail.IssueKey.Should().Be("PROJ-1");
-        detail.CommentText.Should().Be("worked on the fix");
-        detail.SourceUrl.Should().Be("https://acme.atlassian.net/browse/PROJ-1");
+        detail.IssueType.Should().Be("Bug");
     }
 
     [Fact]
@@ -339,6 +338,6 @@ public class JiraConnectorHttpTests
             },
         };
         var client = new JiraApiClient(httpClient, accessor, options, NullLogger<JiraApiClient>.Instance);
-        return new JiraConnector(client, accessor, options);
+        return new JiraConnector(client, options);
     }
 }

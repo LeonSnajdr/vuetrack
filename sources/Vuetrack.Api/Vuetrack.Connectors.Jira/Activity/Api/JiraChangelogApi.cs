@@ -28,14 +28,8 @@ public sealed record JiraChangelogItemResponse
     [JsonPropertyName("fieldId")]
     public string? FieldId { get; init; }
 
-    [JsonPropertyName("from")]
-    public string? From { get; init; }
-
     [JsonPropertyName("fromString")]
     public string? FromString { get; init; }
-
-    [JsonPropertyName("to")]
-    public string? To { get; init; }
 
     [JsonPropertyName("toString")]
     public string? ToDisplay { get; init; }

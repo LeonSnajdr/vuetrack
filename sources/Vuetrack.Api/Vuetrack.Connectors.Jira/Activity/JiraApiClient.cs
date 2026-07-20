@@ -37,7 +37,7 @@ public class JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor access
         var request = new JiraSearchRequest
         {
             Jql = jql,
-            Fields = ["summary", "issuetype", "status", "project", "parent", "labels", "components", "updated"],
+            Fields = ["issuetype", "status", "parent"],
             MaxResults = 5000,
         };
 

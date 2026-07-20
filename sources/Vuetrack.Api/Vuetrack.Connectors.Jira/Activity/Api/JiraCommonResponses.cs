@@ -9,22 +9,10 @@ public sealed record JiraUserResponse
 {
     [JsonPropertyName("accountId")]
     public string? AccountId { get; init; }
-
-    [JsonPropertyName("displayName")]
-    public string? DisplayName { get; init; }
 }
 
 public sealed record JiraNamedResponse
 {
-    [JsonPropertyName("name")]
-    public string? Name { get; init; }
-}
-
-public sealed record JiraProjectResponse
-{
-    [JsonPropertyName("key")]
-    public string? Key { get; init; }
-
     [JsonPropertyName("name")]
     public string? Name { get; init; }
 }
@@ -35,37 +23,16 @@ public sealed record JiraParentResponse
     public string? Key { get; init; }
 }
 
-public sealed record JiraComponentResponse
-{
-    [JsonPropertyName("name")]
-    public string? Name { get; init; }
-}
-
 public sealed record JiraIssueFieldsResponse
 {
-    [JsonPropertyName("summary")]
-    public string? Summary { get; init; }
-
     [JsonPropertyName("issuetype")]
     public JiraNamedResponse? IssueType { get; init; }
 
     [JsonPropertyName("status")]
     public JiraNamedResponse? Status { get; init; }
 
-    [JsonPropertyName("project")]
-    public JiraProjectResponse? Project { get; init; }
-
     [JsonPropertyName("parent")]
     public JiraParentResponse? Parent { get; init; }
-
-    [JsonPropertyName("labels")]
-    public IReadOnlyList<string>? Labels { get; init; }
-
-    [JsonPropertyName("components")]
-    public IReadOnlyList<JiraComponentResponse>? Components { get; init; }
-
-    [JsonPropertyName("updated")]
-    public DateTime? Updated { get; init; }
 }
 
 public sealed record JiraSearchIssueResponse

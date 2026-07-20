@@ -1,4 +1,3 @@
-using System.Text.Json;
 using AwesomeAssertions;
 using Vuetrack.Connectors.Abstractions;
 using Vuetrack.Connectors.Jira.Activity;
@@ -9,15 +8,10 @@ namespace Vuetrack.Connectors.Jira.Tests;
 
 public class JiraActivityMapperTests
 {
-    private const string SiteUrl = "https://acme.atlassian.net";
-
     private static readonly JiraIssueContext Context = new()
     {
         Key = "PROJ-1",
         Id = "1001",
-        Summary = "Fix login",
-        ProjectKey = "PROJ",
-        ProjectName = "Project",
         IssueType = "Bug",
         Status = "In Progress",
     };
@@ -31,10 +25,9 @@ public class JiraActivityMapperTests
             Author = new JiraUserResponse { AccountId = "acc-1" },
             Started = new DateTime(2026, 7, 1, 9, 0, 0, DateTimeKind.Utc),
             TimeSpentSeconds = 3600,
-            Comment = Adf("worked on it"),
         };
 
-        var signal = JiraActivityMapper.ToWorklogSignal(Context, worklog, SiteUrl);
+        var signal = JiraActivityMapper.ToWorklogSignal(Context, worklog);
 
         signal.ConnectorKey.Should().Be(ConnectorKey.Jira);
         signal.ExternalId.Should().Be("PROJ-1:worklog:100");
@@ -44,13 +37,8 @@ public class JiraActivityMapperTests
         signal.Kind.Should().Be(ActivityKind.Worklog);
         var detail = Detail(signal);
         detail.IssueKey.Should().Be("PROJ-1");
-        detail.Summary.Should().Be("Fix login");
-        detail.ActorId.Should().Be("acc-1");
-        detail.CommentText.Should().Be("worked on it");
-        detail.SourceUrl.Should().Be("https://acme.atlassian.net/browse/PROJ-1");
-        detail.ProjectName.Should().Be("Project");
         detail.IssueType.Should().Be("Bug");
-        detail.WorklogId.Should().Be("100");
+        detail.Status.Should().Be("In Progress");
     }
 
     [Fact]
@@ -63,48 +51,39 @@ public class JiraActivityMapperTests
             Created = new DateTime(2026, 7, 1, 11, 0, 0, DateTimeKind.Utc),
             Items =
             [
-                new JiraChangelogItemResponse { Field = "status", FieldId = "status", From = "1", FromString = "To Do", To = "3", ToDisplay = "In Progress" },
+                new JiraChangelogItemResponse { Field = "status", FieldId = "status", FromString = "To Do", ToDisplay = "In Progress" },
             ],
         };
 
-        var signal = JiraActivityMapper.ToChangeSignal(Context, changelog, changelog.Items[0], 0, SiteUrl);
+        var signal = JiraActivityMapper.ToChangeSignal(Context, changelog, changelog.Items[0], 0);
 
         signal.ExternalId.Should().Be("PROJ-1:changelog:5000:0");
         signal.DateStarted.Should().Be(new DateTime(2026, 7, 1, 11, 0, 0, DateTimeKind.Utc));
         signal.DateEnded.Should().BeNull();
         signal.Kind.Should().Be(ActivityKind.StatusTransition);
 
-        Detail(signal).Transition.Should().Be(new JiraFieldTransition("1", "To Do", "3", "In Progress"));
+        Detail(signal).Transition.Should().Be(new JiraFieldTransition("To Do", "In Progress"));
     }
 
     [Fact]
-    public void ToCommentSignal_ProducesPointEventWithCommentText()
+    public void ToCommentSignal_ProducesPointEvent()
     {
         var comment = new JiraCommentResponse
         {
             Id = "9000",
             Author = new JiraUserResponse { AccountId = "acc-1" },
             Created = new DateTime(2026, 7, 1, 12, 0, 0, DateTimeKind.Utc),
-            Body = Adf("looks good"),
         };
 
-        var signal = JiraActivityMapper.ToCommentSignal(Context, comment, SiteUrl);
+        var signal = JiraActivityMapper.ToCommentSignal(Context, comment);
 
         signal.ExternalId.Should().Be("PROJ-1:comment:9000");
         signal.DateEnded.Should().BeNull();
         signal.Kind.Should().Be(ActivityKind.Comment);
-        Detail(signal).CommentText.Should().Be("looks good");
     }
 
     private static JiraSignalDetail Detail(ActivitySignal signal)
     {
         return signal.Detail.Should().BeOfType<JiraSignalDetail>().Which;
-    }
-
-    private static JsonElement Adf(string text)
-    {
-        var json = $$"""{ "type": "doc", "content": [ { "type": "paragraph", "content": [ { "type": "text", "text": "{{text}}" } ] } ] }""";
-        using var document = JsonDocument.Parse(json);
-        return document.RootElement.Clone();
     }
 }
