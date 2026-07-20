@@ -29,7 +29,7 @@ public class JiraActivityMapperTests
         {
             Id = "100",
             Author = new JiraUserResponse { AccountId = "acc-1" },
-            Started = new DateTimeOffset(2026, 7, 1, 9, 0, 0, TimeSpan.Zero),
+            Started = new DateTime(2026, 7, 1, 9, 0, 0, DateTimeKind.Utc),
             TimeSpentSeconds = 3600,
             Comment = Adf("worked on it"),
         };
@@ -60,7 +60,7 @@ public class JiraActivityMapperTests
         {
             Id = "5000",
             Author = new JiraUserResponse { AccountId = "acc-1" },
-            Created = new DateTimeOffset(2026, 7, 1, 11, 0, 0, TimeSpan.Zero),
+            Created = new DateTime(2026, 7, 1, 11, 0, 0, DateTimeKind.Utc),
             Items =
             [
                 new JiraChangelogItemResponse { Field = "status", FieldId = "status", From = "1", FromString = "To Do", To = "3", ToDisplay = "In Progress" },
@@ -84,7 +84,7 @@ public class JiraActivityMapperTests
         {
             Id = "9000",
             Author = new JiraUserResponse { AccountId = "acc-1" },
-            Created = new DateTimeOffset(2026, 7, 1, 12, 0, 0, TimeSpan.Zero),
+            Created = new DateTime(2026, 7, 1, 12, 0, 0, DateTimeKind.Utc),
             Body = Adf("looks good"),
         };
 

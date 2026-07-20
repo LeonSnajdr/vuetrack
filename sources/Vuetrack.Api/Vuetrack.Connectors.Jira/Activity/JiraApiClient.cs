@@ -209,7 +209,7 @@ public class JiraApiClient(HttpClient httpClient, IJiraConnectionAccessor access
     private static JsonSerializerOptions BuildJsonOptions()
     {
         var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
-        jsonOptions.Converters.Add(new JiraDateTimeOffsetConverter());
+        jsonOptions.Converters.Add(new JiraDateTimeConverter());
         return jsonOptions;
     }
 }

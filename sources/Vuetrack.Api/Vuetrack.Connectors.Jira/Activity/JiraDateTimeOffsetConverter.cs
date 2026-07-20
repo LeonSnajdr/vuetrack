@@ -6,9 +6,9 @@ namespace Vuetrack.Connectors.Jira.Activity;
 
 // Jira Cloud REST v3 returns timestamps with a colonless RFC822 offset (e.g. "2024-01-15T10:30:00.000+0000").
 // System.Text.Json's built-in ISO 8601 parser rejects that offset form, so we parse with the lenient BCL parser.
-public sealed class JiraDateTimeOffsetConverter : JsonConverter<DateTimeOffset?>
+public sealed class JiraDateTimeConverter : JsonConverter<DateTime?>
 {
-    public override DateTimeOffset? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override DateTime? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (reader.TokenType == JsonTokenType.Null)
         {
@@ -20,7 +20,7 @@ public sealed class JiraDateTimeOffsetConverter : JsonConverter<DateTimeOffset?>
         if (reader.TokenType == JsonTokenType.Number)
         {
             var epochMilliseconds = reader.GetInt64();
-            return DateTimeOffset.FromUnixTimeMilliseconds(epochMilliseconds);
+            return DateTimeOffset.FromUnixTimeMilliseconds(epochMilliseconds).UtcDateTime;
         }
 
         var text = reader.GetString();
@@ -32,13 +32,13 @@ public sealed class JiraDateTimeOffsetConverter : JsonConverter<DateTimeOffset?>
         var parsed = DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var value);
         if (!parsed)
         {
-            throw new JsonException($"Could not parse '{text}' as DateTimeOffset.");
+            throw new JsonException($"Could not parse '{text}' as DateTime.");
         }
 
-        return value;
+        return value.UtcDateTime;
     }
 
-    public override void Write(Utf8JsonWriter writer, DateTimeOffset? value, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, DateTime? value, JsonSerializerOptions options)
     {
         if (value is null)
         {

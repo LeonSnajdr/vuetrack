@@ -12,7 +12,7 @@ public sealed record JiraWorklogResponse
     public JiraUserResponse? Author { get; init; }
 
     [JsonPropertyName("started")]
-    public DateTimeOffset? Started { get; init; }
+    public DateTime? Started { get; init; }
 
     [JsonPropertyName("timeSpentSeconds")]
     public long TimeSpentSeconds { get; init; }

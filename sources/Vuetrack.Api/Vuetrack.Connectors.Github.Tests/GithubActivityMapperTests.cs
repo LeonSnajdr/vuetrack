@@ -22,7 +22,7 @@ public class GithubActivityMapperTests
                 Author = new GithubCommitAuthorResponse
                 {
                     Name = "Octo",
-                    Date = new DateTimeOffset(2026, 7, 1, 9, 0, 0, TimeSpan.FromHours(2)),
+                    Date = new DateTime(2026, 7, 1, 7, 0, 0, DateTimeKind.Utc),
                 },
             },
             Author = new GithubUserResponse { Login = "octocat", Id = 42 },

@@ -65,7 +65,7 @@ public sealed record JiraIssueFieldsResponse
     public IReadOnlyList<JiraComponentResponse>? Components { get; init; }
 
     [JsonPropertyName("updated")]
-    public DateTimeOffset? Updated { get; init; }
+    public DateTime? Updated { get; init; }
 }
 
 public sealed record JiraSearchIssueResponse

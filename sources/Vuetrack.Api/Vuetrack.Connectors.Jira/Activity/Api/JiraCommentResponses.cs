@@ -12,10 +12,10 @@ public sealed record JiraCommentResponse
     public JiraUserResponse? Author { get; init; }
 
     [JsonPropertyName("created")]
-    public DateTimeOffset? Created { get; init; }
+    public DateTime? Created { get; init; }
 
     [JsonPropertyName("updated")]
-    public DateTimeOffset? Updated { get; init; }
+    public DateTime? Updated { get; init; }
 
     // Atlassian Document Format; flattened to text via AdfTextExtractor.
     [JsonPropertyName("body")]

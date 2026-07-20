@@ -45,7 +45,7 @@ public sealed record GithubCommitAuthorResponse
     public string? Name { get; init; }
 
     [JsonPropertyName("date")]
-    public DateTimeOffset? Date { get; init; }
+    public DateTime? Date { get; init; }
 }
 
 public sealed record GithubRepoResponse

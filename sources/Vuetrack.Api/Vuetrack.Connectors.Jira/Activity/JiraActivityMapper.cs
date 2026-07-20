@@ -11,7 +11,7 @@ public static class JiraActivityMapper
 
     public static ActivitySignal ToWorklogSignal(JiraIssueContext context, JiraWorklogResponse worklog, string siteUrl)
     {
-        var started = worklog.Started!.Value.UtcDateTime;
+        var started = worklog.Started!.Value;
         var ended = started.AddSeconds(worklog.TimeSpentSeconds);
         var extracted = AdfTextExtractor.Extract(worklog.Comment);
         var commentText = extracted.Truncate(MaxCommentLength);
@@ -38,7 +38,7 @@ public static class JiraActivityMapper
 
     public static ActivitySignal ToCommentSignal(JiraIssueContext context, JiraCommentResponse comment, string siteUrl)
     {
-        var created = comment.Created!.Value.UtcDateTime;
+        var created = comment.Created!.Value;
         var extracted = AdfTextExtractor.Extract(comment.Body);
         var text = extracted.Truncate(MaxCommentLength);
 
@@ -64,7 +64,7 @@ public static class JiraActivityMapper
 
     public static ActivitySignal ToChangeSignal(JiraIssueContext context, JiraChangelogResponse changelog, JiraChangelogItemResponse item, int itemIndex, string siteUrl)
     {
-        var created = changelog.Created!.Value.UtcDateTime;
+        var created = changelog.Created!.Value;
         var kind = Classify(item);
         var transition = new JiraFieldTransition(item.From, item.FromString, item.To, item.ToDisplay);
 

@@ -50,7 +50,7 @@ public sealed record JiraChangelogResponse
     public JiraUserResponse? Author { get; init; }
 
     [JsonPropertyName("created")]
-    public DateTimeOffset? Created { get; init; }
+    public DateTime? Created { get; init; }
 
     [JsonPropertyName("items")]
     public IReadOnlyList<JiraChangelogItemResponse>? Items { get; init; }

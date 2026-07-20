@@ -100,8 +100,7 @@ public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor access
                 continue;
             }
 
-            var startedUtc = started.UtcDateTime;
-            if (startedUtc < window.From || startedUtc >= window.To)
+            if (started < window.From || started >= window.To)
             {
                 continue;
             }
@@ -127,8 +126,7 @@ public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor access
                 continue;
             }
 
-            var createdUtc = created.UtcDateTime;
-            if (createdUtc < window.From || createdUtc >= window.To)
+            if (created < window.From || created >= window.To)
             {
                 continue;
             }
@@ -192,8 +190,7 @@ public class JiraConnector(IJiraApiClient client, IJiraConnectionAccessor access
             return;
         }
 
-        var createdUtc = created.UtcDateTime;
-        if (createdUtc < window.From || createdUtc >= window.To)
+        if (created < window.From || created >= window.To)
         {
             return;
         }

@@ -20,7 +20,7 @@ public static class GithubActivityMapper
         var messageTitle = FirstLine(message);
 
         var authorLogin = item.Author?.Login;
-        var started = item.Commit?.Author?.Date?.UtcDateTime ?? default;
+        var started = item.Commit?.Author?.Date ?? default;
 
         var detail = new GithubSignalDetail
         {
