@@ -1,8 +1,6 @@
 <template>
     <div
         :id="event.uiId"
-        @contextmenu="details.hardClose()"
-        @mousedown="details.hardClose()"
         @mouseenter="details.open($event, event)"
         @mouseleave="details.close()"
         @mousemove="details.move($event, event)"

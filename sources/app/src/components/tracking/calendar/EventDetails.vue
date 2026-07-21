@@ -9,12 +9,12 @@
         location="end"
         scrollStrategy="close"
     >
-        <VCard v-if="timeEntry" class="pa-3" width="360">
+        <VCard v-if="timeEntry" ref="cardRef" class="pa-3" width="360">
             <div class="d-flex flex-column ga-1">
                 <div class="d-flex align-center ga-2 font-weight-bold">
                     <span class="text-truncate">{{ displayTitle }}</span>
                     <VSpacer />
-                    <VHotkey class="mr-n2" keys="ctrl" />
+                    <VHotkey class="mr-n2" keys="shift" />
                     <VIcon :icon="state.pinned ? mdiPinOff : mdiPin" size="small" />
                 </div>
 
@@ -73,15 +73,31 @@ type DetailFieldGroup = {
     rows: Exclude<DetailField, ChipDetailField>[];
 };
 
-const { state, togglePin } = useEventDetails();
+const { state, togglePin, hardClose } = useEventDetails();
+
+const calendarStore = useCalendarStore();
+const { interaction } = storeToRefs(calendarStore);
 
 const dateFormatter = useDate();
 
-onKeyStroke("Control", (nativeEvent) => {
+const cardRef = useTemplateRef("cardRef");
+
+onKeyStroke("Shift", (nativeEvent) => {
     if (nativeEvent.repeat || !state.value.show) return;
     nativeEvent.preventDefault();
     togglePin();
 });
+
+onClickOutside(cardRef, () => {
+    if (state.value.show) hardClose();
+});
+
+watch(
+    () => interaction.value.kind !== "idle",
+    (active) => {
+        if (active) hardClose();
+    }
+);
 
 const timeEntry = computed(() => {
     const event = state.value.event;
