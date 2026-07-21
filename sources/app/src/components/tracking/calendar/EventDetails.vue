@@ -14,7 +14,7 @@
                 <div class="d-flex align-center ga-2 font-weight-bold">
                     <span class="text-truncate">{{ displayTitle }}</span>
                     <VSpacer />
-                    <VHotkey class="mr-n2" keys="alt" />
+                    <VHotkey class="mr-n2" keys="ctrl" />
                     <VIcon :icon="state.pinned ? mdiPinOff : mdiPin" size="small" />
                 </div>
 
@@ -77,7 +77,7 @@ const { state, togglePin } = useEventDetails();
 
 const dateFormatter = useDate();
 
-onKeyStroke("Alt", (nativeEvent) => {
+onKeyStroke("Control", (nativeEvent) => {
     if (nativeEvent.repeat || !state.value.show) return;
     nativeEvent.preventDefault();
     togglePin();
