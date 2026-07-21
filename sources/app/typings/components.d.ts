@@ -46,6 +46,7 @@ declare module 'vue' {
     TrackingCalendarIntervalSelection: typeof import('./../src/components/tracking/calendar/IntervalSelection.vue')['default']
     TrackingCalendarOverlays: typeof import('./../src/components/tracking/calendar/Overlays.vue')['default']
     TrackingCalendarView: typeof import('./../src/components/tracking/calendar/View.vue')['default']
+    TrackingEmptyState: typeof import('./../src/components/tracking/EmptyState.vue')['default']
     TrackingListFeaturesCreateOverlay: typeof import('./../src/components/tracking/list/features/CreateOverlay.vue')['default']
     TrackingListFeaturesDeleteOverlay: typeof import('./../src/components/tracking/list/features/DeleteOverlay.vue')['default']
     TrackingListFeaturesEditOverlay: typeof import('./../src/components/tracking/list/features/EditOverlay.vue')['default']

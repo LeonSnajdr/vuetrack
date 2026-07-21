@@ -11,7 +11,7 @@ using Vuetrack.OAuth.Contractrs;
 
 namespace Vuetrack.Api.Features.Backends.Timetracking.Services;
 
-[Inject]
+[Inject(Target.All)]
 public class TimetrackingConnectionService(
     IBackendRegistry registry,
     IBackendResolver resolver,

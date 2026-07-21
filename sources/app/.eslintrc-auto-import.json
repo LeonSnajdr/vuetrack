@@ -7781,6 +7781,7 @@
     "useScroll": true,
     "useScrollLock": true,
     "useSessionStorage": true,
+    "useSettingsDialogStore": true,
     "useSettingsStore": true,
     "useShare": true,
     "useSlots": true,

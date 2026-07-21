@@ -1,5 +1,5 @@
 <template>
-    <VDialog v-model="open" height="600" width="900">
+    <VDialog v-model="isOpen" height="600" width="900">
         <VCard>
             <VCardTitle>{{ $t("settings.title") }}</VCardTitle>
             <VCardText class="d-flex h-100 overflow-auto ga-4">
@@ -30,13 +30,13 @@
             </VCardText>
             <VCardActions>
                 <VSpacer />
-                <VBtn @click="open = false" variant="flat">{{ $t("action.close") }}</VBtn>
+                <VBtn @click="isOpen = false" variant="flat">{{ $t("action.close") }}</VBtn>
             </VCardActions>
         </VCard>
     </VDialog>
 </template>
 
 <script setup lang="ts">
-const open = defineModel<boolean>({ default: false });
-const activeTab = ref("general");
+const settingsDialogStore = useSettingsDialogStore();
+const { isOpen, activeTab } = storeToRefs(settingsDialogStore);
 </script>

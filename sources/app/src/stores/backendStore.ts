@@ -11,6 +11,8 @@ export const useBackendStore = defineStore("backend", () => {
     const connectingKeys = ref<Record<string, boolean>>({});
     const disconnectingKeys = ref<Record<string, boolean>>({});
 
+    const hasUsableBackend = computed(() => backends.value.some((b) => b.connected && b.healthy));
+
     const statusFor = (key: string): BackendStatusResponse => {
         const backend = backends.value.find((b) => b.key === key);
         return { connected: backend?.connected ?? false, healthy: backend?.healthy ?? false };
@@ -72,6 +74,7 @@ export const useBackendStore = defineStore("backend", () => {
     return {
         backends,
         isLoading,
+        hasUsableBackend,
         executeLoad,
         statusFor,
         isConnecting,

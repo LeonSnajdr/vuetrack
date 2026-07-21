@@ -5,20 +5,20 @@
             <p class="ml-2">Vuetrack</p>
         </template>
         <template #append>
-            <VIconBtn @click="settingsOpen = true" :icon="mdiCog" />
+            <VIconBtn @click="settingsDialogStore.open()" :icon="mdiCog" />
             <VIconBtn @click="logout" :icon="mdiLogout" class="ml-1" />
         </template>
     </VAppBar>
-    <AppSettingsDialog v-model="settingsOpen" />
+    <AppSettingsDialog />
 </template>
 
 <script setup lang="ts">
 const trackingStore = useTrackingStore();
 const { sidebarOpen } = storeToRefs(trackingStore);
 
-const router = useRouter();
+const settingsDialogStore = useSettingsDialogStore();
 
-const settingsOpen = ref(false);
+const router = useRouter();
 
 const logout = () => {
     router.push({ name: "/auth/logout" });
