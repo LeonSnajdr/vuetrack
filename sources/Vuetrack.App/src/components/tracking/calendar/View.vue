@@ -167,13 +167,13 @@ const toTime = (tms: CalendarDayBodySlotScope) => {
 </script>
 
 <style scoped>
-:deep(.v-event-timed) {
-    user-select: none;
-    min-height: 30px;
-}
-
+:deep(.v-event-timed),
 :deep(.v-event) {
     user-select: none;
-    min-height: 30px;
+    min-height: 28px;
+    background-color: transparent !important;
+    border: none;
+    box-shadow: none;
+    border-radius: 6px;
 }
 </style>

@@ -10,13 +10,12 @@ export function useEventWrapper() {
     const { minimumEventDurationMs } = useCalendarHelper();
     const timeEntryHelper = useTimeEntryHelper();
 
-    const createExistingEvent = (contract: TimeEntryContract, color = "#7da6c9"): ExistingTimeEntryEvent => {
+    const createExistingEvent = (contract: TimeEntryContract): ExistingTimeEntryEvent => {
         const cached = existingWrapperCache.get(contract);
         if (cached) return cached;
 
         const wrapper: ExistingTimeEntryEvent = {
             kind: "existing",
-            color,
             timed: true,
             uiId: `event-uiId-${uuidv4()}`,
             timeEntry: contract,
@@ -37,13 +36,12 @@ export function useEventWrapper() {
         return wrapper;
     };
 
-    const createSuggestionEvent = (contract: TimeEntrySuggestionContract, color = "#22C55E"): SuggestionTimeEntryEvent => {
+    const createSuggestionEvent = (contract: TimeEntrySuggestionContract): SuggestionTimeEntryEvent => {
         const cached = suggestionWrapperCache.get(contract);
         if (cached) return cached;
 
         const wrapper: SuggestionTimeEntryEvent = {
             kind: "suggestion",
-            color,
             timed: true,
             uiId: `event-uiId-${uuidv4()}`,
             timeEntry: contract,
@@ -72,7 +70,6 @@ export function useEventWrapper() {
 
         return {
             kind: "draft",
-            color: "#673AB7",
             timed: true,
             uiId: `event-uiId-${uuidv4()}`,
             createEntry,
@@ -104,7 +101,6 @@ export function useEventWrapper() {
 
         return {
             kind: "draft",
-            color: source.color,
             timed: true,
             uiId: `event-uiId-${uuidv4()}`,
             createEntry,

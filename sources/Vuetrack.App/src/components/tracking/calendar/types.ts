@@ -14,7 +14,6 @@ export type EventPosition = {
 export type BaseCalendarEvent = {
     uiId: string;
     timed: boolean;
-    color: string;
 } & EventPosition;
 
 export type DraftTimeEntryEvent = {
