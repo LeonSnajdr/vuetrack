@@ -73,7 +73,8 @@ export function useAsyncTask<TArgs extends unknown[], TResult, TKey = symbol>(fn
             }
 
             console.error(e);
-            return error(e);
+            const validation = tryGetValidationErrors(e);
+            return error(e, validation);
         } finally {
             if (controller && abortControllers.get(key) === controller) {
                 abortControllers.delete(key);

@@ -124,5 +124,8 @@
   "tracking.period.thisMonth": "Dieser Monat",
   "tracking.period.today": "Heute",
   "tracking.period.workweek": "Diese Arbeitswoche",
-  "tracking.period.yesterday": "Gestern"
+  "tracking.period.yesterday": "Gestern",
+  "validation.dateOrder": "Start muss vor dem Ende liegen",
+  "validation.invalid": "Ungültiger Wert",
+  "validation.required": "Pflichtfeld"
 }

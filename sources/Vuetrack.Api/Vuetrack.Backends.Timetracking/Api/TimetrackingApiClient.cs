@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Vuetrack.Backends.Timetracking.Connection;
 
 namespace Vuetrack.Backends.Timetracking.Api;
@@ -68,9 +69,38 @@ public class TimetrackingApiClient(HttpClient httpClient, ITimetrackingConnectio
         using var request = BuildRequest(HttpMethod.Post, "timeEntry/upsert");
         request.Content = new FormUrlEncodedContent(form);
         using var response = await HttpClient.SendAsync(request, cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+            var fieldErrors = ParseValidationErrors(body);
+            throw new TimetrackingValidationException(fieldErrors);
+        }
+
         response.EnsureSuccessStatusCode();
 
         return await response.Content.ReadFromJsonAsync<TimetrackingTimeEntryResponse>(cancellationToken) ?? throw new InvalidOperationException("Timetracking upsert returned an empty response.");
+    }
+
+    private static IReadOnlyList<TimetrackingFieldError> ParseValidationErrors(string body)
+    {
+        var errors = new List<TimetrackingFieldError>();
+
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            return errors;
+        }
+
+        using var document = JsonDocument.Parse(body);
+        var root = document.RootElement;
+
+        foreach (var property in root.EnumerateObject())
+        {
+            var error = new TimetrackingFieldError(property.Name);
+            errors.Add(error);
+        }
+
+        return errors;
     }
 
     public async Task DeleteTimeEntriesAsync(string idsToDelete, CancellationToken cancellationToken)

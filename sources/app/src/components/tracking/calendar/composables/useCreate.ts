@@ -1,5 +1,4 @@
 import type { DraftTimeEntryEvent, SuggestionTimeEntryEvent } from "@/components/tracking/calendar/types";
-import { ApiValidationException } from "@/util/ApiValidationError";
 import { useCalendarHelper } from "./useCalendarHelper";
 import { useEventMutation } from "./useEventMutation";
 
@@ -25,8 +24,8 @@ export function useCreate() {
         const createResult = await mutation.execute(createMutation);
 
         if (createResult.status === "error") {
-            if (createResult.error instanceof ApiValidationException) {
-                interaction.value.errors = createResult.error.errors;
+            if (createResult.validation) {
+                interaction.value.errors = createResult.validation;
             }
             return;
         }

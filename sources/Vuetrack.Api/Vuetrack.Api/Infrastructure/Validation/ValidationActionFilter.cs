@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Vuetrack.Api.Infrastructure.Problems;
+using Vuetrack.Backends.Abstractions.Contracts;
 
 namespace Vuetrack.Api.Infrastructure.Validation;
 
@@ -34,7 +35,8 @@ public class ValidationActionFilter(IServiceProvider serviceProvider) : IAsyncAc
             var modelState = new ModelStateDictionary();
             foreach (var failure in result.Errors)
             {
-                modelState.AddModelError(failure.PropertyName, failure.ErrorMessage);
+                var error = ToValidationError(failure.ErrorCode);
+                modelState.AddModelError(failure.PropertyName, error);
             }
 
             var factory = context.HttpContext.RequestServices.GetRequiredService<ProblemDetailsFactory>();
@@ -46,5 +48,23 @@ public class ValidationActionFilter(IServiceProvider serviceProvider) : IAsyncAc
         }
 
         await next();
+    }
+
+    private static string ToValidationError(string errorCode)
+    {
+        if (Enum.TryParse<ValidationError>(errorCode, out var explicitError))
+        {
+            var explicitName = explicitError.ToString();
+            return explicitName;
+        }
+
+        var error = errorCode switch
+        {
+            "NotEmptyValidator" or "NotNullValidator" => ValidationError.Required,
+            _ => ValidationError.Invalid,
+        };
+
+        var name = error.ToString();
+        return name;
     }
 }

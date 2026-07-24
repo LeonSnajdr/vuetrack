@@ -1,5 +1,5 @@
 import { success } from "@/util/ActionResult";
-import { ApiValidationException, type ApiValidationError } from "@/util/ApiValidationError";
+import type { ValidationErrors } from "@/util/ValidationProblem";
 import type {
     DraftTimeEntryCreateMutation,
     DraftTimeEntryDeleteMutation,
@@ -27,11 +27,12 @@ export type ExecuteAllResult =
     | {
           status: "error";
           error?: unknown;
+          validation?: ValidationErrors | null;
           failedMutation: TimeEntryMutation;
           remaining: TimeEntryMutation[];
       };
 
-export function buildHandoffInteraction(failedMutation: TimeEntryMutation, remaining: TimeEntryMutation[], errors: ApiValidationError): Interaction | null {
+export function buildHandoffInteraction(failedMutation: TimeEntryMutation, remaining: TimeEntryMutation[], errors: ValidationErrors): Interaction | null {
     if (failedMutation.kind === "update") {
         return {
             kind: "edit",
@@ -79,6 +80,7 @@ export function useEventMutation() {
                 return {
                     status: "error",
                     error: result.status === "error" ? result.error : undefined,
+                    validation: result.status === "error" ? result.validation : undefined,
                     failedMutation: mutations[i],
                     remaining: mutations.slice(i + 1)
                 };
@@ -144,12 +146,12 @@ export function useEventMutation() {
 
         const result = await execute(cur.mutation);
 
-        if (result.status === "error" && result.error instanceof ApiValidationException) {
+        if (result.status === "error" && result.validation) {
             interaction.value = {
                 kind: "edit",
                 event: cur.event,
                 mutation: cur.mutation,
-                errors: result.error.errors
+                errors: result.validation
             };
             return false;
         }
@@ -172,8 +174,8 @@ export function useEventMutation() {
         const result = await executeAll(pendingMutations);
         if (result.status === "success") return true;
 
-        if (result.error instanceof ApiValidationException) {
-            const handoff = buildHandoffInteraction(result.failedMutation, result.remaining, result.error.errors);
+        if (result.validation) {
+            const handoff = buildHandoffInteraction(result.failedMutation, result.remaining, result.validation);
             if (handoff) {
                 interaction.value = handoff;
                 return false;

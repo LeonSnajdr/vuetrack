@@ -1,7 +1,7 @@
 import type { TimeEntryCreateContract, TimeEntryContract, TimeEntryUpdateContract, TimeEntryId } from "@/contracts/TimeEntryContract";
 import type { TimeEntrySuggestionContract, TimeEntrySuggestionUpdateContract, TimeEntrySuggestionId } from "@/contracts/TimeEntrySuggestion";
 import type { Nullable } from "@/util/Nullable";
-import type { ApiValidationError } from "@/util/ApiValidationError";
+import type { ValidationErrors } from "@/util/ValidationProblem";
 import type { CalendarEvent } from "vuetify/lib/components/VCalendar/types.mjs";
 
 export type EventEdge = "start" | "end";
@@ -108,14 +108,14 @@ export type Interaction =
           kind: "create";
           event: DraftTimeEntryEvent | SuggestionTimeEntryEvent;
           mutation: DraftTimeEntryCreateMutation | SuggestionTimeEntryCreateMutation;
-          errors?: ApiValidationError;
+          errors?: ValidationErrors;
           pendingMutations?: TimeEntryMutation[];
       }
     | {
           kind: "edit";
           event: ExistingTimeEntryEvent | SuggestionTimeEntryEvent;
           mutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation;
-          errors?: ApiValidationError;
+          errors?: ValidationErrors;
           pendingMutations?: TimeEntryMutation[];
       }
     | {

@@ -1,7 +1,7 @@
 import { cloneFnJSON, type UseClonedReturn } from "@vueuse/core";
 import { isRef, ref as deepRef, shallowRef, toValue, watch, type MaybeRefOrGetter, type Ref, type WatchOptions } from "vue";
 
-export interface UseClonedMappedOptions<TMapped = any> extends WatchOptions {
+export interface UseClonedMappedOptions<TMapped> extends WatchOptions {
     clone?: (source: TMapped) => TMapped;
     manual?: boolean;
 }
@@ -15,12 +15,7 @@ export function useClonedMapped<TSource, TMapped>(
     const isModified = shallowRef<boolean>(false);
     let _lastSync = false;
 
-    const {
-        manual,
-        clone = cloneFnJSON,
-        deep = true,
-        immediate = true
-    } = options;
+    const { manual, clone = cloneFnJSON, deep = true, immediate = true } = options;
 
     watch(
         cloned,

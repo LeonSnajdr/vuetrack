@@ -52,6 +52,10 @@ try
             options.Filters.Add<ValidationActionFilter>();
             options.ModelBinderProviders.Insert(0, new TrimStringModelBinderProvider());
         })
+        .ConfigureApiBehaviorOptions(options =>
+        {
+            options.InvalidModelStateResponseFactory = ModelBindingProblemFactory.Create;
+        })
         .AddJsonOptions(opts =>
         {
             var enumConverter = new JsonStringEnumConverter(JsonNamingPolicy.CamelCase);

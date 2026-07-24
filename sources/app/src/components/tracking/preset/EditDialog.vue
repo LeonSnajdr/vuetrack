@@ -27,7 +27,6 @@
 </template>
 
 <script setup lang="ts">
-import { useClonedMapped } from "@/composables/useClonedMapped";
 import type { TimeEntryPreset } from "@/models/TimeEntryPreset";
 
 const props = defineProps<{

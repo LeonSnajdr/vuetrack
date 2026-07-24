@@ -44,6 +44,8 @@ public class ValidationActionFilterTests
         problem.Status.Should().Be(StatusCodes.Status400BadRequest);
         problem.Errors.Should().ContainKey(nameof(TimeEntryCreateContract.ProjectId));
         problem.Errors.Should().ContainKey(nameof(TimeEntryCreateContract.ActivityId));
+        problem.Errors[nameof(TimeEntryCreateContract.ProjectId)].Should().Contain(nameof(ValidationError.Required));
+        problem.Errors[nameof(TimeEntryCreateContract.DateStarted)].Should().Contain(nameof(ValidationError.DateOrder));
     }
 
     [Fact]

@@ -123,5 +123,8 @@
   "tracking.period.thisMonth": "This month",
   "tracking.period.today": "Today",
   "tracking.period.workweek": "This work week",
-  "tracking.period.yesterday": "Yesterday"
+  "tracking.period.yesterday": "Yesterday",
+  "validation.dateOrder": "Start must be before end",
+  "validation.invalid": "Invalid value",
+  "validation.required": "This field is required"
 }

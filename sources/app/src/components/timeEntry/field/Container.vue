@@ -1,12 +1,12 @@
 <template>
     <VForm :key="reFocusKey" v-model="valid">
-        <TimeEntryFieldTaskId v-model="timeEntry.taskId" :autofocus="firstEmptyField === 'taskId'" :errorMessages="fieldErrors?.taskId" />
+        <TimeEntryFieldTaskId v-model="timeEntry.taskId" :autofocus="firstEmptyField === 'taskId'" :errorMessages="errorMessages.taskId" />
         <VRow :class="isEndTimeFullMode ? 'ga-4' : 'ga-2'">
             <VCol :cols="isEndTimeFullMode ? undefined : 8">
                 <TimeEntryFieldDateStarted
                     v-model="timeEntry.dateStarted"
                     :autofocus="firstEmptyField === 'dateStarted'"
-                    :errorMessages="fieldErrors?.dateStarted"
+                    :errorMessages="errorMessages.dateStarted"
                     :tabindex="skipTimeFields ? -1 : undefined"
                 />
             </VCol>
@@ -15,8 +15,8 @@
                     v-model="timeEntry.dateEnded"
                     v-model:fullMode="isEndTimeFullMode"
                     :autofocus="firstEmptyField === 'dateEnded'"
-                    :errorMessages="fieldErrors?.dateEnded"
                     :dateStarted="timeEntry.dateStarted"
+                    :errorMessages="errorMessages.dateEnded"
                     :tabindex="skipTimeFields ? -1 : undefined"
                 />
             </VCol>
@@ -24,23 +24,23 @@
         <TimeEntryFieldProjectId
             v-model="timeEntry.projectId"
             :autofocus="firstEmptyField === 'projectId'"
-            :errorMessages="fieldErrors?.projectId"
+            :errorMessages="errorMessages.projectId"
             :taskId="timeEntry.taskId"
         />
         <TimeEntryFieldActivityId
             v-model="timeEntry.activityId"
             :autofocus="firstEmptyField === 'activityId'"
-            :errorMessages="fieldErrors?.activityId"
+            :errorMessages="errorMessages.activityId"
             :projectId="timeEntry.projectId"
         />
-        <TimeEntryFieldComment v-model="timeEntry.comment" :autofocus="firstEmptyField === 'comment'" :errorMessages="fieldErrors?.comment" />
+        <TimeEntryFieldComment v-model="timeEntry.comment" :autofocus="firstEmptyField === 'comment'" :errorMessages="errorMessages.comment" />
     </VForm>
 </template>
 
 <script setup lang="ts">
 import type { ActivityId } from "@/contracts/ActivityContract";
 import type { ProjectId } from "@/contracts/ProjectContract";
-import type { ApiValidationError } from "@/util/ApiValidationError";
+import type { ValidationErrors } from "@/util/ValidationProblem";
 
 const props = defineProps<{
     skipTimeFields?: boolean;
@@ -56,7 +56,8 @@ const timeEntry = defineModel<{
 }>({ required: true });
 
 const valid = defineModel<boolean>("valid", { default: false });
-const fieldErrors = defineModel<ApiValidationError | undefined>("errors");
+const fieldErrors = defineModel<ValidationErrors | undefined>("errors");
+const { messages: errorMessages } = useValidation(fieldErrors);
 const isEndTimeFullMode = ref(false);
 
 const firstEmptyField = computed(() => {

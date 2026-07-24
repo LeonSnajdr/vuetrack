@@ -1,17 +1,7 @@
 import type { TimeEntryContract, TimeEntryCreateContract, TimeEntryId, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
 import axios from "@/plugins/axios";
 import type { TrackingFilter } from "@/models/TrackingFilter";
-import { ApiValidationException, type ApiValidationError, tryGetApiValidationError } from "@/util/ApiValidationError";
 import { format, parseISO } from "date-fns";
-
-const validationFieldKeyMappings: ReadonlyArray<readonly [string, readonly string[]]> = [
-    ["taskId", ["taskId"]],
-    ["dateStarted", ["dateStarted"]],
-    ["dateEnded", ["dateEnded"]],
-    ["projectId", ["projectId"]],
-    ["activityId", ["activityId"]],
-    ["comment", ["comment"]]
-];
 
 // The backend returns the clean TimeEntryContract; dates arrive as naive local ISO strings
 // (no timezone), so we revive them here rather than relying on the axios date transform.
@@ -34,41 +24,18 @@ class TimeEntryService {
     };
 
     public create = async (createContract: TimeEntryCreateContract): Promise<TimeEntryContract> => {
-        const result = await this.invokeWithValidationMapping(() => axios.api.post<TimeEntryResponse>("timeEntry", this.toCreatePayload(createContract)));
+        const result = await axios.api.post<TimeEntryResponse>("timeEntry", this.toPayload(createContract));
         return this.mapResponse(result.data);
     };
 
     public update = async (id: TimeEntryId, updateContract: TimeEntryUpdateContract, signal?: AbortSignal): Promise<TimeEntryContract> => {
-        const result = await this.invokeWithValidationMapping(() => axios.api.put<TimeEntryResponse>(`timeEntry/${id}`, this.toUpdatePayload(updateContract), { signal }));
+        const result = await axios.api.put<TimeEntryResponse>(`timeEntry/${id}`, this.toPayload(updateContract), { signal });
         return this.mapResponse(result.data);
     };
 
     public delete = async (id: TimeEntryId): Promise<void> => {
         await axios.api.delete(`timeEntry/${id}`);
     };
-
-    private async invokeWithValidationMapping<T>(fn: () => Promise<T>): Promise<T> {
-        try {
-            return await fn();
-        } catch (error) {
-            const validationError = this.tryMapValidationError(error);
-            if (validationError) throw new ApiValidationException(validationError);
-            throw error;
-        }
-    }
-
-    private tryMapValidationError(error: unknown): ApiValidationError | null {
-        const raw = tryGetApiValidationError(error);
-        if (!raw) return null;
-
-        const mapped: ApiValidationError = {};
-        for (const [fieldKey, sourceKeys] of validationFieldKeyMappings) {
-            const messages = [...new Set(sourceKeys.flatMap((sourceKey) => raw[sourceKey] ?? []))];
-            if (messages.length > 0) mapped[fieldKey] = messages;
-        }
-
-        return Object.keys(mapped).length > 0 ? mapped : null;
-    }
 
     private mapResponse(dto: TimeEntryResponse): TimeEntryContract {
         return {
@@ -78,18 +45,7 @@ class TimeEntryService {
         };
     }
 
-    private toCreatePayload(contract: TimeEntryCreateContract) {
-        return {
-            taskId: contract.taskId,
-            projectId: contract.projectId,
-            activityId: contract.activityId,
-            dateStarted: this.formatDateTime(contract.dateStarted),
-            dateEnded: this.formatDateTime(contract.dateEnded),
-            comment: contract.comment
-        };
-    }
-
-    private toUpdatePayload(contract: TimeEntryUpdateContract) {
+    private toPayload(contract: TimeEntryCreateContract | TimeEntryUpdateContract) {
         return {
             taskId: contract.taskId,
             projectId: contract.projectId,

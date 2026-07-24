@@ -11,6 +11,6 @@ public class TimeEntryCreateContractValidator : AbstractValidator<TimeEntryCreat
     {
         RuleFor(x => x.ProjectId).NotEmpty();
         RuleFor(x => x.ActivityId).NotEmpty();
-        RuleFor(x => x.DateStarted).LessThan(x => x.DateEnded);
+        RuleFor(x => x.DateStarted).LessThan(x => x.DateEnded).WithErrorCode(nameof(ValidationError.DateOrder));
     }
 }

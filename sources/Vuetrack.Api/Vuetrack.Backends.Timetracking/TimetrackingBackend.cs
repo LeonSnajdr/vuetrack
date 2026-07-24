@@ -63,6 +63,12 @@ public class TimetrackingBackend(ITimetrackingApiClient client, ITimetrackingCon
             var response = await Client.UpsertTimeEntryAsync(form, cancellationToken);
             return response.ToContract();
         }
+        catch (TimetrackingValidationException ex)
+        {
+            Logger.LogInformation(ex, "Timetracking rejected time entry create");
+            var errors = TimetrackingValidationMapper.ToValidationErrors(ex);
+            return errors;
+        }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to create time entry");
@@ -77,6 +83,12 @@ public class TimetrackingBackend(ITimetrackingApiClient client, ITimetrackingCon
             var form = TimetrackingMapper.ToUpdateForm(id, contract, Accessor.Current?.ExternalUserId);
             var response = await Client.UpsertTimeEntryAsync(form, cancellationToken);
             return response.ToContract();
+        }
+        catch (TimetrackingValidationException ex)
+        {
+            Logger.LogInformation(ex, "Timetracking rejected time entry update {Id}", id);
+            var errors = TimetrackingValidationMapper.ToValidationErrors(ex);
+            return errors;
         }
         catch (Exception ex)
         {

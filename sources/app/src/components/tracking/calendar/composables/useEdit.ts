@@ -1,5 +1,4 @@
 import type { ExistingTimeEntryEvent, SuggestionTimeEntryEvent } from "@/components/tracking/calendar/types";
-import { ApiValidationException } from "@/util/ApiValidationError";
 import { useCalendarHelper } from "./useCalendarHelper";
 import { useEventMutation } from "./useEventMutation";
 
@@ -26,8 +25,8 @@ export function useEdit() {
         const editResult = await mutation.execute(editMutation);
 
         if (editResult.status === "error") {
-            if (editResult.error instanceof ApiValidationException) {
-                interaction.value.errors = editResult.error.errors;
+            if (editResult.validation) {
+                interaction.value.errors = editResult.validation;
             }
             return;
         }

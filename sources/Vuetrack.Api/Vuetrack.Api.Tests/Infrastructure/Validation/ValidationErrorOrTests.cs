@@ -83,6 +83,25 @@ public class ValidationErrorOrTests
         problem.Detail.Should().Be("Already exists");
     }
 
+    [Fact]
+    public void ToActionResult_WhenValidationErrors_ReturnsFieldKeyedValidationProblem()
+    {
+        var controller = CreateController();
+        List<Error> errors = [Error.Validation("projectId", "Required"), Error.Validation("activityId", "Required")];
+        ErrorOr<Created> result = errors;
+
+        var actionResult = controller.ToActionResult(result);
+
+        var objectResult = actionResult.Should().BeOfType<ObjectResult>().Subject;
+        objectResult.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
+        objectResult.ContentTypes.Should().Contain("application/problem+json");
+
+        var problem = objectResult.Value.Should().BeOfType<ValidationProblemDetails>().Subject;
+        problem.Errors.Should().ContainKey("projectId");
+        problem.Errors["projectId"].Should().Contain("Required");
+        problem.Errors.Should().ContainKey("activityId");
+    }
+
     private static ControllerBase CreateController()
     {
         var provider = new ServiceCollection()
