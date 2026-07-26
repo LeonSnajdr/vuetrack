@@ -59,7 +59,7 @@ public class TimetrackingBackend(ITimetrackingApiClient client, ITimetrackingCon
     {
         try
         {
-            var form = contract.ToCreateForm(Accessor.Current?.ExternalUserId);
+            var form = contract.ToCreateForm(Accessor.Current?.ExternalUserId, approved: false, billable: false);
             var response = await Client.UpsertTimeEntryAsync(form, cancellationToken);
             return response.ToContract();
         }
@@ -80,7 +80,7 @@ public class TimetrackingBackend(ITimetrackingApiClient client, ITimetrackingCon
     {
         try
         {
-            var form = contract.ToUpdateForm(id, Accessor.Current?.ExternalUserId);
+            var form = contract.ToUpdateForm(id, Accessor.Current?.ExternalUserId, approved: false, billable: false);
             var response = await Client.UpsertTimeEntryAsync(form, cancellationToken);
             return response.ToContract();
         }

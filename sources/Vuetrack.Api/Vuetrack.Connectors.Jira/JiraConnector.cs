@@ -222,7 +222,8 @@ public partial class JiraConnector(IJiraApiClient client, IJiraConnectionAccesso
         for (var index = 0; index < history.Items.Count; index++)
         {
             var item = history.Items[index];
-            var signal = history.ToChangeSignal(context, item, index);
+            var kind = item.Classify();
+            var signal = history.ToChangeSignal(context, item, kind, index);
             signals[signal.ExternalId] = signal;
         }
     }

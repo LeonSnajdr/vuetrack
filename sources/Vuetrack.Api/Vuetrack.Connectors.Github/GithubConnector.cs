@@ -59,7 +59,7 @@ public class GithubConnector(IGithubApiClient client) : IConnector
                     continue;
                 }
 
-                var signal = commit.ToCommitSignal();
+                var signal = commit.ToCommitSignal(500);
                 signals[signal.ExternalId] = signal;
             }
 

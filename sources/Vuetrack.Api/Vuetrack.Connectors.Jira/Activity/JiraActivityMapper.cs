@@ -42,10 +42,9 @@ public static class JiraActivityMapper
         };
     }
 
-    public static ActivitySignal ToChangeSignal(this JiraChangelogResponse changelog, JiraIssueContext context, JiraChangelogItemResponse item, int itemIndex)
+    public static ActivitySignal ToChangeSignal(this JiraChangelogResponse changelog, JiraIssueContext context, JiraChangelogItemResponse item, ActivityKind kind, int itemIndex)
     {
         var created = changelog.Created!.Value;
-        var kind = Classify(item);
         var transition = new JiraFieldTransition(item.FromString, item.ToDisplay);
 
         var detail = BaseDetail(context) with
@@ -63,21 +62,6 @@ public static class JiraActivityMapper
             DateEnded = null,
             Kind = kind,
             Detail = detail,
-        };
-    }
-
-    private static ActivityKind Classify(JiraChangelogItemResponse item)
-    {
-        var field = item.FieldId ?? item.Field;
-        var normalized = field?.ToLowerInvariant();
-
-        return normalized switch
-        {
-            "status" => ActivityKind.StatusTransition,
-            "summary" or "description" => ActivityKind.ContentEdit,
-            "priority" or "assignee" or "resolution" or "reporter" or "labels" or "parent" => ActivityKind.Planning,
-            "project" or "key" => ActivityKind.Admin,
-            _ => ActivityKind.Planning,
         };
     }
 

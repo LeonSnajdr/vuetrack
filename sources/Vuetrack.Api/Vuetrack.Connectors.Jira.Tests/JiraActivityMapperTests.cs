@@ -55,7 +55,9 @@ public class JiraActivityMapperTests
             ],
         };
 
-        var signal = changelog.ToChangeSignal(Context, changelog.Items[0], 0);
+        var item = changelog.Items[0];
+        var kind = item.Classify();
+        var signal = changelog.ToChangeSignal(Context, item, kind, 0);
 
         signal.ExternalId.Should().Be("PROJ-1:changelog:5000:0");
         signal.DateStarted.Should().Be(new DateTime(2026, 7, 1, 11, 0, 0, DateTimeKind.Utc));

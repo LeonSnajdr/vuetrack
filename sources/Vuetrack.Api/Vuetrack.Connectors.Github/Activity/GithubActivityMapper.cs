@@ -6,14 +6,12 @@ namespace Vuetrack.Connectors.Github.Activity;
 
 public static class GithubActivityMapper
 {
-    private const int MaxMessageLength = 500;
-
-    public static ActivitySignal ToCommitSignal(this GithubCommitItemResponse item)
+    public static ActivitySignal ToCommitSignal(this GithubCommitItemResponse item, int maxMessageLength)
     {
         var repoFullName = item.Repository?.FullName ?? string.Empty;
         var sha = item.Sha ?? string.Empty;
         var message = item.Commit?.Message ?? string.Empty;
-        var truncatedMessage = message.Truncate(MaxMessageLength);
+        var truncatedMessage = message.Truncate(maxMessageLength);
         var started = item.Commit?.Author?.Date ?? default;
 
         var detail = new GithubSignalDetail
@@ -34,5 +32,4 @@ public static class GithubActivityMapper
             Detail = detail,
         };
     }
-
 }

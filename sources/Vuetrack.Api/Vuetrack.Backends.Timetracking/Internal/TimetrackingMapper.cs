@@ -36,17 +36,17 @@ internal static class TimetrackingMapper
         return new ActivityContract(response.Id.ToString(CultureInfo.InvariantCulture), response.Name);
     }
 
-    public static Dictionary<string, string> ToCreateForm(this TimeEntryCreateContract contract, string? externalUserId)
+    public static Dictionary<string, string> ToCreateForm(this TimeEntryCreateContract contract, string? externalUserId, bool approved, bool billable)
     {
-        return BuildForm(null, contract.TaskId, contract.ProjectId, contract.ActivityId, contract.DateStarted, contract.DateEnded, contract.Comment, externalUserId);
+        return BuildForm(null, contract.TaskId, contract.ProjectId, contract.ActivityId, contract.DateStarted, contract.DateEnded, contract.Comment, externalUserId, approved, billable);
     }
 
-    public static Dictionary<string, string> ToUpdateForm(this TimeEntryUpdateContract contract, string id, string? externalUserId)
+    public static Dictionary<string, string> ToUpdateForm(this TimeEntryUpdateContract contract, string id, string? externalUserId, bool approved, bool billable)
     {
-        return BuildForm(id, contract.TaskId, contract.ProjectId, contract.ActivityId, contract.DateStarted, contract.DateEnded, contract.Comment, externalUserId);
+        return BuildForm(id, contract.TaskId, contract.ProjectId, contract.ActivityId, contract.DateStarted, contract.DateEnded, contract.Comment, externalUserId, approved, billable);
     }
 
-    private static Dictionary<string, string> BuildForm(string? id, string? taskId, string projectId, string activityId, DateTime start, DateTime end, string? comment, string? externalUserId)
+    private static Dictionary<string, string> BuildForm(string? id, string? taskId, string projectId, string activityId, DateTime start, DateTime end, string? comment, string? externalUserId, bool approved, bool billable)
     {
         var form = new Dictionary<string, string>
         {
@@ -58,8 +58,8 @@ internal static class TimetrackingMapper
             ["endDate"] = end.ToString(DateFormat, CultureInfo.InvariantCulture),
             ["endTime"] = end.ToString(TimeFormat, CultureInfo.InvariantCulture),
             ["comment"] = comment ?? string.Empty,
-            ["approved"] = "false",
-            ["billable"] = "false",
+            ["approved"] = approved ? "true" : "false",
+            ["billable"] = billable ? "true" : "false",
             ["invoiceInfo"] = string.Empty,
         };
 
