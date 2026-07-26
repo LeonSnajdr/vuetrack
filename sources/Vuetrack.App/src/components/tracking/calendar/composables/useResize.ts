@@ -4,7 +4,7 @@ import { useEventMutation } from "./useEventMutation";
 
 export function useResize() {
     const calendarStore = useCalendarStore();
-    const { interaction, existingEvents } = storeToRefs(calendarStore);
+    const { interaction, events } = storeToRefs(calendarStore);
     const mutation = useEventMutation();
     const { roundTime, getEventBoundaries, prepareUpdateMutation, updateEventPosition, restoreOriginalPosition } = useCalendarHelper();
 
@@ -27,7 +27,7 @@ export function useResize() {
         if (interaction.value.kind !== "resize") return;
 
         const { event, edge } = interaction.value;
-        const snapPoints = getEventBoundaries(event, existingEvents.value);
+        const snapPoints = getEventBoundaries(event, events.value);
 
         if (edge === "start") {
             const mouseRounded = roundTime(mouseMs, { down: true, snapPoints });
