@@ -24,12 +24,14 @@
         <TimeEntryFieldProjectId
             v-model="timeEntry.projectId"
             :autofocus="firstEmptyField === 'projectId'"
+            :disableRequired="disableRequired"
             :errorMessages="errorMessages.projectId"
             :taskId="timeEntry.taskId"
         />
         <TimeEntryFieldActivityId
             v-model="timeEntry.activityId"
             :autofocus="firstEmptyField === 'activityId'"
+            :disableRequired="disableRequired"
             :errorMessages="errorMessages.activityId"
             :projectId="timeEntry.projectId"
         />
@@ -44,6 +46,7 @@ import type { ValidationErrors } from "@/util/ValidationProblem";
 
 const props = defineProps<{
     skipTimeFields?: boolean;
+    disableRequired?: boolean;
 }>();
 
 const timeEntry = defineModel<{

@@ -4,7 +4,12 @@
             {{ $t("action.save.title", { type: $t("timeEntry.singular") }) }}
         </template>
         <template #content>
-            <TimeEntryFieldContainer v-model="interaction.mutation.update" v-model:errors="interaction.errors" v-model:valid="valid" />
+            <TimeEntryFieldContainer
+                v-model="interaction.mutation.update"
+                v-model:errors="interaction.errors"
+                v-model:valid="valid"
+                :disableRequired="interaction.event.kind === 'suggestion'"
+            />
         </template>
         <template #actions>
             <VBtn @click="edit.finish" :disabled="!valid" :loading="isUpdatingEvent" color="primary" variant="flat">
