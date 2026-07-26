@@ -136,6 +136,8 @@ const beginGridInteraction = (nativeEvent: Event, tms: CalendarDayBodySlotScope)
         return;
     }
 
+    if (interaction.value.kind !== "idle") return;
+
     draft.start(mouseMs);
 };
 

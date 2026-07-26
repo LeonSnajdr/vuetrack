@@ -146,6 +146,8 @@ export function useEventMutation() {
 
         const result = await execute(cur.mutation);
 
+        if (result.status === "cancelled") return false;
+
         if (result.status === "error" && result.validation) {
             interaction.value = {
                 kind: "edit",
