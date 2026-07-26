@@ -17,7 +17,7 @@ export function useEventWrapper() {
         const wrapper: ExistingTimeEntryEvent = {
             kind: "existing",
             timed: true,
-            uiId: `event-uiId-${uuidv4()}`,
+            uiId: `event-uiId-${crypto.randomUUID()}`,
             timeEntry: contract,
             get start() {
                 return this.timeEntry.dateStarted.getTime();
@@ -43,7 +43,7 @@ export function useEventWrapper() {
         const wrapper: SuggestionTimeEntryEvent = {
             kind: "suggestion",
             timed: true,
-            uiId: `event-uiId-${uuidv4()}`,
+            uiId: `event-uiId-${crypto.randomUUID()}`,
             timeEntry: contract,
             get start() {
                 return this.timeEntry.dateStarted.getTime();
@@ -71,7 +71,7 @@ export function useEventWrapper() {
         return {
             kind: "draft",
             timed: true,
-            uiId: `event-uiId-${uuidv4()}`,
+            uiId: `event-uiId-${crypto.randomUUID()}`,
             createEntry,
             get start() {
                 return this.createEntry.dateStarted.getTime();
@@ -102,7 +102,7 @@ export function useEventWrapper() {
         return {
             kind: "draft",
             timed: true,
-            uiId: `event-uiId-${uuidv4()}`,
+            uiId: `event-uiId-${crypto.randomUUID()}`,
             createEntry,
             get start() {
                 return this.createEntry.dateStarted.getTime();

@@ -13,7 +13,7 @@ export const usePresetStore = defineStore(
             if (!isNonNullable(preset)) return;
 
             const createdPreset: TimeEntryPreset = {
-                id: uuidv4() as TimeEntryPresetId,
+                id: crypto.randomUUID() as TimeEntryPresetId,
                 ...preset
             };
 

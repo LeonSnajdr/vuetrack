@@ -1,5 +1,4 @@
 import axios from "axios";
-import qs from "qs";
 import type { AxiosInstance } from "axios";
 import { AxiosAuthInterceptor } from "@samhammer/authentication-vue";
 
@@ -15,7 +14,22 @@ class Axios {
         client.defaults.baseURL = baseURL;
         client.defaults.transformResponse = transformResponse;
         client.defaults.paramsSerializer = (params) => {
-            return qs.stringify(params, { arrayFormat: "repeat" });
+            const search = new URLSearchParams();
+
+            for (const [key, value] of Object.entries(params)) {
+                if (value === null || value === undefined) continue;
+
+                if (Array.isArray(value)) {
+                    for (const item of value) {
+                        search.append(key, item);
+                    }
+                    continue;
+                }
+
+                search.append(key, value);
+            }
+
+            return search.toString();
         };
 
         AxiosAuthInterceptor.addAuthTokenInterceptor(client);
