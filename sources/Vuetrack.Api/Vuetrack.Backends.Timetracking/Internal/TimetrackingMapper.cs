@@ -20,7 +20,6 @@ internal static class TimetrackingMapper
             TaskId = string.IsNullOrWhiteSpace(response.TaskId) ? null : response.TaskId,
             Project = new ProjectContract(response.Project.Id.ToString(CultureInfo.InvariantCulture), response.Project.Name),
             Activity = new ActivityContract(response.Activity.Id.ToString(CultureInfo.InvariantCulture), response.Activity.Name),
-            BreakDetails = response.BreakDetails is null ? null : new TimeEntryBreakContract(response.BreakDetails.DurationMillis, response.BreakDetails.Valid),
             DateStarted = Combine(response.StartDate, response.StartTime),
             DateEnded = Combine(response.EndDate, response.EndTime),
             Comment = string.IsNullOrEmpty(response.Comment) ? null : response.Comment,

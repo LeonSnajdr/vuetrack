@@ -12,8 +12,6 @@ public sealed record TimeEntryContract
 
     public required ActivityContract Activity { get; init; }
 
-    public TimeEntryBreakContract? BreakDetails { get; init; }
-
     public required DateTime DateStarted { get; init; }
 
     public required DateTime DateEnded { get; init; }

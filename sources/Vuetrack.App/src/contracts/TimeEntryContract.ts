@@ -19,15 +19,9 @@ export type TimeEntryContract = {
     taskId: string | null;
     project: ProjectContract;
     activity: ActivityContract;
-    breakDetails: TimeEntryBreakContract | null;
     dateStarted: Date;
     dateEnded: Date;
     comment: string | null;
-};
-
-export type TimeEntryBreakContract = {
-    durationMillis: number;
-    valid: boolean;
 };
 
 export type TimeEntryUpdateContract = {

@@ -57,9 +57,9 @@
                     <VIconBtn :id="'time-entry-delete-' + item.id" @click="remove.start(item.id)" :icon="mdiDelete" iconColor="error" variant="text" />
                 </template>
             </VDataTableRow>
-            <tr v-if="item.breakDetails" class="bg-secondary-lighten-2 v-table-break-row">
+            <tr v-if="item.breakMillis" class="bg-secondary-lighten-2 v-table-break-row">
                 <td colspan="3" />
-                <td colspan="6">{{ dateHelper.formatDurationMillis(item.breakDetails.durationMillis) }}</td>
+                <td colspan="6">{{ dateHelper.formatDurationMillis(item.breakMillis) }}</td>
             </tr>
         </template>
         <template #loading>
@@ -78,7 +78,7 @@ import { useEdit } from "@/components/tracking/list/composables/useEdit";
 import { useDelete } from "@/components/tracking/list/composables/useDelete";
 import type { TimeEntryContract } from "@/contracts/TimeEntryContract";
 
-type TimeEntryListContract = TimeEntryContract & { date: string };
+type TimeEntryListContract = TimeEntryContract & { date: string; breakMillis: number | null };
 
 const dateFormatter = useDate();
 const dateHelper = useDateHelper();
@@ -108,10 +108,23 @@ const headers: DataTableHeader[] = [
     { title: t("list.table.actions"), key: "actions", sortable: false, align: "end", fixed: "end", width: 100, nowrap: true }
 ];
 
+const breakBetween = (current: TimeEntryContract, next: TimeEntryContract | undefined): number | null => {
+    if (!next || !dateHelper.sameDay(current.dateStarted, next.dateStarted)) return null;
+
+    const earlier = current.dateStarted <= next.dateStarted ? current : next;
+    const later = earlier === current ? next : current;
+    const gap = dateHelper.durationBetween(earlier.dateEnded, later.dateStarted);
+
+    return gap > 0 ? gap : null;
+};
+
 const tableItems = computed((): TimeEntryListContract[] => {
-    return timeEntries.value.map((x) => ({
-        ...x,
-        date: dateFormatter.format(x.dateStarted, "keyboardDate")
+    const entries = timeEntries.value;
+
+    return entries.map((entry, index) => ({
+        ...entry,
+        date: dateFormatter.format(entry.dateStarted, "keyboardDate"),
+        breakMillis: breakBetween(entry, entries[index + 1])
     }));
 });
 

@@ -12,8 +12,6 @@ public sealed class TimetrackingTimeEntryResponse
 
     public TimetrackingActivityResponse Activity { get; set; } = new();
 
-    public TimetrackingBreakResponse? BreakDetails { get; set; }
-
     public string TaskId { get; set; } = string.Empty;
 
     public string StartDate { get; set; } = string.Empty;

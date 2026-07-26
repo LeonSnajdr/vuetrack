@@ -51,7 +51,6 @@
     "Slot": true,
     "Slots": true,
     "TextDetailField": true,
-    "TimeEntryBreakContract": true,
     "TimeEntryContract": true,
     "TimeEntryCreateContract": true,
     "TimeEntryId": true,
