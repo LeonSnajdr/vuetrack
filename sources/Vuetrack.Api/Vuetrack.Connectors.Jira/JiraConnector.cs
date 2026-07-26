@@ -99,7 +99,7 @@ public partial class JiraConnector(IJiraApiClient client, IJiraConnectionAccesso
         {
             var issue = await Client.GetIssueAsync(issueKey, cancellationToken);
             var siteUrl = Accessor.Current?.SiteUrl ?? string.Empty;
-            var fields = JiraDetailMapper.ToDetailFields(issue, issueKey, siteUrl);
+            var fields = issue.ToDetailFields(issueKey, siteUrl);
             return fields.ToErrorOr();
         }
         catch (JiraApiException ex)
@@ -129,7 +129,7 @@ public partial class JiraConnector(IJiraApiClient client, IJiraConnectionAccesso
                 continue;
             }
 
-            var signal = JiraActivityMapper.ToWorklogSignal(context, worklog);
+            var signal = worklog.ToWorklogSignal(context);
             signals[signal.ExternalId] = signal;
         }
     }
@@ -155,7 +155,7 @@ public partial class JiraConnector(IJiraApiClient client, IJiraConnectionAccesso
                 continue;
             }
 
-            var signal = JiraActivityMapper.ToCommentSignal(context, comment);
+            var signal = comment.ToCommentSignal(context);
             signals[signal.ExternalId] = signal;
         }
     }
@@ -222,7 +222,7 @@ public partial class JiraConnector(IJiraApiClient client, IJiraConnectionAccesso
         for (var index = 0; index < history.Items.Count; index++)
         {
             var item = history.Items[index];
-            var signal = JiraActivityMapper.ToChangeSignal(context, history, item, index);
+            var signal = history.ToChangeSignal(context, item, index);
             signals[signal.ExternalId] = signal;
         }
     }

@@ -5,7 +5,7 @@ namespace Vuetrack.Connectors.Jira.Activity;
 
 public static class JiraDetailMapper
 {
-    public static IReadOnlyList<DetailField> ToDetailFields(JiraSearchIssueResponse issue, string issueKey, string siteUrl)
+    public static IReadOnlyList<DetailField> ToDetailFields(this JiraSearchIssueResponse issue, string issueKey, string siteUrl)
     {
         var fields = new List<DetailField>();
 

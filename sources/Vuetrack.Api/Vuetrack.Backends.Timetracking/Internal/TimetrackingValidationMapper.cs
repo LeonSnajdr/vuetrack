@@ -20,7 +20,7 @@ internal static class TimetrackingValidationMapper
         ["comment"] = nameof(TimeEntryCreateContract.Comment),
     };
 
-    public static List<Error> ToValidationErrors(TimetrackingValidationException exception)
+    public static List<Error> ToValidationErrors(this TimetrackingValidationException exception)
     {
         var errors = new List<Error>();
 

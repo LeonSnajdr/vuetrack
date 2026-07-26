@@ -5,7 +5,7 @@ namespace Vuetrack.Connectors.Jira.Activity;
 
 public static class JiraActivityMapper
 {
-    public static ActivitySignal ToWorklogSignal(JiraIssueContext context, JiraWorklogResponse worklog)
+    public static ActivitySignal ToWorklogSignal(this JiraWorklogResponse worklog, JiraIssueContext context)
     {
         var started = worklog.Started!.Value;
         var ended = started.AddSeconds(worklog.TimeSpentSeconds);
@@ -24,7 +24,7 @@ public static class JiraActivityMapper
         };
     }
 
-    public static ActivitySignal ToCommentSignal(JiraIssueContext context, JiraCommentResponse comment)
+    public static ActivitySignal ToCommentSignal(this JiraCommentResponse comment, JiraIssueContext context)
     {
         var created = comment.Created!.Value;
         var detail = BaseDetail(context);
@@ -42,7 +42,7 @@ public static class JiraActivityMapper
         };
     }
 
-    public static ActivitySignal ToChangeSignal(JiraIssueContext context, JiraChangelogResponse changelog, JiraChangelogItemResponse item, int itemIndex)
+    public static ActivitySignal ToChangeSignal(this JiraChangelogResponse changelog, JiraIssueContext context, JiraChangelogItemResponse item, int itemIndex)
     {
         var created = changelog.Created!.Value;
         var kind = Classify(item);

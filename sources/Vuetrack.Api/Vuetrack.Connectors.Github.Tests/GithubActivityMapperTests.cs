@@ -25,7 +25,7 @@ public class GithubActivityMapperTests
             Repository = new GithubRepoResponse { Name = "widgets", FullName = "acme/widgets" },
         };
 
-        var signal = GithubActivityMapper.ToCommitSignal(item);
+        var signal = item.ToCommitSignal();
 
         signal.ConnectorKey.Should().Be(ConnectorKey.Github);
         signal.Kind.Should().Be(ActivityKind.Commit);

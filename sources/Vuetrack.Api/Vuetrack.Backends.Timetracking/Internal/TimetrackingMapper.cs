@@ -9,7 +9,7 @@ internal static class TimetrackingMapper
     private const string DateFormat = "dd.MM.yyyy";
     private const string TimeFormat = "HH:mm";
 
-    public static string FormatDate(DateTime value) => value.ToString(DateFormat, CultureInfo.InvariantCulture);
+    public static string FormatDate(this DateTime value) => value.ToString(DateFormat, CultureInfo.InvariantCulture);
 
     public static TimeEntryContract ToContract(this TimetrackingTimeEntryResponse response)
     {
@@ -36,12 +36,12 @@ internal static class TimetrackingMapper
         return new ActivityContract(response.Id.ToString(CultureInfo.InvariantCulture), response.Name);
     }
 
-    public static Dictionary<string, string> ToCreateForm(TimeEntryCreateContract contract, string? externalUserId)
+    public static Dictionary<string, string> ToCreateForm(this TimeEntryCreateContract contract, string? externalUserId)
     {
         return BuildForm(null, contract.TaskId, contract.ProjectId, contract.ActivityId, contract.DateStarted, contract.DateEnded, contract.Comment, externalUserId);
     }
 
-    public static Dictionary<string, string> ToUpdateForm(string id, TimeEntryUpdateContract contract, string? externalUserId)
+    public static Dictionary<string, string> ToUpdateForm(this TimeEntryUpdateContract contract, string id, string? externalUserId)
     {
         return BuildForm(id, contract.TaskId, contract.ProjectId, contract.ActivityId, contract.DateStarted, contract.DateEnded, contract.Comment, externalUserId);
     }

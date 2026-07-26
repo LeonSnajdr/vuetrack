@@ -44,7 +44,7 @@ public class TimetrackingBackend(ITimetrackingApiClient client, ITimetrackingCon
     {
         try
         {
-            var responses = await Client.GetTimeEntriesAsync(TimetrackingMapper.FormatDate(range.From), TimetrackingMapper.FormatDate(range.To), cancellationToken);
+            var responses = await Client.GetTimeEntriesAsync(range.From.FormatDate(), range.To.FormatDate(), cancellationToken);
             var contracts = responses.Select(dto => dto.ToContract()).ToList();
             return contracts;
         }
@@ -59,14 +59,14 @@ public class TimetrackingBackend(ITimetrackingApiClient client, ITimetrackingCon
     {
         try
         {
-            var form = TimetrackingMapper.ToCreateForm(contract, Accessor.Current?.ExternalUserId);
+            var form = contract.ToCreateForm(Accessor.Current?.ExternalUserId);
             var response = await Client.UpsertTimeEntryAsync(form, cancellationToken);
             return response.ToContract();
         }
         catch (TimetrackingValidationException ex)
         {
             Logger.LogInformation(ex, "Timetracking rejected time entry create");
-            var errors = TimetrackingValidationMapper.ToValidationErrors(ex);
+            var errors = ex.ToValidationErrors();
             return errors;
         }
         catch (Exception ex)
@@ -80,14 +80,14 @@ public class TimetrackingBackend(ITimetrackingApiClient client, ITimetrackingCon
     {
         try
         {
-            var form = TimetrackingMapper.ToUpdateForm(id, contract, Accessor.Current?.ExternalUserId);
+            var form = contract.ToUpdateForm(id, Accessor.Current?.ExternalUserId);
             var response = await Client.UpsertTimeEntryAsync(form, cancellationToken);
             return response.ToContract();
         }
         catch (TimetrackingValidationException ex)
         {
             Logger.LogInformation(ex, "Timetracking rejected time entry update {Id}", id);
-            var errors = TimetrackingValidationMapper.ToValidationErrors(ex);
+            var errors = ex.ToValidationErrors();
             return errors;
         }
         catch (Exception ex)

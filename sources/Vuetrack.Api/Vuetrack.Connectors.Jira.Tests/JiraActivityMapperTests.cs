@@ -27,7 +27,7 @@ public class JiraActivityMapperTests
             TimeSpentSeconds = 3600,
         };
 
-        var signal = JiraActivityMapper.ToWorklogSignal(Context, worklog);
+        var signal = worklog.ToWorklogSignal(Context);
 
         signal.ConnectorKey.Should().Be(ConnectorKey.Jira);
         signal.ExternalId.Should().Be("PROJ-1:worklog:100");
@@ -55,7 +55,7 @@ public class JiraActivityMapperTests
             ],
         };
 
-        var signal = JiraActivityMapper.ToChangeSignal(Context, changelog, changelog.Items[0], 0);
+        var signal = changelog.ToChangeSignal(Context, changelog.Items[0], 0);
 
         signal.ExternalId.Should().Be("PROJ-1:changelog:5000:0");
         signal.DateStarted.Should().Be(new DateTime(2026, 7, 1, 11, 0, 0, DateTimeKind.Utc));
@@ -75,7 +75,7 @@ public class JiraActivityMapperTests
             Created = new DateTime(2026, 7, 1, 12, 0, 0, DateTimeKind.Utc),
         };
 
-        var signal = JiraActivityMapper.ToCommentSignal(Context, comment);
+        var signal = comment.ToCommentSignal(Context);
 
         signal.ExternalId.Should().Be("PROJ-1:comment:9000");
         signal.DateEnded.Should().BeNull();

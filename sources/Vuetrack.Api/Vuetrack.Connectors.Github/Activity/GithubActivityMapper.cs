@@ -8,7 +8,7 @@ public static class GithubActivityMapper
 {
     private const int MaxMessageLength = 500;
 
-    public static ActivitySignal ToCommitSignal(GithubCommitItemResponse item)
+    public static ActivitySignal ToCommitSignal(this GithubCommitItemResponse item)
     {
         var repoFullName = item.Repository?.FullName ?? string.Empty;
         var sha = item.Sha ?? string.Empty;
