@@ -149,12 +149,16 @@ export function useEventMutation() {
         if (result.status === "cancelled") return false;
 
         if (result.status === "error" && result.validation) {
-            interaction.value = {
-                kind: "edit",
-                event: cur.event,
-                mutation: cur.mutation,
-                errors: result.validation
-            };
+            if (interaction.value.kind === "idle") {
+                interaction.value = {
+                    kind: "edit",
+                    event: cur.event,
+                    mutation: cur.mutation,
+                    errors: result.validation
+                };
+            } else {
+                restoreOriginalPosition(cur.mutation);
+            }
             return false;
         }
 

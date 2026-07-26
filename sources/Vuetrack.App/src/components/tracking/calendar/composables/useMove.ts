@@ -9,8 +9,6 @@ export function useMove() {
     const { roundTime, getEventBoundaries, prepareUpdateMutation, minimumEventDurationMs, updateEventPosition, restoreOriginalPosition } =
         useCalendarHelper();
 
-    const isCommitting = ref(false);
-
     const start = (event: TimeEntryEvent) => {
         const moveMutation = prepareUpdateMutation(event);
         if (!moveMutation) return;
@@ -30,7 +28,6 @@ export function useMove() {
     };
 
     const update = (mouseMs: number) => {
-        if (isCommitting.value) return;
         if (interaction.value.kind !== "move") return;
         const { event, pointerOffsetMs } = interaction.value;
         if (pointerOffsetMs === undefined) return;
@@ -45,12 +42,9 @@ export function useMove() {
     const finish = async () => {
         if (interaction.value.kind !== "move") return;
 
-        isCommitting.value = true;
-        const shouldIdle = await mutation.commitUpdate(interaction.value);
-        isCommitting.value = false;
-        if (shouldIdle) {
-            interaction.value = { kind: "idle" };
-        }
+        const cur = interaction.value;
+        interaction.value = { kind: "idle" };
+        await mutation.commitUpdate(cur);
     };
 
     const cancel = () => {

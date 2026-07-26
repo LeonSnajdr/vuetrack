@@ -8,8 +8,6 @@ export function useResize() {
     const mutation = useEventMutation();
     const { roundTime, getEventBoundaries, prepareUpdateMutation, updateEventPosition, restoreOriginalPosition } = useCalendarHelper();
 
-    const isCommitting = ref(false);
-
     const start = (event: TimeEntryEvent, edge: EventEdge = "end") => {
         const resizeMutation = prepareUpdateMutation(event);
         if (!resizeMutation) return;
@@ -23,7 +21,6 @@ export function useResize() {
     };
 
     const update = (mouseMs: number) => {
-        if (isCommitting.value) return;
         if (interaction.value.kind !== "resize") return;
 
         const { event, edge } = interaction.value;
@@ -41,12 +38,9 @@ export function useResize() {
     const finish = async () => {
         if (interaction.value.kind !== "resize") return;
 
-        isCommitting.value = true;
-        const shouldIdle = await mutation.commitUpdate(interaction.value);
-        isCommitting.value = false;
-        if (shouldIdle) {
-            interaction.value = { kind: "idle" };
-        }
+        const cur = interaction.value;
+        interaction.value = { kind: "idle" };
+        await mutation.commitUpdate(cur);
     };
 
     const cancel = () => {
