@@ -30,7 +30,11 @@
             <TrackingCalendarCurrentTimeLine :day="day" />
         </template>
         <template #event="{ event }">
-            <TrackingCalendarEvent v-if="isTimeEntryEvent(event)" @resize="beginResizeEvent(event, $event)" :event="event" />
+            <TrackingCalendarEvent
+                v-if="isTimeEntryEvent(event)"
+                @resize="(edge, nativeEvent) => beginResizeEvent(event, edge, nativeEvent)"
+                :event="event"
+            />
         </template>
     </VCalendar>
     <TrackingCalendarContextMenu />
@@ -49,6 +53,7 @@ import { useCreate } from "./composables/useCreate";
 import { useEdit } from "./composables/useEdit";
 import { useDelete } from "./composables/useDelete";
 import { useConflict } from "./composables/useConflict";
+import { useGestureArm } from "./composables/useGestureArm";
 import { useCalendarTimePeriod } from "./composables/useCalendarTimePeriod";
 import { useCalendarInterval } from "./composables/useCalendarInterval";
 import { useEventShortcuts } from "./composables/useEventShortcuts";
@@ -66,6 +71,7 @@ const create = useCreate();
 const edit = useEdit();
 const remove = useDelete();
 const conflict = useConflict();
+const { isArmed, armGesture, setAnchorTime, clearArm, promoteArm } = useGestureArm();
 const { jumpToDay } = useTrackingTimePeriod();
 const { start, end, weekdays, isReadonly, calendarType } = useCalendarTimePeriod();
 const { intervalMinutes, intervalCount, firstInterval } = useCalendarInterval();
@@ -80,6 +86,7 @@ onBeforeUnmount(() => {
 });
 
 const cancelAll = () => {
+    clearArm();
     move.cancel();
     resize.cancel();
     draft.cancel();
@@ -115,21 +122,21 @@ const beginMoveEvent = (nativeEvent: Event, { event, timed }: EventSlotScope) =>
     const target = event as TimeEntryEvent;
 
     conflict.select(target);
-    move.start(target);
+    armGesture({ kind: "move", event: target }, nativeEvent as MouseEvent);
 };
 
 const openContextMenu = (nativeEvent: Event, { event }: EventSlotScope) => {
     contextMenu.open(nativeEvent, event);
 };
 
-const beginResizeEvent = (event: CalendarEvent, edge: EventEdge) => {
+const beginResizeEvent = (event: CalendarEvent, edge: EventEdge, nativeEvent: MouseEvent) => {
     if (isReadonly.value) return;
     if (!canAdjustEvent(event)) return;
 
     const target = event as TimeEntryEvent;
 
     conflict.select(target);
-    resize.start(target, edge);
+    armGesture({ kind: "resize", event: target, edge }, nativeEvent);
 };
 
 const beginGridInteraction = (nativeEvent: Event, tms: CalendarDayBodySlotScope) => {
@@ -138,8 +145,9 @@ const beginGridInteraction = (nativeEvent: Event, tms: CalendarDayBodySlotScope)
 
     const mouseMs = toTime(tms);
 
-    if (gesture.value.kind === "move" && gesture.value.pointerOffsetMs === undefined) {
-        move.setPointerOffset(mouseMs);
+    // The press already belongs to an event, so it never drafts a new one.
+    if (isArmed.value) {
+        setAnchorTime(mouseMs);
         return;
     }
 
@@ -149,9 +157,16 @@ const beginGridInteraction = (nativeEvent: Event, tms: CalendarDayBodySlotScope)
     draft.start(mouseMs);
 };
 
-const updateInteractionFromPointer = (_nativeEvent: Event, tms: CalendarDayBodySlotScope) => {
+const updateInteractionFromPointer = (nativeEvent: Event, tms: CalendarDayBodySlotScope) => {
     if (isReadonly.value) return;
+
     const mouseMs = toTime(tms);
+
+    if (isArmed.value) {
+        const promoted = promoteArm(nativeEvent as MouseEvent, mouseMs);
+        if (!promoted) return;
+    }
+
     move.update(mouseMs);
     resize.update(mouseMs);
     draft.update(mouseMs);
@@ -159,6 +174,9 @@ const updateInteractionFromPointer = (_nativeEvent: Event, tms: CalendarDayBodyS
 
 const finishInteraction = async () => {
     if (isReadonly.value) return;
+
+    clearArm();
+
     draft.finish();
     await move.finish();
     await resize.finish();
@@ -166,6 +184,9 @@ const finishInteraction = async () => {
 
 const cancelInteractionOnLeave = () => {
     if (isReadonly.value) return;
+
+    clearArm();
+
     resize.cancel();
     move.cancel();
     draft.cancel();

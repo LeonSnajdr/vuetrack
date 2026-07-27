@@ -29,8 +29,8 @@
             </div>
         </div>
     </div>
-    <div v-if="canResize" @mousedown.stop="emit('resize', 'start')" class="v-event-drag-top" />
-    <div v-if="canResize" @mousedown.stop="emit('resize', 'end')" class="v-event-drag-bottom" />
+    <div v-if="canResize" @mousedown.stop="emit('resize', 'start', $event)" class="v-event-drag-top" />
+    <div v-if="canResize" @mousedown.stop="emit('resize', 'end', $event)" class="v-event-drag-bottom" />
 </template>
 
 <script setup lang="ts">
@@ -43,7 +43,7 @@ import { useEventHover } from "./composables/useEventHover";
 import { useEventPolicy } from "./composables/useEventPolicy";
 
 const emit = defineEmits<{
-    resize: [edge: EventEdge];
+    resize: [edge: EventEdge, nativeEvent: MouseEvent];
 }>();
 
 const props = defineProps<{
