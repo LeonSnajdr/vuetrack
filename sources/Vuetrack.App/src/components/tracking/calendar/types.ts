@@ -133,6 +133,10 @@ export type EventKind = TimeEntryEvent["kind"];
 export type MutationKind = TimeEntryMutation["kind"];
 export type InteractionKind = Interaction["kind"];
 
+export function canStartInteraction(currentKind: InteractionKind): boolean {
+    return currentKind !== "create" && currentKind !== "edit" && currentKind !== "conflict" && currentKind !== "delete";
+}
+
 export function isTimeEntryEvent(e: CalendarEvent): e is TimeEntryEvent {
     return e.kind === "suggestion" || e.kind === "existing" || e.kind === "draft";
 }

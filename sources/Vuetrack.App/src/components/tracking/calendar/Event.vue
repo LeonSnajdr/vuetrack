@@ -1,8 +1,8 @@
 <template>
     <div
         :id="event.uiId"
-        @mouseenter="details.open($event, event)"
-        @mouseleave="details.close()"
+        @mouseenter="onMouseEnter"
+        @mouseleave="onMouseLeave"
         @mousemove="details.move($event, event)"
         :class="['h-100', 'tc-event', `tc-${event.kind}`]"
     >
@@ -31,12 +31,13 @@
 import type { EventEdge, TimeEntryEvent } from "./types";
 import { useCalendarTimePeriod } from "./composables/useCalendarTimePeriod";
 import { useEventDetails } from "./composables/useEventDetails";
+import { useEventHover } from "./composables/useEventHover";
 
 const emit = defineEmits<{
     resize: [edge: EventEdge];
 }>();
 
-defineProps<{
+const props = defineProps<{
     event: TimeEntryEvent;
 }>();
 
@@ -44,10 +45,21 @@ const calendarStore = useCalendarStore();
 const { interaction } = storeToRefs(calendarStore);
 const { isReadonly } = useCalendarTimePeriod();
 const details = useEventDetails();
+const hover = useEventHover();
 
 const dateFormatter = useDate();
 
 const canResize = computed(() => !isReadonly.value && interaction.value.kind === "idle");
+
+const onMouseEnter = (nativeEvent: MouseEvent) => {
+    hover.setHovered(props.event);
+    details.open(nativeEvent, props.event);
+};
+
+const onMouseLeave = () => {
+    hover.clearHovered(props.event);
+    details.close();
+};
 </script>
 
 <style scoped>

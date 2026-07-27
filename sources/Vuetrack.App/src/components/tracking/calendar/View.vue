@@ -33,7 +33,7 @@
             <TrackingCalendarEvent v-if="isTimeEntryEvent(event)" @resize="beginResizeEvent(event, $event)" :event="event" />
         </template>
     </VCalendar>
-    <TrackingCalendarContextMenu ref="contextMenuRef" />
+    <TrackingCalendarContextMenu />
     <TrackingCalendarEventDetails />
     <TrackingCalendarOverlays />
 </template>
@@ -41,7 +41,7 @@
 <script setup lang="ts">
 import type { EventSlotScope } from "vuetify/lib/components/VCalendar/VCalendar.mjs";
 import type { CalendarDayBodySlotScope, CalendarEvent } from "vuetify/lib/components/VCalendar/types.mjs";
-import { isTimeEntryEvent, type EventEdge, type InteractionKind, type TimeEntryEvent } from "./types";
+import { canStartInteraction, isTimeEntryEvent, type EventEdge, type TimeEntryEvent } from "./types";
 import { useMove } from "./composables/useMove";
 import { useResize } from "./composables/useResize";
 import { useDraft } from "./composables/useDraft";
@@ -51,6 +51,8 @@ import { useDelete } from "./composables/useDelete";
 import { useConflict } from "./composables/useConflict";
 import { useCalendarTimePeriod } from "./composables/useCalendarTimePeriod";
 import { useCalendarInterval } from "./composables/useCalendarInterval";
+import { useEventShortcuts } from "./composables/useEventShortcuts";
+import { useEventContextMenu } from "./composables/useEventContextMenu";
 
 const calendarStore = useCalendarStore();
 
@@ -67,7 +69,9 @@ const { jumpToDay } = useTrackingTimePeriod();
 const { start, end, weekdays, isReadonly, calendarType } = useCalendarTimePeriod();
 const { intervalMinutes, intervalCount, firstInterval } = useCalendarInterval();
 
-const contextMenuRef = useTemplateRef("contextMenuRef");
+const contextMenu = useEventContextMenu();
+
+useEventShortcuts();
 
 onBeforeUnmount(() => {
     cancelAll();
@@ -91,10 +95,6 @@ const jumpToMoreDay = (_nativeEvent: Event, day: { year: number; month: number; 
     jumpToDay(new Date(day.year, day.month - 1, day.day));
 };
 
-const canStartInteraction = (currentKind: InteractionKind): boolean => {
-    return currentKind !== "create" && currentKind !== "edit" && currentKind !== "conflict" && currentKind !== "delete";
-};
-
 const canAdjustEvent = (event: CalendarEvent): boolean => {
     if (canStartInteraction(interaction.value.kind)) return true;
     if (interaction.value.kind !== "conflict") return false;
@@ -115,7 +115,7 @@ const beginMoveEvent = (nativeEvent: Event, { event, timed }: EventSlotScope) =>
 };
 
 const openContextMenu = (nativeEvent: Event, { event }: EventSlotScope) => {
-    contextMenuRef.value?.open(nativeEvent, event);
+    contextMenu.open(nativeEvent, event);
 };
 
 const beginResizeEvent = (event: CalendarEvent, edge: EventEdge) => {
