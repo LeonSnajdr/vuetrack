@@ -116,7 +116,6 @@
     "inject": true,
     "injectLocal": true,
     "isDefined": true,
-    "isNonNullable": true,
     "isProxy": true,
     "isReactive": true,
     "isReadonly": true,

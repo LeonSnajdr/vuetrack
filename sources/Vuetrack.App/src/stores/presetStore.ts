@@ -1,5 +1,6 @@
 import type { TimeEntryPreset, TimeEntryPresetId, TimeEntryPresetCreate, TimeEntryPresetUpdate } from "@/models/TimeEntryPreset";
-import { isNonNullable, type Nullable } from "@/util/Nullable";
+import type { Nullable } from "@/util/Nullable";
+import typia from "typia";
 
 export const usePresetStore = defineStore(
     "preset",
@@ -10,7 +11,7 @@ export const usePresetStore = defineStore(
         const activePreset = computed<TimeEntryPreset | null>(() => presets.value.find((preset) => preset.id === activePresetId.value) ?? null);
 
         const createPreset = (preset: Nullable<TimeEntryPresetCreate>): TimeEntryPreset | undefined => {
-            if (!isNonNullable(preset)) return;
+            if (!typia.is<TimeEntryPresetCreate>(preset)) return;
 
             const createdPreset: TimeEntryPreset = {
                 id: crypto.randomUUID() as TimeEntryPresetId,

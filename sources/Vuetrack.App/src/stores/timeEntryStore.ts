@@ -1,6 +1,7 @@
 import type { TimeEntryContract, TimeEntryCreateContract, TimeEntryId, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
 import { type ActionResult } from "@/util/ActionResult";
 import { type Nullable } from "@/util/Nullable";
+import typia from "typia";
 
 export const useTimeEntryStore = defineStore("timeEntry", () => {
     const { filter } = useTrackingFilter();
@@ -29,9 +30,9 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
     watch(filter, executeLoadWithFilters, { deep: true });
 
     const create = async (createContract: Nullable<TimeEntryCreateContract>): Promise<ActionResult<TimeEntryContract>> => {
-        if (!isNonNullable(createContract)) return error();
+        if (!typia.is<TimeEntryCreateContract>(createContract)) return error();
 
-        const createResult = await executeCreate(createContract as TimeEntryCreateContract);
+        const createResult = await executeCreate(createContract);
 
         if (createResult.status === "success") {
             timeEntries.value.push(createResult.data);

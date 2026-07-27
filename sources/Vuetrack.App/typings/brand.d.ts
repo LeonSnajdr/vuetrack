@@ -1,5 +1,9 @@
-// Concept from https://www.youtube.com/watch?v=aP6w2OzidYM
+import type { tags } from "typia";
 
-export declare const __brand: unique symbol;
-
-export type Branded<T, Name extends string> = T & { [__brand]: Name };
+export type Branded<T extends string, Name extends string> = T &
+    tags.TagBase<{
+        kind: Name;
+        target: "string";
+        value: undefined;
+        validate: "true";
+    }>;

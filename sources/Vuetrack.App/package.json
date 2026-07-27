@@ -13,7 +13,8 @@
     "lint": "eslint src/ --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts",
     "lint:style": "stylelint src/**/*.{css,scss,vue}",
     "cspell": "cspell",
-    "format": "prettier --write src/"
+    "format": "prettier --write src/",
+    "prepare": "ts-patch install"
   },
   "dependencies": {
     "@date-io/date-fns": "^3.2.1",
@@ -27,6 +28,7 @@
     "lodash": "^4.18.1",
     "pinia": "^3.0.4",
     "pinia-plugin-persistedstate": "^4.7.1",
+    "typia": "12",
     "vue": "^3.5.39",
     "vue-i18n": "^11.4.6",
     "vue-router": "^5.1.0",
@@ -37,6 +39,7 @@
     "@tsconfig/node24": "^24.0.4",
     "@types/lodash": "^4.17.24",
     "@types/node": "^26.0.1",
+    "@typia/unplugin": "12",
     "@vitejs/plugin-vue": "^6.0.7",
     "@vue/eslint-config-typescript": "^14.7.0",
     "@vue/tsconfig": "^0.9.1",
@@ -53,7 +56,8 @@
     "stylelint": "^17.4.0",
     "stylelint-config-recommended-scss": "^17.0.0",
     "stylelint-config-recommended-vue": "^1.6.1",
-    "typescript": "~5.9.3",
+    "ts-patch": "^4.0.1",
+    "typescript": "~6.0.3",
     "unplugin-auto-import": "^21.0.0",
     "unplugin-fonts": "^2.0.0",
     "unplugin-vue-components": "^32.1.0",

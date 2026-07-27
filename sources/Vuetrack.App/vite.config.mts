@@ -4,6 +4,7 @@ import { fileURLToPath, URL } from "node:url";
 import AutoImport from "unplugin-auto-import/vite";
 import Fonts from "unplugin-fonts/vite";
 import Components from "unplugin-vue-components/vite";
+import UnpluginTypia from "@typia/unplugin/vite";
 import { VueRouterAutoImports } from "vue-router/unplugin";
 import VueRouter from "vue-router/vite";
 import Layouts from "vite-plugin-vue-layouts-next";
@@ -12,6 +13,7 @@ import Vuetify, { transformAssetUrls } from "vite-plugin-vuetify";
 // https://vitejs.dev/config/
 export default defineConfig({
     plugins: [
+        UnpluginTypia({ tsconfig: "./tsconfig.app.json" }),
         VueRouter({
             dts: "typings/typed-router.d.ts"
         }),
