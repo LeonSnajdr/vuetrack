@@ -27,5 +27,13 @@
       }
     ],
     "no-descending-specificity": null
-  }
+  },
+  "overrides": [
+    {
+      "files": ["**/*.vue"],
+      "rules": {
+        "no-invalid-position-declaration": null
+      }
+    }
+  ]
 }
