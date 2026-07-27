@@ -1,6 +1,7 @@
 import type { CalendarEvent } from "vuetify/lib/components/VCalendar/types.mjs";
 import type { PositionableEvent } from "@/components/tracking/calendar/types";
 import { useCalendarTimePeriod } from "./useCalendarTimePeriod";
+import { useConflict } from "./useConflict";
 import { useEventDetails } from "./useEventDetails";
 import { useEventPolicy } from "./useEventPolicy";
 
@@ -18,6 +19,7 @@ const state = ref<ContextMenuState>({ show: false, x: 0, y: 0, event: null });
 export function useEventContextMenu() {
     const { isReadonly } = useCalendarTimePeriod();
     const { setContextMenuOpen } = useEventDetails();
+    const conflict = useConflict();
     const policy = useEventPolicy();
 
     const open = (nativeEvent: Event, event?: CalendarEvent) => {
@@ -31,6 +33,7 @@ export function useEventContextMenu() {
 
         const target = event as ContextMenuEvent;
 
+        conflict.select(target);
         setContextMenuOpen(true);
         state.value = { show: true, x: mouseEvent.clientX, y: mouseEvent.clientY, event: target };
     };

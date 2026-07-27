@@ -123,16 +123,12 @@ export type Task =
     | {
           kind: "conflict";
           event: TimeEntryEvent;
-          overlaps: TimeEntryEvent[];
-          mode: ConflictMode;
-          previewStrategyId?: string;
+          selectedUiId: string;
       }
     | {
           kind: "delete";
           event: TimeEntryEvent;
       };
-
-export type ConflictMode = "strategies" | "manual";
 
 export type ConflictTask = Extract<Task, { kind: "conflict" }>;
 

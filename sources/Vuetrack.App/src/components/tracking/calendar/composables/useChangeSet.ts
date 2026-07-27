@@ -12,6 +12,13 @@ import { useCalendarHelper } from "./useCalendarHelper";
 import { useEventMutation } from "./useEventMutation";
 import type { ExecuteAllResult } from "./useEventMutation";
 
+// Everything an attempted resolution may touch: the staged changes plus where
+// every event sat when it started.
+export type ChangeSetSnapshot = {
+    changes: Map<string, StagedChange>;
+    positions: Map<string, EventPosition>;
+};
+
 // Staging buffer for pending changes. Every edit is staged here first, which
 // makes it the single source of truth for unsaved state, rollback and commit.
 // Committing immediately after staging gives the classic "save on drop"
@@ -21,7 +28,7 @@ export function useChangeSet() {
     const mutation = useEventMutation();
     const { applyEventPosition, buildCreateMutation, buildDeleteMutation, buildUpdateMutation, isRangeOverlapping } = useCalendarHelper();
 
-    const { stagedChanges, activeCommits, isCommittingChanges } = storeToRefs(calendarStore);
+    const { stagedChanges, activeCommits, isCommittingChanges, draftEvents, events } = storeToRefs(calendarStore);
 
     const changes = computed<StagedChange[]>(() => [...stagedChanges.value.values()]);
     const count = computed(() => stagedChanges.value.size);
@@ -110,11 +117,40 @@ export function useChangeSet() {
         }
     };
 
-    const revertAllExcept = (keptUiId: string): void => {
-        for (const uiId of [...stagedChanges.value.keys()]) {
-            if (uiId === keptUiId) continue;
-            revert(uiId);
+    // Lets a caller try something out and put everything back if it did not work
+    // out, without losing the changes that were already staged.
+    const snapshot = (): ChangeSetSnapshot => {
+        const changes = new Map<string, StagedChange>();
+
+        for (const [uiId, change] of stagedChanges.value) {
+            const copy = change.kind === "update" ? { ...change, from: { ...change.from } } : { ...change };
+            changes.set(uiId, copy);
         }
+
+        const positions = new Map<string, EventPosition>();
+
+        for (const event of events.value) {
+            positions.set(event.uiId, { start: event.start, end: event.end });
+        }
+
+        return { changes, positions };
+    };
+
+    const restore = (taken: ChangeSetSnapshot): void => {
+        const added = draftEvents.value.filter((event) => !taken.positions.has(event.uiId));
+
+        for (const event of added) {
+            mutation.removeDraftEvent(event.uiId);
+        }
+
+        for (const event of events.value) {
+            const position = taken.positions.get(event.uiId);
+            if (!position) continue;
+
+            applyEventPosition(event, position.start, position.end);
+        }
+
+        stagedChanges.value = taken.changes;
     };
 
     const buildMutation = (change: StagedChange): TimeEntryMutation => {
@@ -256,7 +292,8 @@ export function useChangeSet() {
         unstageIfUnchanged,
         revert,
         revertAll,
-        revertAllExcept,
+        snapshot,
+        restore,
         commit
     };
 }

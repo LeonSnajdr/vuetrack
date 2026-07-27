@@ -111,7 +111,11 @@ const beginMoveEvent = (nativeEvent: Event, { event, timed }: EventSlotScope) =>
     if (!isLeftClick(nativeEvent)) return;
     if (!event || !timed) return;
     if (!canAdjustEvent(event)) return;
-    move.start(event as TimeEntryEvent);
+
+    const target = event as TimeEntryEvent;
+
+    conflict.select(target);
+    move.start(target);
 };
 
 const openContextMenu = (nativeEvent: Event, { event }: EventSlotScope) => {
@@ -121,7 +125,11 @@ const openContextMenu = (nativeEvent: Event, { event }: EventSlotScope) => {
 const beginResizeEvent = (event: CalendarEvent, edge: EventEdge) => {
     if (isReadonly.value) return;
     if (!canAdjustEvent(event)) return;
-    resize.start(event as TimeEntryEvent, edge);
+
+    const target = event as TimeEntryEvent;
+
+    conflict.select(target);
+    resize.start(target, edge);
 };
 
 const beginGridInteraction = (nativeEvent: Event, tms: CalendarDayBodySlotScope) => {

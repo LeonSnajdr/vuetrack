@@ -1,7 +1,7 @@
 <template>
     <VMenu v-model="contextMenu.show" :target="[contextMenu.x, contextMenu.y]">
         <VList v-if="contextMenu.event" density="compact">
-            <template v-if="!isManualConflict">
+            <template v-if="!isConflict">
                 <VListItem @click="runContextAction(edit.start)" :prependIcon="mdiPencil" :title="$t('action.edit')">
                     <template #append>
                         <VHotkey class="ml-10" keys="e" />
@@ -45,7 +45,7 @@ const create = useCreate();
 const edit = useEdit();
 const remove = useDelete();
 const stagedRemoval = useStagedRemoval();
-const { isManualConflict, canStageRemoval } = useEventPolicy();
+const { isConflict, canStageRemoval } = useEventPolicy();
 const { setContextMenuOpen } = useEventDetails();
 const { state: contextMenu, close } = useEventContextMenu();
 

@@ -1,4 +1,4 @@
-import type { ConflictTask } from "@/components/tracking/calendar/types";
+import type { ConflictTask, TimeEntryEvent } from "@/components/tracking/calendar/types";
 import { useChangeSet } from "./useChangeSet";
 import { useEventCommit } from "./useEventCommit";
 import { useEventMutation } from "./useEventMutation";
@@ -9,45 +9,42 @@ export function useConflict() {
     const commit = useEventCommit();
     const mutation = useEventMutation();
 
-    const { task } = storeToRefs(calendarStore);
+    const { task, events } = storeToRefs(calendarStore);
 
     const conflictTask = computed<ConflictTask | null>(() => {
         if (task.value.kind !== "conflict") return null;
         return task.value;
     });
 
-    // Undoes everything staged while resolving but keeps the change that caused
-    // the conflict: reverting that one would defeat the purpose, and for a new
-    // entry it would delete the event the panel is about.
-    const reset = () => {
+    // The event the automatic resolutions work on. Starts out as the event that
+    // caused the conflict and follows the user's last pointer pick.
+    const selectedEvent = computed<TimeEntryEvent | null>(() => {
+        const current = conflictTask.value;
+        if (!current) return null;
+
+        const selected = events.value.find((event) => event.uiId === current.selectedUiId);
+        return selected ?? current.event;
+    });
+
+    const select = (event: TimeEntryEvent) => {
         const current = conflictTask.value;
         if (!current) return;
 
-        changeSet.revertAllExcept(current.event.uiId);
-        current.previewStrategyId = undefined;
+        current.selectedUiId = event.uiId;
     };
 
-    const previewStrategy = (strategyId: string, resolve: () => boolean): boolean => {
-        const current = conflictTask.value;
-        if (!current) return false;
+    // A resolution works on the state the user is looking at, so manual
+    // adjustments and earlier resolutions stay in place. Only an attempt that
+    // found no solution is rolled back.
+    const previewStrategy = (resolve: () => boolean): boolean => {
+        if (!conflictTask.value) return false;
 
-        reset();
-
+        const taken = changeSet.snapshot();
         const resolved = resolve();
-        if (!resolved) {
-            reset();
-            return false;
-        }
+        if (resolved) return true;
 
-        current.previewStrategyId = strategyId;
-        return true;
-    };
-
-    const enterManual = () => {
-        const current = conflictTask.value;
-        if (!current) return;
-
-        current.mode = "manual";
+        changeSet.restore(taken);
+        return false;
     };
 
     const apply = async () => {
@@ -65,5 +62,5 @@ export function useConflict() {
         if (current.event.kind === "draft") mutation.removeDraftEvent(current.event.uiId);
     };
 
-    return { conflictTask, reset, previewStrategy, enterManual, apply, cancel };
+    return { selectedEvent, select, previewStrategy, apply, cancel };
 }

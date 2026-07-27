@@ -3,7 +3,6 @@ import { useCalendarHelper } from "./useCalendarHelper";
 import { useChangeSet } from "./useChangeSet";
 
 export type ConflictPair = {
-    key: string;
     first: TimeEntryEvent;
     second: TimeEntryEvent;
 };
@@ -37,7 +36,7 @@ export function useConflictDetection() {
                 const key = [first.uiId, second.uiId].sort().join("|");
                 if (pairs.has(key)) continue;
 
-                pairs.set(key, { key, first, second });
+                pairs.set(key, { first, second });
             }
         }
 
@@ -51,6 +50,13 @@ export function useConflictDetection() {
 
     const hasConflicts = computed(() => conflictPairs.value.length > 0);
 
+    // Live overlaps of a single event. The conflict task holds no snapshot: every
+    // preview and every drag changes who overlaps whom.
+    const getOverlapsFor = (event: TimeEntryEvent): TimeEntryEvent[] => {
+        const obstacles = candidates.value.filter((candidate) => candidate.uiId !== event.uiId);
+        return getOverlappingEvents(event, obstacles);
+    };
+
     // Opens the conflict task when the event collides with stored entries. The
     // staged changes are deliberately left in place: they are the unsaved state
     // the conflict panel lets the user work on.
@@ -58,9 +64,9 @@ export function useConflictDetection() {
         const overlaps = getOverlappingEvents(event, existingEvents.value);
         if (overlaps.length === 0) return false;
 
-        task.value = { kind: "conflict", event, overlaps, mode: "strategies" };
+        task.value = { kind: "conflict", event, selectedUiId: event.uiId };
         return true;
     };
 
-    return { candidates, conflictPairs, conflictingUiIds, hasConflicts, tryEnterConflict };
+    return { candidates, conflictPairs, conflictingUiIds, hasConflicts, getOverlapsFor, tryEnterConflict };
 }

@@ -4,7 +4,12 @@
         @mouseenter="onMouseEnter"
         @mouseleave="onMouseLeave"
         @mousemove="details.move($event, event)"
-        :class="['h-100', 'tc-event', `tc-${event.kind}`, { 'tc-conflicting': isConflicting, 'tc-unsaved': isUnsaved, 'tc-removed': isRemoved }]"
+        :class="[
+            'h-100',
+            'tc-event',
+            `tc-${event.kind}`,
+            { 'tc-conflicting': isConflicting, 'tc-unsaved': isUnsaved, 'tc-removed': isRemoved, 'tc-selected': isSelected }
+        ]"
     >
         <div class="h-100 py-1 px-2 d-flex flex-column ga-1 text-truncate">
             <div class="tc-header">
@@ -46,7 +51,7 @@ const props = defineProps<{
 }>();
 
 const calendarStore = useCalendarStore();
-const { gesture } = storeToRefs(calendarStore);
+const { gesture, task } = storeToRefs(calendarStore);
 const { isReadonly } = useCalendarTimePeriod();
 const details = useEventDetails();
 const hover = useEventHover();
@@ -73,6 +78,12 @@ const isUnsaved = computed(() => {
 });
 
 const isConflicting = computed(() => conflictingUiIds.value.has(props.event.uiId));
+
+// The event the conflict panel's quick fixes act on.
+const isSelected = computed(() => {
+    if (task.value.kind !== "conflict") return false;
+    return task.value.selectedUiId === props.event.uiId;
+});
 
 const onMouseEnter = (nativeEvent: MouseEvent) => {
     hover.setHovered(props.event);
@@ -150,6 +161,11 @@ const onMouseLeave = () => {
 .tc-unsaved {
     border-style: dashed;
     border-left-style: solid;
+}
+
+.tc-selected {
+    outline: 2px solid rgb(var(--v-theme-on-surface));
+    outline-offset: 1px;
 }
 
 .tc-removed {

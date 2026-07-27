@@ -1,6 +1,8 @@
 import type { TimeEntryEvent } from "@/components/tracking/calendar/types";
 import { useCalendarHelper } from "./useCalendarHelper";
 import { useChangeSet } from "./useChangeSet";
+import { useConflict } from "./useConflict";
+import { useConflictDetection } from "./useConflictDetection";
 import { useEventWrapper } from "./useEventWrapper";
 
 export interface ConflictResolutionStrategy {
@@ -8,22 +10,26 @@ export interface ConflictResolutionStrategy {
     label: string;
     subtitle: string;
     icon: string;
-    variant?: "error" | "warning";
+    // Set on a resolution that reshapes or removes other entries.
+    color?: "error";
     resolve: () => boolean;
 }
 
-// Automatic resolutions. Each one only stages its changes, so the user sees the
-// outcome on the calendar and decides whether to keep it.
+// Automatic resolutions for the selected event. Each one only stages its
+// changes, so the user sees the outcome on the calendar and decides whether to
+// keep it.
 export function useConflictStrategies() {
     const calendarStore = useCalendarStore();
     const changeSet = useChangeSet();
+    const conflict = useConflict();
+    const detection = useConflictDetection();
 
     const { t } = useI18n();
     const { startOfDay, addDays } = useDateHelper();
     const { applyEventPosition, buildCreatePayload } = useCalendarHelper();
     const { cloneEventAsDraft } = useEventWrapper();
 
-    const { draftEvents, existingEvents, task } = storeToRefs(calendarStore);
+    const { draftEvents } = storeToRefs(calendarStore);
 
     const strategies = computed<ConflictResolutionStrategy[]>(() => [
         {
@@ -52,23 +58,10 @@ export function useConflictStrategies() {
             label: t("calendar.conflict.strategy.forcePosition"),
             subtitle: t("calendar.conflict.strategy.forcePosition.subtitle"),
             icon: mdiAlertBoxOutline,
-            variant: "error",
+            color: "error",
             resolve: resolveForce
-        },
-        {
-            id: "manual",
-            label: t("calendar.conflict.strategy.manual"),
-            subtitle: t("calendar.conflict.strategy.manual.subtitle"),
-            icon: mdiCursorMove,
-            variant: "warning",
-            resolve: () => true
         }
     ]);
-
-    const getConflict = () => {
-        if (task.value.kind !== "conflict") return null;
-        return task.value;
-    };
 
     const getSearchWindow = (event: TimeEntryEvent) => {
         const windowStart = startOfDay(new Date(event.start)).getTime();
@@ -79,9 +72,11 @@ export function useConflictStrategies() {
         return { windowStart, windowEndExclusive };
     };
 
+    // Everything the selection has to stay clear of, including the unsaved event
+    // the conflict is about when the selection is another one.
     const getSearchCandidates = (event: TimeEntryEvent) => {
         const { windowStart, windowEndExclusive } = getSearchWindow(event);
-        const candidates = [...existingEvents.value]
+        const candidates = [...detection.candidates.value]
             .filter((candidate) => candidate.uiId !== event.uiId)
             .filter((candidate) => !changeSet.isRemoved(candidate.uiId))
             .sort((a, b) => a.start - b.start)
@@ -98,10 +93,9 @@ export function useConflictStrategies() {
     };
 
     const resolveShiftUp = (): boolean => {
-        const current = getConflict();
-        if (!current) return false;
+        const event = conflict.selectedEvent.value;
+        if (!event) return false;
 
-        const event = current.event;
         const duration = event.end - event.start;
         const { candidates, windowStart, windowEndExclusive } = getSearchCandidates(event);
 
@@ -129,10 +123,9 @@ export function useConflictStrategies() {
     };
 
     const resolveShiftDown = (): boolean => {
-        const current = getConflict();
-        if (!current) return false;
+        const event = conflict.selectedEvent.value;
+        if (!event) return false;
 
-        const event = current.event;
         const duration = event.end - event.start;
         const { candidates, windowEndExclusive } = getSearchCandidates(event);
 
@@ -153,11 +146,10 @@ export function useConflictStrategies() {
     };
 
     const resolveTruncate = (): boolean => {
-        const current = getConflict();
-        if (!current) return false;
+        const event = conflict.selectedEvent.value;
+        if (!event) return false;
 
-        const event = current.event;
-        const overlaps = current.overlaps;
+        const overlaps = detection.getOverlapsFor(event);
 
         let allowedStart = event.start;
         let allowedEnd = event.end;
@@ -181,11 +173,10 @@ export function useConflictStrategies() {
     };
 
     const resolveForce = (): boolean => {
-        const current = getConflict();
-        if (!current) return false;
+        const event = conflict.selectedEvent.value;
+        if (!event) return false;
 
-        const event = current.event;
-        const overlaps = current.overlaps;
+        const overlaps = detection.getOverlapsFor(event);
 
         const splitOverlap = (overlap: TimeEntryEvent, headEnd: number, tailStart: number): boolean => {
             if (overlap.kind !== "existing" && overlap.kind !== "suggestion") return false;
@@ -202,6 +193,9 @@ export function useConflictStrategies() {
         };
 
         for (const overlap of overlaps) {
+            // A draft is not saved yet, so it is never reshaped for the selection.
+            if (overlap.kind === "draft") continue;
+
             // Completely overlapped - remove it
             if (event.start <= overlap.start && event.end >= overlap.end) {
                 changeSet.stageRemove(overlap);
