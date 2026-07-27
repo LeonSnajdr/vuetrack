@@ -1,5 +1,6 @@
 ﻿import type { TimeEntrySuggestionContract, TimeEntrySuggestionId, TimeEntrySuggestionUpdateContract } from "@/contracts/TimeEntrySuggestion";
 import type { ActionResult } from "@/util/ActionResult";
+import { omit } from "lodash";
 
 export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", () => {
     const { filter } = useTrackingFilter();
@@ -54,7 +55,12 @@ export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", ()
 
         if (updateResult.status === "success") {
             const existing = timeEntrySuggestions.value.find((x) => x.id === id);
-            if (existing) Object.assign(existing, updateResult.data);
+
+            // The dates are left out on purpose: the calendar moves suggestions
+            // optimistically, so echoing them back would snap one to a stale
+            // range when it was dragged again while the request ran.
+            const serverFields = omit(updateResult.data, "dateStarted", "dateEnded");
+            if (existing) Object.assign(existing, serverFields);
         }
 
         return updateResult;

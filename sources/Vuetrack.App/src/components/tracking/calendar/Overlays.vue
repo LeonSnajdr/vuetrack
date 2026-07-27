@@ -1,11 +1,11 @@
 <template>
-    <TrackingCalendarFeaturesCreateOverlay v-if="interaction.kind === 'create'" :key="interaction.event.uiId" v-model:interaction="interaction" />
-    <TrackingCalendarFeaturesEditOverlay v-if="interaction.kind === 'edit'" :key="interaction.event.uiId" v-model:interaction="interaction" />
-    <TrackingCalendarFeaturesConflictOverlay v-if="interaction.kind === 'conflict'" :key="interaction.event.uiId" v-model:interaction="interaction" />
-    <TrackingCalendarFeaturesDeleteOverlay v-if="interaction.kind === 'delete'" :key="interaction.event.uiId" v-model:interaction="interaction" />
+    <TrackingCalendarFeaturesCreateOverlay v-if="task.kind === 'create'" :key="task.event.uiId" v-model:task="task" />
+    <TrackingCalendarFeaturesEditOverlay v-if="task.kind === 'edit'" :key="task.event.uiId" v-model:task="task" />
+    <TrackingCalendarFeaturesConflictPanel v-if="task.kind === 'conflict'" :key="task.event.uiId" v-model:task="task" />
+    <TrackingCalendarFeaturesDeleteOverlay v-if="task.kind === 'delete'" :key="task.event.uiId" v-model:task="task" />
 </template>
 
 <script setup lang="ts">
 const calendarStore = useCalendarStore();
-const { interaction } = storeToRefs(calendarStore);
+const { task } = storeToRefs(calendarStore);
 </script>

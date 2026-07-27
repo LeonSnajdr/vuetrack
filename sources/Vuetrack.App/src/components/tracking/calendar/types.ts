@@ -26,11 +26,22 @@ export type ExistingTimeEntryEvent = {
     timeEntry: TimeEntryContract;
 } & BaseCalendarEvent;
 
+export type SuggestionTimeEntryEvent = {
+    kind: "suggestion";
+    timeEntry: TimeEntrySuggestionContract;
+} & BaseCalendarEvent;
+
+export type TimeEntryEvent = DraftTimeEntryEvent | ExistingTimeEntryEvent | SuggestionTimeEntryEvent;
+export type PositionableEvent = ExistingTimeEntryEvent | SuggestionTimeEntryEvent;
+export type CreatableEvent = DraftTimeEntryEvent | SuggestionTimeEntryEvent;
+
+export type TimeEntryUpdatePayload = TimeEntryUpdateContract | TimeEntrySuggestionUpdateContract;
+export type TimeEntryCreatePayload = Nullable<TimeEntryCreateContract>;
+
 export type ExistingTimeEntryUpdateMutation = {
     kind: "update";
     event: ExistingTimeEntryEvent;
     update: TimeEntryUpdateContract;
-    originalPosition: EventPosition;
 };
 
 export type ExistingTimeEntryDeleteMutation = {
@@ -39,22 +50,16 @@ export type ExistingTimeEntryDeleteMutation = {
     id: TimeEntryId;
 };
 
-export type SuggestionTimeEntryEvent = {
-    kind: "suggestion";
-    timeEntry: TimeEntrySuggestionContract;
-} & BaseCalendarEvent;
-
 export type SuggestionTimeEntryUpdateMutation = {
     kind: "update";
     event: SuggestionTimeEntryEvent;
     update: TimeEntrySuggestionUpdateContract;
-    originalPosition: EventPosition;
 };
 
 export type SuggestionTimeEntryCreateMutation = {
     kind: "create";
     event: SuggestionTimeEntryEvent;
-    create: Nullable<TimeEntryCreateContract>;
+    create: TimeEntryCreatePayload;
 };
 
 export type SuggestionTimeEntryDeleteMutation = {
@@ -71,78 +76,94 @@ export type DraftTimeEntryDeleteMutation = {
 export type DraftTimeEntryCreateMutation = {
     kind: "create";
     event: DraftTimeEntryEvent;
-    create: Nullable<TimeEntryCreateContract>;
+    create: TimeEntryCreatePayload;
 };
 
-export type TimeEntryEvent = DraftTimeEntryEvent | ExistingTimeEntryEvent | SuggestionTimeEntryEvent;
-export type TimeEntryMutation =
-    | ExistingTimeEntryUpdateMutation
-    | ExistingTimeEntryDeleteMutation
-    | SuggestionTimeEntryUpdateMutation
-    | SuggestionTimeEntryDeleteMutation
-    | DraftTimeEntryDeleteMutation
-    | DraftTimeEntryCreateMutation
-    | SuggestionTimeEntryCreateMutation;
+export type TimeEntryUpdateMutation = ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation;
+export type TimeEntryCreateMutation = DraftTimeEntryCreateMutation | SuggestionTimeEntryCreateMutation;
+export type TimeEntryDeleteMutation = DraftTimeEntryDeleteMutation | ExistingTimeEntryDeleteMutation | SuggestionTimeEntryDeleteMutation;
+export type TimeEntryMutation = TimeEntryUpdateMutation | TimeEntryCreateMutation | TimeEntryDeleteMutation;
 
-export type Interaction =
+// Transient pointer state. Never touches the API and is always safe to leave.
+export type Gesture =
     | { kind: "idle" }
     | {
           kind: "move";
-          event: ExistingTimeEntryEvent | SuggestionTimeEntryEvent;
+          event: PositionableEvent;
+          from: EventPosition;
           pointerOffsetMs?: number;
-          mutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation;
       }
     | {
           kind: "resize";
           edge: EventEdge;
-          event: ExistingTimeEntryEvent | SuggestionTimeEntryEvent;
-          mutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation;
+          event: PositionableEvent;
+          from: EventPosition;
       }
     | {
           kind: "draft";
           event: DraftTimeEntryEvent;
           anchorStartMs: number;
-      }
+      };
+
+// Modal intent awaiting user input. Drives the overlays and gates gestures.
+export type Task =
+    | { kind: "none" }
     | {
           kind: "create";
-          event: DraftTimeEntryEvent | SuggestionTimeEntryEvent;
-          mutation: DraftTimeEntryCreateMutation | SuggestionTimeEntryCreateMutation;
+          event: CreatableEvent;
+          payload: TimeEntryCreatePayload;
           errors?: ValidationErrors;
-          pendingMutations?: TimeEntryMutation[];
       }
     | {
           kind: "edit";
-          event: ExistingTimeEntryEvent | SuggestionTimeEntryEvent;
-          mutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation;
+          event: PositionableEvent;
+          payload: TimeEntryUpdatePayload;
           errors?: ValidationErrors;
-          pendingMutations?: TimeEntryMutation[];
       }
     | {
           kind: "conflict";
           event: TimeEntryEvent;
           overlaps: TimeEntryEvent[];
-          mutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation | DraftTimeEntryCreateMutation | SuggestionTimeEntryCreateMutation;
+          mode: ConflictMode;
+          previewStrategyId?: string;
       }
     | {
           kind: "delete";
           event: TimeEntryEvent;
-          mutation: DraftTimeEntryDeleteMutation | ExistingTimeEntryDeleteMutation | SuggestionTimeEntryDeleteMutation;
       };
 
-export type EventKind = TimeEntryEvent["kind"];
-export type MutationKind = TimeEntryMutation["kind"];
-export type InteractionKind = Interaction["kind"];
+export type ConflictMode = "strategies" | "manual";
 
-export function canStartInteraction(currentKind: InteractionKind): boolean {
-    return currentKind !== "create" && currentKind !== "edit" && currentKind !== "conflict" && currentKind !== "delete";
-}
+export type ConflictTask = Extract<Task, { kind: "conflict" }>;
+
+// A single pending change, staged until committed. Only the position the event
+// started from is stored: event wrappers proxy their contracts, so the live
+// position is always the target position.
+export type StagedChange =
+    | {
+          kind: "update";
+          event: PositionableEvent;
+          from: EventPosition;
+          payload?: TimeEntryUpdatePayload;
+      }
+    | {
+          kind: "remove";
+          event: TimeEntryEvent;
+      }
+    | {
+          kind: "add";
+          event: CreatableEvent;
+          payload: TimeEntryCreatePayload;
+      };
+
+export type GestureKind = Gesture["kind"];
+export type TaskKind = Task["kind"];
+export type StagedChangeKind = StagedChange["kind"];
 
 export function isTimeEntryEvent(e: CalendarEvent): e is TimeEntryEvent {
     return e.kind === "suggestion" || e.kind === "existing" || e.kind === "draft";
 }
 
-export function isExistingUpdateMutation(
-    mutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation
-): mutation is ExistingTimeEntryUpdateMutation {
+export function isExistingUpdateMutation(mutation: TimeEntryUpdateMutation): mutation is ExistingTimeEntryUpdateMutation {
     return mutation.event.kind === "existing";
 }

@@ -1,21 +1,22 @@
-import { canStartInteraction, type TimeEntryEvent } from "@/components/tracking/calendar/types";
+import type { TimeEntryEvent } from "@/components/tracking/calendar/types";
 import { useCreate } from "./useCreate";
 import { useEdit } from "./useEdit";
 import { useDelete } from "./useDelete";
 import { useCalendarTimePeriod } from "./useCalendarTimePeriod";
 import { useEventHover } from "./useEventHover";
 import { useEventContextMenu } from "./useEventContextMenu";
+import { useEventPolicy } from "./useEventPolicy";
+import { useStagedRemoval } from "./useStagedRemoval";
 
 export function useEventShortcuts() {
-    const calendarStore = useCalendarStore();
-    const { interaction } = storeToRefs(calendarStore);
-
     const create = useCreate();
     const edit = useEdit();
     const remove = useDelete();
     const { isReadonly } = useCalendarTimePeriod();
     const { hoveredEvent } = useEventHover();
     const contextMenu = useEventContextMenu();
+    const policy = useEventPolicy();
+    const stagedRemoval = useStagedRemoval();
 
     const getTargetEvent = (): TimeEntryEvent | null => {
         if (contextMenu.state.value.show) return contextMenu.state.value.event;
@@ -24,7 +25,6 @@ export function useEventShortcuts() {
 
     const getShortcutTarget = (): TimeEntryEvent | null => {
         if (isReadonly.value) return null;
-        if (!canStartInteraction(interaction.value.kind)) return null;
 
         const event = getTargetEvent();
         if (!event) return null;
@@ -33,8 +33,13 @@ export function useEventShortcuts() {
         return event;
     };
 
+    const getTaskTarget = (): TimeEntryEvent | null => {
+        if (!policy.canOpenTask()) return null;
+        return getShortcutTarget();
+    };
+
     const startEdit = () => {
-        const event = getShortcutTarget();
+        const event = getTaskTarget();
         if (!event) return;
         if (event.kind !== "existing" && event.kind !== "suggestion") return;
 
@@ -43,7 +48,7 @@ export function useEventShortcuts() {
     };
 
     const startAccept = () => {
-        const event = getShortcutTarget();
+        const event = getTaskTarget();
         if (!event) return;
         if (event.kind !== "suggestion") return;
 
@@ -51,9 +56,19 @@ export function useEventShortcuts() {
         create.start(event);
     };
 
+    // While resolving a conflict manually the same key stages and unstages a
+    // removal instead of opening the delete dialog.
     const startDelete = () => {
         const event = getShortcutTarget();
         if (!event) return;
+
+        if (policy.canStageRemoval(event)) {
+            contextMenu.close();
+            stagedRemoval.toggle(event);
+            return;
+        }
+
+        if (!policy.canOpenTask()) return;
 
         contextMenu.close();
         remove.start(event);

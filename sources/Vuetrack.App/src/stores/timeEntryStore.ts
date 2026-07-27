@@ -2,6 +2,7 @@ import type { TimeEntryContract, TimeEntryCreateContract, TimeEntryId, TimeEntry
 import { type ActionResult } from "@/util/ActionResult";
 import { type Nullable } from "@/util/Nullable";
 import typia from "typia";
+import { omit } from "lodash";
 
 export const useTimeEntryStore = defineStore("timeEntry", () => {
     const { filter } = useTrackingFilter();
@@ -46,7 +47,12 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
 
         if (updateResult.status === "success") {
             const existing = timeEntries.value.find((x) => x.id === id);
-            if (existing) Object.assign(existing, updateResult.data);
+
+            // The dates are left out on purpose: the calendar moves entries
+            // optimistically, so echoing them back would snap an entry to a
+            // stale range when it was dragged again while the request ran.
+            const serverFields = omit(updateResult.data, "dateStarted", "dateEnded");
+            if (existing) Object.assign(existing, serverFields);
         }
 
         return updateResult;

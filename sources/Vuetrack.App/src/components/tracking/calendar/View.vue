@@ -41,7 +41,7 @@
 <script setup lang="ts">
 import type { EventSlotScope } from "vuetify/lib/components/VCalendar/VCalendar.mjs";
 import type { CalendarDayBodySlotScope, CalendarEvent } from "vuetify/lib/components/VCalendar/types.mjs";
-import { canStartInteraction, isTimeEntryEvent, type EventEdge, type TimeEntryEvent } from "./types";
+import { isTimeEntryEvent, type EventEdge, type TimeEntryEvent } from "./types";
 import { useMove } from "./composables/useMove";
 import { useResize } from "./composables/useResize";
 import { useDraft } from "./composables/useDraft";
@@ -53,10 +53,11 @@ import { useCalendarTimePeriod } from "./composables/useCalendarTimePeriod";
 import { useCalendarInterval } from "./composables/useCalendarInterval";
 import { useEventShortcuts } from "./composables/useEventShortcuts";
 import { useEventContextMenu } from "./composables/useEventContextMenu";
+import { useEventPolicy } from "./composables/useEventPolicy";
 
 const calendarStore = useCalendarStore();
 
-const { events, interaction, isLoadingEvents } = storeToRefs(calendarStore);
+const { events, gesture, isLoadingEvents } = storeToRefs(calendarStore);
 
 const move = useMove();
 const resize = useResize();
@@ -70,6 +71,7 @@ const { start, end, weekdays, isReadonly, calendarType } = useCalendarTimePeriod
 const { intervalMinutes, intervalCount, firstInterval } = useCalendarInterval();
 
 const contextMenu = useEventContextMenu();
+const policy = useEventPolicy();
 
 useEventShortcuts();
 
@@ -96,10 +98,8 @@ const jumpToMoreDay = (_nativeEvent: Event, day: { year: number; month: number; 
 };
 
 const canAdjustEvent = (event: CalendarEvent): boolean => {
-    if (canStartInteraction(interaction.value.kind)) return true;
-    if (interaction.value.kind !== "conflict") return false;
-
-    return event.uiId === interaction.value.event.uiId;
+    if (!isTimeEntryEvent(event)) return false;
+    return policy.canStartGesture(event);
 };
 
 const isLeftClick = (nativeEvent: Event): boolean => {
@@ -127,16 +127,16 @@ const beginResizeEvent = (event: CalendarEvent, edge: EventEdge) => {
 const beginGridInteraction = (nativeEvent: Event, tms: CalendarDayBodySlotScope) => {
     if (isReadonly.value) return;
     if (!isLeftClick(nativeEvent)) return;
-    if (!canStartInteraction(interaction.value.kind)) return;
 
     const mouseMs = toTime(tms);
 
-    if (interaction.value.kind === "move" && interaction.value.pointerOffsetMs === undefined) {
+    if (gesture.value.kind === "move" && gesture.value.pointerOffsetMs === undefined) {
         move.setPointerOffset(mouseMs);
         return;
     }
 
-    if (interaction.value.kind !== "idle") return;
+    if (gesture.value.kind !== "idle") return;
+    if (!policy.canOpenTask()) return;
 
     draft.start(mouseMs);
 };

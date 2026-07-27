@@ -4,11 +4,13 @@
         @mouseenter="onMouseEnter"
         @mouseleave="onMouseLeave"
         @mousemove="details.move($event, event)"
-        :class="['h-100', 'tc-event', `tc-${event.kind}`]"
+        :class="['h-100', 'tc-event', `tc-${event.kind}`, { 'tc-conflicting': isConflicting, 'tc-unsaved': isUnsaved, 'tc-removed': isRemoved }]"
     >
         <div class="h-100 py-1 px-2 d-flex flex-column ga-1 text-truncate">
             <div class="tc-header">
                 <div class="tc-title text-on-surface text-truncate font-weight-medium text-high-emphasis">
+                    <VIcon v-if="isRemoved" :icon="mdiDelete" class="mr-1" color="error" size="x-small" />
+                    <VIcon v-else-if="isUnsaved" :icon="mdiContentSaveAlertOutline" class="mr-1" color="warning" size="x-small" />
                     <template v-if="event.kind === 'existing'">{{ event.timeEntry.taskId ?? event.timeEntry.project.name }}</template>
                     <template v-else-if="event.kind === 'suggestion'">{{ event.timeEntry.taskId ?? event.timeEntry.projectName }}</template>
                     <template v-else>{{ $t("calendar.event.draft") }}</template>
@@ -22,7 +24,6 @@
             </div>
         </div>
     </div>
-    <!-- TODO Might be allowed during conflict-->
     <div v-if="canResize" @mousedown.stop="emit('resize', 'start')" class="v-event-drag-top" />
     <div v-if="canResize" @mousedown.stop="emit('resize', 'end')" class="v-event-drag-bottom" />
 </template>
@@ -30,8 +31,11 @@
 <script setup lang="ts">
 import type { EventEdge, TimeEntryEvent } from "./types";
 import { useCalendarTimePeriod } from "./composables/useCalendarTimePeriod";
+import { useChangeSet } from "./composables/useChangeSet";
+import { useConflictDetection } from "./composables/useConflictDetection";
 import { useEventDetails } from "./composables/useEventDetails";
 import { useEventHover } from "./composables/useEventHover";
+import { useEventPolicy } from "./composables/useEventPolicy";
 
 const emit = defineEmits<{
     resize: [edge: EventEdge];
@@ -42,14 +46,33 @@ const props = defineProps<{
 }>();
 
 const calendarStore = useCalendarStore();
-const { interaction } = storeToRefs(calendarStore);
+const { gesture } = storeToRefs(calendarStore);
 const { isReadonly } = useCalendarTimePeriod();
 const details = useEventDetails();
 const hover = useEventHover();
+const policy = useEventPolicy();
+const changeSet = useChangeSet();
+const { conflictingUiIds } = useConflictDetection();
 
 const dateFormatter = useDate();
 
-const canResize = computed(() => !isReadonly.value && interaction.value.kind === "idle");
+const canResize = computed(() => {
+    if (isReadonly.value) return false;
+    if (gesture.value.kind !== "idle") return false;
+    return policy.canStartGesture(props.event);
+});
+
+const isRemoved = computed(() => changeSet.isRemoved(props.event.uiId));
+
+// A change that is currently being sent is no longer "unsaved", so an ordinary
+// drag does not flash the unsaved styling while its request is in flight.
+const isUnsaved = computed(() => {
+    if (isRemoved.value) return false;
+    if (changeSet.isCommitting.value) return false;
+    return changeSet.has(props.event.uiId);
+});
+
+const isConflicting = computed(() => conflictingUiIds.value.has(props.event.uiId));
 
 const onMouseEnter = (nativeEvent: MouseEvent) => {
     hover.setHovered(props.event);
@@ -116,6 +139,31 @@ const onMouseLeave = () => {
     background-color: color-mix(in srgb, rgb(var(--v-theme-secondary)) 22%, rgb(var(--v-theme-surface)));
     border-color: color-mix(in srgb, rgb(var(--v-theme-secondary)) 45%, rgb(var(--v-theme-surface)));
     border-left-color: rgb(var(--v-theme-secondary));
+}
+
+.tc-conflicting {
+    background-color: color-mix(in srgb, rgb(var(--v-theme-error)) 22%, rgb(var(--v-theme-surface)));
+    border-color: color-mix(in srgb, rgb(var(--v-theme-error)) 45%, rgb(var(--v-theme-surface)));
+    border-left-color: rgb(var(--v-theme-error));
+}
+
+.tc-unsaved {
+    border-style: dashed;
+    border-left-style: solid;
+}
+
+.tc-removed {
+    background-color: color-mix(in srgb, rgb(var(--v-theme-error)) 10%, rgb(var(--v-theme-surface)));
+    border-color: color-mix(in srgb, rgb(var(--v-theme-error)) 35%, rgb(var(--v-theme-surface)));
+    border-left-color: rgb(var(--v-theme-error));
+    border-style: dashed;
+    border-left-style: solid;
+    opacity: 0.45;
+    cursor: default;
+
+    .tc-title {
+        text-decoration: line-through;
+    }
 }
 
 .v-event-drag-top,

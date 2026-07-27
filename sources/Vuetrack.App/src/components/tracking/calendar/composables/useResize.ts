@@ -1,29 +1,34 @@
 import type { EventEdge, TimeEntryEvent } from "@/components/tracking/calendar/types";
 import { useCalendarHelper } from "./useCalendarHelper";
-import { useEventMutation } from "./useEventMutation";
+import { useChangeSet } from "./useChangeSet";
+import { useEventCommit } from "./useEventCommit";
 
 export function useResize() {
     const calendarStore = useCalendarStore();
-    const { interaction, events } = storeToRefs(calendarStore);
-    const mutation = useEventMutation();
-    const { roundTime, getEventBoundaries, prepareUpdateMutation, updateEventPosition, restoreOriginalPosition } = useCalendarHelper();
+    const changeSet = useChangeSet();
+    const commit = useEventCommit();
+    const { roundTime, getEventBoundaries, cancelPendingUpdateForEvent, updateEventPosition, applyEventPosition } = useCalendarHelper();
+
+    const { gesture, events } = storeToRefs(calendarStore);
 
     const start = (event: TimeEntryEvent, edge: EventEdge = "end") => {
-        const resizeMutation = prepareUpdateMutation(event);
-        if (!resizeMutation) return;
+        if (event.kind !== "existing" && event.kind !== "suggestion") return;
 
-        interaction.value = {
+        cancelPendingUpdateForEvent(event);
+        changeSet.stageUpdate(event);
+
+        gesture.value = {
             kind: "resize",
             edge,
-            event: resizeMutation.event,
-            mutation: resizeMutation
+            event,
+            from: { start: event.start, end: event.end }
         };
     };
 
     const update = (mouseMs: number) => {
-        if (interaction.value.kind !== "resize") return;
+        if (gesture.value.kind !== "resize") return;
 
-        const { event, edge } = interaction.value;
+        const { event, edge } = gesture.value;
         const snapPoints = getEventBoundaries(event, events.value);
 
         if (edge === "start") {
@@ -36,17 +41,22 @@ export function useResize() {
     };
 
     const finish = async () => {
-        if (interaction.value.kind !== "resize") return;
+        if (gesture.value.kind !== "resize") return;
 
-        const cur = interaction.value;
-        interaction.value = { kind: "idle" };
-        await mutation.commitUpdate(cur);
+        const { event } = gesture.value;
+        gesture.value = { kind: "idle" };
+
+        await commit.commitGesture(event);
     };
 
     const cancel = () => {
-        if (interaction.value.kind !== "resize") return;
-        restoreOriginalPosition(interaction.value.mutation);
-        interaction.value = { kind: "idle" };
+        if (gesture.value.kind !== "resize") return;
+
+        const { event, from } = gesture.value;
+        gesture.value = { kind: "idle" };
+
+        applyEventPosition(event, from.start, from.end);
+        changeSet.unstageIfUnchanged(event.uiId);
     };
 
     return { start, update, finish, cancel };

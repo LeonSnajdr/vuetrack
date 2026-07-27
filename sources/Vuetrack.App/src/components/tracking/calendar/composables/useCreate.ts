@@ -1,51 +1,42 @@
-import type { DraftTimeEntryEvent, SuggestionTimeEntryEvent } from "@/components/tracking/calendar/types";
+import type { CreatableEvent } from "@/components/tracking/calendar/types";
 import { useCalendarHelper } from "./useCalendarHelper";
+import { useChangeSet } from "./useChangeSet";
+import { useEventCommit } from "./useEventCommit";
 import { useEventMutation } from "./useEventMutation";
 
 export function useCreate() {
     const calendarStore = useCalendarStore();
+    const changeSet = useChangeSet();
+    const commit = useEventCommit();
     const mutation = useEventMutation();
-    const { buildCreateMutation } = useCalendarHelper();
+    const { buildCreatePayload } = useCalendarHelper();
 
-    const { interaction } = storeToRefs(calendarStore);
+    const { task } = storeToRefs(calendarStore);
 
-    const start = (event: DraftTimeEntryEvent | SuggestionTimeEntryEvent) => {
-        const createMutation = buildCreateMutation(event);
-        interaction.value = { kind: "create", event, mutation: createMutation };
+    const start = (event: CreatableEvent) => {
+        const payload = buildCreatePayload(event);
+        task.value = { kind: "create", event, payload };
     };
 
     const finish = async () => {
-        if (interaction.value.kind !== "create") return;
+        if (task.value.kind !== "create") return;
 
-        const { event, mutation: createMutation, pendingMutations } = interaction.value;
+        const { event, payload } = task.value;
 
-        if (!pendingMutations && mutation.tryEnterConflict(event, createMutation)) return;
-
-        const createResult = await mutation.execute(createMutation);
-
-        if (createResult.status === "error") {
-            if (createResult.validation) {
-                interaction.value.errors = createResult.validation;
-            }
-            return;
-        }
-
-        if (pendingMutations?.length) {
-            const shouldIdle = await mutation.drainPending(pendingMutations);
-            if (!shouldIdle) return;
-        }
-
-        interaction.value = { kind: "idle" };
+        changeSet.stageAdd(event, payload);
+        await commit.commitOrEscalate(event);
     };
 
+    // Abandons the whole batch, not just this form: a create task can be the
+    // recovery step of a rejected conflict resolution.
     const cancel = () => {
-        if (interaction.value.kind !== "create") return;
-        const { event, pendingMutations } = interaction.value;
+        if (task.value.kind !== "create") return;
 
-        mutation.deleteIfDraft(event);
-        mutation.cancelPending(pendingMutations);
+        const { event } = task.value;
+        task.value = { kind: "none" };
 
-        interaction.value = { kind: "idle" };
+        changeSet.revertAll();
+        if (event.kind === "draft") mutation.removeDraftEvent(event.uiId);
     };
 
     return { start, finish, cancel };

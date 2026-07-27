@@ -73,10 +73,7 @@ type DetailFieldGroup = {
     rows: Exclude<DetailField, ChipDetailField>[];
 };
 
-const { state, togglePin, hardClose } = useEventDetails();
-
-const calendarStore = useCalendarStore();
-const { interaction } = storeToRefs(calendarStore);
+const { state, isBusy, togglePin, hardClose } = useEventDetails();
 
 const dateFormatter = useDate();
 
@@ -92,12 +89,9 @@ onClickOutside(cardRef, () => {
     if (state.value.show) hardClose();
 });
 
-watch(
-    () => interaction.value.kind !== "idle",
-    (active) => {
-        if (active) hardClose();
-    }
-);
+watch(isBusy, (busy) => {
+    if (busy) hardClose();
+});
 
 const timeEntry = computed(() => {
     const event = state.value.event;

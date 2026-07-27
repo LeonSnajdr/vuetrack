@@ -1,35 +1,40 @@
 import type { TimeEntryEvent } from "@/components/tracking/calendar/types";
 import { useCalendarHelper } from "./useCalendarHelper";
-import { useEventMutation } from "./useEventMutation";
+import { useChangeSet } from "./useChangeSet";
+import { useEventCommit } from "./useEventCommit";
 
 export function useMove() {
     const calendarStore = useCalendarStore();
-    const { interaction, events } = storeToRefs(calendarStore);
-    const mutation = useEventMutation();
-    const { roundTime, getEventBoundaries, prepareUpdateMutation, minimumEventDurationMs, updateEventPosition, restoreOriginalPosition } =
+    const changeSet = useChangeSet();
+    const commit = useEventCommit();
+    const { roundTime, getEventBoundaries, cancelPendingUpdateForEvent, minimumEventDurationMs, updateEventPosition, applyEventPosition } =
         useCalendarHelper();
 
-    const start = (event: TimeEntryEvent) => {
-        const moveMutation = prepareUpdateMutation(event);
-        if (!moveMutation) return;
+    const { gesture, events } = storeToRefs(calendarStore);
 
-        interaction.value = {
+    const start = (event: TimeEntryEvent) => {
+        if (event.kind !== "existing" && event.kind !== "suggestion") return;
+
+        cancelPendingUpdateForEvent(event);
+        changeSet.stageUpdate(event);
+
+        gesture.value = {
             kind: "move",
-            event: moveMutation.event,
-            pointerOffsetMs: undefined,
-            mutation: moveMutation
+            event,
+            from: { start: event.start, end: event.end },
+            pointerOffsetMs: undefined
         };
     };
 
     const setPointerOffset = (mouseMs: number) => {
-        if (interaction.value.kind !== "move") return;
-        if (interaction.value.pointerOffsetMs !== undefined) return;
-        interaction.value.pointerOffsetMs = mouseMs - interaction.value.event.start;
+        if (gesture.value.kind !== "move") return;
+        if (gesture.value.pointerOffsetMs !== undefined) return;
+        gesture.value.pointerOffsetMs = mouseMs - gesture.value.event.start;
     };
 
     const update = (mouseMs: number) => {
-        if (interaction.value.kind !== "move") return;
-        const { event, pointerOffsetMs } = interaction.value;
+        if (gesture.value.kind !== "move") return;
+        const { event, pointerOffsetMs } = gesture.value;
         if (pointerOffsetMs === undefined) return;
 
         const duration = Math.max(event.end - event.start, minimumEventDurationMs);
@@ -40,17 +45,24 @@ export function useMove() {
     };
 
     const finish = async () => {
-        if (interaction.value.kind !== "move") return;
+        if (gesture.value.kind !== "move") return;
 
-        const cur = interaction.value;
-        interaction.value = { kind: "idle" };
-        await mutation.commitUpdate(cur);
+        const { event } = gesture.value;
+        gesture.value = { kind: "idle" };
+
+        await commit.commitGesture(event);
     };
 
+    // Aborting a drag only undoes that drag: earlier staged changes to the same
+    // event stay untouched.
     const cancel = () => {
-        if (interaction.value.kind !== "move") return;
-        restoreOriginalPosition(interaction.value.mutation);
-        interaction.value = { kind: "idle" };
+        if (gesture.value.kind !== "move") return;
+
+        const { event, from } = gesture.value;
+        gesture.value = { kind: "idle" };
+
+        applyEventPosition(event, from.start, from.end);
+        changeSet.unstageIfUnchanged(event.uiId);
     };
 
     return { start, setPointerOffset, update, finish, cancel };

@@ -1,52 +1,43 @@
-import type { ExistingTimeEntryEvent, SuggestionTimeEntryEvent } from "@/components/tracking/calendar/types";
+import type { PositionableEvent } from "@/components/tracking/calendar/types";
 import { useCalendarHelper } from "./useCalendarHelper";
-import { useEventMutation } from "./useEventMutation";
+import { useChangeSet } from "./useChangeSet";
+import { useEventCommit } from "./useEventCommit";
 
 export function useEdit() {
     const calendarStore = useCalendarStore();
-    const mutation = useEventMutation();
-    const { buildUpdateMutation, getOriginalPosition, restoreOriginalPosition } = useCalendarHelper();
+    const changeSet = useChangeSet();
+    const commit = useEventCommit();
+    const { buildUpdatePayload, cancelPendingUpdateForEvent } = useCalendarHelper();
 
-    const { interaction } = storeToRefs(calendarStore);
+    const { task } = storeToRefs(calendarStore);
 
-    const start = (event: ExistingTimeEntryEvent | SuggestionTimeEntryEvent) => {
-        const originalPosition = getOriginalPosition(event, interaction.value);
-        const editMutation = buildUpdateMutation(event, originalPosition);
-        interaction.value = { kind: "edit", event, mutation: editMutation };
+    const start = (event: PositionableEvent) => {
+        cancelPendingUpdateForEvent(event);
+
+        // Staged up front so the date fields the form writes into are rolled
+        // back correctly when the user cancels.
+        changeSet.stageUpdate(event);
+
+        const payload = buildUpdatePayload(event);
+        task.value = { kind: "edit", event, payload };
     };
 
     const finish = async () => {
-        if (interaction.value.kind !== "edit") return;
+        if (task.value.kind !== "edit") return;
 
-        const { event, mutation: editMutation, pendingMutations } = interaction.value;
+        const { event, payload } = task.value;
 
-        if (!pendingMutations && event.kind === "existing" && mutation.tryEnterConflict(event, editMutation)) return;
-
-        const editResult = await mutation.execute(editMutation);
-
-        if (editResult.status === "error") {
-            if (editResult.validation) {
-                interaction.value.errors = editResult.validation;
-            }
-            return;
-        }
-
-        if (pendingMutations?.length) {
-            const shouldIdle = await mutation.drainPending(pendingMutations);
-            if (!shouldIdle) return;
-        }
-
-        interaction.value = { kind: "idle" };
+        changeSet.stageUpdate(event, payload);
+        await commit.commitOrEscalate(event);
     };
 
+    // Abandons the whole batch, not just this form: an edit task can be the
+    // recovery step of a rejected conflict resolution.
     const cancel = () => {
-        if (interaction.value.kind !== "edit") return;
-        const { mutation: editMutation, pendingMutations } = interaction.value;
+        if (task.value.kind !== "edit") return;
 
-        restoreOriginalPosition(editMutation);
-        mutation.cancelPending(pendingMutations);
-
-        interaction.value = { kind: "idle" };
+        task.value = { kind: "none" };
+        changeSet.revertAll();
     };
 
     return { start, finish, cancel };
