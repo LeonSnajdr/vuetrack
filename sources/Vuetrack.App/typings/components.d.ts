@@ -40,7 +40,7 @@ declare module 'vue' {
     TrackingCalendarCurrentTimeLine: typeof import('./../src/components/tracking/calendar/CurrentTimeLine.vue')['default']
     TrackingCalendarEvent: typeof import('./../src/components/tracking/calendar/Event.vue')['default']
     TrackingCalendarEventDetails: typeof import('./../src/components/tracking/calendar/EventDetails.vue')['default']
-    TrackingCalendarFeaturesConflictPanel: typeof import('./../src/components/tracking/calendar/features/ConflictPanel.vue')['default']
+    TrackingCalendarFeaturesConflictOverlay: typeof import('./../src/components/tracking/calendar/features/ConflictOverlay.vue')['default']
     TrackingCalendarFeaturesCreateOverlay: typeof import('./../src/components/tracking/calendar/features/CreateOverlay.vue')['default']
     TrackingCalendarFeaturesDeleteOverlay: typeof import('./../src/components/tracking/calendar/features/DeleteOverlay.vue')['default']
     TrackingCalendarFeaturesEditOverlay: typeof import('./../src/components/tracking/calendar/features/EditOverlay.vue')['default']

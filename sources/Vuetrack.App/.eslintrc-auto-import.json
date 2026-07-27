@@ -7701,6 +7701,7 @@
     "useDisplayMedia": true,
     "useDocumentVisibility": true,
     "useDraggable": true,
+    "useDraggableOverlay": true,
     "useDropZone": true,
     "useElementBounding": true,
     "useElementByPoint": true,
