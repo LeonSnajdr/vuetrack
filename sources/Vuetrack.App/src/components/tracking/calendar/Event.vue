@@ -39,8 +39,8 @@ import { useCalendarTimePeriod } from "./composables/useCalendarTimePeriod";
 import { useChangeSet } from "./composables/useChangeSet";
 import { useConflictDetection } from "./composables/useConflictDetection";
 import { useEventDetails } from "./composables/useEventDetails";
-import { useEventHover } from "./composables/useEventHover";
 import { useEventPolicy } from "./composables/useEventPolicy";
+import { useEventSelection } from "./composables/useEventSelection";
 
 const emit = defineEmits<{
     resize: [edge: EventEdge, nativeEvent: MouseEvent];
@@ -51,13 +51,13 @@ const props = defineProps<{
 }>();
 
 const calendarStore = useCalendarStore();
-const { gesture, task } = storeToRefs(calendarStore);
+const { gesture } = storeToRefs(calendarStore);
 const { isReadonly } = useCalendarTimePeriod();
 const details = useEventDetails();
-const hover = useEventHover();
 const policy = useEventPolicy();
 const changeSet = useChangeSet();
 const { conflictingUiIds } = useConflictDetection();
+const { selectedUiId } = useEventSelection();
 
 const dateFormatter = useDate();
 
@@ -79,19 +79,14 @@ const isUnsaved = computed(() => {
 
 const isConflicting = computed(() => conflictingUiIds.value.has(props.event.uiId));
 
-// The event the conflict panel's quick fixes act on.
-const isSelected = computed(() => {
-    if (task.value.kind !== "conflict") return false;
-    return task.value.selectedUiId === props.event.uiId;
-});
+// What the shortcuts and the conflict resolutions act on.
+const isSelected = computed(() => selectedUiId.value === props.event.uiId);
 
 const onMouseEnter = (nativeEvent: MouseEvent) => {
-    hover.setHovered(props.event);
     details.open(nativeEvent, props.event);
 };
 
 const onMouseLeave = () => {
-    hover.clearHovered(props.event);
     details.close();
 };
 </script>
@@ -135,27 +130,35 @@ const onMouseLeave = () => {
 }
 
 .tc-existing {
-    background-color: color-mix(in srgb, rgb(var(--v-theme-primary)) 22%, rgb(var(--v-theme-surface)));
-    border-color: color-mix(in srgb, rgb(var(--v-theme-primary)) 45%, rgb(var(--v-theme-surface)));
-    border-left-color: rgb(var(--v-theme-primary));
+    --tc-accent: var(--v-theme-primary);
+
+    background-color: color-mix(in srgb, rgb(var(--tc-accent)) 22%, rgb(var(--v-theme-surface)));
+    border-color: color-mix(in srgb, rgb(var(--tc-accent)) 45%, rgb(var(--v-theme-surface)));
+    border-left-color: rgb(var(--tc-accent));
 }
 
 .tc-suggestion {
-    background-color: color-mix(in srgb, rgb(var(--v-theme-tertiary)) 22%, rgb(var(--v-theme-surface)));
-    border-color: color-mix(in srgb, rgb(var(--v-theme-tertiary)) 45%, rgb(var(--v-theme-surface)));
-    border-left-color: rgb(var(--v-theme-tertiary));
+    --tc-accent: var(--v-theme-tertiary);
+
+    background-color: color-mix(in srgb, rgb(var(--tc-accent)) 22%, rgb(var(--v-theme-surface)));
+    border-color: color-mix(in srgb, rgb(var(--tc-accent)) 45%, rgb(var(--v-theme-surface)));
+    border-left-color: rgb(var(--tc-accent));
 }
 
 .tc-draft {
-    background-color: color-mix(in srgb, rgb(var(--v-theme-secondary)) 22%, rgb(var(--v-theme-surface)));
-    border-color: color-mix(in srgb, rgb(var(--v-theme-secondary)) 45%, rgb(var(--v-theme-surface)));
-    border-left-color: rgb(var(--v-theme-secondary));
+    --tc-accent: var(--v-theme-secondary);
+
+    background-color: color-mix(in srgb, rgb(var(--tc-accent)) 22%, rgb(var(--v-theme-surface)));
+    border-color: color-mix(in srgb, rgb(var(--tc-accent)) 45%, rgb(var(--v-theme-surface)));
+    border-left-color: rgb(var(--tc-accent));
 }
 
 .tc-conflicting {
-    background-color: color-mix(in srgb, rgb(var(--v-theme-error)) 22%, rgb(var(--v-theme-surface)));
-    border-color: color-mix(in srgb, rgb(var(--v-theme-error)) 45%, rgb(var(--v-theme-surface)));
-    border-left-color: rgb(var(--v-theme-error));
+    --tc-accent: var(--v-theme-error);
+
+    background-color: color-mix(in srgb, rgb(var(--tc-accent)) 22%, rgb(var(--v-theme-surface)));
+    border-color: color-mix(in srgb, rgb(var(--tc-accent)) 45%, rgb(var(--v-theme-surface)));
+    border-left-color: rgb(var(--tc-accent));
 }
 
 .tc-unsaved {
@@ -163,9 +166,11 @@ const onMouseLeave = () => {
     border-left-style: solid;
 }
 
+/* Selection reads as a brighter version of the event's own colour, so it stays
+   legible on a two-line entry and adds nothing around the card. */
 .tc-selected {
-    outline: 2px solid rgb(var(--v-theme-on-surface));
-    outline-offset: 1px;
+    background-color: color-mix(in srgb, rgb(var(--tc-accent)) 40%, rgb(var(--v-theme-surface)));
+    border-color: color-mix(in srgb, rgb(var(--tc-accent)) 70%, rgb(var(--v-theme-surface)));
 }
 
 .tc-removed {

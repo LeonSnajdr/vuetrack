@@ -45,7 +45,7 @@
 <script setup lang="ts">
 import type { EventSlotScope } from "vuetify/lib/components/VCalendar/VCalendar.mjs";
 import type { CalendarDayBodySlotScope, CalendarEvent } from "vuetify/lib/components/VCalendar/types.mjs";
-import { isTimeEntryEvent, type EventEdge, type TimeEntryEvent } from "./types";
+import { isTimeEntryEvent, type EventEdge } from "./types";
 import { useMove } from "./composables/useMove";
 import { useResize } from "./composables/useResize";
 import { useDraft } from "./composables/useDraft";
@@ -59,6 +59,7 @@ import { useCalendarInterval } from "./composables/useCalendarInterval";
 import { useEventShortcuts } from "./composables/useEventShortcuts";
 import { useEventContextMenu } from "./composables/useEventContextMenu";
 import { useEventPolicy } from "./composables/useEventPolicy";
+import { useEventSelection } from "./composables/useEventSelection";
 
 const calendarStore = useCalendarStore();
 
@@ -71,6 +72,7 @@ const create = useCreate();
 const edit = useEdit();
 const remove = useDelete();
 const conflict = useConflict();
+const { select, clearSelection } = useEventSelection();
 const { isArmed, armGesture, setAnchorTime, clearArm, promoteArm } = useGestureArm();
 const { jumpToDay } = useTrackingTimePeriod();
 const { start, end, weekdays, isReadonly, calendarType } = useCalendarTimePeriod();
@@ -80,6 +82,9 @@ const contextMenu = useEventContextMenu();
 const policy = useEventPolicy();
 
 useEventShortcuts();
+
+// A shortcut must never hit an event that scrolled out of the shown range.
+watch([start, end], () => clearSelection());
 
 onBeforeUnmount(() => {
     cancelAll();
@@ -117,12 +122,14 @@ const beginMoveEvent = (nativeEvent: Event, { event, timed }: EventSlotScope) =>
     if (isReadonly.value) return;
     if (!isLeftClick(nativeEvent)) return;
     if (!event || !timed) return;
+    if (!isTimeEntryEvent(event)) return;
+
+    // Selecting is always allowed: it is what the shortcuts and the conflict
+    // resolutions read, even where a gesture is not.
+    select(event);
     if (!canAdjustEvent(event)) return;
 
-    const target = event as TimeEntryEvent;
-
-    conflict.select(target);
-    armGesture({ kind: "move", event: target }, nativeEvent as MouseEvent);
+    armGesture({ kind: "move", event }, nativeEvent as MouseEvent);
 };
 
 const openContextMenu = (nativeEvent: Event, { event }: EventSlotScope) => {
@@ -131,12 +138,12 @@ const openContextMenu = (nativeEvent: Event, { event }: EventSlotScope) => {
 
 const beginResizeEvent = (event: CalendarEvent, edge: EventEdge, nativeEvent: MouseEvent) => {
     if (isReadonly.value) return;
+    if (!isTimeEntryEvent(event)) return;
+
+    select(event);
     if (!canAdjustEvent(event)) return;
 
-    const target = event as TimeEntryEvent;
-
-    conflict.select(target);
-    armGesture({ kind: "resize", event: target, edge }, nativeEvent);
+    armGesture({ kind: "resize", event, edge }, nativeEvent);
 };
 
 const beginGridInteraction = (nativeEvent: Event, tms: CalendarDayBodySlotScope) => {
@@ -154,6 +161,7 @@ const beginGridInteraction = (nativeEvent: Event, tms: CalendarDayBodySlotScope)
     if (gesture.value.kind !== "idle") return;
     if (!policy.canOpenTask()) return;
 
+    clearSelection();
     draft.start(mouseMs);
 };
 

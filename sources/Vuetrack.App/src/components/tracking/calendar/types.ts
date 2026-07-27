@@ -123,7 +123,6 @@ export type Task =
     | {
           kind: "conflict";
           event: TimeEntryEvent;
-          selectedUiId: string;
       }
     | {
           kind: "delete";

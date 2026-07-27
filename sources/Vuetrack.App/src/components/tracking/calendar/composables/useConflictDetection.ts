@@ -1,6 +1,7 @@
 import type { TimeEntryEvent } from "@/components/tracking/calendar/types";
 import { useCalendarHelper } from "./useCalendarHelper";
 import { useChangeSet } from "./useChangeSet";
+import { useEventSelection } from "./useEventSelection";
 
 export type ConflictPair = {
     first: TimeEntryEvent;
@@ -10,6 +11,7 @@ export type ConflictPair = {
 export function useConflictDetection() {
     const calendarStore = useCalendarStore();
     const changeSet = useChangeSet();
+    const { select } = useEventSelection();
     const { isOverlapping, getOverlappingEvents } = useCalendarHelper();
 
     const { existingEvents, task } = storeToRefs(calendarStore);
@@ -64,7 +66,10 @@ export function useConflictDetection() {
         const overlaps = getOverlappingEvents(event, existingEvents.value);
         if (overlaps.length === 0) return false;
 
-        task.value = { kind: "conflict", event, selectedUiId: event.uiId };
+        // The offending event is what the resolutions should act on first.
+        select(event);
+
+        task.value = { kind: "conflict", event };
         return true;
     };
 

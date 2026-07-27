@@ -3,9 +3,9 @@ import { useCreate } from "./useCreate";
 import { useEdit } from "./useEdit";
 import { useDelete } from "./useDelete";
 import { useCalendarTimePeriod } from "./useCalendarTimePeriod";
-import { useEventHover } from "./useEventHover";
 import { useEventContextMenu } from "./useEventContextMenu";
 import { useEventPolicy } from "./useEventPolicy";
+import { useEventSelection } from "./useEventSelection";
 import { useStagedRemoval } from "./useStagedRemoval";
 
 export function useEventShortcuts() {
@@ -13,20 +13,15 @@ export function useEventShortcuts() {
     const edit = useEdit();
     const remove = useDelete();
     const { isReadonly } = useCalendarTimePeriod();
-    const { hoveredEvent } = useEventHover();
+    const { selectedEvent, clearSelection } = useEventSelection();
     const contextMenu = useEventContextMenu();
     const policy = useEventPolicy();
     const stagedRemoval = useStagedRemoval();
 
-    const getTargetEvent = (): TimeEntryEvent | null => {
-        if (contextMenu.state.value.show) return contextMenu.state.value.event;
-        return hoveredEvent.value;
-    };
-
     const getShortcutTarget = (): TimeEntryEvent | null => {
         if (isReadonly.value) return null;
 
-        const event = getTargetEvent();
+        const event = selectedEvent.value;
         if (!event) return null;
         if (event.kind === "draft") return null;
 
@@ -74,7 +69,15 @@ export function useEventShortcuts() {
         remove.start(event);
     };
 
+    // Overlays bind escape themselves, so it only drops the selection while none
+    // is open.
+    const dropSelection = () => {
+        if (!policy.canOpenTask()) return;
+        clearSelection();
+    };
+
     useHotkey("e", startEdit);
     useHotkey("a", startAccept);
     useHotkey("delete/d", startDelete);
+    useHotkey("escape", dropSelection);
 }
