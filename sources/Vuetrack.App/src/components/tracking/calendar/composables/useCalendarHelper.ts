@@ -1,19 +1,20 @@
-import type {
-    DraftTimeEntryCreateMutation,
-    DraftTimeEntryDeleteMutation,
-    DraftTimeEntryEvent,
-    EventEdge,
-    EventPosition,
-    ExistingTimeEntryDeleteMutation,
-    ExistingTimeEntryEvent,
-    ExistingTimeEntryUpdateMutation,
-    Interaction,
-    SuggestionTimeEntryCreateMutation,
-    SuggestionTimeEntryDeleteMutation,
-    SuggestionTimeEntryEvent,
-    SuggestionTimeEntryUpdateMutation,
-    TimeEntryEvent,
-    TimeEntryMutation
+import {
+    isExistingUpdateMutation,
+    type DraftTimeEntryCreateMutation,
+    type DraftTimeEntryDeleteMutation,
+    type DraftTimeEntryEvent,
+    type EventEdge,
+    type EventPosition,
+    type ExistingTimeEntryDeleteMutation,
+    type ExistingTimeEntryEvent,
+    type ExistingTimeEntryUpdateMutation,
+    type Interaction,
+    type SuggestionTimeEntryCreateMutation,
+    type SuggestionTimeEntryDeleteMutation,
+    type SuggestionTimeEntryEvent,
+    type SuggestionTimeEntryUpdateMutation,
+    type TimeEntryEvent,
+    type TimeEntryMutation
 } from "@/components/tracking/calendar/types";
 import type { TimeEntryContract, TimeEntryCreateContract, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
 import type { TimeEntrySuggestionContract, TimeEntrySuggestionUpdateContract } from "@/contracts/TimeEntrySuggestion";
@@ -170,27 +171,21 @@ export const useCalendarHelper = () => {
     // Shared start-of-interaction prelude for move/resize/edit: filters out
     // unsupported event kinds, cancels any pending background update, snapshots
     // the original position, and returns a ready-to-use update mutation.
-    const prepareUpdateMutation = (
-        event: TimeEntryEvent
-    ): ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation | null => {
+    const prepareUpdateMutation = (event: TimeEntryEvent): ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation | null => {
         if (event.kind !== "existing" && event.kind !== "suggestion") return null;
         cancelPendingUpdateForEvent(event);
         const originalPosition = getOriginalPosition(event, interaction.value);
         return buildUpdateMutation(event, originalPosition);
     };
 
-    const buildCreateMutation = (
-        event: DraftTimeEntryEvent | SuggestionTimeEntryEvent
-    ): DraftTimeEntryCreateMutation | SuggestionTimeEntryCreateMutation => {
+    const buildCreateMutation = (event: DraftTimeEntryEvent | SuggestionTimeEntryEvent): DraftTimeEntryCreateMutation | SuggestionTimeEntryCreateMutation => {
         if (event.kind === "draft") {
             return { kind: "create", event, create: buildTimeEntryCreate(event.createEntry) };
         }
         return { kind: "create", event, create: buildTimeEntryCreateFromSuggestion(event.timeEntry) };
     };
 
-    const buildDeleteMutation = (
-        event: TimeEntryEvent
-    ): DraftTimeEntryDeleteMutation | ExistingTimeEntryDeleteMutation | SuggestionTimeEntryDeleteMutation => {
+    const buildDeleteMutation = (event: TimeEntryEvent): DraftTimeEntryDeleteMutation | ExistingTimeEntryDeleteMutation | SuggestionTimeEntryDeleteMutation => {
         if (event.kind === "draft") return { kind: "delete", event };
         if (event.kind === "existing") return { kind: "delete", event, id: event.timeEntry.id };
         return { kind: "delete", event, id: event.timeEntry.id };
@@ -198,10 +193,12 @@ export const useCalendarHelper = () => {
 
     const withMutationPosition = (mutation: TimeEntryMutation, start: number, end: number): TimeEntryMutation => {
         if (mutation.kind === "update") {
-            return {
-                ...mutation,
-                update: { ...mutation.update, dateStarted: new Date(start), dateEnded: new Date(end) }
-            };
+            const position = { dateStarted: new Date(start), dateEnded: new Date(end) };
+
+            if (isExistingUpdateMutation(mutation)) {
+                return { ...mutation, update: { ...mutation.update, ...position } };
+            }
+            return { ...mutation, update: { ...mutation.update, ...position } };
         }
         if (mutation.kind === "create") {
             return {

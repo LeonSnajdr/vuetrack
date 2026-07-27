@@ -1,26 +1,23 @@
 import { success } from "@/util/ActionResult";
 import type { ValidationErrors } from "@/util/ValidationProblem";
-import type {
-    DraftTimeEntryCreateMutation,
-    DraftTimeEntryDeleteMutation,
-    ExistingTimeEntryDeleteMutation,
-    ExistingTimeEntryEvent,
-    ExistingTimeEntryUpdateMutation,
-    Interaction,
-    SuggestionTimeEntryCreateMutation,
-    SuggestionTimeEntryDeleteMutation,
-    SuggestionTimeEntryEvent,
-    SuggestionTimeEntryUpdateMutation,
-    TimeEntryEvent,
-    TimeEntryMutation
+import {
+    isExistingUpdateMutation,
+    type DraftTimeEntryCreateMutation,
+    type DraftTimeEntryDeleteMutation,
+    type ExistingTimeEntryDeleteMutation,
+    type ExistingTimeEntryEvent,
+    type ExistingTimeEntryUpdateMutation,
+    type Interaction,
+    type SuggestionTimeEntryCreateMutation,
+    type SuggestionTimeEntryDeleteMutation,
+    type SuggestionTimeEntryEvent,
+    type SuggestionTimeEntryUpdateMutation,
+    type TimeEntryEvent,
+    type TimeEntryMutation
 } from "@/components/tracking/calendar/types";
 import { useCalendarHelper } from "./useCalendarHelper";
 
-type ConflictMutation =
-    | ExistingTimeEntryUpdateMutation
-    | SuggestionTimeEntryUpdateMutation
-    | DraftTimeEntryCreateMutation
-    | SuggestionTimeEntryCreateMutation;
+type ConflictMutation = ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation | DraftTimeEntryCreateMutation | SuggestionTimeEntryCreateMutation;
 
 export type ExecuteAllResult =
     | { status: "success" }
@@ -105,7 +102,7 @@ export function useEventMutation() {
     };
 
     const executeUpdate = async (mutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation) => {
-        if (mutation.event.kind === "existing") {
+        if (isExistingUpdateMutation(mutation)) {
             return await timeEntryStore.update(mutation.event.timeEntry.id, mutation.update);
         } else {
             return await suggestionStore.update(mutation.event.timeEntry.id, mutation.update);

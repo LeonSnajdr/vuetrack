@@ -136,3 +136,9 @@ export type InteractionKind = Interaction["kind"];
 export function isTimeEntryEvent(e: CalendarEvent): e is TimeEntryEvent {
     return e.kind === "suggestion" || e.kind === "existing" || e.kind === "draft";
 }
+
+export function isExistingUpdateMutation(
+    mutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation
+): mutation is ExistingTimeEntryUpdateMutation {
+    return mutation.event.kind === "existing";
+}

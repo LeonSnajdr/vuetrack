@@ -43,10 +43,10 @@ export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", ()
 
     const reload = async (): Promise<ActionResult> => {
         const reloadResult = await executeReload(filter.value);
-        if (reloadResult.status === "success") {
-            await executeLoadWithFilters();
-        }
-        return reloadResult;
+        if (reloadResult.status !== "success") return reloadResult;
+
+        await executeLoadWithFilters();
+        return success();
     };
 
     const update = async (id: TimeEntrySuggestionId, updateContract: TimeEntrySuggestionUpdateContract): Promise<ActionResult<TimeEntrySuggestionContract>> => {

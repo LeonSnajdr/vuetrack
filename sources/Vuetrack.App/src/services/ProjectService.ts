@@ -14,6 +14,12 @@ class ProjectService {
     };
 
     public findProjectByTaskId = async (taskId: string): Promise<ProjectContract | undefined> => {
+        // TODO: remove
+        return {
+            id: "2" as ProjectId,
+            name: "project-1"
+        };
+
         const result = await axios.api.get<ProjectContract | null>("project/findByTaskId", {
             params: { taskId: taskId }
         });

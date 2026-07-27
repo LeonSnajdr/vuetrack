@@ -123,11 +123,6 @@ const rootStyle = computed(() => ({
     margin-inline: auto;
 }
 
-.v-theme--dark .vt-loader {
-    --vt-limb: #c5c5c5;
-    --vt-shadow-color: #000000;
-}
-
 .vt *,
 .vt-shadow,
 .vt-bob,

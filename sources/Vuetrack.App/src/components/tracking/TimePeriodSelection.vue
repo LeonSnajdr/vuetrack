@@ -1,12 +1,7 @@
 <template>
     <div class="d-flex align-center ga-1">
-        <VIconBtn
-            @click="shiftPeriod(filter.from, filter.to, -1)"
-            :icon="mdiChevronLeft"
-            :title="t('tracking.period.previous')"
-            variant="text"
-        />
-        <div class="d-flex align-center justify-center ga-1" style="cursor: pointer; width: 130px">
+        <VIconBtn @click="shiftPeriod(filter.from, filter.to, -1)" :icon="mdiChevronLeft" :title="t('tracking.period.previous')" variant="text" />
+        <div class="d-flex align-center justify-center ga-1" style="cursor: pointer; width: 150px">
             {{ periodLabel }}
             <VMenu v-model="menuOpen" :closeOnContentClick="false" activator="parent" location="bottom start">
                 <VCard minWidth="800">
