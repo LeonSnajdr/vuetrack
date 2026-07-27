@@ -41,10 +41,13 @@ const emptyPreset = (): Nullable<TimeEntryPresetCreate> => ({
 const draftPreset = ref<Nullable<TimeEntryPresetCreate>>(emptyPreset());
 
 const submit = (): void => {
+    if (!dialogOpen.value) return;
     if (!valid.value) return;
     presetStore.createPreset(draftPreset.value);
     dialogOpen.value = false;
 };
+
+useHotkey("cmd+s", submit, { inputs: true });
 
 whenever(dialogOpen, () => {
     draftPreset.value = emptyPreset();

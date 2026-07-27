@@ -1,5 +1,5 @@
 <template>
-    <BaseOverlayProvider @closed="create.cancel" :loading="isCreatingEvent" :target="targetSelector">
+    <BaseOverlayProvider @closed="create.cancel" @submit="submit" :loading="isCreatingEvent" :target="targetSelector">
         <template #title>
             {{ $t("action.create.title", { type: $t("timeEntry.singular") }) }}
         </template>
@@ -7,7 +7,7 @@
             <TimeEntryFieldContainer v-model="interaction.mutation.create" v-model:errors="interaction.errors" v-model:valid="valid" skipTimeFields />
         </template>
         <template #actions>
-            <VBtn @click="create.finish" :disabled="!valid" :loading="isCreatingEvent" color="primary" variant="flat">
+            <VBtn @click="submit" :disabled="!valid" :loading="isCreatingEvent" color="primary" variant="flat">
                 {{ $t("action.create") }}
             </VBtn>
         </template>
@@ -26,4 +26,10 @@ const { isCreatingEvent } = storeToRefs(calendarStore);
 const valid = ref(false);
 
 const targetSelector = computed(() => "#" + interaction.value.event.uiId);
+
+const submit = (): void => {
+    if (!valid.value) return;
+    if (isCreatingEvent.value) return;
+    create.finish();
+};
 </script>

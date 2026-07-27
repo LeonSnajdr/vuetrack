@@ -50,10 +50,13 @@ const { cloned: draftPreset } = useClonedMapped(
 );
 
 const submit = (): void => {
+    if (!dialogOpen.value) return;
     if (!valid.value) return;
     presetStore.updatePreset(props.preset.id, draftPreset.value);
     dialogOpen.value = false;
 };
+
+useHotkey("cmd+s", submit, { inputs: true });
 
 const remove = (): void => {
     presetStore.deletePreset(props.preset.id);

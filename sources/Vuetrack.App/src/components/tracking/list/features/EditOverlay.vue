@@ -1,5 +1,5 @@
 <template>
-    <BaseOverlayProvider @closed="edit.cancel" :loading="isUpdatingEntry" :target="targetSelector">
+    <BaseOverlayProvider @closed="edit.cancel" @submit="submit" :loading="isUpdatingEntry" :target="targetSelector">
         <template #title>
             {{ $t("action.save.title", { type: $t("timeEntry.singular") }) }}
         </template>
@@ -7,7 +7,7 @@
             <TimeEntryFieldContainer v-model="interaction.update" v-model:errors="interaction.errors" v-model:valid="valid" />
         </template>
         <template #actions>
-            <VBtn @click="edit.finish" :disabled="!valid" :loading="isUpdatingEntry" color="primary" variant="flat">
+            <VBtn @click="submit" :disabled="!valid" :loading="isUpdatingEntry" color="primary" variant="flat">
                 {{ $t("action.save") }}
             </VBtn>
         </template>
@@ -25,4 +25,10 @@ const listStore = useTrackingListStore();
 const { isUpdatingEntry } = storeToRefs(listStore);
 const targetSelector = computed(() => "#time-entry-edit-" + interaction.value.timeEntryId);
 const valid = ref(false);
+
+const submit = (): void => {
+    if (!valid.value) return;
+    if (isUpdatingEntry.value) return;
+    edit.finish();
+};
 </script>

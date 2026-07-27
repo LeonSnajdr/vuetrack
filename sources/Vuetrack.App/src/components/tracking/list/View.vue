@@ -135,7 +135,10 @@ const dayDurationByDate = computed(() => {
     }, {});
 });
 
-useHotkey("#", create.start);
+useHotkey("+", (e) => {
+    e.preventDefault();
+    create.start();
+});
 
 onBeforeUnmount(() => {
     create.cancel();

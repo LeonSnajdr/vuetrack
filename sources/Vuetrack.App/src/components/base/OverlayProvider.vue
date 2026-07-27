@@ -68,7 +68,7 @@
 <script setup lang="ts">
 import { OverlayType } from "@/models/DisplaySettings";
 
-const emit = defineEmits(["closed"]);
+const emit = defineEmits(["closed", "submit"]);
 
 const props = defineProps<{
     loading: boolean;
@@ -84,9 +84,20 @@ const valid = ref(false);
 
 useHotkey(
     "escape",
-    () => {
+    (e) => {
+        e.preventDefault();
         if (props.loading) return;
         overlayOpen.value = false;
+    },
+    { inputs: true }
+);
+
+useHotkey(
+    "cmd+s",
+    (e) => {
+        e.preventDefault();
+        if (props.loading) return;
+        emit("submit");
     },
     { inputs: true }
 );

@@ -1,5 +1,5 @@
 <template>
-    <BaseOverlayProvider @closed="edit.cancel" :loading="isUpdatingEvent" :target="targetSelector">
+    <BaseOverlayProvider @closed="edit.cancel" @submit="submit" :loading="isUpdatingEvent" :target="targetSelector">
         <template #title>
             {{ $t("action.save.title", { type: $t("timeEntry.singular") }) }}
         </template>
@@ -12,7 +12,7 @@
             />
         </template>
         <template #actions>
-            <VBtn @click="edit.finish" :disabled="!valid" :loading="isUpdatingEvent" color="primary" variant="flat">
+            <VBtn @click="submit" :disabled="!valid" :loading="isUpdatingEvent" color="primary" variant="flat">
                 {{ $t("action.save") }}
             </VBtn>
         </template>
@@ -31,4 +31,10 @@ const { isUpdatingEvent } = storeToRefs(calendarStore);
 const valid = ref(false);
 
 const targetSelector = computed(() => "#" + interaction.value.event.uiId);
+
+const submit = (): void => {
+    if (!valid.value) return;
+    if (isUpdatingEvent.value) return;
+    edit.finish();
+};
 </script>

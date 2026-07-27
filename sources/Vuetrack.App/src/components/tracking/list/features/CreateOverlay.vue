@@ -1,5 +1,5 @@
 <template>
-    <BaseOverlayProvider @closed="create.cancel" :loading="isCreatingEntry" :target="targetSelector">
+    <BaseOverlayProvider @closed="create.cancel" @submit="submit" :loading="isCreatingEntry" :target="targetSelector">
         <template #title>
             {{ $t("action.create.title", { type: $t("timeEntry.singular") }) }}
         </template>
@@ -10,7 +10,7 @@
             <VCheckbox v-model="createAnother" :label="$t('action.createAnother')" />
         </template>
         <template #actions>
-            <VBtn @click="create.finish(createAnother)" :disabled="!valid" :loading="isCreatingEntry" color="primary" variant="flat">
+            <VBtn @click="submit" :disabled="!valid" :loading="isCreatingEntry" color="primary" variant="flat">
                 {{ $t("action.create") }}
             </VBtn>
         </template>
@@ -30,4 +30,10 @@ const { isCreatingEntry } = storeToRefs(listStore);
 const valid = ref(false);
 const createAnother = ref(false);
 const targetSelector = "#time-entry-create";
+
+const submit = (): void => {
+    if (!valid.value) return;
+    if (isCreatingEntry.value) return;
+    create.finish(createAnother.value);
+};
 </script>
