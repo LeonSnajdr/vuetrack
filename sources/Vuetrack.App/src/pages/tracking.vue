@@ -1,4 +1,5 @@
 ﻿<template>
+    <AppHeader />
     <TrackingSidebar />
     <VContainer class="h-100 d-flex flex-column">
         <VCard :loading="isLoading" class="h-100">

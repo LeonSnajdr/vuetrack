@@ -98,12 +98,17 @@ let instanceCount = 0;
 
 const gradientId = `vt-body-${++instanceCount}`;
 
-const rootStyle = computed(() => ({
-    width: typeof props.size === "number" ? `${props.size}px` : props.size,
-    "--vt-cycle": `${(0.9 / (props.speed || 1)).toFixed(4)}s`,
-    "--vt-half": `${(0.45 / (props.speed || 1)).toFixed(4)}s`,
-    "--vt-play": props.paused ? "paused" : "running"
-}));
+const rootStyle = computed(() => {
+    const cycle = 0.9 / (props.speed || 1);
+
+    return {
+        width: typeof props.size === "number" ? `${props.size}px` : props.size,
+        "--vt-cycle": `${cycle.toFixed(4)}s`,
+        "--vt-half": `${(cycle / 2).toFixed(4)}s`,
+        "--vt-offset": `${-((Date.now() / 1000) % cycle).toFixed(4)}s`,
+        "--vt-play": props.paused ? "paused" : "running"
+    };
+});
 </script>
 
 <style scoped>
@@ -139,48 +144,55 @@ const rootStyle = computed(() => ({
 
 .vt-bob {
     animation: vt-bob var(--vt-half) cubic-bezier(0.2, 0.6, 0.35, 1) infinite alternate;
+    animation-delay: var(--vt-offset);
 }
 
 .vt-squash {
     transform-origin: 50% 100%;
     animation: vt-squash var(--vt-cycle) linear infinite;
+    animation-delay: var(--vt-offset);
 }
 
 .vt-head {
     transform-origin: 50% 100%;
     animation: vt-head var(--vt-cycle) ease-in-out infinite;
+    animation-delay: var(--vt-offset);
 }
 
 .vt-ant {
     transform-origin: 50% 100%;
     animation: vt-ant var(--vt-cycle) ease-in-out infinite;
-    animation-delay: calc(var(--vt-cycle) * -0.156);
+    animation-delay: calc(var(--vt-offset) - (var(--vt-cycle) * 0.156));
 }
 
 .vt-arm-r {
     transform-origin: 0% 100%;
     animation: vt-wave var(--vt-cycle) ease-in-out infinite;
+    animation-delay: var(--vt-offset);
 }
 
 .vt-arm-l {
     transform-origin: 95% 30%;
     animation: vt-swoosh var(--vt-cycle) ease-in-out infinite;
+    animation-delay: var(--vt-offset);
 }
 
 .vt-leg-a {
     transform-origin: 35% 0%;
     animation: vt-step var(--vt-cycle) ease-in-out infinite;
+    animation-delay: var(--vt-offset);
 }
 
 .vt-leg-b {
     transform-origin: 35% 0%;
     animation: vt-step var(--vt-cycle) ease-in-out infinite;
-    animation-delay: calc(var(--vt-cycle) * -0.5);
+    animation-delay: calc(var(--vt-offset) - (var(--vt-cycle) * 0.5));
 }
 
 .vt-shadow {
     transform-origin: 50% 50%;
     animation: vt-shade var(--vt-cycle) linear infinite;
+    animation-delay: var(--vt-offset);
 }
 
 @keyframes vt-bob {

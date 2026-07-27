@@ -21,6 +21,7 @@
   "app.initialize.error.actionText": "Erneut versuchen",
   "app.initialize.error.headline": "Fehler",
   "app.initialize.error.text": "Vuetrack konnte nicht initialisiert werden, da die Server momentan nicht erreichbar sind. Bitte versuchen Sie es später erneut.",
+  "app.initialize.loading": "Initialisierung läuft...",
   "auth.login.loading": "Anmeldung läuft...",
   "auth.logout.loading": "Abmeldung läuft...",
   "calendar.conflict.reverted": "Kein freier Slot gefunden. Das Ereignis wurde auf seine ursprüngliche Position zurückgesetzt.",

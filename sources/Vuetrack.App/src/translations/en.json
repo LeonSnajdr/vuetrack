@@ -21,6 +21,7 @@
   "app.initialize.error.actionText": "Try again",
   "app.initialize.error.headline": "Error",
   "app.initialize.error.text": "Vuetrack could not be initialized because the servers are currently unavailable. Please try again later.",
+  "app.initialize.loading": "Initializing...",
   "auth.login.loading": "Login in progress...",
   "auth.logout.loading": "Logout in progress...",
   "calendar.conflict.reverted": "No free slot found. Event was moved back to its original position.",

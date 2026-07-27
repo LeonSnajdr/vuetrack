@@ -3,11 +3,10 @@
         <VMain class="h-screen">
             <template v-if="isInitialized">
                 <AppNotificationView />
-                <AppHeader />
                 <RouterView />
             </template>
 
-            <VEmptyState v-else-if="loading">
+            <VEmptyState v-else-if="loading" :text="$t('app.initialize.loading')">
                 <template #media>
                     <BaseMascotLoader />
                 </template>

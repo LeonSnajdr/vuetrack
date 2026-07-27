@@ -1,6 +1,10 @@
 <template>
-    <VContainer>
-        <VAlert :icon="mdiLogin">{{ $t("auth.login.loading") }}</VAlert>
+    <VContainer class="h-100">
+        <VEmptyState :text="$t('auth.login.loading')">
+            <template #media>
+                <BaseMascotLoader />
+            </template>
+        </VEmptyState>
     </VContainer>
 </template>
 
