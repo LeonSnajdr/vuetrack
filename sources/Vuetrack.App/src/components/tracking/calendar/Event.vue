@@ -8,7 +8,7 @@
     >
         <div class="h-100 py-1 px-2 d-flex flex-column ga-1 text-truncate">
             <div class="tc-header">
-                <div class="tc-title text-on-surface text-truncate font-weight-medium">
+                <div class="tc-title text-on-surface text-truncate font-weight-medium text-high-emphasis">
                     <template v-if="event.kind === 'existing'">{{ event.timeEntry.taskId ?? event.timeEntry.project.name }}</template>
                     <template v-else-if="event.kind === 'suggestion'">{{ event.timeEntry.taskId ?? event.timeEntry.projectName }}</template>
                     <template v-else>{{ $t("calendar.event.draft") }}</template>

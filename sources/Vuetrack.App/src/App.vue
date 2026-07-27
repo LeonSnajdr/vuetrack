@@ -1,25 +1,72 @@
 <template>
     <VApp>
         <VMain class="h-screen">
-            <AppNotificationView />
-            <AppHeader />
-            <RouterView />
+            <template v-if="isInitialized">
+                <AppNotificationView />
+                <AppHeader />
+                <RouterView />
+            </template>
+
+            <VEmptyState v-else-if="loading">
+                <template #media>
+                    <BaseMascotLoader />
+                </template>
+            </VEmptyState>
+
+            <VEmptyState
+                v-else
+                @click:action="initializeApp"
+                :actionText="$t('app.initialize.error.actionText')"
+                :icon="mdiAlertCircleOutline"
+                :text="$t('app.initialize.error.text')"
+                :title="$t('app.initialize.error.headline')"
+                color="primary"
+            />
         </VMain>
     </VApp>
 </template>
 
 <script lang="ts" setup>
 import { useTheme } from "vuetify";
+import { setupAuth } from "@/plugins/auth";
 
 const settingsStore = useSettingsStore();
 const { generalSettings } = storeToRefs(settingsStore);
 
+const configStore = useConfigStore();
 const connectorStore = useConnectorStore();
 const backendStore = useBackendStore();
 
 const theme = useTheme();
 
-onMounted(() => {
+const loading = ref(true);
+const isInitialized = ref(false);
+
+const initializeApp = async () => {
+    loading.value = true;
+    isInitialized.value = false;
+
+    try {
+        await configStore.executeLoad();
+
+        if (configStore.error) {
+            return;
+        }
+
+        await setupAuth(configStore.data.authOptions);
+        isInitialized.value = true;
+    } catch (e) {
+        console.error("error initializing app", e);
+    } finally {
+        loading.value = false;
+    }
+};
+
+onBeforeMount(initializeApp);
+
+watch(isInitialized, (value) => {
+    if (!value) return;
+
     connectorStore.executeLoad();
     backendStore.executeLoad();
 });

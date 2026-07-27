@@ -24,6 +24,7 @@ declare module 'vue' {
     BaseConfirmationDialog: typeof import('./../src/components/base/ConfirmationDialog.vue')['default']
     BaseDateTimeInput: typeof import('./../src/components/base/DateTimeInput.vue')['default']
     BaseExpandColumnContent: typeof import('./../src/components/base/ExpandColumnContent.vue')['default']
+    BaseMascotLoader: typeof import('./../src/components/base/MascotLoader.vue')['default']
     BaseOverlayProvider: typeof import('./../src/components/base/OverlayProvider.vue')['default']
     BaseValidationDynamicRulesSupport: typeof import('./../src/components/base/validation/DynamicRulesSupport.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']

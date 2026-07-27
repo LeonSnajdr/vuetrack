@@ -1,10 +1,12 @@
 import AuthPlugin, { type AuthOptions } from "@samhammer/authentication-vue";
+import type { WebAuthOptions } from "@/contracts/ConfigContract";
 
-export const setupAuth = async () => {
+export const setupAuth = async (webAuthOptions: WebAuthOptions) => {
     const authOptions: AuthOptions = {
-        authUrl: "https://auth-test.cloud.samhammer.de/auth",
-        realm: "timetracking-dev",
-        appClientId: "vuetrack-dev-core-app",
+        authUrl: webAuthOptions.authUrl,
+        realm: webAuthOptions.realm,
+        appClientId: webAuthOptions.appClientId,
+        apiClientId: webAuthOptions.apiClientId,
         keycloakInitOptions: {
             responseMode: "query"
         }
