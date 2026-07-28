@@ -12,7 +12,7 @@ public static class GithubActivityMapper
         var sha = item.Sha ?? string.Empty;
         var message = item.Commit?.Message ?? string.Empty;
         var truncatedMessage = message.Truncate(maxMessageLength);
-        var started = item.Commit?.Author?.Date ?? default;
+        var started = item.Commit?.Author?.Date?.ToUniversalTime() ?? default;
 
         var detail = new GithubSignalDetail
         {

@@ -178,7 +178,7 @@ public class JiraConnectorHttpTests
                 {
                   "id": "5000",
                   "author": { "accountId": "acc-1" },
-                  "created": 1782039600000,
+                  "created": 1782903600000,
                   "items": [ { "field": "status", "fieldId": "status", "from": "1", "fromString": "To Do", "to": "3", "toString": "In Progress" } ]
                 }
               ]

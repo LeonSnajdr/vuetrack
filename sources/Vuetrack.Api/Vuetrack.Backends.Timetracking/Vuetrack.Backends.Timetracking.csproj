@@ -13,9 +13,9 @@
 
   <ItemGroup>
     <PackageReference Include="Duende.IdentityModel" Version="8.1.0" />
-    <PackageReference Include="Microsoft.AspNetCore.DataProtection.Abstractions" Version="10.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.8" />
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection.Abstractions" Version="10.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.10" />
     <PackageReference Include="Samhammer.DependencyInjection" Version="10.0.0" />
     <PackageReference Include="Samhammer.Mongo" Version="10.0.1" />
     <PackageReference Include="Samhammer.Options.Abstractions" Version="10.0.0" />
