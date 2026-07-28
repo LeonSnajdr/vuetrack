@@ -83,7 +83,7 @@ const policy = useEventPolicy();
 
 useEventShortcuts();
 
-// A shortcut must never hit an event that scrolled out of the shown range.
+// A shortcut must not hit an event outside the shown range.
 watch([start, end], () => clearSelection());
 
 onBeforeUnmount(() => {
@@ -124,8 +124,7 @@ const beginMoveEvent = (nativeEvent: Event, { event, timed }: EventSlotScope) =>
     if (!event || !timed) return;
     if (!isTimeEntryEvent(event)) return;
 
-    // Selecting is always allowed: it is what the shortcuts and the conflict
-    // resolutions read, even where a gesture is not.
+    // Selecting is allowed where a gesture is not.
     select(event);
     if (!canAdjustEvent(event)) return;
 
@@ -152,7 +151,7 @@ const beginGridInteraction = (nativeEvent: Event, tms: CalendarDayBodySlotScope)
 
     const mouseMs = toTime(tms);
 
-    // The press already belongs to an event, so it never drafts a new one.
+    // The press belongs to an event, so it never drafts a new one.
     if (isArmed.value) {
         setAnchorTime(mouseMs);
         return;

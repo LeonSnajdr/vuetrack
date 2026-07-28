@@ -74,7 +74,6 @@ const canApply = computed(() => {
     return !hasConflicts.value;
 });
 
-// A quick fix on an event that overlaps nothing has nothing to do.
 const selectionHasOverlaps = computed(() => {
     const selected = conflict.selectedEvent.value;
     if (!selected) return false;

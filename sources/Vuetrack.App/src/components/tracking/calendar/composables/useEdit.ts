@@ -14,8 +14,6 @@ export function useEdit() {
     const start = (event: PositionableEvent) => {
         cancelPendingUpdateForEvent(event);
 
-        // Staged up front so the date fields the form writes into are rolled
-        // back correctly when the user cancels.
         changeSet.stageUpdate(event);
 
         const payload = buildUpdatePayload(event);
@@ -31,8 +29,6 @@ export function useEdit() {
         await commit.commitOrEscalate(event);
     };
 
-    // Abandons the whole batch, not just this form: an edit task can be the
-    // recovery step of a rejected conflict resolution.
     const cancel = () => {
         if (task.value.kind !== "edit") return;
 

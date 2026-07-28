@@ -51,8 +51,7 @@ export function useEventShortcuts() {
         create.start(event);
     };
 
-    // While resolving a conflict manually the same key stages and unstages a
-    // removal instead of opening the delete dialog.
+    // During a conflict the key stages a removal instead of opening the dialog.
     const startDelete = () => {
         const event = getShortcutTarget();
         if (!event) return;
@@ -69,8 +68,7 @@ export function useEventShortcuts() {
         remove.start(event);
     };
 
-    // Overlays bind escape themselves, so it only drops the selection while none
-    // is open.
+    // Overlays bind escape themselves.
     const dropSelection = () => {
         if (!policy.canOpenTask()) return;
         clearSelection();

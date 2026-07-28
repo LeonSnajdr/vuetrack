@@ -18,8 +18,6 @@ export function useConflict() {
         return task.value;
     });
 
-    // The event the automatic resolutions work on: the calendar selection, which
-    // starts out on the event that caused the conflict.
     const selectedEvent = computed<TimeEntryEvent | null>(() => {
         const current = conflictTask.value;
         if (!current) return null;
@@ -27,9 +25,7 @@ export function useConflict() {
         return selection.selectedEvent.value ?? current.event;
     });
 
-    // A resolution works on the state the user is looking at, so manual
-    // adjustments and earlier resolutions stay in place. Only an attempt that
-    // found no solution is rolled back.
+    // Builds on the current state; only a failed attempt is rolled back.
     const previewStrategy = (resolve: () => boolean): boolean => {
         if (!conflictTask.value) return false;
 

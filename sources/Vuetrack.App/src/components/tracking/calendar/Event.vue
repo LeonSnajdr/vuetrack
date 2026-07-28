@@ -69,8 +69,7 @@ const canResize = computed(() => {
 
 const isRemoved = computed(() => changeSet.isRemoved(props.event.uiId));
 
-// A change that is currently being sent is no longer "unsaved", so an ordinary
-// drag does not flash the unsaved styling while its request is in flight.
+// While committing the change is no longer "unsaved".
 const isUnsaved = computed(() => {
     if (isRemoved.value) return false;
     if (changeSet.isCommitting.value) return false;
@@ -79,7 +78,6 @@ const isUnsaved = computed(() => {
 
 const isConflicting = computed(() => conflictingUiIds.value.has(props.event.uiId));
 
-// What the shortcuts and the conflict resolutions act on.
 const isSelected = computed(() => selectedUiId.value === props.event.uiId);
 
 const onMouseEnter = (nativeEvent: MouseEvent) => {
@@ -166,8 +164,6 @@ const onMouseLeave = () => {
     border-left-style: solid;
 }
 
-/* Selection reads as a brighter version of the event's own colour, so it stays
-   legible on a two-line entry and adds nothing around the card. */
 .tc-selected {
     background-color: color-mix(in srgb, rgb(var(--tc-accent)) 40%, rgb(var(--v-theme-surface)));
     border-color: color-mix(in srgb, rgb(var(--tc-accent)) 70%, rgb(var(--v-theme-surface)));

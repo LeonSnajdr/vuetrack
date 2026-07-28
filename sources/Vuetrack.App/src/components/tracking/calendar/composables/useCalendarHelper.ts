@@ -149,9 +149,7 @@ export const useCalendarHelper = () => {
             .build();
     };
 
-    // Builds the payload an update mutation sends. Date fields are live
-    // accessors onto the backing contract, so the payload always carries the
-    // event's current position.
+    // Date fields proxy the contract, so the payload carries the live position.
     const buildUpdatePayload = (event: PositionableEvent): TimeEntryUpdatePayload => {
         if (event.kind === "existing") return buildTimeEntryUpdate(event.timeEntry);
         return buildTimeEntrySuggestionUpdate(event.timeEntry);

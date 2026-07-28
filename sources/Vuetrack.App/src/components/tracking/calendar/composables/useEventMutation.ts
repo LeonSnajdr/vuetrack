@@ -37,9 +37,7 @@ export function useEventMutation() {
         }
     };
 
-    // Runs mutations in order and stops at the first failure, reporting which
-    // mutation failed and which ones never ran. A cancellation is reported on
-    // its own: it means a newer edit superseded this one, not that it failed.
+    // Stops at the first failure. A cancellation means a newer edit superseded this one.
     const executeAll = async (mutations: TimeEntryMutation[], onExecuted?: (mutation: TimeEntryMutation) => void): Promise<ExecuteAllResult> => {
         for (let i = 0; i < mutations.length; i++) {
             const result = await execute(mutations[i]);

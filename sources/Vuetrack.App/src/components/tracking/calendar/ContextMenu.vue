@@ -63,7 +63,6 @@ watch(
     (show) => setContextMenuOpen(show)
 );
 
-// The menu belongs to the state it was opened in, so any transition closes it.
 watch([() => gesture.value.kind, () => task.value.kind], () => close());
 
 const runDeleteAction = (event: ContextMenuEvent) => {

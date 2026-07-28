@@ -16,8 +16,7 @@ export function useConflictDetection() {
 
     const { existingEvents, task } = storeToRefs(calendarStore);
 
-    // Suggestions are not obstacles: only stored entries plus the event the
-    // current conflict is about can collide with each other.
+    // Suggestions are not obstacles.
     const candidates = computed<TimeEntryEvent[]>(() => {
         const conflictEvent = task.value.kind === "conflict" ? task.value.event : null;
         const stored = existingEvents.value.filter((event) => !changeSet.isRemoved(event.uiId));
@@ -52,21 +51,17 @@ export function useConflictDetection() {
 
     const hasConflicts = computed(() => conflictPairs.value.length > 0);
 
-    // Live overlaps of a single event. The conflict task holds no snapshot: every
-    // preview and every drag changes who overlaps whom.
+    // Never snapshotted: every preview and drag changes who overlaps whom.
     const getOverlapsFor = (event: TimeEntryEvent): TimeEntryEvent[] => {
         const obstacles = candidates.value.filter((candidate) => candidate.uiId !== event.uiId);
         return getOverlappingEvents(event, obstacles);
     };
 
-    // Opens the conflict task when the event collides with stored entries. The
-    // staged changes are deliberately left in place: they are the unsaved state
-    // the conflict panel lets the user work on.
+    // Staged changes stay in place: they are what the conflict panel works on.
     const tryEnterConflict = (event: TimeEntryEvent): boolean => {
         const overlaps = getOverlappingEvents(event, existingEvents.value);
         if (overlaps.length === 0) return false;
 
-        // The offending event is what the resolutions should act on first.
         select(event);
 
         task.value = { kind: "conflict", event };

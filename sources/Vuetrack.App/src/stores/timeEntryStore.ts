@@ -48,9 +48,8 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
         if (updateResult.status === "success") {
             const existing = timeEntries.value.find((x) => x.id === id);
 
-            // The dates are left out on purpose: the calendar moves entries
-            // optimistically, so echoing them back would snap an entry to a
-            // stale range when it was dragged again while the request ran.
+            // Dates left out on purpose: echoing them back would snap an entry
+            // dragged again while the request ran.
             const serverFields = omit(updateResult.data, "dateStarted", "dateEnded");
             if (existing) Object.assign(existing, serverFields);
         }

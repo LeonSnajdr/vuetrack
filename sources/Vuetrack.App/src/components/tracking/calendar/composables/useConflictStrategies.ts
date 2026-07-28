@@ -10,14 +10,12 @@ export interface ConflictResolutionStrategy {
     label: string;
     subtitle: string;
     icon: string;
-    // Set on a resolution that reshapes or removes other entries.
+    // Set on resolutions that reshape other entries.
     color?: "error";
     resolve: () => boolean;
 }
 
-// Automatic resolutions for the selected event. Each one only stages its
-// changes, so the user sees the outcome on the calendar and decides whether to
-// keep it.
+// Automatic resolutions for the selected event. Each one only stages its changes.
 export function useConflictStrategies() {
     const calendarStore = useCalendarStore();
     const changeSet = useChangeSet();
@@ -72,8 +70,7 @@ export function useConflictStrategies() {
         return { windowStart, windowEndExclusive };
     };
 
-    // Everything the selection has to stay clear of, including the unsaved event
-    // the conflict is about when the selection is another one.
+    // Includes the unsaved conflict event when the selection is another one.
     const getSearchCandidates = (event: TimeEntryEvent) => {
         const { windowStart, windowEndExclusive } = getSearchWindow(event);
         const candidates = [...detection.candidates.value]
@@ -85,8 +82,7 @@ export function useConflictStrategies() {
         return { candidates, windowStart, windowEndExclusive };
     };
 
-    // A draft is already staged as an addition and carries its position live,
-    // so only stored entries and suggestions need an update staged.
+    // A draft carries its position live, so only stored entries need staging.
     const stagePosition = (event: TimeEntryEvent, newStart: number, newEnd: number): void => {
         if (event.kind === "existing" || event.kind === "suggestion") changeSet.stageUpdate(event);
         applyEventPosition(event, newStart, newEnd);
@@ -193,7 +189,7 @@ export function useConflictStrategies() {
         };
 
         for (const overlap of overlaps) {
-            // A draft is not saved yet, so it is never reshaped for the selection.
+            // A draft is not saved yet.
             if (overlap.kind === "draft") continue;
 
             // Completely overlapped - remove it
@@ -202,8 +198,7 @@ export function useConflictStrategies() {
                 continue;
             }
 
-            // Event sits inside the overlap - split it so the event fits in the
-            // middle (head shrinks, tail becomes a new entry).
+            // Event sits inside the overlap - split it: head shrinks, tail becomes a new entry
             if (event.start > overlap.start && event.end < overlap.end) {
                 if (splitOverlap(overlap, event.start, event.end)) continue;
             }

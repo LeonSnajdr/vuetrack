@@ -3,9 +3,6 @@ type DragPoint = {
     y: number;
 };
 
-// Lets an overlay be pushed aside with the mouse. The overlay keeps its own
-// positioning and is only shifted by an offset, so nothing about how it is
-// anchored has to change.
 export function useDraggableOverlay() {
     const offset = ref<DragPoint>({ x: 0, y: 0 });
     const isDragging = ref(false);
@@ -42,9 +39,6 @@ export function useDraggableOverlay() {
     useEventListener(window, "mousemove", update);
     useEventListener(window, "mouseup", stop);
 
-    // Deliberately the standalone translate property and not transform: the
-    // overlays animate their own transform, and this offset has to compose with
-    // that instead of replacing it.
     const style = computed(() => {
         const { x, y } = offset.value;
         if (x === 0 && y === 0) return undefined;

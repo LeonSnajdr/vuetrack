@@ -12,17 +12,11 @@ import { useCalendarHelper } from "./useCalendarHelper";
 import { useEventMutation } from "./useEventMutation";
 import type { ExecuteAllResult } from "./useEventMutation";
 
-// Everything an attempted resolution may touch: the staged changes plus where
-// every event sat when it started.
 export type ChangeSetSnapshot = {
     changes: Map<string, StagedChange>;
     positions: Map<string, EventPosition>;
 };
 
-// Staging buffer for pending changes. Every edit is staged here first, which
-// makes it the single source of truth for unsaved state, rollback and commit.
-// Committing immediately after staging gives the classic "save on drop"
-// behaviour; staging many changes and committing later gives batch resolution.
 export function useChangeSet() {
     const calendarStore = useCalendarStore();
     const mutation = useEventMutation();
@@ -46,13 +40,11 @@ export function useChangeSet() {
         return get(uiId)?.kind === "remove";
     };
 
-    // The first stage wins for `from`, so repeated drags of the same event keep
-    // pointing back at the position it had before the user touched it.
+    // First stage wins for `from`, so repeated drags still point at the original position.
     const stageUpdate = (event: PositionableEvent, payload?: TimeEntryUpdatePayload): void => {
         const staged = get(event.uiId);
 
-        // A pending creation already carries the live position, so moving or
-        // resizing it does not need its own staged change.
+        // A pending creation already carries the live position.
         if (staged?.kind === "add") return;
 
         if (staged?.kind === "update") {
@@ -67,8 +59,7 @@ export function useChangeSet() {
         stagedChanges.value.set(event.uiId, { kind: "add", event, payload });
     };
 
-    // Staging a removal for something that was never created just drops the
-    // pending creation instead of queueing a delete for the backend.
+    // Removing something that was never created just drops the pending creation.
     const stageRemove = (event: TimeEntryEvent): void => {
         const staged = get(event.uiId);
 
@@ -84,8 +75,7 @@ export function useChangeSet() {
         stagedChanges.value.delete(uiId);
     };
 
-    // Drops a staged move that ended up back where it started, so a cancelled or
-    // zero-distance drag neither marks the event unsaved nor sends a request.
+    // A drag that ended where it started must not mark the event unsaved.
     const unstageIfUnchanged = (uiId: string): void => {
         const staged = get(uiId);
         if (staged?.kind !== "update") return;
@@ -117,8 +107,7 @@ export function useChangeSet() {
         }
     };
 
-    // Lets a caller try something out and put everything back if it did not work
-    // out, without losing the changes that were already staged.
+    // Try something out and put it back without losing what was already staged.
     const snapshot = (): ChangeSetSnapshot => {
         const changes = new Map<string, StagedChange>();
 
@@ -159,7 +148,6 @@ export function useChangeSet() {
         return buildCreateMutation(change.event, change.payload);
     };
 
-    // The range the backend still holds, and the one the event wants next.
     // Additions hold nothing yet, removals want nothing.
     const getPersistedRange = (change: StagedChange): EventPosition | null => {
         if (change.kind === "add") return null;
@@ -172,8 +160,7 @@ export function useChangeSet() {
         return change.event;
     };
 
-    // Saving into a range another entry still occupies is rejected, so a change
-    // has to wait for that entry to move out of the way first.
+    // Saving into a range another entry still holds is rejected by the backend.
     const isBlocked = (change: StagedChange, pending: StagedChange[]): boolean => {
         const target = getTargetRange(change);
         if (!target) return false;
@@ -188,10 +175,8 @@ export function useChangeSet() {
         });
     };
 
-    // Repeatedly takes the first change nothing blocks: removals and shrinks
-    // end up before the growth and additions that need the freed space, in
-    // either direction. Two entries swapping places block each other with no
-    // valid order, so those keep their staging order and the backend decides.
+    // Takes the first change nothing blocks, so freeing space happens before using it.
+    // Two entries swapping places have no valid order; those keep staging order.
     const getOrderedChanges = (): StagedChange[] => {
         const pending = [...changes.value];
         const ordered: StagedChange[] = [];
@@ -207,8 +192,6 @@ export function useChangeSet() {
         return ordered;
     };
 
-    // What a commit sent, so its outcome can be matched against whatever the
-    // user did in the meantime.
     type CommitEntry = {
         change: StagedChange;
         mutation: TimeEntryMutation;
@@ -225,10 +208,7 @@ export function useChangeSet() {
         }));
     };
 
-    // Saving one change must never throw away an edit made while the request was
-    // in flight: the entry only leaves the change set if the event still sits
-    // where it was saved. If it moved on, the entry stays staged and its
-    // rollback target moves up to what the backend now holds.
+    // An event that moved again while the request was in flight stays staged.
     const settleCommitted = (entry: CommitEntry): void => {
         const uiId = entry.change.event.uiId;
         const staged = get(uiId);
@@ -245,9 +225,7 @@ export function useChangeSet() {
         unstage(uiId);
     };
 
-    // Executes every staged change. Saved ones settle as they go, so a failure
-    // leaves exactly the outstanding work staged: the caller can hand the
-    // failing event to a form and the rest still flushes on the next commit.
+    // Saved changes settle as they go, so a failure leaves only outstanding work staged.
     const commit = async (): Promise<ExecuteAllResult> => {
         if (count.value === 0) return { status: "success" };
 
@@ -267,9 +245,7 @@ export function useChangeSet() {
 
         if (result.status === "success") return result;
 
-        // A cancelled request was superseded by a newer edit that is already
-        // being dragged or committed. Touching anything here would yank the
-        // event out from under it, so the staged changes are left alone.
+        // Superseded by a newer edit that owns the state now.
         if (result.status === "cancelled") return result;
 
         if (!result.validation) revertAll();

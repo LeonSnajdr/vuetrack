@@ -27,8 +27,7 @@ export function useCreate() {
         await commit.commitOrEscalate(event);
     };
 
-    // Abandons the whole batch, not just this form: a create task can be the
-    // recovery step of a rejected conflict resolution.
+    // Abandons the whole batch: a create can be the recovery step of a conflict.
     const cancel = () => {
         if (task.value.kind !== "create") return;
 

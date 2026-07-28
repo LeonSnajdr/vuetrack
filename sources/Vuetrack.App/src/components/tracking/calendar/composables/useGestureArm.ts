@@ -14,8 +14,7 @@ const dragThresholdPx = 4;
 
 const armed = ref<ArmedGesture | null>(null);
 
-// A press on an event is only an intent to drag: it stages nothing and moves
-// nothing. The gesture behind it starts once the pointer travelled far enough,
+// A press is only an intent to drag: the gesture starts once the pointer travelled,
 // so a plain click neither re-times the event nor saves it.
 export function useGestureArm() {
     const move = useMove();
@@ -44,14 +43,12 @@ export function useGestureArm() {
         return travelX >= dragThresholdPx || travelY >= dragThresholdPx;
     };
 
-    // Turns the intent into a real gesture. The anchor keeps the event under the
-    // pointer instead of jumping to the pointer's rounded time.
+    // The anchor keeps the event under the pointer instead of jumping to its rounded time.
     const promoteArm = (nativeEvent: MouseEvent, mouseMs: number): boolean => {
         const current = armed.value;
         if (!current) return false;
 
-        // The button went up somewhere that never reported it, so the press is
-        // over and plain hovering must not turn into a drag.
+        // The button went up unnoticed, so hovering must not become a drag.
         if (nativeEvent.buttons === 0) {
             clearArm();
             return false;

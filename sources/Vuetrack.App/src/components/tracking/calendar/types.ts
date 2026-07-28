@@ -84,7 +84,7 @@ export type TimeEntryCreateMutation = DraftTimeEntryCreateMutation | SuggestionT
 export type TimeEntryDeleteMutation = DraftTimeEntryDeleteMutation | ExistingTimeEntryDeleteMutation | SuggestionTimeEntryDeleteMutation;
 export type TimeEntryMutation = TimeEntryUpdateMutation | TimeEntryCreateMutation | TimeEntryDeleteMutation;
 
-// Transient pointer state. Never touches the API and is always safe to leave.
+// Transient pointer state. Never touches the API.
 export type Gesture =
     | { kind: "idle" }
     | {
@@ -105,7 +105,7 @@ export type Gesture =
           anchorStartMs: number;
       };
 
-// Modal intent awaiting user input. Drives the overlays and gates gestures.
+// Modal intent. Drives the overlays and gates gestures.
 export type Task =
     | { kind: "none" }
     | {
@@ -131,9 +131,7 @@ export type Task =
 
 export type ConflictTask = Extract<Task, { kind: "conflict" }>;
 
-// A single pending change, staged until committed. Only the position the event
-// started from is stored: event wrappers proxy their contracts, so the live
-// position is always the target position.
+// Stores the position the event started from; the event itself carries the target.
 export type StagedChange =
     | {
           kind: "update";

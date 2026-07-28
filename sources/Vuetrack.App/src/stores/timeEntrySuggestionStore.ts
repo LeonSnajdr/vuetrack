@@ -56,9 +56,8 @@ export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", ()
         if (updateResult.status === "success") {
             const existing = timeEntrySuggestions.value.find((x) => x.id === id);
 
-            // The dates are left out on purpose: the calendar moves suggestions
-            // optimistically, so echoing them back would snap one to a stale
-            // range when it was dragged again while the request ran.
+            // Dates left out on purpose: echoing them back would snap a suggestion
+            // dragged again while the request ran.
             const serverFields = omit(updateResult.data, "dateStarted", "dateEnded");
             if (existing) Object.assign(existing, serverFields);
         }

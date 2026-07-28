@@ -10,7 +10,7 @@ export function useEventCommit() {
 
     const { task } = storeToRefs(calendarStore);
 
-    // Turns a rejected mutation back into the form the user needs to fix it.
+    // A rejected mutation becomes the form that fixes it.
     const buildRecoveryTask = (mutation: TimeEntryMutation, errors: ValidationErrors): Task | null => {
         if (mutation.kind === "update") {
             return { kind: "edit", event: mutation.event, payload: mutation.update, errors };
@@ -28,7 +28,7 @@ export function useEventCommit() {
             return true;
         }
 
-        // Superseded by a newer edit: whatever state that edit put us in wins.
+        // Superseded by a newer edit that owns the state now.
         if (result.status === "cancelled") return false;
 
         if (result.validation) {
@@ -43,9 +43,7 @@ export function useEventCommit() {
         return false;
     };
 
-    // Suggestions are proposals, not bookings: they may sit on top of stored
-    // entries and only have to be conflict free once they are accepted, which
-    // stages them as an addition rather than an update.
+    // Suggestions may overlap; only accepting one has to be conflict free.
     const needsConflictCheck = (event: TimeEntryEvent): boolean => {
         const staged = changeSet.get(event.uiId);
         if (!staged) return false;
@@ -54,18 +52,16 @@ export function useEventCommit() {
         return !(staged.kind === "update" && event.kind === "suggestion");
     };
 
-    // Single exit point for a finished edit: overlapping events open the
-    // conflict panel with the change still staged, everything else commits.
+    // Single exit of a finished edit: an overlap opens the conflict panel, else commit.
     const commitOrEscalate = async (event: TimeEntryEvent): Promise<boolean> => {
         if (needsConflictCheck(event) && conflictDetection.tryEnterConflict(event)) return false;
         return await commitStaged();
     };
 
-    // Shared tail of a finished move or resize.
     const commitGesture = async (event: PositionableEvent): Promise<void> => {
         changeSet.unstageIfUnchanged(event.uiId);
 
-        // Inside a conflict the change stays staged until the user applies it.
+        // Inside a conflict the change stays staged until Apply.
         if (task.value.kind === "conflict") return;
         if (!changeSet.has(event.uiId)) return;
 

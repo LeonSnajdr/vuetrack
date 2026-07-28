@@ -2,8 +2,7 @@ import type { TimeEntryEvent } from "@/components/tracking/calendar/types";
 
 const selectedUiId = ref<string | null>(null);
 
-// The event the user picked. Shortcuts and the conflict resolutions act on it, so
-// a key press never depends on where the pointer happens to rest.
+// Shortcuts act on this, not on whatever the pointer rests on.
 export function useEventSelection() {
     const calendarStore = useCalendarStore();
     const { events } = storeToRefs(calendarStore);

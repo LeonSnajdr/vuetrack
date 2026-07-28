@@ -86,9 +86,6 @@ const emit = defineEmits(["closed", "submit"]);
 
 const props = defineProps<{
     loading: boolean;
-    // Keeps the page behind the overlay usable: no scrim, clicking outside does
-    // not close it, and the title bar drags the overlay out of the way. For
-    // overlays whose whole purpose is to work on the content behind them.
     interactive?: boolean;
 }>();
 

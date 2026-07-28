@@ -16,8 +16,7 @@ export const useCalendarStore = defineStore("calendar", () => {
 
     const stagedChanges = ref<Map<string, StagedChange>>(new Map());
 
-    // Counted, not a flag: a superseded commit can still be unwinding while the
-    // next one is already running.
+    // Counted, not a flag: a superseded commit can still be unwinding.
     const activeCommits = ref(0);
     const isCommittingChanges = computed(() => activeCommits.value > 0);
 
