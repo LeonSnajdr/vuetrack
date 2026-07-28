@@ -14,15 +14,14 @@ export function useConflictDetection() {
     const { select } = useEventSelection();
     const { isOverlapping, getOverlappingEvents } = useCalendarHelper();
 
-    const { existingEvents, task } = storeToRefs(calendarStore);
+    const { existingEvents, draftEvents, task } = storeToRefs(calendarStore);
 
     // Suggestions are not obstacles.
     const candidates = computed<TimeEntryEvent[]>(() => {
         const conflictEvent = task.value.kind === "conflict" ? task.value.event : null;
-        const stored = existingEvents.value.filter((event) => !changeSet.isRemoved(event.uiId));
+        const stored = [...existingEvents.value, ...draftEvents.value].filter((event) => !changeSet.isRemoved(event.uiId));
 
-        if (!conflictEvent || conflictEvent.kind === "existing") return stored;
-        if (changeSet.isRemoved(conflictEvent.uiId)) return stored;
+        if (!conflictEvent || conflictEvent.kind !== "suggestion" || changeSet.isRemoved(conflictEvent.uiId)) return stored;
 
         return [...stored, conflictEvent];
     });
@@ -59,7 +58,7 @@ export function useConflictDetection() {
 
     // Staged changes stay in place: they are what the conflict panel works on.
     const tryEnterConflict = (event: TimeEntryEvent): boolean => {
-        const overlaps = getOverlappingEvents(event, existingEvents.value);
+        const overlaps = getOverlappingEvents(event, candidates.value);
         if (overlaps.length === 0) return false;
 
         select(event);

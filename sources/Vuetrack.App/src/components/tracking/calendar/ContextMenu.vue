@@ -2,7 +2,7 @@
     <VMenu v-model="contextMenu.show" :target="[contextMenu.x, contextMenu.y]">
         <VList v-if="contextMenu.event" density="compact">
             <template v-if="!isConflict">
-                <VListItem @click="runContextAction(edit.start)" :prependIcon="mdiPencil" :title="$t('action.edit')">
+                <VListItem @click="runContextAction(runEditAction)" :prependIcon="mdiPencil" :title="$t('action.edit')">
                     <template #append>
                         <VHotkey class="ml-10" keys="e" />
                     </template>
@@ -72,6 +72,11 @@ const runDeleteAction = (event: ContextMenuEvent) => {
     }
 
     remove.start(event);
+};
+
+const runEditAction = (event: ContextMenuEvent) => {
+    if (event.kind === "draft") return;
+    edit.start(event);
 };
 
 const runContextAction = (action: (event: ContextMenuEvent) => void) => {

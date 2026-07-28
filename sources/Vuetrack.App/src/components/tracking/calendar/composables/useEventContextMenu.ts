@@ -1,11 +1,11 @@
 import type { CalendarEvent } from "vuetify/lib/components/VCalendar/types.mjs";
-import type { PositionableEvent } from "@/components/tracking/calendar/types";
+import { isTimeEntryEvent, type TimeEntryEvent } from "@/components/tracking/calendar/types";
 import { useCalendarTimePeriod } from "./useCalendarTimePeriod";
 import { useEventDetails } from "./useEventDetails";
 import { useEventPolicy } from "./useEventPolicy";
 import { useEventSelection } from "./useEventSelection";
 
-export type ContextMenuEvent = PositionableEvent;
+export type ContextMenuEvent = TimeEntryEvent;
 
 type ContextMenuState = {
     show: boolean;
@@ -28,10 +28,11 @@ export function useEventContextMenu() {
 
         if (isReadonly.value) return;
         if (!event) return;
-        if (event.kind !== "existing" && event.kind !== "suggestion") return;
-        if (!policy.canOpenTask() && !policy.canStageRemoval(event as PositionableEvent)) return;
+        if (!isTimeEntryEvent(event)) return;
+        if (event.kind === "draft" && !policy.canStageRemoval(event)) return;
+        if (!policy.canOpenTask() && !policy.canStageRemoval(event)) return;
 
-        const target = event as ContextMenuEvent;
+        const target = event;
 
         select(target);
         setContextMenuOpen(true);

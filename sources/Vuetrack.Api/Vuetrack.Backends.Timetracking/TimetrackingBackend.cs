@@ -65,8 +65,8 @@ public class TimetrackingBackend(ITimetrackingApiClient client, ITimetrackingCon
         }
         catch (TimetrackingValidationException ex)
         {
-            Logger.LogInformation(ex, "Timetracking rejected time entry create");
             var errors = ex.ToValidationErrors();
+            Logger.LogInformation("Timetracking rejected time entry create due to validation errors {ValidationErrors}", errors);
             return errors;
         }
         catch (Exception ex)
@@ -86,8 +86,8 @@ public class TimetrackingBackend(ITimetrackingApiClient client, ITimetrackingCon
         }
         catch (TimetrackingValidationException ex)
         {
-            Logger.LogInformation(ex, "Timetracking rejected time entry update {Id}", id);
             var errors = ex.ToValidationErrors();
+            Logger.LogInformation("Timetracking rejected time entry update of {Id} due to validation errors {ValidationErrors}", id, errors);
             return errors;
         }
         catch (Exception ex)

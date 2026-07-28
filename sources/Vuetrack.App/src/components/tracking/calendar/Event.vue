@@ -4,12 +4,7 @@
         @mouseenter="onMouseEnter"
         @mouseleave="onMouseLeave"
         @mousemove="details.move($event, event)"
-        :class="[
-            'h-100',
-            'tc-event',
-            `tc-${event.kind}`,
-            { 'tc-conflicting': isConflicting, 'tc-unsaved': isUnsaved, 'tc-removed': isRemoved, 'tc-selected': isSelected }
-        ]"
+        :class="['h-100', 'tc-event', `tc-${event.kind}`, { 'tc-conflicting': isConflicting, 'tc-removed': isRemoved, 'tc-selected': isSelected }]"
     >
         <div class="h-100 py-1 px-2 d-flex flex-column ga-1 text-truncate">
             <div class="tc-header">
@@ -97,6 +92,10 @@ const onMouseLeave = () => {
     overflow: hidden;
     margin-right: 2px;
     container-type: inline-size;
+
+    background-color: color-mix(in srgb, rgb(var(--tc-accent)) 22%, rgb(var(--v-theme-surface)));
+    border-color: color-mix(in srgb, rgb(var(--tc-accent)) 45%, rgb(var(--v-theme-surface)));
+    border-left-color: rgb(var(--tc-accent));
 }
 
 .tc-header {
@@ -129,39 +128,18 @@ const onMouseLeave = () => {
 
 .tc-existing {
     --tc-accent: var(--v-theme-primary);
-
-    background-color: color-mix(in srgb, rgb(var(--tc-accent)) 22%, rgb(var(--v-theme-surface)));
-    border-color: color-mix(in srgb, rgb(var(--tc-accent)) 45%, rgb(var(--v-theme-surface)));
-    border-left-color: rgb(var(--tc-accent));
 }
 
 .tc-suggestion {
     --tc-accent: var(--v-theme-tertiary);
-
-    background-color: color-mix(in srgb, rgb(var(--tc-accent)) 22%, rgb(var(--v-theme-surface)));
-    border-color: color-mix(in srgb, rgb(var(--tc-accent)) 45%, rgb(var(--v-theme-surface)));
-    border-left-color: rgb(var(--tc-accent));
 }
 
 .tc-draft {
     --tc-accent: var(--v-theme-secondary);
-
-    background-color: color-mix(in srgb, rgb(var(--tc-accent)) 22%, rgb(var(--v-theme-surface)));
-    border-color: color-mix(in srgb, rgb(var(--tc-accent)) 45%, rgb(var(--v-theme-surface)));
-    border-left-color: rgb(var(--tc-accent));
 }
 
 .tc-conflicting {
     --tc-accent: var(--v-theme-error);
-
-    background-color: color-mix(in srgb, rgb(var(--tc-accent)) 22%, rgb(var(--v-theme-surface)));
-    border-color: color-mix(in srgb, rgb(var(--tc-accent)) 45%, rgb(var(--v-theme-surface)));
-    border-left-color: rgb(var(--tc-accent));
-}
-
-.tc-unsaved {
-    border-style: dashed;
-    border-left-style: solid;
 }
 
 .tc-selected {
@@ -173,8 +151,6 @@ const onMouseLeave = () => {
     background-color: color-mix(in srgb, rgb(var(--v-theme-error)) 10%, rgb(var(--v-theme-surface)));
     border-color: color-mix(in srgb, rgb(var(--v-theme-error)) 35%, rgb(var(--v-theme-surface)));
     border-left-color: rgb(var(--v-theme-error));
-    border-style: dashed;
-    border-left-style: solid;
     opacity: 0.45;
     cursor: default;
 

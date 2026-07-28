@@ -112,10 +112,15 @@ export function useEventWrapper() {
         return buildDraftEvent(createEntry, start, end);
     };
 
+    const cloneDraftEvent = (source: DraftTimeEntryEvent, start: number, end: number): DraftTimeEntryEvent => {
+        return buildDraftEvent({ ...source.createEntry, dateStarted: new Date(start), dateEnded: new Date(end) }, start, end);
+    };
+
     return {
         createExistingEvent,
         createSuggestionEvent,
         createDraftEvent,
-        cloneEventAsDraft
+        cloneEventAsDraft,
+        cloneDraftEvent
     };
 }

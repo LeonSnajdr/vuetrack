@@ -26,8 +26,6 @@ export function useEventPolicy() {
     // The conflict event is excluded: abandoning that one is what Cancel is for.
     const canStageRemoval = (event: TimeEntryEvent): boolean => {
         if (task.value.kind !== "conflict") return false;
-        if (event.kind === "draft") return false;
-
         return event.uiId !== task.value.event.uiId;
     };
 

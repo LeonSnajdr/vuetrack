@@ -89,14 +89,14 @@ export type Gesture =
     | { kind: "idle" }
     | {
           kind: "move";
-          event: PositionableEvent;
+          event: TimeEntryEvent;
           from: EventPosition;
           pointerOffsetMs?: number;
       }
     | {
           kind: "resize";
           edge: EventEdge;
-          event: PositionableEvent;
+          event: TimeEntryEvent;
           from: EventPosition;
       }
     | {

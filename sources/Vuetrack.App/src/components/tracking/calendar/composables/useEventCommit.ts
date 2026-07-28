@@ -1,12 +1,14 @@
-import type { PositionableEvent, Task, TimeEntryEvent, TimeEntryMutation } from "@/components/tracking/calendar/types";
+import type { Task, TimeEntryEvent, TimeEntryMutation } from "@/components/tracking/calendar/types";
 import type { ValidationErrors } from "@/util/ValidationProblem";
 import { useChangeSet } from "./useChangeSet";
+import { useCalendarHelper } from "./useCalendarHelper";
 import { useConflictDetection } from "./useConflictDetection";
 
 export function useEventCommit() {
     const calendarStore = useCalendarStore();
     const changeSet = useChangeSet();
     const conflictDetection = useConflictDetection();
+    const { buildCreatePayload } = useCalendarHelper();
 
     const { task } = storeToRefs(calendarStore);
 
@@ -58,8 +60,9 @@ export function useEventCommit() {
         return await commitStaged();
     };
 
-    const commitGesture = async (event: PositionableEvent): Promise<void> => {
+    const commitGesture = async (event: TimeEntryEvent): Promise<void> => {
         changeSet.unstageIfUnchanged(event.uiId);
+        if (event.kind === "draft") changeSet.stageAdd(event, buildCreatePayload(event));
 
         // Inside a conflict the change stays staged until Apply.
         if (task.value.kind === "conflict") return;

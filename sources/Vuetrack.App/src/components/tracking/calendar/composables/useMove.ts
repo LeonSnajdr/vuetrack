@@ -13,10 +13,8 @@ export function useMove() {
     const { gesture, events } = storeToRefs(calendarStore);
 
     const start = (event: TimeEntryEvent) => {
-        if (event.kind !== "existing" && event.kind !== "suggestion") return;
-
         cancelPendingUpdateForEvent(event);
-        changeSet.stageUpdate(event);
+        if (event.kind !== "draft") changeSet.stageUpdate(event);
 
         gesture.value = {
             kind: "move",

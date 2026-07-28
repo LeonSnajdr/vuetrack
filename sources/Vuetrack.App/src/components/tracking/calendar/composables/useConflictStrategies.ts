@@ -25,7 +25,7 @@ export function useConflictStrategies() {
     const { t } = useI18n();
     const { startOfDay, addDays } = useDateHelper();
     const { applyEventPosition, buildCreatePayload } = useCalendarHelper();
-    const { cloneEventAsDraft } = useEventWrapper();
+    const { cloneDraftEvent, cloneEventAsDraft } = useEventWrapper();
 
     const { draftEvents } = storeToRefs(calendarStore);
 
@@ -82,10 +82,11 @@ export function useConflictStrategies() {
         return { candidates, windowStart, windowEndExclusive };
     };
 
-    // A draft carries its position live, so only stored entries need staging.
+    // Drafts update their pending create; stored entries need an update mutation.
     const stagePosition = (event: TimeEntryEvent, newStart: number, newEnd: number): void => {
         if (event.kind === "existing" || event.kind === "suggestion") changeSet.stageUpdate(event);
         applyEventPosition(event, newStart, newEnd);
+        if (event.kind === "draft") changeSet.stageAdd(event, buildCreatePayload(event));
     };
 
     const resolveShiftUp = (): boolean => {
@@ -174,24 +175,18 @@ export function useConflictStrategies() {
 
         const overlaps = detection.getOverlapsFor(event);
 
-        const splitOverlap = (overlap: TimeEntryEvent, headEnd: number, tailStart: number): boolean => {
-            if (overlap.kind !== "existing" && overlap.kind !== "suggestion") return false;
-
+        const splitOverlap = (overlap: TimeEntryEvent, headEnd: number, tailStart: number): void => {
             const tailEnd = overlap.end;
             stagePosition(overlap, overlap.start, headEnd);
 
-            const tailEvent = cloneEventAsDraft(overlap, tailStart, tailEnd);
+            const tailEvent = overlap.kind === "draft" ? cloneDraftEvent(overlap, tailStart, tailEnd) : cloneEventAsDraft(overlap, tailStart, tailEnd);
             draftEvents.value.push(tailEvent);
 
             const payload = buildCreatePayload(tailEvent);
             changeSet.stageAdd(tailEvent, payload);
-            return true;
         };
 
         for (const overlap of overlaps) {
-            // A draft is not saved yet.
-            if (overlap.kind === "draft") continue;
-
             // Completely overlapped - remove it
             if (event.start <= overlap.start && event.end >= overlap.end) {
                 changeSet.stageRemove(overlap);
@@ -200,7 +195,8 @@ export function useConflictStrategies() {
 
             // Event sits inside the overlap - split it: head shrinks, tail becomes a new entry
             if (event.start > overlap.start && event.end < overlap.end) {
-                if (splitOverlap(overlap, event.start, event.end)) continue;
+                splitOverlap(overlap, event.start, event.end);
+                continue;
             }
 
             // Partially overlapped - truncate it
