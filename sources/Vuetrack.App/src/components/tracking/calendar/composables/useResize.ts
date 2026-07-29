@@ -13,7 +13,7 @@ export function useResize() {
 
     const start = (event: TimeEntryEvent, edge: EventEdge = "end") => {
         cancelPendingUpdateForEvent(event);
-        if (event.kind !== "draft") changeSet.stageUpdate(event);
+        changeSet.stagePosition(event);
 
         gesture.value = {
             kind: "resize",

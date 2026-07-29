@@ -1,4 +1,5 @@
 import type { TimeEntryEvent } from "@/components/tracking/calendar/types";
+import { useEventPolicy } from "./useEventPolicy";
 
 type DetailsState = {
     show: boolean;
@@ -21,6 +22,7 @@ watch(
 
 export function useEventDetails() {
     const calendarStore = useCalendarStore();
+    const policy = useEventPolicy();
     const { gesture, task } = storeToRefs(calendarStore);
 
     const isBusy = computed(() => gesture.value.kind !== "idle" || task.value.kind !== "none");
@@ -29,7 +31,7 @@ export function useEventDetails() {
         if (state.value.pinned) return;
         if (isBusy.value) return;
         if (contextMenuOpen.value) return;
-        if (event.kind === "draft") return;
+        if (!policy.isSaved(event)) return;
 
         state.value.x = nativeEvent.clientX;
         state.value.y = nativeEvent.clientY;

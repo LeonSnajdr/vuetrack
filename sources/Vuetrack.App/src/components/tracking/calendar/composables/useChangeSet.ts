@@ -1,5 +1,6 @@
 import type {
     CreatableEvent,
+    DraftTimeEntryEvent,
     EventPosition,
     PositionableEvent,
     StagedChange,
@@ -20,9 +21,9 @@ export type ChangeSetSnapshot = {
 export function useChangeSet() {
     const calendarStore = useCalendarStore();
     const mutation = useEventMutation();
-    const { applyEventPosition, buildCreateMutation, buildDeleteMutation, buildUpdateMutation, isRangeOverlapping } = useCalendarHelper();
+    const { applyEventPosition, buildCreateMutation, buildCreatePayload, buildDeleteMutation, buildUpdateMutation, isRangeOverlapping } = useCalendarHelper();
 
-    const { stagedChanges, activeCommits, isCommittingChanges, draftEvents, events } = storeToRefs(calendarStore);
+    const { stagedChanges, activeCommits, isCommittingChanges, events } = storeToRefs(calendarStore);
 
     const changes = computed<StagedChange[]>(() => [...stagedChanges.value.values()]);
     const count = computed(() => stagedChanges.value.size);
@@ -55,8 +56,27 @@ export function useChangeSet() {
         stagedChanges.value.set(event.uiId, { kind: "update", event, from: { start: event.start, end: event.end }, payload });
     };
 
-    const stageAdd = (event: CreatableEvent, payload: TimeEntryCreatePayload): void => {
-        stagedChanges.value.set(event.uiId, { kind: "add", event, payload });
+    // A pending creation keeps its payload: that object is what the create overlay edits.
+    const stageAdd = (event: CreatableEvent, payload?: TimeEntryCreatePayload): void => {
+        const staged = get(event.uiId);
+        if (staged?.kind === "add" && !payload) return;
+
+        const create = payload ?? buildCreatePayload(event);
+        stagedChanges.value.set(event.uiId, { kind: "add", event, payload: create });
+    };
+
+    // Staging the create is what brings a draft into existence.
+    const stageDraft = (draft: DraftTimeEntryEvent): TimeEntryCreatePayload => {
+        const payload = buildCreatePayload(draft);
+        stagedChanges.value.set(draft.uiId, { kind: "add", event: draft, payload });
+
+        return payload;
+    };
+
+    // A draft carries its position in the pending create, so there is nothing to stage.
+    const stagePosition = (event: TimeEntryEvent): void => {
+        if (event.kind === "draft") return;
+        stageUpdate(event);
     };
 
     // Removing something that was never created just drops the pending creation.
@@ -67,6 +87,8 @@ export function useChangeSet() {
             revert(event.uiId);
             return;
         }
+
+        if (event.kind === "draft") return;
 
         stagedChanges.value.set(event.uiId, { kind: "remove", event });
     };
@@ -85,6 +107,7 @@ export function useChangeSet() {
         unstage(uiId);
     };
 
+    // Dropping an "add" also drops the draft that lived in it.
     const revert = (uiId: string): void => {
         const staged = get(uiId);
         if (!staged) return;
@@ -93,11 +116,6 @@ export function useChangeSet() {
 
         if (staged.kind === "update") {
             applyEventPosition(staged.event, staged.from.start, staged.from.end);
-            return;
-        }
-
-        if (staged.kind === "add" && staged.event.kind === "draft") {
-            mutation.removeDraftEvent(staged.event.uiId);
         }
     };
 
@@ -125,12 +143,9 @@ export function useChangeSet() {
         return { changes, positions };
     };
 
+    // The changes go back first: drafts only exist again once their create is staged again.
     const restore = (taken: ChangeSetSnapshot): void => {
-        const added = draftEvents.value.filter((event) => !taken.positions.has(event.uiId));
-
-        for (const event of added) {
-            mutation.removeDraftEvent(event.uiId);
-        }
+        stagedChanges.value = taken.changes;
 
         for (const event of events.value) {
             const position = taken.positions.get(event.uiId);
@@ -138,8 +153,6 @@ export function useChangeSet() {
 
             applyEventPosition(event, position.start, position.end);
         }
-
-        stagedChanges.value = taken.changes;
     };
 
     const buildMutation = (change: StagedChange): TimeEntryMutation => {
@@ -263,6 +276,8 @@ export function useChangeSet() {
         isRemoved,
         stageUpdate,
         stageAdd,
+        stageDraft,
+        stagePosition,
         stageRemove,
         unstage,
         unstageIfUnchanged,

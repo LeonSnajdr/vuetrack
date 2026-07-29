@@ -8,8 +8,8 @@
                     </template>
                 </VListItem>
                 <VListItem
-                    v-if="contextMenu.event.kind === 'suggestion'"
-                    @click="runContextAction((e) => e.kind === 'suggestion' && create.start(e))"
+                    v-if="canAccept(contextMenu.event)"
+                    @click="runContextAction(runAcceptAction)"
                     :prependIcon="mdiCheck"
                     :title="$t('action.accept')"
                 >
@@ -45,7 +45,7 @@ const create = useCreate();
 const edit = useEdit();
 const remove = useDelete();
 const stagedRemoval = useStagedRemoval();
-const { isConflict, canStageRemoval } = useEventPolicy();
+const { isConflict, canStageRemoval, canAccept, isSaved } = useEventPolicy();
 const { setContextMenuOpen } = useEventDetails();
 const { state: contextMenu, close } = useEventContextMenu();
 
@@ -71,12 +71,18 @@ const runDeleteAction = (event: ContextMenuEvent) => {
         return;
     }
 
+    if (!isSaved(event)) return;
     remove.start(event);
 };
 
 const runEditAction = (event: ContextMenuEvent) => {
-    if (event.kind === "draft") return;
+    if (!isSaved(event)) return;
     edit.start(event);
+};
+
+const runAcceptAction = (event: ContextMenuEvent) => {
+    if (!canAccept(event)) return;
+    create.start(event);
 };
 
 const runContextAction = (action: (event: ContextMenuEvent) => void) => {

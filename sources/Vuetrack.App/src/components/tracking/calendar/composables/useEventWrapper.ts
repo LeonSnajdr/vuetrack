@@ -1,7 +1,7 @@
 import type { TimeEntryContract, TimeEntryCreateContract } from "@/contracts/TimeEntryContract";
 import type { TimeEntrySuggestionContract } from "@/contracts/TimeEntrySuggestion";
 import type { Nullable } from "@/util/Nullable";
-import type { DraftTimeEntryEvent, ExistingTimeEntryEvent, SuggestionTimeEntryEvent } from "@/components/tracking/calendar/types";
+import type { DraftTimeEntryEvent, ExistingTimeEntryEvent, SuggestionTimeEntryEvent, TimeEntryEvent } from "@/components/tracking/calendar/types";
 import { useCalendarHelper } from "./useCalendarHelper";
 
 const existingWrapperCache = new WeakMap<TimeEntryContract, ExistingTimeEntryEvent>();
@@ -98,29 +98,42 @@ export function useEventWrapper() {
         return buildDraftEvent(createEntry, anchorStartMs, anchorEndMs);
     };
 
-    const cloneEventAsDraft = (source: ExistingTimeEntryEvent | SuggestionTimeEntryEvent, start: number, end: number): DraftTimeEntryEvent => {
-        const sourceEntry = source.timeEntry;
-        const createEntry = {
-            taskId: sourceEntry.taskId,
-            projectId: source.kind === "existing" ? source.timeEntry.project.id : source.timeEntry.projectId,
-            activityId: source.kind === "existing" ? source.timeEntry.activity.id : source.timeEntry.activityId,
-            comment: sourceEntry.comment,
-            dateStarted: new Date(start),
-            dateEnded: new Date(end)
-        };
+    const buildCloneEntry = (source: TimeEntryEvent): Nullable<TimeEntryCreateContract> => {
+        if (source.kind === "draft") return { ...source.createEntry };
+        if (source.kind === "existing") {
+            return {
+                taskId: source.timeEntry.taskId,
+                projectId: source.timeEntry.project.id,
+                activityId: source.timeEntry.activity.id,
+                comment: source.timeEntry.comment,
+                dateStarted: null,
+                dateEnded: null
+            };
+        }
 
-        return buildDraftEvent(createEntry, start, end);
+        return {
+            taskId: source.timeEntry.taskId,
+            projectId: source.timeEntry.projectId,
+            activityId: source.timeEntry.activityId,
+            comment: source.timeEntry.comment,
+            dateStarted: null,
+            dateEnded: null
+        };
     };
 
-    const cloneDraftEvent = (source: DraftTimeEntryEvent, start: number, end: number): DraftTimeEntryEvent => {
-        return buildDraftEvent({ ...source.createEntry, dateStarted: new Date(start), dateEnded: new Date(end) }, start, end);
+    // Anything can be cloned into a draft: what differs is only where the fields sit.
+    const cloneAsDraft = (source: TimeEntryEvent, start: number, end: number): DraftTimeEntryEvent => {
+        const createEntry = buildCloneEntry(source);
+        createEntry.dateStarted = new Date(start);
+        createEntry.dateEnded = new Date(end);
+
+        return buildDraftEvent(createEntry, start, end);
     };
 
     return {
         createExistingEvent,
         createSuggestionEvent,
         createDraftEvent,
-        cloneEventAsDraft,
-        cloneDraftEvent
+        cloneAsDraft
     };
 }

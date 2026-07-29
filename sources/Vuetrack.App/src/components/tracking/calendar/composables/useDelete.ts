@@ -1,4 +1,4 @@
-import type { TimeEntryEvent } from "@/components/tracking/calendar/types";
+import type { PositionableEvent } from "@/components/tracking/calendar/types";
 import { useChangeSet } from "./useChangeSet";
 import { useEventCommit } from "./useEventCommit";
 
@@ -9,7 +9,7 @@ export function useDelete() {
 
     const { task } = storeToRefs(calendarStore);
 
-    const start = (event: TimeEntryEvent) => {
+    const start = (event: PositionableEvent) => {
         task.value = { kind: "delete", event };
     };
 

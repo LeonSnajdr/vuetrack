@@ -14,12 +14,12 @@ export function useConflictDetection() {
     const { select } = useEventSelection();
     const { isOverlapping, getOverlappingEvents } = useCalendarHelper();
 
-    const { existingEvents, draftEvents, task } = storeToRefs(calendarStore);
+    const { events, task } = storeToRefs(calendarStore);
 
-    // Suggestions are not obstacles.
+    // Suggestions are not obstacles. Everything else claims its time, drafts included.
     const candidates = computed<TimeEntryEvent[]>(() => {
         const conflictEvent = task.value.kind === "conflict" ? task.value.event : null;
-        const stored = [...existingEvents.value, ...draftEvents.value].filter((event) => !changeSet.isRemoved(event.uiId));
+        const stored = events.value.filter((event) => event.kind !== "suggestion").filter((event) => !changeSet.isRemoved(event.uiId));
 
         if (!conflictEvent || conflictEvent.kind !== "suggestion" || changeSet.isRemoved(conflictEvent.uiId)) return stored;
 

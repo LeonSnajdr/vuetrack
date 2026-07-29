@@ -1,4 +1,4 @@
-import type { TimeEntryEvent } from "@/components/tracking/calendar/types";
+import type { PositionableEvent, SuggestionTimeEntryEvent, TimeEntryEvent } from "@/components/tracking/calendar/types";
 import { useChangeSet } from "./useChangeSet";
 
 // Single home for "is this allowed right now", so every caller agrees.
@@ -29,5 +29,14 @@ export function useEventPolicy() {
         return event.uiId !== task.value.event.uiId;
     };
 
-    return { isIdle, isConflict, canOpenTask, canStartGesture, canStageRemoval };
+    // A draft is a pending create: there is nothing stored to edit, delete or show.
+    const isSaved = (event: TimeEntryEvent): event is PositionableEvent => {
+        return event.kind !== "draft";
+    };
+
+    const canAccept = (event: TimeEntryEvent): event is SuggestionTimeEntryEvent => {
+        return event.kind === "suggestion";
+    };
+
+    return { isIdle, isConflict, canOpenTask, canStartGesture, canStageRemoval, isSaved, canAccept };
 }

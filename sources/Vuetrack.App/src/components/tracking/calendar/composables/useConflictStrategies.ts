@@ -17,17 +17,14 @@ export interface ConflictResolutionStrategy {
 
 // Automatic resolutions for the selected event. Each one only stages its changes.
 export function useConflictStrategies() {
-    const calendarStore = useCalendarStore();
     const changeSet = useChangeSet();
     const conflict = useConflict();
     const detection = useConflictDetection();
 
     const { t } = useI18n();
     const { startOfDay, addDays } = useDateHelper();
-    const { applyEventPosition, buildCreatePayload } = useCalendarHelper();
-    const { cloneDraftEvent, cloneEventAsDraft } = useEventWrapper();
-
-    const { draftEvents } = storeToRefs(calendarStore);
+    const { applyEventPosition } = useCalendarHelper();
+    const { cloneAsDraft } = useEventWrapper();
 
     const strategies = computed<ConflictResolutionStrategy[]>(() => [
         {
@@ -82,11 +79,9 @@ export function useConflictStrategies() {
         return { candidates, windowStart, windowEndExclusive };
     };
 
-    // Drafts update their pending create; stored entries need an update mutation.
-    const stagePosition = (event: TimeEntryEvent, newStart: number, newEnd: number): void => {
-        if (event.kind === "existing" || event.kind === "suggestion") changeSet.stageUpdate(event);
+    const moveTo = (event: TimeEntryEvent, newStart: number, newEnd: number): void => {
+        changeSet.stagePosition(event);
         applyEventPosition(event, newStart, newEnd);
-        if (event.kind === "draft") changeSet.stageAdd(event, buildCreatePayload(event));
     };
 
     const resolveShiftUp = (): boolean => {
@@ -111,7 +106,7 @@ export function useConflictStrategies() {
             if (overlap) {
                 searchTime = overlap.start - duration;
             } else {
-                stagePosition(event, potentialStart, potentialEnd);
+                moveTo(event, potentialStart, potentialEnd);
                 return true;
             }
         }
@@ -134,7 +129,7 @@ export function useConflictStrategies() {
                 searchTime = overlap.end;
             } else {
                 const foundEnd = searchTime + duration;
-                stagePosition(event, searchTime, foundEnd);
+                moveTo(event, searchTime, foundEnd);
                 return true;
             }
         }
@@ -165,7 +160,7 @@ export function useConflictStrategies() {
 
         if (allowedEnd <= allowedStart) return false;
 
-        stagePosition(event, allowedStart, allowedEnd);
+        moveTo(event, allowedStart, allowedEnd);
         return true;
     };
 
@@ -177,13 +172,10 @@ export function useConflictStrategies() {
 
         const splitOverlap = (overlap: TimeEntryEvent, headEnd: number, tailStart: number): void => {
             const tailEnd = overlap.end;
-            stagePosition(overlap, overlap.start, headEnd);
+            moveTo(overlap, overlap.start, headEnd);
 
-            const tailEvent = overlap.kind === "draft" ? cloneDraftEvent(overlap, tailStart, tailEnd) : cloneEventAsDraft(overlap, tailStart, tailEnd);
-            draftEvents.value.push(tailEvent);
-
-            const payload = buildCreatePayload(tailEvent);
-            changeSet.stageAdd(tailEvent, payload);
+            const tailEvent = cloneAsDraft(overlap, tailStart, tailEnd);
+            changeSet.stageDraft(tailEvent);
         };
 
         for (const overlap of overlaps) {
@@ -201,11 +193,11 @@ export function useConflictStrategies() {
 
             // Partially overlapped - truncate it
             if (event.start > overlap.start && event.start < overlap.end) {
-                stagePosition(overlap, overlap.start, event.start);
+                moveTo(overlap, overlap.start, event.start);
             }
 
             if (event.end > overlap.start && event.end < overlap.end) {
-                stagePosition(overlap, event.end, overlap.end);
+                moveTo(overlap, event.end, overlap.end);
             }
         }
 

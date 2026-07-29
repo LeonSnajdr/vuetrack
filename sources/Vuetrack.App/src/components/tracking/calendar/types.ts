@@ -56,32 +56,21 @@ export type SuggestionTimeEntryUpdateMutation = {
     update: TimeEntrySuggestionUpdateContract;
 };
 
-export type SuggestionTimeEntryCreateMutation = {
-    kind: "create";
-    event: SuggestionTimeEntryEvent;
-    create: TimeEntryCreatePayload;
-};
-
 export type SuggestionTimeEntryDeleteMutation = {
     kind: "delete";
     event: SuggestionTimeEntryEvent;
     id: TimeEntrySuggestionId;
 };
 
-export type DraftTimeEntryDeleteMutation = {
-    kind: "delete";
-    event: DraftTimeEntryEvent;
-};
-
-export type DraftTimeEntryCreateMutation = {
+// Nothing exists yet, so a create carries no id and both event kinds look the same.
+export type TimeEntryCreateMutation = {
     kind: "create";
-    event: DraftTimeEntryEvent;
+    event: CreatableEvent;
     create: TimeEntryCreatePayload;
 };
 
 export type TimeEntryUpdateMutation = ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation;
-export type TimeEntryCreateMutation = DraftTimeEntryCreateMutation | SuggestionTimeEntryCreateMutation;
-export type TimeEntryDeleteMutation = DraftTimeEntryDeleteMutation | ExistingTimeEntryDeleteMutation | SuggestionTimeEntryDeleteMutation;
+export type TimeEntryDeleteMutation = ExistingTimeEntryDeleteMutation | SuggestionTimeEntryDeleteMutation;
 export type TimeEntryMutation = TimeEntryUpdateMutation | TimeEntryCreateMutation | TimeEntryDeleteMutation;
 
 // Transient pointer state. Never touches the API.
@@ -126,7 +115,7 @@ export type Task =
       }
     | {
           kind: "delete";
-          event: TimeEntryEvent;
+          event: PositionableEvent;
       };
 
 export type ConflictTask = Extract<Task, { kind: "conflict" }>;
@@ -141,7 +130,7 @@ export type StagedChange =
       }
     | {
           kind: "remove";
-          event: TimeEntryEvent;
+          event: PositionableEvent;
       }
     | {
           kind: "add";
@@ -149,12 +138,23 @@ export type StagedChange =
           payload: TimeEntryCreatePayload;
       };
 
+// A draft has no other home: staging the create is what brings it into existence.
+export type DraftAddChange = {
+    kind: "add";
+    event: DraftTimeEntryEvent;
+    payload: TimeEntryCreatePayload;
+};
+
 export type GestureKind = Gesture["kind"];
 export type TaskKind = Task["kind"];
 export type StagedChangeKind = StagedChange["kind"];
 
 export function isTimeEntryEvent(e: CalendarEvent): e is TimeEntryEvent {
     return e.kind === "suggestion" || e.kind === "existing" || e.kind === "draft";
+}
+
+export function isDraftAdd(change: StagedChange): change is DraftAddChange {
+    return change.kind === "add" && change.event.kind === "draft";
 }
 
 export function isExistingUpdateMutation(mutation: TimeEntryUpdateMutation): mutation is ExistingTimeEntryUpdateMutation {

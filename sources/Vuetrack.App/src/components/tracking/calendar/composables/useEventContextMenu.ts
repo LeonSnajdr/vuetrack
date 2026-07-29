@@ -29,7 +29,7 @@ export function useEventContextMenu() {
         if (isReadonly.value) return;
         if (!event) return;
         if (!isTimeEntryEvent(event)) return;
-        if (event.kind === "draft" && !policy.canStageRemoval(event)) return;
+        if (!policy.isSaved(event) && !policy.canStageRemoval(event)) return;
         if (!policy.canOpenTask() && !policy.canStageRemoval(event)) return;
 
         const target = event;

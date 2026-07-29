@@ -14,7 +14,7 @@ export function useMove() {
 
     const start = (event: TimeEntryEvent) => {
         cancelPendingUpdateForEvent(event);
-        if (event.kind !== "draft") changeSet.stageUpdate(event);
+        changeSet.stagePosition(event);
 
         gesture.value = {
             kind: "move",

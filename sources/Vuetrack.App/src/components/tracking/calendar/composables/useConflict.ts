@@ -1,14 +1,12 @@
 import type { ConflictTask, TimeEntryEvent } from "@/components/tracking/calendar/types";
 import { useChangeSet } from "./useChangeSet";
 import { useEventCommit } from "./useEventCommit";
-import { useEventMutation } from "./useEventMutation";
 import { useEventSelection } from "./useEventSelection";
 
 export function useConflict() {
     const calendarStore = useCalendarStore();
     const changeSet = useChangeSet();
     const commit = useEventCommit();
-    const mutation = useEventMutation();
     const selection = useEventSelection();
 
     const { task } = storeToRefs(calendarStore);
@@ -45,14 +43,12 @@ export function useConflict() {
     };
 
     const cancel = () => {
-        const current = conflictTask.value;
-        if (!current) return;
+        if (!conflictTask.value) return;
 
         task.value = { kind: "none" };
         selection.clearSelection();
 
         changeSet.revertAll();
-        if (current.event.kind === "draft") mutation.removeDraftEvent(current.event.uiId);
     };
 
     return { selectedEvent, previewStrategy, apply, cancel };

@@ -105,6 +105,7 @@ export const useCalendarHelper = () => {
         }
     };
 
+    // The proxy holds on to this exact source, so a draft must keep its createEntry object.
     const buildTimeEntryCreate = (source: TimeEntryCreatePayload): TimeEntryCreatePayload => {
         return withProxy({
             taskId: source.taskId,
@@ -171,12 +172,10 @@ export const useCalendarHelper = () => {
 
     const buildCreateMutation = (event: CreatableEvent, payload?: TimeEntryCreatePayload): TimeEntryCreateMutation => {
         const create = payload ?? buildCreatePayload(event);
-        if (event.kind === "draft") return { kind: "create", event, create };
         return { kind: "create", event, create };
     };
 
-    const buildDeleteMutation = (event: TimeEntryEvent): TimeEntryDeleteMutation => {
-        if (event.kind === "draft") return { kind: "delete", event };
+    const buildDeleteMutation = (event: PositionableEvent): TimeEntryDeleteMutation => {
         if (event.kind === "existing") return { kind: "delete", event, id: event.timeEntry.id };
         return { kind: "delete", event, id: event.timeEntry.id };
     };

@@ -1,4 +1,3 @@
-import { success } from "@/util/ActionResult";
 import type { ValidationErrors } from "@/util/ValidationProblem";
 import {
     isExistingUpdateMutation,
@@ -20,11 +19,8 @@ export type ExecuteAllResult =
       };
 
 export function useEventMutation() {
-    const calendarStore = useCalendarStore();
     const timeEntryStore = useTimeEntryStore();
     const suggestionStore = useTimeEntrySuggestionStore();
-
-    const { draftEvents } = storeToRefs(calendarStore);
 
     const execute = async (mutation: TimeEntryMutation) => {
         switch (mutation.kind) {
@@ -58,15 +54,12 @@ export function useEventMutation() {
         return { status: "success" };
     };
 
+    // A draft needs no follow up: unstaging the create is what makes it go away.
     const executeCreate = async (mutation: TimeEntryCreateMutation) => {
         const result = await timeEntryStore.create(mutation.create);
 
-        if (result.status === "success") {
-            if (mutation.event.kind === "draft") {
-                removeDraftEvent(mutation.event.uiId);
-            } else {
-                await suggestionStore.accept(mutation.event.timeEntry.id);
-            }
+        if (result.status === "success" && mutation.event.kind === "suggestion") {
+            await suggestionStore.accept(mutation.event.timeEntry.id);
         }
 
         return result;
@@ -81,20 +74,12 @@ export function useEventMutation() {
     };
 
     const executeDelete = async (mutation: TimeEntryDeleteMutation) => {
-        if (mutation.event.kind === "draft") {
-            removeDraftEvent(mutation.event.uiId);
-            return success();
-        } else if (mutation.event.kind === "existing") {
+        if (mutation.event.kind === "existing") {
             return await timeEntryStore.remove(mutation.event.timeEntry.id);
         } else {
             return await suggestionStore.dismiss(mutation.event.timeEntry.id);
         }
     };
 
-    const removeDraftEvent = (uiId: string) => {
-        const index = draftEvents.value.findIndex((draft) => draft.uiId === uiId);
-        if (index !== -1) draftEvents.value.splice(index, 1);
-    };
-
-    return { execute, executeAll, removeDraftEvent };
+    return { execute, executeAll };
 }

@@ -2,13 +2,11 @@ import type { CreatableEvent } from "@/components/tracking/calendar/types";
 import { useCalendarHelper } from "./useCalendarHelper";
 import { useChangeSet } from "./useChangeSet";
 import { useEventCommit } from "./useEventCommit";
-import { useEventMutation } from "./useEventMutation";
 
 export function useCreate() {
     const calendarStore = useCalendarStore();
     const changeSet = useChangeSet();
     const commit = useEventCommit();
-    const mutation = useEventMutation();
     const { buildCreatePayload } = useCalendarHelper();
 
     const { task } = storeToRefs(calendarStore);
@@ -31,11 +29,8 @@ export function useCreate() {
     const cancel = () => {
         if (task.value.kind !== "create") return;
 
-        const { event } = task.value;
         task.value = { kind: "none" };
-
         changeSet.revertAll();
-        if (event.kind === "draft") mutation.removeDraftEvent(event.uiId);
     };
 
     return { start, finish, cancel };

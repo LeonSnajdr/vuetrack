@@ -23,7 +23,6 @@ export function useEventShortcuts() {
 
         const event = selectedEvent.value;
         if (!event) return null;
-        if (event.kind === "draft") return null;
 
         return event;
     };
@@ -36,7 +35,7 @@ export function useEventShortcuts() {
     const startEdit = () => {
         const event = getTaskTarget();
         if (!event) return;
-        if (event.kind !== "existing" && event.kind !== "suggestion") return;
+        if (!policy.isSaved(event)) return;
 
         contextMenu.close();
         edit.start(event);
@@ -45,7 +44,7 @@ export function useEventShortcuts() {
     const startAccept = () => {
         const event = getTaskTarget();
         if (!event) return;
-        if (event.kind !== "suggestion") return;
+        if (!policy.canAccept(event)) return;
 
         contextMenu.close();
         create.start(event);
@@ -63,6 +62,7 @@ export function useEventShortcuts() {
         }
 
         if (!policy.canOpenTask()) return;
+        if (!policy.isSaved(event)) return;
 
         contextMenu.close();
         remove.start(event);
