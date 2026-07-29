@@ -4,18 +4,27 @@
         @mouseenter="onMouseEnter"
         @mouseleave="onMouseLeave"
         @mousemove="details.move($event, event)"
-        :class="['h-100', 'tc-event', `tc-${event.kind}`, { 'tc-conflicting': isConflicting, 'tc-removed': isRemoved, 'tc-selected': isSelected }]"
+        :class="[
+            'h-100',
+            'rounded',
+            'border',
+            'border-s-lg',
+            'overflow-hidden',
+            'tc-event',
+            `tc-${event.kind}`,
+            { 'tc-conflicting': isConflicting, 'tc-removed': isRemoved, 'tc-selected': isSelected }
+        ]"
     >
         <div class="h-100 py-1 px-2 d-flex flex-column ga-1 text-truncate">
-            <div class="tc-header">
-                <div class="tc-title text-on-surface text-truncate font-weight-medium text-high-emphasis">
+            <div class="tc-header d-flex flex-column">
+                <div class="flex-grow-1 text-on-surface text-truncate font-weight-medium text-high-emphasis">
                     <VIcon v-if="isRemoved" :icon="mdiDelete" class="mr-1" color="error" size="x-small" />
                     <VIcon v-else-if="isUnsaved" :icon="mdiContentSaveAlertOutline" class="mr-1" color="warning" size="x-small" />
                     <template v-if="event.kind === 'existing'">{{ event.timeEntry.taskId ?? event.timeEntry.project.name }}</template>
                     <template v-else-if="event.kind === 'suggestion'">{{ event.timeEntry.taskId ?? event.timeEntry.projectName }}</template>
                     <template v-else>{{ $t("calendar.event.draft") }}</template>
                 </div>
-                <div class="tc-time text-label-small text-medium-emphasis text-truncate">
+                <div class="tc-time flex-shrink-0 text-label-small text-medium-emphasis text-truncate">
                     {{ dateFormatter.format(event.start, "fullTime24h") }} - {{ dateFormatter.format(event.end, "fullTime24h") }}
                 </div>
             </div>
@@ -86,26 +95,14 @@ const onMouseLeave = () => {
 
 <style scoped>
 .tc-event {
-    border-radius: 6px;
-    border: 1px solid;
-    border-left-width: 3px;
-    overflow: hidden;
-    margin-right: 2px;
     container-type: inline-size;
-
     background-color: color-mix(in srgb, rgb(var(--tc-accent)) 22%, rgb(var(--v-theme-surface)));
     border-color: color-mix(in srgb, rgb(var(--tc-accent)) 45%, rgb(var(--v-theme-surface)));
-    border-left-color: rgb(var(--tc-accent));
+    border-inline-start-color: rgb(var(--tc-accent));
 }
 
 .tc-header {
-    display: flex;
-    flex-direction: column;
     gap: 2px;
-    min-width: 0;
-}
-
-.tc-title {
     min-width: 0;
 }
 
@@ -116,13 +113,8 @@ const onMouseLeave = () => {
         gap: 8px;
     }
 
-    .tc-title {
-        flex: 1 1 auto;
-    }
-
     .tc-time {
         margin-left: auto;
-        flex-shrink: 0;
     }
 }
 
@@ -154,7 +146,7 @@ const onMouseLeave = () => {
     opacity: 0.45;
     cursor: default;
 
-    .tc-title {
+    .flex-grow-1 {
         text-decoration: line-through;
     }
 }
