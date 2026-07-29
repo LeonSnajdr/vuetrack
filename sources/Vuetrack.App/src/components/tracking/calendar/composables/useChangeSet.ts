@@ -1,13 +1,15 @@
-import type {
-    CreatableEvent,
-    DraftTimeEntryEvent,
-    EventPosition,
-    PositionableEvent,
-    StagedChange,
-    TimeEntryCreatePayload,
-    TimeEntryEvent,
-    TimeEntryMutation,
-    TimeEntryUpdatePayload
+import {
+    isSavedRemove,
+    type CreatableEvent,
+    type DraftTimeEntryEvent,
+    type EventPosition,
+    type PositionableEvent,
+    type StagedChange,
+    type SupersededChange,
+    type TimeEntryCreatePayload,
+    type TimeEntryEvent,
+    type TimeEntryMutation,
+    type TimeEntryUpdatePayload
 } from "@/components/tracking/calendar/types";
 import { useCalendarHelper } from "./useCalendarHelper";
 import { useEventMutation } from "./useEventMutation";
@@ -48,6 +50,10 @@ export function useChangeSet() {
         // A pending creation already carries the live position.
         if (staged?.kind === "add") return;
 
+        // A removal owns the entry: moving what is about to be deleted would drop the
+        // removal and with it the position it covers.
+        if (staged?.kind === "remove") return;
+
         if (staged?.kind === "update") {
             if (payload) staged.payload = payload;
             return;
@@ -79,18 +85,26 @@ export function useChangeSet() {
         stageUpdate(event);
     };
 
-    // Removing something that was never created just drops the pending creation.
+    // The removal covers what was staged before, so Cancel can still put it back.
+    // Removing twice is the same removal; nesting one would bury that position.
     const stageRemove = (event: TimeEntryEvent): void => {
         const staged = get(event.uiId);
+        if (staged?.kind === "remove") return;
 
-        if (staged?.kind === "add") {
-            revert(event.uiId);
+        stagedChanges.value.set(event.uiId, { kind: "remove", event, superseded: staged });
+    };
+
+    // Undoing a removal uncovers the change it replaced; it does not undo that one too.
+    const restoreRemoved = (uiId: string): void => {
+        const staged = get(uiId);
+        if (staged?.kind !== "remove") return;
+
+        if (!staged.superseded) {
+            unstage(uiId);
             return;
         }
 
-        if (event.kind === "draft") return;
-
-        stagedChanges.value.set(event.uiId, { kind: "remove", event });
+        stagedChanges.value.set(uiId, staged.superseded);
     };
 
     const unstage = (uiId: string): void => {
@@ -108,15 +122,21 @@ export function useChangeSet() {
     };
 
     // Dropping an "add" also drops the draft that lived in it.
+    const revertChange = (change: StagedChange): void => {
+        if (change.kind === "update") {
+            applyEventPosition(change.event, change.from.start, change.from.end);
+            return;
+        }
+
+        if (change.kind === "remove" && change.superseded) revertChange(change.superseded);
+    };
+
     const revert = (uiId: string): void => {
         const staged = get(uiId);
         if (!staged) return;
 
         unstage(uiId);
-
-        if (staged.kind === "update") {
-            applyEventPosition(staged.event, staged.from.start, staged.from.end);
-        }
+        revertChange(staged);
     };
 
     const revertAll = (): void => {
@@ -125,12 +145,26 @@ export function useChangeSet() {
         }
     };
 
+    // Payloads are shared on purpose: they proxy the live contract and the overlays edit them.
+    const copySuperseded = (change: SupersededChange): SupersededChange => {
+        if (change.kind === "update") return { ...change, from: { ...change.from } };
+        return { ...change };
+    };
+
+    const copyChange = (change: StagedChange): StagedChange => {
+        if (change.kind !== "remove") return copySuperseded(change);
+        if (!change.superseded) return { ...change };
+
+        const superseded = copySuperseded(change.superseded);
+        return { ...change, superseded };
+    };
+
     // Try something out and put it back without losing what was already staged.
     const snapshot = (): ChangeSetSnapshot => {
         const changes = new Map<string, StagedChange>();
 
         for (const [uiId, change] of stagedChanges.value) {
-            const copy = change.kind === "update" ? { ...change, from: { ...change.from } } : { ...change };
+            const copy = copyChange(change);
             changes.set(uiId, copy);
         }
 
@@ -155,16 +189,28 @@ export function useChangeSet() {
         }
     };
 
-    const buildMutation = (change: StagedChange): TimeEntryMutation => {
-        if (change.kind === "remove") return buildDeleteMutation(change.event);
-        if (change.kind === "update") return buildUpdateMutation(change.event, change.payload);
-        return buildCreateMutation(change.event, change.payload);
+    // A removed draft was never saved: there is nothing to send.
+    const isCommittable = (change: StagedChange): boolean => {
+        if (change.kind !== "remove") return true;
+        return isSavedRemove(change);
     };
 
-    // Additions hold nothing yet, removals want nothing.
+    const buildMutation = (change: StagedChange): TimeEntryMutation | null => {
+        if (change.kind === "update") return buildUpdateMutation(change.event, change.payload);
+        if (change.kind === "add") return buildCreateMutation(change.event, change.payload);
+        if (!isSavedRemove(change)) return null;
+
+        return buildDeleteMutation(change.event);
+    };
+
+    // Additions hold nothing yet, removals want nothing. A removal reports what it covers,
+    // not where the event sits now: a split entry has moved, the backend still has it whole.
     const getPersistedRange = (change: StagedChange): EventPosition | null => {
         if (change.kind === "add") return null;
         if (change.kind === "update") return change.from;
+        if (!isSavedRemove(change)) return null;
+        if (change.superseded) return getPersistedRange(change.superseded);
+
         return change.event;
     };
 
@@ -191,7 +237,7 @@ export function useChangeSet() {
     // Takes the first change nothing blocks, so freeing space happens before using it.
     // Two entries swapping places have no valid order; those keep staging order.
     const getOrderedChanges = (): StagedChange[] => {
-        const pending = [...changes.value];
+        const pending = changes.value.filter(isCommittable);
         const ordered: StagedChange[] = [];
 
         while (pending.length > 0) {
@@ -214,11 +260,13 @@ export function useChangeSet() {
     const buildCommitPlan = (): CommitEntry[] => {
         const ordered = getOrderedChanges();
 
-        return ordered.map((change) => ({
-            change,
-            mutation: buildMutation(change),
-            sentPosition: { start: change.event.start, end: change.event.end }
-        }));
+        return ordered.flatMap((change) => {
+            const mutation = buildMutation(change);
+            if (!mutation) return [];
+
+            const sentPosition = { start: change.event.start, end: change.event.end };
+            return [{ change, mutation, sentPosition }];
+        });
     };
 
     // An event that moved again while the request was in flight stays staged.
@@ -238,8 +286,19 @@ export function useChangeSet() {
         unstage(uiId);
     };
 
+    // A removed draft never reached the backend, so Apply just lets it go.
+    const dropUncommittable = (): void => {
+        for (const [uiId, change] of [...stagedChanges.value]) {
+            if (isCommittable(change)) continue;
+            unstage(uiId);
+        }
+    };
+
     // Saved changes settle as they go, so a failure leaves only outstanding work staged.
     const commit = async (): Promise<ExecuteAllResult> => {
+        if (count.value === 0) return { status: "success" };
+
+        dropUncommittable();
         if (count.value === 0) return { status: "success" };
 
         activeCommits.value++;
@@ -279,6 +338,7 @@ export function useChangeSet() {
         stageDraft,
         stagePosition,
         stageRemove,
+        restoreRemoved,
         unstage,
         unstageIfUnchanged,
         revert,

@@ -121,29 +121,32 @@ export type Task =
 export type ConflictTask = Extract<Task, { kind: "conflict" }>;
 
 // Stores the position the event started from; the event itself carries the target.
-export type StagedChange =
-    | {
-          kind: "update";
-          event: PositionableEvent;
-          from: EventPosition;
-          payload?: TimeEntryUpdatePayload;
-      }
-    | {
-          kind: "remove";
-          event: PositionableEvent;
-      }
-    | {
-          kind: "add";
-          event: CreatableEvent;
-          payload: TimeEntryCreatePayload;
-      };
+export type StagedUpdateChange = {
+    kind: "update";
+    event: PositionableEvent;
+    from: EventPosition;
+    payload?: TimeEntryUpdatePayload;
+};
 
 // A draft has no other home: staging the create is what brings it into existence.
-export type DraftAddChange = {
+export type StagedAddChange = {
     kind: "add";
-    event: DraftTimeEntryEvent;
+    event: CreatableEvent;
     payload: TimeEntryCreatePayload;
 };
+
+export type SupersededChange = StagedUpdateChange | StagedAddChange;
+
+// A removal covers what was staged before; it never destroys it. Only an update or an
+// add can be covered, so a removal never nests another removal.
+export type StagedRemoveChange = {
+    kind: "remove";
+    event: TimeEntryEvent;
+    superseded?: SupersededChange;
+};
+
+export type StagedChange = StagedUpdateChange | StagedRemoveChange | StagedAddChange;
+export type SavedRemoveChange = StagedRemoveChange & { event: PositionableEvent };
 
 export type GestureKind = Gesture["kind"];
 export type TaskKind = Task["kind"];
@@ -153,8 +156,17 @@ export function isTimeEntryEvent(e: CalendarEvent): e is TimeEntryEvent {
     return e.kind === "suggestion" || e.kind === "existing" || e.kind === "draft";
 }
 
-export function isDraftAdd(change: StagedChange): change is DraftAddChange {
-    return change.kind === "add" && change.event.kind === "draft";
+// A removed draft was never saved, so there is nothing to delete.
+export function isSavedRemove(change: StagedChange): change is SavedRemoveChange {
+    return change.kind === "remove" && change.event.kind !== "draft";
+}
+
+// A draft has no home but the change it sits in, add or remove alike.
+export function getDraftEvent(change: StagedChange): DraftTimeEntryEvent | null {
+    if (change.kind === "update") return null;
+    if (change.event.kind !== "draft") return null;
+
+    return change.event;
 }
 
 export function isExistingUpdateMutation(mutation: TimeEntryUpdateMutation): mutation is ExistingTimeEntryUpdateMutation {

@@ -11,7 +11,10 @@ export function useCreate() {
 
     const { task } = storeToRefs(calendarStore);
 
+    // Accepting something staged for removal would drop that removal.
     const start = (event: CreatableEvent) => {
+        if (changeSet.isRemoved(event.uiId)) return;
+
         const payload = buildCreatePayload(event);
         task.value = { kind: "create", event, payload };
     };

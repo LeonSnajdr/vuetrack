@@ -13,7 +13,7 @@ export function useStagedRemoval() {
 
     const toggle = (event: TimeEntryEvent): void => {
         if (isStaged(event)) {
-            changeSet.unstage(event.uiId);
+            changeSet.restoreRemoved(event.uiId);
             return;
         }
 

@@ -1,4 +1,4 @@
-import { isDraftAdd, type DraftTimeEntryEvent, type Gesture, type StagedChange, type Task, type TimeEntryEvent } from "@/components/tracking/calendar/types";
+import { getDraftEvent, type DraftTimeEntryEvent, type Gesture, type StagedChange, type Task, type TimeEntryEvent } from "@/components/tracking/calendar/types";
 import { useEventWrapper } from "@/components/tracking/calendar/composables/useEventWrapper";
 
 export const useCalendarStore = defineStore("calendar", () => {
@@ -14,10 +14,11 @@ export const useCalendarStore = defineStore("calendar", () => {
     const existingEvents = computed(() => timeEntryStore.timeEntries.map((c) => createExistingEvent(c)));
     const suggestionEvents = computed(() => suggestionStore.timeEntrySuggestions.map((c) => createSuggestionEvent(c)));
 
-    // A draft is a pending create and nothing else. Sorted, because map order shifts on revert.
+    // A draft lives in its staged change, add or remove alike: a removed one keeps rendering
+    // so it can be brought back. Sorted, because map order shifts on revert.
     const draftEvents = computed<readonly DraftTimeEntryEvent[]>(() => {
         const changes = [...stagedChanges.value.values()];
-        const drafts = changes.filter(isDraftAdd).map((change) => change.event);
+        const drafts = changes.map(getDraftEvent).filter((draft) => draft !== null);
 
         return drafts.sort((a, b) => a.start - b.start);
     });

@@ -11,7 +11,10 @@ export function useEdit() {
 
     const { task } = storeToRefs(calendarStore);
 
+    // Editing something staged for removal would commit that removal instead.
     const start = (event: PositionableEvent) => {
+        if (changeSet.isRemoved(event.uiId)) return;
+
         cancelPendingUpdateForEvent(event);
 
         changeSet.stageUpdate(event);
