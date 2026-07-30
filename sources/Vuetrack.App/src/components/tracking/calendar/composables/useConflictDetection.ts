@@ -1,4 +1,5 @@
 import type { TimeEntryEvent } from "@/components/tracking/calendar/types";
+import type { Occupied } from "@/components/tracking/calendar/conflictResolvers";
 import { useCalendarHelper } from "./useCalendarHelper";
 import { useChangeSet } from "./useChangeSet";
 import { useEventSelection } from "./useEventSelection";
@@ -24,6 +25,11 @@ export function useConflictDetection() {
         if (!conflictEvent || conflictEvent.kind !== "suggestion" || changeSet.isRemoved(conflictEvent.uiId)) return stored;
 
         return [...stored, conflictEvent];
+    });
+
+    // What the resolutions reason over: ranges, not events to be poked at.
+    const occupied = computed<Occupied[]>(() => {
+        return candidates.value.map((event) => ({ event, position: { start: event.start, end: event.end } }));
     });
 
     const conflictPairs = computed<ConflictPair[]>(() => {
@@ -67,5 +73,5 @@ export function useConflictDetection() {
         return true;
     };
 
-    return { candidates, conflictPairs, conflictingUiIds, hasConflicts, getOverlapsFor, tryEnterConflict };
+    return { candidates, occupied, conflictPairs, conflictingUiIds, hasConflicts, getOverlapsFor, tryEnterConflict };
 }

@@ -7,19 +7,18 @@ export function useMove() {
     const calendarStore = useCalendarStore();
     const changeSet = useChangeSet();
     const commit = useEventCommit();
-    const { roundTime, getEventBoundaries, cancelPendingUpdateForEvent, minimumEventDurationMs, updateEventPosition, applyEventPosition } =
-        useCalendarHelper();
+    const { roundTime, getEventBoundaries, cancelPendingUpdateForEvent, minimumEventDurationMs, clampPosition } = useCalendarHelper();
 
     const { gesture, events } = storeToRefs(calendarStore);
 
     const start = (event: TimeEntryEvent) => {
         cancelPendingUpdateForEvent(event);
-        changeSet.stagePosition(event);
 
         gesture.value = {
             kind: "move",
             event,
             from: { start: event.start, end: event.end },
+            wasStaged: changeSet.has(event.uiId),
             pointerOffsetMs: undefined
         };
     };
@@ -38,8 +37,9 @@ export function useMove() {
         const duration = Math.max(event.end - event.start, minimumEventDurationMs);
         const snapPoints = getEventBoundaries(event, events.value).flatMap((boundary) => [boundary, boundary - duration]);
         const newStart = roundTime(mouseMs - pointerOffsetMs, { snapPoints });
+        const position = clampPosition({ start: newStart, end: newStart + duration }, "start");
 
-        updateEventPosition(event, { start: newStart, end: newStart + duration }, "start");
+        changeSet.stagePosition(event, position);
     };
 
     const finish = async () => {
@@ -51,15 +51,19 @@ export function useMove() {
         await commit.commitGesture(event);
     };
 
-    // Aborting a drag leaves earlier staged changes alone.
+    // Aborting a drag leaves earlier staged changes alone: only what this drag added goes.
     const cancel = () => {
         if (gesture.value.kind !== "move") return;
 
-        const { event, from } = gesture.value;
+        const { event, from, wasStaged } = gesture.value;
         gesture.value = { kind: "idle" };
 
-        applyEventPosition(event, from.start, from.end);
-        changeSet.unstageIfUnchanged(event.uiId);
+        if (!wasStaged) {
+            changeSet.unstage(event.uiId);
+            return;
+        }
+
+        changeSet.stagePosition(event, from);
     };
 
     return { start, setPointerOffset, update, finish, cancel };

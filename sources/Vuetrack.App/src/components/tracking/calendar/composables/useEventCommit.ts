@@ -47,9 +47,9 @@ export function useEventCommit() {
     const needsConflictCheck = (event: TimeEntryEvent): boolean => {
         const staged = changeSet.get(event.uiId);
         if (!staged) return false;
-        if (staged.kind === "remove") return false;
+        if (staged.removed) return false;
 
-        return !(staged.kind === "update" && event.kind === "suggestion");
+        return !(staged.kind === "save" && event.kind === "suggestion");
     };
 
     // Single exit of a finished edit: an overlap opens the conflict panel, else commit.

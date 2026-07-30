@@ -7,19 +7,19 @@ export function useResize() {
     const calendarStore = useCalendarStore();
     const changeSet = useChangeSet();
     const commit = useEventCommit();
-    const { roundTime, getEventBoundaries, cancelPendingUpdateForEvent, updateEventPosition, applyEventPosition } = useCalendarHelper();
+    const { roundTime, getEventBoundaries, cancelPendingUpdateForEvent, clampPosition } = useCalendarHelper();
 
     const { gesture, events } = storeToRefs(calendarStore);
 
     const start = (event: TimeEntryEvent, edge: EventEdge = "end") => {
         cancelPendingUpdateForEvent(event);
-        changeSet.stagePosition(event);
 
         gesture.value = {
             kind: "resize",
             edge,
             event,
-            from: { start: event.start, end: event.end }
+            from: { start: event.start, end: event.end },
+            wasStaged: changeSet.has(event.uiId)
         };
     };
 
@@ -31,11 +31,14 @@ export function useResize() {
 
         if (edge === "start") {
             const mouseRounded = roundTime(mouseMs, { down: true, snapPoints });
-            updateEventPosition(event, { start: mouseRounded }, "end");
-        } else {
-            const mouseRounded = roundTime(mouseMs, { down: false, snapPoints });
-            updateEventPosition(event, { end: mouseRounded }, "start");
+            const position = clampPosition({ start: mouseRounded, end: event.end }, "end");
+            changeSet.stagePosition(event, position);
+            return;
         }
+
+        const mouseRounded = roundTime(mouseMs, { down: false, snapPoints });
+        const position = clampPosition({ start: event.start, end: mouseRounded }, "start");
+        changeSet.stagePosition(event, position);
     };
 
     const finish = async () => {
@@ -50,11 +53,15 @@ export function useResize() {
     const cancel = () => {
         if (gesture.value.kind !== "resize") return;
 
-        const { event, from } = gesture.value;
+        const { event, from, wasStaged } = gesture.value;
         gesture.value = { kind: "idle" };
 
-        applyEventPosition(event, from.start, from.end);
-        changeSet.unstageIfUnchanged(event.uiId);
+        if (!wasStaged) {
+            changeSet.unstage(event.uiId);
+            return;
+        }
+
+        changeSet.stagePosition(event, from);
     };
 
     return { start, update, finish, cancel };

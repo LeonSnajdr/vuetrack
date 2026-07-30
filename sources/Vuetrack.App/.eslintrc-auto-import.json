@@ -7853,7 +7853,6 @@
     "watchThrottled": true,
     "watchTriggerable": true,
     "watchWithFilter": true,
-    "whenever": true,
-    "withProxy": true
+    "whenever": true
   }
 }

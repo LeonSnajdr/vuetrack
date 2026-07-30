@@ -1,5 +1,4 @@
 import type { CreatableEvent } from "@/components/tracking/calendar/types";
-import { useCalendarHelper } from "./useCalendarHelper";
 import { useChangeSet } from "./useChangeSet";
 import { useEventCommit } from "./useEventCommit";
 
@@ -7,24 +6,22 @@ export function useCreate() {
     const calendarStore = useCalendarStore();
     const changeSet = useChangeSet();
     const commit = useEventCommit();
-    const { buildCreatePayload } = useCalendarHelper();
 
     const { task } = storeToRefs(calendarStore);
 
-    // Accepting something staged for removal would drop that removal.
+    // The overlay edits the staged proposal itself. Accepting something staged for
+    // removal would drop that removal.
     const start = (event: CreatableEvent) => {
         if (changeSet.isRemoved(event.uiId)) return;
 
-        const payload = buildCreatePayload(event);
-        task.value = { kind: "create", event, payload };
+        const change = changeSet.stageCreate(event);
+        task.value = { kind: "create", event, payload: change.payload };
     };
 
     const finish = async () => {
         if (task.value.kind !== "create") return;
 
-        const { event, payload } = task.value;
-
-        changeSet.stageAdd(event, payload);
+        const { event } = task.value;
         await commit.commitOrEscalate(event);
     };
 

@@ -3,6 +3,7 @@ import type {
     EventEdge,
     EventPosition,
     PositionableEvent,
+    SuggestionTimeEntryEvent,
     TimeEntryCreateMutation,
     TimeEntryCreatePayload,
     TimeEntryDeleteMutation,
@@ -17,11 +18,6 @@ import type { CalendarInterval } from "./useCalendarInterval";
 type RoundTimeOptions = {
     down?: boolean;
     snapPoints?: number[];
-};
-
-type UpdateEventPositionPatch = {
-    start?: number;
-    end?: number;
 };
 
 export const useCalendarHelper = () => {
@@ -105,73 +101,67 @@ export const useCalendarHelper = () => {
         }
     };
 
-    // The proxy holds on to this exact source, so a draft must keep its createEntry object.
-    const buildTimeEntryCreate = (source: TimeEntryCreatePayload): TimeEntryCreatePayload => {
-        return withProxy({
-            taskId: source.taskId,
-            projectId: source.projectId,
-            activityId: source.activityId,
-            comment: source.comment
-        })
-            .from(source, "dateStarted", "dateEnded")
-            .build();
-    };
-
     const buildTimeEntryCreateFromSuggestion = (source: TimeEntrySuggestionContract): TimeEntryCreatePayload => {
-        return withProxy({
+        return {
             taskId: source.taskId,
             projectId: source.projectId,
             activityId: source.activityId,
-            comment: source.comment
-        })
-            .from(source, "dateStarted", "dateEnded")
-            .build();
+            comment: source.comment,
+            dateStarted: new Date(source.dateStarted),
+            dateEnded: new Date(source.dateEnded)
+        };
     };
 
     const buildTimeEntryUpdate = (source: TimeEntryContract): TimeEntryUpdateContract => {
-        return withProxy({
+        return {
             taskId: source.taskId,
             projectId: source.project.id,
             activityId: source.activity.id,
-            comment: source.comment
-        })
-            .from(source, "dateStarted", "dateEnded")
-            .build();
+            comment: source.comment,
+            dateStarted: new Date(source.dateStarted),
+            dateEnded: new Date(source.dateEnded)
+        };
     };
 
     const buildTimeEntrySuggestionUpdate = (source: TimeEntrySuggestionContract): TimeEntrySuggestionUpdateContract => {
-        return withProxy({
+        return {
             taskId: source.taskId,
             projectId: source.projectId,
             activityId: source.activityId,
-            comment: source.comment
-        })
-            .from(source, "dateStarted", "dateEnded")
-            .build();
+            comment: source.comment,
+            dateStarted: new Date(source.dateStarted),
+            dateEnded: new Date(source.dateEnded)
+        };
     };
 
-    // Date fields proxy the contract, so the payload carries the live position.
+    // A snapshot of what is saved, for the change set to propose changes on.
     const buildUpdatePayload = (event: PositionableEvent): TimeEntryUpdatePayload => {
         if (event.kind === "existing") return buildTimeEntryUpdate(event.timeEntry);
         return buildTimeEntrySuggestionUpdate(event.timeEntry);
     };
 
-    const buildCreatePayload = (event: CreatableEvent): TimeEntryCreatePayload => {
-        if (event.kind === "draft") return buildTimeEntryCreate(event.createEntry);
+    const buildCreatePayload = (event: SuggestionTimeEntryEvent): TimeEntryCreatePayload => {
         return buildTimeEntryCreateFromSuggestion(event.timeEntry);
     };
 
-    const buildUpdateMutation = (event: PositionableEvent, payload?: TimeEntryUpdatePayload): TimeEntryUpdateMutation => {
+    // What the backend holds right now. A draft is not saved at all.
+    const getPersistedPosition = (event: TimeEntryEvent): EventPosition | null => {
+        if (event.kind === "draft") return null;
+
+        return { start: event.timeEntry.dateStarted.getTime(), end: event.timeEntry.dateEnded.getTime() };
+    };
+
+    const buildUpdateMutation = (event: PositionableEvent, payload: TimeEntryUpdatePayload): TimeEntryUpdateMutation => {
         if (event.kind === "existing") {
-            const update = (payload as TimeEntryUpdateContract | undefined) ?? buildTimeEntryUpdate(event.timeEntry);
+            const update = payload as TimeEntryUpdateContract;
             return { kind: "update", event, update };
         }
-        const update = (payload as TimeEntrySuggestionUpdateContract | undefined) ?? buildTimeEntrySuggestionUpdate(event.timeEntry);
+
+        const update = payload as TimeEntrySuggestionUpdateContract;
         return { kind: "update", event, update };
     };
 
-    const buildCreateMutation = (event: CreatableEvent, payload?: TimeEntryCreatePayload): TimeEntryCreateMutation => {
-        const create = payload ?? buildCreatePayload(event);
+    const buildCreateMutation = (event: CreatableEvent, create: TimeEntryCreatePayload): TimeEntryCreateMutation => {
         return { kind: "create", event, create };
     };
 
@@ -180,30 +170,14 @@ export const useCalendarHelper = () => {
         return { kind: "delete", event, id: event.timeEntry.id };
     };
 
-    const applyEventPosition = (event: TimeEntryEvent, start: number, end: number): void => {
-        event.start = start;
-        event.end = end;
-    };
-
     const minimumEventDurationMs = 60 * 1000;
 
-    const updateEventPosition = (event: TimeEntryEvent, patch: UpdateEventPositionPatch, lock: EventEdge = "start"): void => {
-        const nextStart = patch.start ?? event.start;
-        const nextEnd = patch.end ?? event.end;
+    // The locked edge stays put while the other one is pushed out to the minimum.
+    const clampPosition = (position: EventPosition, lock: EventEdge = "start"): EventPosition => {
+        if (position.end - position.start >= minimumEventDurationMs) return position;
+        if (lock === "end") return { start: position.end - minimumEventDurationMs, end: position.end };
 
-        let normalizedStart = nextStart;
-        let normalizedEnd = nextEnd;
-
-        if (normalizedEnd - normalizedStart < minimumEventDurationMs) {
-            if (lock === "end") {
-                normalizedStart = normalizedEnd - minimumEventDurationMs;
-            } else {
-                normalizedEnd = normalizedStart + minimumEventDurationMs;
-            }
-        }
-
-        event.start = normalizedStart;
-        event.end = normalizedEnd;
+        return { start: position.start, end: position.start + minimumEventDurationMs };
     };
 
     return {
@@ -214,17 +188,13 @@ export const useCalendarHelper = () => {
         isOverlapping,
         getOverlappingEvents,
         cancelPendingUpdateForEvent,
-        buildTimeEntryCreate,
-        buildTimeEntryCreateFromSuggestion,
-        buildTimeEntryUpdate,
-        buildTimeEntrySuggestionUpdate,
         buildUpdatePayload,
         buildCreatePayload,
         buildUpdateMutation,
         buildCreateMutation,
         buildDeleteMutation,
-        applyEventPosition,
+        getPersistedPosition,
         minimumEventDurationMs,
-        updateEventPosition
+        clampPosition
     };
 };

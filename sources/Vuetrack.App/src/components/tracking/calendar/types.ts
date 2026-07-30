@@ -11,10 +11,13 @@ export type EventPosition = {
     end: number;
 };
 
+// Positions are read-only: an event resolves its own, it never gets written one.
 export type BaseCalendarEvent = {
     uiId: string;
     timed: boolean;
-} & EventPosition;
+    readonly start: number;
+    readonly end: number;
+};
 
 export type DraftTimeEntryEvent = {
     kind: "draft";
@@ -80,6 +83,8 @@ export type Gesture =
           kind: "move";
           event: TimeEntryEvent;
           from: EventPosition;
+          // Whether the event already carried a proposal, so cancel knows what to leave behind.
+          wasStaged: boolean;
           pointerOffsetMs?: number;
       }
     | {
@@ -87,6 +92,7 @@ export type Gesture =
           edge: EventEdge;
           event: TimeEntryEvent;
           from: EventPosition;
+          wasStaged: boolean;
       }
     | {
           kind: "draft";
@@ -120,33 +126,26 @@ export type Task =
 
 export type ConflictTask = Extract<Task, { kind: "conflict" }>;
 
-// Stores the position the event started from; the event itself carries the target.
-export type StagedUpdateChange = {
-    kind: "update";
+// The persisted contract stays untouched; the payload is what the calendar proposes for it.
+// `kind` says what a commit would do, `removed` is a separate question, so marking a
+// removal can never overwrite the proposal underneath it.
+export type StagedSaveChange = {
+    kind: "save";
     event: PositionableEvent;
-    from: EventPosition;
-    payload?: TimeEntryUpdatePayload;
+    payload: TimeEntryUpdatePayload;
+    removed: boolean;
 };
 
 // A draft has no other home: staging the create is what brings it into existence.
-export type StagedAddChange = {
-    kind: "add";
+export type StagedCreateChange = {
+    kind: "create";
     event: CreatableEvent;
     payload: TimeEntryCreatePayload;
+    removed: boolean;
 };
 
-export type SupersededChange = StagedUpdateChange | StagedAddChange;
-
-// A removal covers what was staged before; it never destroys it. Only an update or an
-// add can be covered, so a removal never nests another removal.
-export type StagedRemoveChange = {
-    kind: "remove";
-    event: TimeEntryEvent;
-    superseded?: SupersededChange;
-};
-
-export type StagedChange = StagedUpdateChange | StagedRemoveChange | StagedAddChange;
-export type SavedRemoveChange = StagedRemoveChange & { event: PositionableEvent };
+export type StagedChange = StagedSaveChange | StagedCreateChange;
+export type StagedPayload = TimeEntryUpdatePayload | TimeEntryCreatePayload;
 
 export type GestureKind = Gesture["kind"];
 export type TaskKind = Task["kind"];
@@ -156,17 +155,19 @@ export function isTimeEntryEvent(e: CalendarEvent): e is TimeEntryEvent {
     return e.kind === "suggestion" || e.kind === "existing" || e.kind === "draft";
 }
 
-// A removed draft was never saved, so there is nothing to delete.
-export function isSavedRemove(change: StagedChange): change is SavedRemoveChange {
-    return change.kind === "remove" && change.event.kind !== "draft";
-}
-
-// A draft has no home but the change it sits in, add or remove alike.
+// A draft has no home but its staged create, removed or not.
 export function getDraftEvent(change: StagedChange): DraftTimeEntryEvent | null {
-    if (change.kind === "update") return null;
+    if (change.kind !== "create") return null;
     if (change.event.kind !== "draft") return null;
 
     return change.event;
+}
+
+// A proposal without both dates has no position to render or send yet.
+export function getPayloadPosition(payload: StagedPayload): EventPosition | null {
+    if (!payload.dateStarted || !payload.dateEnded) return null;
+
+    return { start: payload.dateStarted.getTime(), end: payload.dateEnded.getTime() };
 }
 
 export function isExistingUpdateMutation(mutation: TimeEntryUpdateMutation): mutation is ExistingTimeEntryUpdateMutation {

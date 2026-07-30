@@ -7,28 +7,27 @@ export function useEdit() {
     const calendarStore = useCalendarStore();
     const changeSet = useChangeSet();
     const commit = useEventCommit();
-    const { buildUpdatePayload, cancelPendingUpdateForEvent } = useCalendarHelper();
+    const { cancelPendingUpdateForEvent } = useCalendarHelper();
 
     const { task } = storeToRefs(calendarStore);
 
-    // Editing something staged for removal would commit that removal instead.
+    // The form edits the staged proposal, so a typed time moves the box straight away.
+    // Editing something staged for removal would commit that removal instead, and a
+    // pending create belongs to the create form.
     const start = (event: PositionableEvent) => {
         if (changeSet.isRemoved(event.uiId)) return;
+        if (changeSet.get(event.uiId)?.kind === "create") return;
 
         cancelPendingUpdateForEvent(event);
 
-        changeSet.stageUpdate(event);
-
-        const payload = buildUpdatePayload(event);
-        task.value = { kind: "edit", event, payload };
+        const change = changeSet.stageSave(event);
+        task.value = { kind: "edit", event, payload: change.payload };
     };
 
     const finish = async () => {
         if (task.value.kind !== "edit") return;
 
-        const { event, payload } = task.value;
-
-        changeSet.stageUpdate(event, payload);
+        const { event } = task.value;
         await commit.commitOrEscalate(event);
     };
 

@@ -5,7 +5,7 @@ import { useEventWrapper } from "./useEventWrapper";
 export function useDraft() {
     const calendarStore = useCalendarStore();
     const changeSet = useChangeSet();
-    const { getAllBoundaries, getEventBoundaries, roundTime, updateEventPosition } = useCalendarHelper();
+    const { getAllBoundaries, getEventBoundaries, roundTime, clampPosition } = useCalendarHelper();
     const { createDraftEvent } = useEventWrapper();
     const { gesture, task, events } = storeToRefs(calendarStore);
 
@@ -27,8 +27,10 @@ export function useDraft() {
         const down = mouseMs < anchorStartMs;
         const snapPoints = getEventBoundaries(event, events.value);
         const mouseRounded = roundTime(mouseMs, { down, snapPoints });
+        const drawn = { start: Math.min(mouseRounded, anchorStartMs), end: Math.max(mouseRounded, anchorStartMs) };
+        const position = clampPosition(drawn, down ? "end" : "start");
 
-        updateEventPosition(event, { start: Math.min(mouseRounded, anchorStartMs), end: Math.max(mouseRounded, anchorStartMs) }, down ? "end" : "start");
+        changeSet.stagePosition(event, position);
     };
 
     // The drawn box turns into a pending create; the overlay edits that same payload.
@@ -36,10 +38,10 @@ export function useDraft() {
         if (gesture.value.kind !== "draft") return;
 
         const { event } = gesture.value;
-        const payload = changeSet.stageDraft(event);
+        const change = changeSet.stageCreate(event);
         gesture.value = { kind: "idle" };
 
-        task.value = { kind: "create", event, payload };
+        task.value = { kind: "create", event, payload: change.payload };
     };
 
     const cancel = () => {

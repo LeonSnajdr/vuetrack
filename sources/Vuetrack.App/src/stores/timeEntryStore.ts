@@ -48,10 +48,15 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
         if (updateResult.status === "success") {
             const existing = timeEntries.value.find((x) => x.id === id);
 
-            // Dates left out on purpose: echoing them back would snap an entry
-            // dragged again while the request ran.
+            // Times come from the request: those are the ones the backend accepted,
+            // so nothing depends on how the response spells its dates.
             const serverFields = omit(updateResult.data, "dateStarted", "dateEnded");
-            if (existing) Object.assign(existing, serverFields);
+
+            if (existing) {
+                Object.assign(existing, serverFields);
+                existing.dateStarted = new Date(updateContract.dateStarted);
+                existing.dateEnded = new Date(updateContract.dateEnded);
+            }
         }
 
         return updateResult;

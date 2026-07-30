@@ -1,13 +1,16 @@
 import type { TimeEntryContract, TimeEntryCreateContract } from "@/contracts/TimeEntryContract";
 import type { TimeEntrySuggestionContract } from "@/contracts/TimeEntrySuggestion";
 import type { Nullable } from "@/util/Nullable";
-import type { DraftTimeEntryEvent, ExistingTimeEntryEvent, SuggestionTimeEntryEvent, TimeEntryEvent } from "@/components/tracking/calendar/types";
+import type { DraftTimeEntryEvent, EventPosition, ExistingTimeEntryEvent, SuggestionTimeEntryEvent, TimeEntryEvent } from "@/components/tracking/calendar/types";
 import { useCalendarHelper } from "./useCalendarHelper";
 
 const existingWrapperCache = new WeakMap<TimeEntryContract, ExistingTimeEntryEvent>();
 const suggestionWrapperCache = new WeakMap<TimeEntrySuggestionContract, SuggestionTimeEntryEvent>();
 
-export function useEventWrapper() {
+// Read-only positions: what a gesture proposes lives in the change set, never in the contract.
+export type StagedPositionResolver = (uiId: string) => EventPosition | null;
+
+export function useEventWrapper(resolveStaged: StagedPositionResolver = () => null) {
     const { minimumEventDurationMs } = useCalendarHelper();
     const timeEntryHelper = useTimeEntryHelper();
 
@@ -21,16 +24,16 @@ export function useEventWrapper() {
             uiId: `event-uiId-${crypto.randomUUID()}`,
             timeEntry: contract,
             get start() {
+                const staged = resolveStaged(this.uiId);
+                if (staged) return staged.start;
+
                 return this.timeEntry.dateStarted.getTime();
             },
-            set start(ms: number) {
-                this.timeEntry.dateStarted = new Date(ms);
-            },
             get end() {
+                const staged = resolveStaged(this.uiId);
+                if (staged) return staged.end;
+
                 return this.timeEntry.dateEnded.getTime();
-            },
-            set end(ms: number) {
-                this.timeEntry.dateEnded = new Date(ms);
             }
         };
         existingWrapperCache.set(contract, wrapper);
@@ -47,16 +50,16 @@ export function useEventWrapper() {
             uiId: `event-uiId-${crypto.randomUUID()}`,
             timeEntry: contract,
             get start() {
+                const staged = resolveStaged(this.uiId);
+                if (staged) return staged.start;
+
                 return this.timeEntry.dateStarted.getTime();
             },
-            set start(ms: number) {
-                this.timeEntry.dateStarted = new Date(ms);
-            },
             get end() {
+                const staged = resolveStaged(this.uiId);
+                if (staged) return staged.end;
+
                 return this.timeEntry.dateEnded.getTime();
-            },
-            set end(ms: number) {
-                this.timeEntry.dateEnded = new Date(ms);
             }
         };
         suggestionWrapperCache.set(contract, wrapper);
@@ -72,18 +75,14 @@ export function useEventWrapper() {
             get start() {
                 const dateStarted = this.createEntry.dateStarted;
                 if (!dateStarted) return fallbackStartMs;
+
                 return dateStarted.getTime();
-            },
-            set start(ms: number) {
-                this.createEntry.dateStarted = new Date(ms);
             },
             get end() {
                 const dateEnded = this.createEntry.dateEnded;
                 if (!dateEnded) return fallbackEndMs;
+
                 return dateEnded.getTime();
-            },
-            set end(ms: number) {
-                this.createEntry.dateEnded = new Date(ms);
             }
         };
     };
