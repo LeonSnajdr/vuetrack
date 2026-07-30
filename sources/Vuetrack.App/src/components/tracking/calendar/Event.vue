@@ -12,24 +12,42 @@
             'overflow-hidden',
             'tc-event',
             `tc-${event.kind}`,
-            { 'tc-conflicting': isConflicting, 'tc-removed': isRemoved, 'tc-selected': isSelected }
+            { 'tc-conflicting': isConflicting, 'tc-selected': isSelected },
+            { 'tc-removed cursor-default opacity-40': isRemoved }
         ]"
     >
         <div class="h-100 py-1 px-2 d-flex flex-column ga-1 text-truncate">
-            <div class="tc-header d-flex flex-column">
-                <div class="flex-grow-1 text-on-surface text-truncate font-weight-medium text-high-emphasis">
-                    <VIcon v-if="isRemoved" :icon="mdiDelete" class="mr-1" color="error" size="x-small" />
-                    <VIcon v-else-if="isUnsaved" :icon="mdiContentSaveAlertOutline" class="mr-1" color="warning" size="x-small" />
+            <div class="tc-header d-flex flex-wrap align-baseline">
+                <div
+                    :class="[
+                        'flex-grow-1',
+                        'text-on-surface',
+                        'text-truncate',
+                        'font-weight-medium',
+                        'text-high-emphasis',
+                        { 'text-decoration-line-through': isRemoved }
+                    ]"
+                >
                     <template v-if="event.kind === 'existing'">{{ event.timeEntry.taskId ?? event.timeEntry.project.name }}</template>
                     <template v-else-if="event.kind === 'suggestion'">{{ event.timeEntry.taskId ?? event.timeEntry.projectName }}</template>
-                    <template v-else>{{ $t("calendar.event.draft") }}</template>
+                    <template v-else-if="event.kind === 'draft'">{{ event.createEntry.taskId ?? $t("calendar.event.draft") }}</template>
                 </div>
-                <div class="tc-time flex-shrink-0 text-label-small text-medium-emphasis text-truncate">
+                <div v-if="status" class="tc-status d-flex align-center align-self-start flex-shrink-0">
+                    <VProgressCircular v-if="status === 'saving'" color="warning" size="12" width="2" indeterminate />
+                    <VIcon v-else-if="status === 'removed'" :icon="mdiDelete" color="error" size="x-small" />
+                    <VIcon v-else :icon="mdiContentSaveAlertOutline" color="warning" size="x-small" />
+                </div>
+                <div class="tc-time flex-0-0-100 ml-auto text-label-small text-medium-emphasis text-truncate">
                     {{ dateFormatter.format(event.start, "fullTime24h") }} - {{ dateFormatter.format(event.end, "fullTime24h") }}
                 </div>
             </div>
-            <div v-if="event.kind === 'existing' || event.kind === 'suggestion'" class="text-medium-emphasis text-truncate">
-                {{ event.timeEntry.comment }}
+            <div class="text-medium-emphasis text-truncate">
+                <template v-if="event.kind === 'existing' || event.kind === 'suggestion'">
+                    {{ event.timeEntry.comment }}
+                </template>
+                <template v-else-if="event.kind === 'draft'">
+                    {{ event.createEntry.comment }}
+                </template>
             </div>
         </div>
     </div>
@@ -73,11 +91,15 @@ const canResize = computed(() => {
 
 const isRemoved = computed(() => changeSet.isRemoved(props.event.uiId));
 
-// While committing the change is no longer "unsaved".
-const isUnsaved = computed(() => {
-    if (isRemoved.value) return false;
-    if (changeSet.isCommitting.value) return false;
-    return changeSet.has(props.event.uiId);
+const isSaving = computed(() => changeSet.isSaving(props.event.uiId));
+
+const isUnsaved = computed(() => changeSet.has(props.event.uiId));
+
+const status = computed(() => {
+    if (isSaving.value) return "saving";
+    if (isRemoved.value) return "removed";
+    if (isUnsaved.value) return "unsaved";
+    return null;
 });
 
 const isConflicting = computed(() => conflictingUiIds.value.has(props.event.uiId));
@@ -101,6 +123,10 @@ const onMouseLeave = () => {
     border-inline-start-color: rgb(var(--tc-accent));
 }
 
+.tc-status {
+    height: 1lh;
+}
+
 .tc-header {
     gap: 2px;
     min-width: 0;
@@ -108,13 +134,11 @@ const onMouseLeave = () => {
 
 @container (min-width: 150px) {
     .tc-header {
-        flex-direction: row;
-        align-items: flex-start;
         gap: 8px;
     }
 
     .tc-time {
-        margin-left: auto;
+        flex-basis: auto;
     }
 }
 
@@ -143,12 +167,6 @@ const onMouseLeave = () => {
     background-color: color-mix(in srgb, rgb(var(--v-theme-error)) 10%, rgb(var(--v-theme-surface)));
     border-color: color-mix(in srgb, rgb(var(--v-theme-error)) 35%, rgb(var(--v-theme-surface)));
     border-left-color: rgb(var(--v-theme-error));
-    opacity: 0.45;
-    cursor: default;
-
-    .flex-grow-1 {
-        text-decoration: line-through;
-    }
 }
 
 .v-event-drag-top,

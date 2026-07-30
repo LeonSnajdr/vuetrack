@@ -39,6 +39,12 @@ export function useChangeSet() {
         return get(uiId)?.removed === true;
     };
 
+    // Settled changes leave the map, so still staged while committing means still in flight.
+    const isSaving = (uiId: string): boolean => {
+        if (!isCommittingChanges.value) return false;
+        return has(uiId);
+    };
+
     // Always handed back out of the map: only that copy notifies the calendar of a write.
     const stageSave = (event: PositionableEvent): StagedSaveChange => {
         const staged = get(event.uiId);
@@ -268,6 +274,7 @@ export function useChangeSet() {
         get,
         has,
         isRemoved,
+        isSaving,
         stageSave,
         stageCreate,
         stagePosition,
