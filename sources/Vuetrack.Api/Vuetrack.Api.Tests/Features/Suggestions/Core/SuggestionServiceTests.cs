@@ -78,6 +78,76 @@ public class SuggestionServiceTests
     }
 
     [Fact]
+    public async Task GenerateAsync_ConnectorNotConnected_IsNeverFetched()
+    {
+        var connector = new FakeConnector(Descriptor(ConnectorKey.Jira), (_, _) => Signals([]));
+        var registry = new FakeConnectorRegistry();
+        registry.Add(connector);
+
+        var initializers = new IConnectorContextInitializer[] { new FakeConnectorContextInitializer(ConnectorKey.Jira, false) };
+        var repository = new FakeSuggestionRepository();
+        var service = CreateService(registry, initializers, repository);
+
+        var result = await service.GenerateAsync("user-1", Request(), CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        connector.FetchCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task GenerateAsync_OnlyOneConnectorConnected_FetchesConnectedOneOnly()
+    {
+        var jira = new FakeConnector(Descriptor(ConnectorKey.Jira), (_, _) => Signals(
+        [
+            Signal(ConnectorKey.Jira, "J-1:worklog:1", "J-1", At(9, 0), At(9, 10)),
+        ]));
+        var github = new FakeConnector(Descriptor(ConnectorKey.Github), (_, _) => Signals(
+        [
+            Signal(ConnectorKey.Github, "G-1:commit:1", "G-1", At(13, 0), At(13, 10)),
+        ]));
+
+        var registry = new FakeConnectorRegistry();
+        registry.Add(jira);
+        registry.Add(github);
+
+        var initializers = new IConnectorContextInitializer[]
+        {
+            new FakeConnectorContextInitializer(ConnectorKey.Jira, true),
+            new FakeConnectorContextInitializer(ConnectorKey.Github, false),
+        };
+
+        var repository = new FakeSuggestionRepository();
+        var service = CreateService(registry, initializers, repository);
+
+        var result = await service.GenerateAsync("user-1", Request(), CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        jira.FetchCount.Should().Be(1);
+        github.FetchCount.Should().Be(0);
+        repository.Items.Should().ContainSingle(x => x.Sources.Any(s => s.ConnectorKey == ConnectorKey.Jira));
+    }
+
+    [Fact]
+    public async Task ReloadAsync_NoConnectorConnected_DoesNotDeleteExistingSuggestions()
+    {
+        var connector = new FakeConnector(Descriptor(ConnectorKey.Jira), (_, _) => Signals([]));
+        var registry = new FakeConnectorRegistry();
+        registry.Add(connector);
+
+        var initializers = new IConnectorContextInitializer[] { new FakeConnectorContextInitializer(ConnectorKey.Jira, false) };
+        var repository = new FakeSuggestionRepository();
+        await repository.Save(BuildModel("user-1", "KEEP", At(9, 0), At(9, 30), "J-1"));
+        var service = CreateService(registry, initializers, repository);
+
+        var result = await service.ReloadAsync("user-1", Request(), CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Should().BeEmpty();
+        connector.FetchCount.Should().Be(0);
+        repository.Items.Should().ContainSingle(x => x.TaskId == "KEEP");
+    }
+
+    [Fact]
     public async Task GenerateAsync_SecondRunOverSameRange_InsertsNothingNewAndPreservesEditedStatus()
     {
         var registry = new FakeConnectorRegistry();
@@ -326,7 +396,7 @@ public class SuggestionServiceTests
         var engine = new SuggestionEngine(new EchoSuggestionProvider());
         var resolver = new ConnectorResolver(registry, initializers);
         timeEntryService ??= new StubTimeEntryService { ListResult = ((IReadOnlyList<TimeEntryContract>)Array.Empty<TimeEntryContract>()).ToErrorOr() };
-        return new SuggestionService(registry, resolver, repository, engine, timeEntryService, NullLogger<SuggestionService>.Instance);
+        return new SuggestionService(resolver, repository, engine, timeEntryService, NullLogger<SuggestionService>.Instance);
     }
 
     private static Task<ErrorOr<IReadOnlyList<ActivitySignal>>> Signals(IReadOnlyList<ActivitySignal> signals) =>

@@ -15,7 +15,6 @@ public sealed record JiraWorklogResponse
 
     [JsonPropertyName("timeSpentSeconds")]
     public long TimeSpentSeconds { get; init; }
-
 }
 
 public sealed record JiraWorklogPageResponse

@@ -9,10 +9,8 @@ using Vuetrack.Connectors.Abstractions;
 namespace Vuetrack.Api.Features.Suggestions.Core.Services;
 
 [Inject]
-public class SuggestionService(IConnectorRegistry registry, IConnectorResolver resolver, ISuggestionRepository repository, ISuggestionEngine engine, ITimeEntryService timeEntryService, ILogger<SuggestionService> logger) : ISuggestionService
+public class SuggestionService(IConnectorResolver resolver, ISuggestionRepository repository, ISuggestionEngine engine, ITimeEntryService timeEntryService, ILogger<SuggestionService> logger) : ISuggestionService
 {
-    private IConnectorRegistry Registry { get; } = registry;
-
     private IConnectorResolver Resolver { get; } = resolver;
 
     private ISuggestionRepository Repository { get; } = repository;
@@ -25,8 +23,8 @@ public class SuggestionService(IConnectorRegistry registry, IConnectorResolver r
 
     public async Task<ErrorOr<IReadOnlyList<SuggestionContract>>> GenerateAsync(string userId, GenerateSuggestionsRequestContract request, CancellationToken cancellationToken)
     {
-        var descriptors = SelectDescriptors(request);
-        var fetched = await FetchAllAsync(descriptors, userId, request.From, request.To, cancellationToken);
+        var connectors = await Resolver.ResolveAllConnectedAsync(userId, cancellationToken);
+        var fetched = await FetchAllAsync(connectors, userId, request.From, request.To, cancellationToken);
 
         var inserted = await BuildAndInsertAsync(userId, request.From, request.To, fetched.Signals, cancellationToken);
         return inserted;
@@ -34,8 +32,8 @@ public class SuggestionService(IConnectorRegistry registry, IConnectorResolver r
 
     public async Task<ErrorOr<IReadOnlyList<SuggestionContract>>> ReloadAsync(string userId, GenerateSuggestionsRequestContract request, CancellationToken cancellationToken)
     {
-        var descriptors = SelectDescriptors(request);
-        var fetched = await FetchAllAsync(descriptors, userId, request.From, request.To, cancellationToken);
+        var connectors = await Resolver.ResolveAllConnectedAsync(userId, cancellationToken);
+        var fetched = await FetchAllAsync(connectors, userId, request.From, request.To, cancellationToken);
 
         if (fetched.SuccessfulKeys.Count > 0)
         {
@@ -46,13 +44,13 @@ public class SuggestionService(IConnectorRegistry registry, IConnectorResolver r
         return inserted;
     }
 
-    // Connectors are independent (each resolves its own connection), so fetch them concurrently.
-    private async Task<(List<ActivitySignal> Signals, List<ConnectorKey> SuccessfulKeys)> FetchAllAsync(List<ConnectorDescriptor> descriptors, string userId, DateTime from, DateTime to, CancellationToken cancellationToken)
+    // Connectors are independent (each holds its own connection), so fetch them concurrently.
+    private async Task<(List<ActivitySignal> Signals, List<ConnectorKey> SuccessfulKeys)> FetchAllAsync(IReadOnlyList<IConnector> connectors, string userId, DateTime from, DateTime to, CancellationToken cancellationToken)
     {
-        var fetchTasks = descriptors.Select(async descriptor =>
+        var fetchTasks = connectors.Select(async connector =>
         {
-            var fetched = await FetchFromConnectorAsync(descriptor, userId, from, to, cancellationToken);
-            return (descriptor.Key, Signals: fetched);
+            var fetched = await FetchFromConnectorAsync(connector, userId, from, to, cancellationToken);
+            return (connector.Descriptor.Key, Signals: fetched);
         });
 
         var results = await Task.WhenAll(fetchTasks);
@@ -124,15 +122,6 @@ public class SuggestionService(IConnectorRegistry registry, IConnectorResolver r
         return Result.Success;
     }
 
-    private List<ConnectorDescriptor> SelectDescriptors(GenerateSuggestionsRequestContract request)
-    {
-        var descriptors = Registry.Descriptors
-            .Where(d => request.ConnectorKeys is null || request.ConnectorKeys.Contains(d.Key))
-            .ToList();
-
-        return descriptors;
-    }
-
     private async Task<ErrorOr<IReadOnlyList<SuggestionContract>>> BuildAndInsertAsync(string userId, DateTime from, DateTime to, IReadOnlyList<ActivitySignal> signals, CancellationToken cancellationToken)
     {
         var existingTaskEntries = await GetExistingTaskEntriesAsync(userId, from, to, cancellationToken);
@@ -200,22 +189,17 @@ public class SuggestionService(IConnectorRegistry registry, IConnectorResolver r
         return byTask;
     }
 
-    private async Task<ErrorOr<IReadOnlyList<ActivitySignal>>> FetchFromConnectorAsync(ConnectorDescriptor descriptor, string userId, DateTime from, DateTime to, CancellationToken cancellationToken)
+    private async Task<ErrorOr<IReadOnlyList<ActivitySignal>>> FetchFromConnectorAsync(IConnector connector, string userId, DateTime from, DateTime to, CancellationToken cancellationToken)
     {
+        var key = connector.Descriptor.Key;
+
         try
         {
-            var resolved = await Resolver.ResolveConnectedAsync(descriptor.Key, userId, cancellationToken);
-            if (resolved.IsError)
-            {
-                Logger.LogInformation("Connector {ConnectorKey} unavailable for user {UserId}: {Error}", descriptor.Key, userId, resolved.FirstError.Description);
-                return resolved.Errors;
-            }
-
             var container = new ActivityFetchContainer { From = from, To = to };
-            var fetch = await resolved.Value.FetchAsync(container, cancellationToken);
+            var fetch = await connector.FetchAsync(container, cancellationToken);
             if (fetch.IsError)
             {
-                Logger.LogWarning("Connector {ConnectorKey} failed to fetch signals for user {UserId}: {Error}", descriptor.Key, userId, fetch.FirstError.Description);
+                Logger.LogWarning("Connector {ConnectorKey} failed to fetch signals for user {UserId}: {Error}", key, userId, fetch.FirstError.Description);
                 return fetch.Errors;
             }
 
@@ -223,7 +207,7 @@ public class SuggestionService(IConnectorRegistry registry, IConnectorResolver r
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            Logger.LogWarning(ex, "Connector {ConnectorKey} threw while fetching suggestion signals for user {UserId}", descriptor.Key, userId);
+            Logger.LogWarning(ex, "Connector {ConnectorKey} threw while fetching suggestion signals for user {UserId}", key, userId);
             return Error.Failure(description: "Connector threw while fetching signals.");
         }
     }

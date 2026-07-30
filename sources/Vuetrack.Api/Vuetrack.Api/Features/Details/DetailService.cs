@@ -1,4 +1,3 @@
-using ErrorOr;
 using Samhammer.DependencyInjection.Attributes;
 using Vuetrack.Api.Features.Connectors;
 using Vuetrack.Api.Features.Details.Contracts;
@@ -7,20 +6,20 @@ using Vuetrack.Connectors.Abstractions;
 namespace Vuetrack.Api.Features.Details;
 
 [Inject]
-public class DetailService(IConnectorRegistry registry, IConnectorResolver resolver, ILogger<DetailService> logger) : IDetailService
+public class DetailService(IConnectorResolver resolver, ILogger<DetailService> logger) : IDetailService
 {
-    private IConnectorRegistry Registry { get; } = registry;
-
     private IConnectorResolver Resolver { get; } = resolver;
 
     private ILogger<DetailService> Logger { get; } = logger;
 
     public async Task<DetailsContract> GetAsync(DetailQuery query, string userId, CancellationToken cancellationToken)
     {
-        var detailTasks = Registry.Descriptors.Select(async descriptor =>
+        var connectors = await Resolver.ResolveAllConnectedAsync(userId, cancellationToken);
+
+        var detailTasks = connectors.Select(async connector =>
         {
-            var fields = await GetFromConnectorAsync(descriptor.Key, query, userId, cancellationToken);
-            return (descriptor.Key, Fields: fields);
+            var fields = await GetFromConnectorAsync(connector, query, userId, cancellationToken);
+            return (connector.Descriptor.Key, Fields: fields);
         });
 
         var results = await Task.WhenAll(detailTasks);
@@ -40,18 +39,13 @@ public class DetailService(IConnectorRegistry registry, IConnectorResolver resol
         return new DetailsContract(groups);
     }
 
-    private async Task<IReadOnlyList<DetailField>> GetFromConnectorAsync(ConnectorKey key, DetailQuery query, string userId, CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<DetailField>> GetFromConnectorAsync(IConnector connector, DetailQuery query, string userId, CancellationToken cancellationToken)
     {
+        var key = connector.Descriptor.Key;
+
         try
         {
-            var resolved = await Resolver.ResolveConnectedAsync(key, userId, cancellationToken);
-            if (resolved.IsError)
-            {
-                Logger.LogInformation("Connector {ConnectorKey} unavailable for user {UserId}: {Error}", key, userId, resolved.FirstError.Description);
-                return [];
-            }
-
-            var details = await resolved.Value.GetDetailsAsync(query, cancellationToken);
+            var details = await connector.GetDetailsAsync(query, cancellationToken);
             if (details.IsError)
             {
                 Logger.LogWarning("Connector {ConnectorKey} failed to fetch details for user {UserId}: {Error}", key, userId, details.FirstError.Description);
