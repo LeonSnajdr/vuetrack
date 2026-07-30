@@ -46,6 +46,7 @@
     "OAuthPopupResult": true,
     "ProjectContract": true,
     "ProjectId": true,
+    "ProjectLookupContract": true,
     "ProjectService": true,
     "PropType": true,
     "Ref": true,

@@ -141,22 +141,12 @@ public class TimetrackingBackend(ITimetrackingApiClient client, ITimetrackingCon
         }
     }
 
-    public async Task<ErrorOr<ProjectContract?>> FindProjectByTaskIdAsync(string taskId, CancellationToken cancellationToken)
+    public async Task<ErrorOr<ProjectLookupContract>> FindProjectIdByTaskIdAsync(string taskId, CancellationToken cancellationToken)
     {
         try
         {
             var projectId = await Client.FindProjectIdByTaskIdAsync(taskId, cancellationToken);
-            if (projectId is null)
-            {
-                return Error.NotFound();
-            }
-
-            // TODO Maybe just return the id
-
-            // The legacy endpoint returns only the id; resolve the display name from the project list.
-            var projects = await Client.GetProjectsAsync(cancellationToken);
-            var match = projects.FirstOrDefault(p => p.Id.ToString(System.Globalization.CultureInfo.InvariantCulture) == projectId);
-            return new ProjectContract(projectId, match?.Name ?? string.Empty);
+            return new ProjectLookupContract(projectId);
         }
         catch (Exception ex)
         {

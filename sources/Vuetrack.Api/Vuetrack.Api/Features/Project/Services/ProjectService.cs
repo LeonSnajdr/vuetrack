@@ -35,7 +35,7 @@ public class ProjectService(IBackendResolver resolver) : IProjectService
         return await backend.Value.GetActivitiesAsync(projectId, cancellationToken);
     }
 
-    public async Task<ErrorOr<ProjectContract?>> FindByTaskIdAsync(string userId, string taskId, CancellationToken cancellationToken)
+    public async Task<ErrorOr<ProjectLookupContract>> FindByTaskIdAsync(string userId, string taskId, CancellationToken cancellationToken)
     {
         var backend = await Resolver.ResolveConnectedAsync(Backend, userId, cancellationToken);
         if (backend.IsError)
@@ -43,7 +43,7 @@ public class ProjectService(IBackendResolver resolver) : IProjectService
             return backend.Errors;
         }
 
-        return await backend.Value.FindProjectByTaskIdAsync(taskId, cancellationToken);
+        return await backend.Value.FindProjectIdByTaskIdAsync(taskId, cancellationToken);
     }
 }
 
@@ -53,5 +53,5 @@ public interface IProjectService
 
     Task<ErrorOr<IReadOnlyList<ActivityContract>>> ListActivitiesAsync(string userId, string projectId, CancellationToken cancellationToken);
 
-    Task<ErrorOr<ProjectContract?>> FindByTaskIdAsync(string userId, string taskId, CancellationToken cancellationToken);
+    Task<ErrorOr<ProjectLookupContract>> FindByTaskIdAsync(string userId, string taskId, CancellationToken cancellationToken);
 }

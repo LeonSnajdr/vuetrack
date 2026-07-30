@@ -21,5 +21,5 @@ public interface IBackend
 
     Task<ErrorOr<IReadOnlyList<ActivityContract>>> GetActivitiesAsync(string projectId, CancellationToken cancellationToken);
 
-    Task<ErrorOr<ProjectContract?>> FindProjectByTaskIdAsync(string taskId, CancellationToken cancellationToken);
+    Task<ErrorOr<ProjectLookupContract>> FindProjectIdByTaskIdAsync(string taskId, CancellationToken cancellationToken);
 }

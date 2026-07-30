@@ -6,3 +6,7 @@ export type ProjectContract = {
     id: ProjectId;
     name: string;
 };
+
+export type ProjectLookupContract = {
+    projectId: ProjectId | null;
+};
