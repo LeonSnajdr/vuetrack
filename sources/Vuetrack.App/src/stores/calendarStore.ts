@@ -6,7 +6,8 @@ import {
     type Gesture,
     type StagedChange,
     type Task,
-    type TimeEntryEvent
+    type TimeEntryEvent,
+    type UiId
 } from "@/components/tracking/calendar/types";
 import { useEventWrapper } from "@/components/tracking/calendar/composables/useEventWrapper";
 
@@ -18,10 +19,10 @@ export const useCalendarStore = defineStore("calendar", () => {
     const gesture = ref<Gesture>({ kind: "idle" });
     const task = ref<Task>({ kind: "none" });
 
-    const stagedChanges = ref<Map<string, StagedChange>>(new Map());
+    const stagedChanges = ref<Map<UiId, StagedChange>>(new Map());
 
     // What an event renders at: the staged proposal if there is one, else what is saved.
-    const resolveStagedPosition = (uiId: string): EventPosition | null => {
+    const resolveStagedPosition = (uiId: UiId): EventPosition | null => {
         const change = stagedChanges.value.get(uiId);
         if (!change) return null;
 

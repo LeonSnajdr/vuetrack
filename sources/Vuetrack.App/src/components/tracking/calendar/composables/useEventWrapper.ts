@@ -1,14 +1,20 @@
 import type { TimeEntryContract, TimeEntryCreateContract } from "@/contracts/TimeEntryContract";
 import type { TimeEntrySuggestionContract } from "@/contracts/TimeEntrySuggestion";
 import type { Nullable } from "@/util/Nullable";
-import type { DraftTimeEntryEvent, EventPosition, ExistingTimeEntryEvent, SuggestionTimeEntryEvent, TimeEntryEvent } from "@/components/tracking/calendar/types";
+import type { DraftTimeEntryEvent, EventPosition, ExistingTimeEntryEvent, SuggestionTimeEntryEvent, TimeEntryEvent, UiId } from "@/components/tracking/calendar/types";
 import { useCalendarHelper } from "./useCalendarHelper";
 
 const existingWrapperCache = new WeakMap<TimeEntryContract, ExistingTimeEntryEvent>();
 const suggestionWrapperCache = new WeakMap<TimeEntrySuggestionContract, SuggestionTimeEntryEvent>();
 
 // Read-only positions: what a gesture proposes lives in the change set, never in the contract.
-export type StagedPositionResolver = (uiId: string) => EventPosition | null;
+export type StagedPositionResolver = (uiId: UiId) => EventPosition | null;
+
+// Prefixed because a uiId doubles as a DOM element id, and a raw uuid may start with a digit.
+function createUiId(): UiId {
+    const uuid = crypto.randomUUID();
+    return `event-uiId-${uuid}` as UiId;
+}
 
 export function useEventWrapper(resolveStaged: StagedPositionResolver = () => null) {
     const { minimumEventDurationMs } = useCalendarHelper();
@@ -21,7 +27,7 @@ export function useEventWrapper(resolveStaged: StagedPositionResolver = () => nu
         const wrapper: ExistingTimeEntryEvent = {
             kind: "existing",
             timed: true,
-            uiId: `event-uiId-${crypto.randomUUID()}`,
+            uiId: createUiId(),
             timeEntry: contract,
             get start() {
                 const staged = resolveStaged(this.uiId);
@@ -47,7 +53,7 @@ export function useEventWrapper(resolveStaged: StagedPositionResolver = () => nu
         const wrapper: SuggestionTimeEntryEvent = {
             kind: "suggestion",
             timed: true,
-            uiId: `event-uiId-${crypto.randomUUID()}`,
+            uiId: createUiId(),
             timeEntry: contract,
             get start() {
                 const staged = resolveStaged(this.uiId);
@@ -70,7 +76,7 @@ export function useEventWrapper(resolveStaged: StagedPositionResolver = () => nu
         return {
             kind: "draft",
             timed: true,
-            uiId: `event-uiId-${crypto.randomUUID()}`,
+            uiId: createUiId(),
             createEntry,
             get start() {
                 const dateStarted = this.createEntry.dateStarted;

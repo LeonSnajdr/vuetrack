@@ -3,6 +3,9 @@ import type { TimeEntrySuggestionContract, TimeEntrySuggestionUpdateContract, Ti
 import type { Nullable } from "@/util/Nullable";
 import type { ValidationErrors } from "@/util/ValidationProblem";
 import type { CalendarEvent } from "vuetify/lib/components/VCalendar/types.mjs";
+import type { Branded } from "typings/brand";
+
+export type UiId = Branded<string, "uiId">;
 
 export type EventEdge = "start" | "end";
 
@@ -13,7 +16,7 @@ export type EventPosition = {
 
 // Positions are read-only: an event resolves its own, it never gets written one.
 export type BaseCalendarEvent = {
-    uiId: string;
+    uiId: UiId;
     timed: boolean;
     readonly start: number;
     readonly end: number;

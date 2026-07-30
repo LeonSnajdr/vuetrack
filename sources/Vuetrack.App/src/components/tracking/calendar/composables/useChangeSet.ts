@@ -8,7 +8,8 @@ import {
     type StagedPayload,
     type StagedSaveChange,
     type TimeEntryEvent,
-    type TimeEntryMutation
+    type TimeEntryMutation,
+    type UiId
 } from "@/components/tracking/calendar/types";
 import { useCalendarHelper } from "./useCalendarHelper";
 import { useEventMutation } from "./useEventMutation";
@@ -27,20 +28,20 @@ export function useChangeSet() {
     const count = computed(() => stagedChanges.value.size);
     const removalCount = computed(() => changes.value.filter((change) => change.removed).length);
 
-    const get = (uiId: string): StagedChange | undefined => {
+    const get = (uiId: UiId): StagedChange | undefined => {
         return stagedChanges.value.get(uiId);
     };
 
-    const has = (uiId: string): boolean => {
+    const has = (uiId: UiId): boolean => {
         return stagedChanges.value.has(uiId);
     };
 
-    const isRemoved = (uiId: string): boolean => {
+    const isRemoved = (uiId: UiId): boolean => {
         return get(uiId)?.removed === true;
     };
 
     // Settled changes leave the map, so still staged while committing means still in flight.
-    const isSaving = (uiId: string): boolean => {
+    const isSaving = (uiId: UiId): boolean => {
         if (!isCommittingChanges.value) return false;
         return has(uiId);
     };
@@ -105,13 +106,13 @@ export function useChangeSet() {
         change.removed = true;
     };
 
-    const unstage = (uiId: string): void => {
+    const unstage = (uiId: UiId): void => {
         stagedChanges.value.delete(uiId);
     };
 
     // A drag that ended where it started must not mark the event unsaved. Compared whole:
     // a pending field edit is a change even when the times match what is saved.
-    const unstageIfUnchanged = (uiId: string): void => {
+    const unstageIfUnchanged = (uiId: UiId): void => {
         const change = get(uiId);
         if (change?.kind !== "save") return;
         if (change.removed) return;
@@ -124,7 +125,7 @@ export function useChangeSet() {
 
     // Uncovers the proposal the removal was hiding. A removal that covered nothing at all
     // leaves nothing behind, so the entry stops counting as a change.
-    const restoreRemoved = (uiId: string): void => {
+    const restoreRemoved = (uiId: UiId): void => {
         const change = get(uiId);
         if (!change?.removed) return;
 

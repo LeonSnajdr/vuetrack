@@ -1,4 +1,4 @@
-import type { TimeEntryEvent } from "@/components/tracking/calendar/types";
+import type { TimeEntryEvent, UiId } from "@/components/tracking/calendar/types";
 import type { Occupied } from "@/components/tracking/calendar/conflictResolvers";
 import { useCalendarHelper } from "./useCalendarHelper";
 import { useChangeSet } from "./useChangeSet";
@@ -32,24 +32,24 @@ export function useConflictDetection() {
         return candidates.value.map((event) => ({ event, position: { start: event.start, end: event.end } }));
     });
 
+    // Each unordered pair only once: everything after the subject, never before it.
     const conflictPairs = computed<ConflictPair[]>(() => {
-        const pairs = new Map<string, ConflictPair>();
+        const pairs: ConflictPair[] = [];
 
-        for (const first of candidates.value) {
-            for (const second of candidates.value) {
+        for (const [index, first] of candidates.value.entries()) {
+            const others = candidates.value.slice(index + 1);
+
+            for (const second of others) {
                 if (!isOverlapping(first, second)) continue;
 
-                const key = [first.uiId, second.uiId].sort().join("|");
-                if (pairs.has(key)) continue;
-
-                pairs.set(key, { first, second });
+                pairs.push({ first, second });
             }
         }
 
-        return [...pairs.values()];
+        return pairs;
     });
 
-    const conflictingUiIds = computed<Set<string>>(() => {
+    const conflictingUiIds = computed<Set<UiId>>(() => {
         const uiIds = conflictPairs.value.flatMap((pair) => [pair.first.uiId, pair.second.uiId]);
         return new Set(uiIds);
     });
