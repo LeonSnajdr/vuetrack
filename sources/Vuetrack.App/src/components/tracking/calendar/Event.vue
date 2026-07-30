@@ -18,26 +18,28 @@
     >
         <div class="h-100 py-1 px-2 d-flex flex-column ga-1 text-truncate">
             <div class="tc-header d-flex flex-wrap align-baseline">
-                <div
-                    :class="[
-                        'flex-grow-1',
-                        'text-on-surface',
-                        'text-truncate',
-                        'font-weight-medium',
-                        'text-high-emphasis',
-                        { 'text-decoration-line-through': isRemoved }
-                    ]"
-                >
-                    <template v-if="event.kind === 'existing'">{{ event.timeEntry.taskId ?? event.timeEntry.project.name }}</template>
-                    <template v-else-if="event.kind === 'suggestion'">{{ event.timeEntry.taskId ?? event.timeEntry.projectName }}</template>
-                    <template v-else-if="event.kind === 'draft'">{{ event.createEntry.taskId ?? $t("calendar.event.draft") }}</template>
+                <div class="tc-title d-flex flex-nowrap align-baseline ga-1 flex-1-1-100">
+                    <div
+                        :class="[
+                            'flex-grow-1',
+                            'text-on-surface',
+                            'text-truncate',
+                            'font-weight-medium',
+                            'text-high-emphasis',
+                            { 'text-decoration-line-through': isRemoved }
+                        ]"
+                    >
+                        <template v-if="event.kind === 'existing'">{{ event.timeEntry.taskId ?? event.timeEntry.project.name }}</template>
+                        <template v-else-if="event.kind === 'suggestion'">{{ event.timeEntry.taskId ?? event.timeEntry.projectName }}</template>
+                        <template v-else-if="event.kind === 'draft'">{{ event.createEntry.taskId ?? $t("calendar.event.draft") }}</template>
+                    </div>
+                    <div v-if="status" class="tc-status d-flex align-center align-self-start flex-shrink-0">
+                        <VProgressCircular v-if="status === 'saving'" color="warning" size="12" width="2" indeterminate />
+                        <VIcon v-else-if="status === 'removed'" :icon="mdiDelete" color="error" size="x-small" />
+                        <VIcon v-else :icon="mdiContentSaveAlertOutline" color="warning" size="x-small" />
+                    </div>
                 </div>
-                <div v-if="status" class="tc-status d-flex align-center align-self-start flex-shrink-0">
-                    <VProgressCircular v-if="status === 'saving'" color="warning" size="12" width="2" indeterminate />
-                    <VIcon v-else-if="status === 'removed'" :icon="mdiDelete" color="error" size="x-small" />
-                    <VIcon v-else :icon="mdiContentSaveAlertOutline" color="warning" size="x-small" />
-                </div>
-                <div class="tc-time flex-0-0-100 ml-auto text-label-small text-medium-emphasis text-truncate">
+                <div class="tc-time flex-0-0-100 text-label-small text-medium-emphasis text-truncate">
                     {{ dateFormatter.format(event.start, "fullTime24h") }} - {{ dateFormatter.format(event.end, "fullTime24h") }}
                 </div>
             </div>
@@ -132,11 +134,16 @@ const onMouseLeave = () => {
     min-width: 0;
 }
 
+.tc-title {
+    min-width: 0;
+}
+
 @container (min-width: 150px) {
     .tc-header {
         gap: 8px;
     }
 
+    .tc-title,
     .tc-time {
         flex-basis: auto;
     }
