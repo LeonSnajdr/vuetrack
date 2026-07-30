@@ -70,9 +70,11 @@ public static class JiraActivityMapper
         return new JiraSignalDetail
         {
             IssueKey = context.Key,
+            Title = context.Title,
             IssueType = context.IssueType,
             Status = context.Status,
             ParentKey = context.ParentKey,
+            ParentTitle = context.ParentTitle,
         };
     }
 }

@@ -17,10 +17,19 @@ public sealed record JiraNamedResponse
     public string? Name { get; init; }
 }
 
+public sealed record JiraParentFieldsResponse
+{
+    [JsonPropertyName("summary")]
+    public string? Summary { get; init; }
+}
+
 public sealed record JiraParentResponse
 {
     [JsonPropertyName("key")]
     public string? Key { get; init; }
+
+    [JsonPropertyName("fields")]
+    public JiraParentFieldsResponse? Fields { get; init; }
 }
 
 public sealed record JiraIssueFieldsResponse

@@ -30,6 +30,7 @@ public class JiraConnectorHttpTests
           "summary": "Fix login",
           "issuetype": { "name": "Bug" },
           "status": { "name": "In Progress" },
+          "parent": { "key": "PROJ-9", "fields": { "summary": "Login epic" } },
           "project": { "key": "PROJ", "name": "Project" }
         } }
       ],
@@ -71,7 +72,10 @@ public class JiraConnectorHttpTests
         signal.Kind.Should().Be(ActivityKind.Worklog);
         var detail = Detail(signal);
         detail.IssueKey.Should().Be("PROJ-1");
+        detail.Title.Should().Be("Fix login");
         detail.IssueType.Should().Be("Bug");
+        detail.ParentKey.Should().Be("PROJ-9");
+        detail.ParentTitle.Should().Be("Login epic");
     }
 
     [Fact]

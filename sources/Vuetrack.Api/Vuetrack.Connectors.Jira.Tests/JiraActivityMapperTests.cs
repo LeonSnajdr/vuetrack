@@ -12,8 +12,11 @@ public class JiraActivityMapperTests
     {
         Key = "PROJ-1",
         Id = "1001",
+        Title = "Fix login",
         IssueType = "Bug",
         Status = "In Progress",
+        ParentKey = "PROJ-9",
+        ParentTitle = "Login epic",
     };
 
     [Fact]
@@ -37,8 +40,11 @@ public class JiraActivityMapperTests
         signal.Kind.Should().Be(ActivityKind.Worklog);
         var detail = Detail(signal);
         detail.IssueKey.Should().Be("PROJ-1");
+        detail.Title.Should().Be("Fix login");
         detail.IssueType.Should().Be("Bug");
         detail.Status.Should().Be("In Progress");
+        detail.ParentKey.Should().Be("PROJ-9");
+        detail.ParentTitle.Should().Be("Login epic");
     }
 
     [Fact]
