@@ -26,9 +26,9 @@ export function transformResponseDefault(data: unknown): unknown {
     return data;
 }
 
-function transformValue(key: string, value: string): Date | string {
+const transformValue = (key: string, value: string): Date | string => {
     // https://en.wikipedia.org/wiki/ISO_8601
     const isoDate = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/;
 
     return isoDate.test(value) ? parseISO(value) : value;
-}
+};

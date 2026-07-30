@@ -17,10 +17,10 @@ export function tryGetValidationErrors(error: unknown): ValidationErrors | null 
     return errors;
 }
 
-function isFlatStringArrayRecord(value: unknown): value is ValidationErrors {
+const isFlatStringArrayRecord = (value: unknown): value is ValidationErrors => {
     if (value === null || typeof value !== "object" || Array.isArray(value)) {
         return false;
     }
 
     return Object.values(value).every((entry) => Array.isArray(entry) && entry.every((message) => typeof message === "string"));
-}
+};

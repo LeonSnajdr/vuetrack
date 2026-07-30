@@ -11,10 +11,10 @@ const suggestionWrapperCache = new WeakMap<TimeEntrySuggestionContract, Suggesti
 export type StagedPositionResolver = (uiId: UiId) => EventPosition | null;
 
 // Prefixed because a uiId doubles as a DOM element id, and a raw uuid may start with a digit.
-function createUiId(): UiId {
+const createUiId = (): UiId => {
     const uuid = crypto.randomUUID();
     return `event-uiId-${uuid}` as UiId;
-}
+};
 
 export function useEventWrapper(resolveStaged: StagedPositionResolver = () => null) {
     const { minimumEventDurationMs } = useCalendarHelper();
