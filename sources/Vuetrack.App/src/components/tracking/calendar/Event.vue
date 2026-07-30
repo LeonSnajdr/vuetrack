@@ -158,15 +158,15 @@ const onMouseLeave = () => {
     --tc-accent: var(--v-theme-error);
 }
 
-.tc-selected {
-    background-color: color-mix(in srgb, rgb(var(--tc-accent)) 40%, rgb(var(--v-theme-surface)));
-    border-color: color-mix(in srgb, rgb(var(--tc-accent)) 70%, rgb(var(--v-theme-surface)));
+.tc-removed {
+    --tc-accent: var(--v-theme-error);
+    background-color: color-mix(in srgb, rgb(var(--tc-accent)) 10%, rgb(var(--v-theme-surface)));
+    border-color: color-mix(in srgb, rgb(var(--tc-accent)) 35%, rgb(var(--v-theme-surface)));
+    border-left-color: rgb(var(--tc-accent));
 }
 
-.tc-removed {
-    background-color: color-mix(in srgb, rgb(var(--v-theme-error)) 10%, rgb(var(--v-theme-surface)));
-    border-color: color-mix(in srgb, rgb(var(--v-theme-error)) 35%, rgb(var(--v-theme-surface)));
-    border-left-color: rgb(var(--v-theme-error));
+.tc-selected {
+    background-color: color-mix(in srgb, rgb(var(--tc-accent)) 40%, rgb(var(--v-theme-surface)));
 }
 
 .v-event-drag-top,
