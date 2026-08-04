@@ -33,7 +33,6 @@ export function useEventMutation() {
         }
     };
 
-    // Stops at the first failure. A cancellation means a newer edit superseded this one.
     const executeAll = async (mutations: TimeEntryMutation[], onExecuted?: (mutation: TimeEntryMutation) => void): Promise<ExecuteAllResult> => {
         for (let i = 0; i < mutations.length; i++) {
             const result = await execute(mutations[i]);
@@ -54,7 +53,6 @@ export function useEventMutation() {
         return { status: "success" };
     };
 
-    // A draft needs no follow up: unstaging the create is what makes it go away.
     const executeCreate = async (mutation: TimeEntryCreateMutation) => {
         const result = await timeEntryStore.create(mutation.create);
 

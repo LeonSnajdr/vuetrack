@@ -44,7 +44,6 @@ public class SuggestionService(IConnectorResolver resolver, ISuggestionRepositor
         return inserted;
     }
 
-    // Connectors are independent (each holds its own connection), so fetch them concurrently.
     private async Task<(List<ActivitySignal> Signals, List<ConnectorKey> SuccessfulKeys)> FetchAllAsync(IReadOnlyList<IConnector> connectors, string userId, DateTime from, DateTime to, CancellationToken cancellationToken)
     {
         var fetchTasks = connectors.Select(async connector =>

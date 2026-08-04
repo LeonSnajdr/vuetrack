@@ -7,7 +7,6 @@ import { useCalendarHelper } from "./useCalendarHelper";
 const existingWrapperCache = new WeakMap<TimeEntryContract, ExistingTimeEntryEvent>();
 const suggestionWrapperCache = new WeakMap<TimeEntrySuggestionContract, SuggestionTimeEntryEvent>();
 
-// Read-only positions: what a gesture proposes lives in the change set, never in the contract.
 export type StagedPositionResolver = (uiId: UiId) => EventPosition | null;
 
 // Prefixed because a uiId doubles as a DOM element id, and a raw uuid may start with a digit.
@@ -126,7 +125,6 @@ export function useEventWrapper(resolveStaged: StagedPositionResolver = () => nu
         };
     };
 
-    // Anything can be cloned into a draft: what differs is only where the fields sit.
     const cloneAsDraft = (source: TimeEntryEvent, start: number, end: number): DraftTimeEntryEvent => {
         const createEntry = buildCloneEntry(source);
         createEntry.dateStarted = new Date(start);

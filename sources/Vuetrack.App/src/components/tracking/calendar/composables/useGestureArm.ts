@@ -14,8 +14,6 @@ const dragThresholdPx = 4;
 
 const armed = ref<ArmedGesture | null>(null);
 
-// A press is only an intent to drag: the gesture starts once the pointer travelled,
-// so a plain click neither re-times the event nor saves it.
 export function useGestureArm() {
     const move = useMove();
     const resize = useResize();
@@ -26,7 +24,6 @@ export function useGestureArm() {
         armed.value = { ...intent, anchorClientX: nativeEvent.clientX, anchorClientY: nativeEvent.clientY };
     };
 
-    // Where inside the event the pointer grabbed it.
     const setAnchorTime = (mouseMs: number): void => {
         if (!armed.value) return;
         armed.value.anchorMouseMs = mouseMs;
@@ -43,7 +40,6 @@ export function useGestureArm() {
         return travelX >= dragThresholdPx || travelY >= dragThresholdPx;
     };
 
-    // The anchor keeps the event under the pointer instead of jumping to its rounded time.
     const promoteArm = (nativeEvent: MouseEvent, mouseMs: number): boolean => {
         const current = armed.value;
         if (!current) return false;

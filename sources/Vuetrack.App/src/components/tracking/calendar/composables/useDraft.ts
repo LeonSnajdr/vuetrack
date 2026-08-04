@@ -33,7 +33,6 @@ export function useDraft() {
         changeSet.stagePosition(event, position);
     };
 
-    // The drawn box turns into a pending create; the overlay edits that same payload.
     const finish = () => {
         if (gesture.value.kind !== "draft") return;
 

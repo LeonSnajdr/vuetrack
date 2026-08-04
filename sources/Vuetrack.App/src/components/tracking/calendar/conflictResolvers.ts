@@ -1,14 +1,11 @@
 import type { EventPosition, TimeEntryEvent } from "@/components/tracking/calendar/types";
 import { useDateHelper } from "@/composables/useDateHelper";
 
-// What the calendar shows an event occupying right now.
 export type Occupied = {
     event: TimeEntryEvent;
     position: EventPosition;
 };
 
-// A resolution asks for changes, it does not make them. Nothing is staged until the
-// panel applies the whole set, so a resolution that fails leaves no trace to undo.
 export type Proposal =
     | { kind: "move"; event: TimeEntryEvent; position: EventPosition }
     | { kind: "remove"; event: TimeEntryEvent }
@@ -22,7 +19,6 @@ const isOverlapping = (subject: EventPosition, other: EventPosition): boolean =>
     return subject.start < other.end && subject.end > other.start;
 };
 
-// Only the days the event touches, so a search cannot wander into another week.
 const getSearchWindow = (subject: Occupied) => {
     const windowStart = startOfDay(new Date(subject.position.start)).getTime();
     const lastOccupiedMs = Math.max(subject.position.start, subject.position.end - 1);
@@ -110,7 +106,6 @@ export const resolveTruncate: ConflictResolver = (subject, occupied) => {
     return [{ kind: "move", event: subject.event, position: { start: allowedStart, end: allowedEnd } }];
 };
 
-// Keeps the event where it is and reshapes whatever stands in the way.
 export const resolveForce: ConflictResolver = (subject, occupied) => {
     const overlaps = getOverlaps(subject, occupied);
     const { start, end } = subject.position;

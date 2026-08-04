@@ -49,7 +49,6 @@ public class GithubConnector(IGithubApiClient client) : IConnector
 
             var commits = await Client.SearchCommitsAsync(login, container.From, container.To, cancellationToken);
 
-            // Keyed by ExternalId so overlapping fetch windows collapse deterministically before the engine.
             var signals = new Dictionary<string, ActivitySignal>(StringComparer.Ordinal);
 
             foreach (var commit in commits)

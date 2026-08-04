@@ -2,7 +2,6 @@ import type { TimeEntryEvent, UiId } from "@/components/tracking/calendar/types"
 
 const selectedUiId = ref<UiId | null>(null);
 
-// Shortcuts act on this, not on whatever the pointer rests on.
 export function useEventSelection() {
     const calendarStore = useCalendarStore();
     const { events } = storeToRefs(calendarStore);

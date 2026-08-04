@@ -5,12 +5,10 @@ export interface ConflictResolutionStrategy {
     label: string;
     subtitle: string;
     icon: string;
-    // Set on resolutions that reshape other entries.
     color?: "error";
     resolve: ConflictResolver;
 }
 
-// The offer list. Each resolution is pure: the panel decides whether to stage its answer.
 export function useConflictStrategies() {
     const { t } = useI18n();
 

@@ -51,7 +51,6 @@ export function useMove() {
         await commit.commitGesture(event);
     };
 
-    // Aborting a drag leaves earlier staged changes alone: only what this drag added goes.
     const cancel = () => {
         if (gesture.value.kind !== "move") return;
 

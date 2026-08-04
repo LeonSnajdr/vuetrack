@@ -23,7 +23,6 @@ public class ValidationActionFilterTests
         var provider = BuildProvider();
         var filter = new ValidationActionFilter(provider);
 
-        // Empty contract fails ProjectId/ActivityId NotEmpty and DateStarted < DateEnded.
         var invalidContract = new TimeEntryCreateContract();
         var executingContext = CreateContext(provider, argument: invalidContract);
         var nextCalled = false;

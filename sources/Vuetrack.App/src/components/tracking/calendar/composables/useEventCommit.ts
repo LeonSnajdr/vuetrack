@@ -10,7 +10,6 @@ export function useEventCommit() {
 
     const { task } = storeToRefs(calendarStore);
 
-    // A rejected mutation becomes the form that fixes it.
     const buildRecoveryTask = (mutation: TimeEntryMutation, errors: ValidationErrors): Task | null => {
         if (mutation.kind === "update") {
             return { kind: "edit", event: mutation.event, payload: mutation.update, errors };
@@ -28,7 +27,6 @@ export function useEventCommit() {
             return true;
         }
 
-        // Superseded by a newer edit that owns the state now.
         if (result.status === "cancelled") return false;
 
         if (result.validation) {
@@ -43,7 +41,6 @@ export function useEventCommit() {
         return false;
     };
 
-    // Suggestions may overlap; only accepting one has to be conflict free.
     const needsConflictCheck = (event: TimeEntryEvent): boolean => {
         const staged = changeSet.get(event.uiId);
         if (!staged) return false;
@@ -52,7 +49,6 @@ export function useEventCommit() {
         return !(staged.kind === "save" && event.kind === "suggestion");
     };
 
-    // Single exit of a finished edit: an overlap opens the conflict panel, else commit.
     const commitOrEscalate = async (event: TimeEntryEvent): Promise<boolean> => {
         if (needsConflictCheck(event) && conflictDetection.tryEnterConflict(event)) return false;
         return await commitStaged();
@@ -61,7 +57,6 @@ export function useEventCommit() {
     const commitGesture = async (event: TimeEntryEvent): Promise<void> => {
         changeSet.unstageIfUnchanged(event.uiId);
 
-        // Inside a conflict the change stays staged until Apply.
         if (task.value.kind === "conflict") return;
         if (!changeSet.has(event.uiId)) return;
 

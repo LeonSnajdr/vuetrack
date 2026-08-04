@@ -134,7 +134,6 @@ export const useCalendarHelper = () => {
         };
     };
 
-    // A snapshot of what is saved, for the change set to propose changes on.
     const buildUpdatePayload = (event: PositionableEvent): TimeEntryUpdatePayload => {
         if (event.kind === "existing") return buildTimeEntryUpdate(event.timeEntry);
         return buildTimeEntrySuggestionUpdate(event.timeEntry);
@@ -144,7 +143,6 @@ export const useCalendarHelper = () => {
         return buildTimeEntryCreateFromSuggestion(event.timeEntry);
     };
 
-    // What the backend holds right now. A draft is not saved at all.
     const getPersistedPosition = (event: TimeEntryEvent): EventPosition | null => {
         if (event.kind === "draft") return null;
 
@@ -172,7 +170,6 @@ export const useCalendarHelper = () => {
 
     const minimumEventDurationMs = 60 * 1000;
 
-    // The locked edge stays put while the other one is pushed out to the minimum.
     const clampPosition = (position: EventPosition, lock: EventEdge = "start"): EventPosition => {
         if (position.end - position.start >= minimumEventDurationMs) return position;
         if (lock === "end") return { start: position.end - minimumEventDurationMs, end: position.end };

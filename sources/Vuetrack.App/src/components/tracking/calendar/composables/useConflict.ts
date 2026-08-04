@@ -44,7 +44,6 @@ export function useConflict() {
         changeSet.stageCreate(tailEvent);
     };
 
-    // Asked first, staged after: a resolution that finds no answer changes nothing at all.
     const previewStrategy = (resolve: ConflictResolver): boolean => {
         if (!conflictTask.value) return false;
 

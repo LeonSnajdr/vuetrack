@@ -2,9 +2,6 @@ using System.Text.Json.Serialization;
 
 namespace Vuetrack.Connectors.Jira.Activity.Api;
 
-// Request/response for POST /rest/api/3/changelog/bulkfetch — fetches changelogs for many issues at
-// once, filtered to a small set of field ids, paged by nextPageToken.
-
 public sealed record JiraBulkChangelogRequest
 {
     [JsonPropertyName("issueIdsOrKeys")]

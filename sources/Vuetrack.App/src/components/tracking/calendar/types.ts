@@ -14,7 +14,6 @@ export type EventPosition = {
     end: number;
 };
 
-// Positions are read-only: an event resolves its own, it never gets written one.
 export type BaseCalendarEvent = {
     uiId: UiId;
     timed: boolean;
@@ -68,7 +67,6 @@ export type SuggestionTimeEntryDeleteMutation = {
     id: TimeEntrySuggestionId;
 };
 
-// Nothing exists yet, so a create carries no id and both event kinds look the same.
 export type TimeEntryCreateMutation = {
     kind: "create";
     event: CreatableEvent;
@@ -79,14 +77,12 @@ export type TimeEntryUpdateMutation = ExistingTimeEntryUpdateMutation | Suggesti
 export type TimeEntryDeleteMutation = ExistingTimeEntryDeleteMutation | SuggestionTimeEntryDeleteMutation;
 export type TimeEntryMutation = TimeEntryUpdateMutation | TimeEntryCreateMutation | TimeEntryDeleteMutation;
 
-// Transient pointer state. Never touches the API.
 export type Gesture =
     | { kind: "idle" }
     | {
           kind: "move";
           event: TimeEntryEvent;
           from: EventPosition;
-          // Whether the event already carried a proposal, so cancel knows what to leave behind.
           wasStaged: boolean;
           pointerOffsetMs?: number;
       }
@@ -103,7 +99,6 @@ export type Gesture =
           anchorStartMs: number;
       };
 
-// Modal intent. Drives the overlays and gates gestures.
 export type Task =
     | { kind: "none" }
     | {
@@ -129,9 +124,6 @@ export type Task =
 
 export type ConflictTask = Extract<Task, { kind: "conflict" }>;
 
-// The persisted contract stays untouched; the payload is what the calendar proposes for it.
-// `kind` says what a commit would do, `removed` is a separate question, so marking a
-// removal can never overwrite the proposal underneath it.
 export type StagedSaveChange = {
     kind: "save";
     event: PositionableEvent;
@@ -139,7 +131,6 @@ export type StagedSaveChange = {
     removed: boolean;
 };
 
-// A draft has no other home: staging the create is what brings it into existence.
 export type StagedCreateChange = {
     kind: "create";
     event: CreatableEvent;
@@ -158,7 +149,6 @@ export function isTimeEntryEvent(e: CalendarEvent): e is TimeEntryEvent {
     return e.kind === "suggestion" || e.kind === "existing" || e.kind === "draft";
 }
 
-// A draft has no home but its staged create, removed or not.
 export function getDraftEvent(change: StagedChange): DraftTimeEntryEvent | null {
     if (change.kind !== "create") return null;
     if (change.event.kind !== "draft") return null;
@@ -166,7 +156,6 @@ export function getDraftEvent(change: StagedChange): DraftTimeEntryEvent | null 
     return change.event;
 }
 
-// A proposal without both dates has no position to render or send yet.
 export function getPayloadPosition(payload: StagedPayload): EventPosition | null {
     if (!payload.dateStarted || !payload.dateEnded) return null;
 

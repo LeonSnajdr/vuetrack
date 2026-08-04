@@ -2,9 +2,6 @@ using System.Text.Json.Serialization;
 
 namespace Vuetrack.Connectors.Jira.Activity.Api;
 
-// Shared fragments used across several Jira REST responses. All Jira Cloud v3 responses are camelCase,
-// so web-default deserialization matches; JsonPropertyName is added only where the CLR name would differ.
-
 public sealed record JiraUserResponse
 {
     [JsonPropertyName("accountId")]

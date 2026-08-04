@@ -60,7 +60,6 @@ public partial class JiraConnector(IJiraApiClient client, IJiraConnectionAccesso
                 .Select(JiraIssueContext.FromResponse)
                 .ToList();
 
-            // Keyed by ExternalId so overlapping fetch windows collapse deterministically before the engine.
             var signals = new ConcurrentDictionary<string, ActivitySignal>(StringComparer.Ordinal);
 
             var maxConcurrency = Math.Max(1, Options.Value.MaxConcurrency);

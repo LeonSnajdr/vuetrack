@@ -40,13 +40,11 @@ export function useChangeSet() {
         return get(uiId)?.removed === true;
     };
 
-    // Settled changes leave the map, so still staged while committing means still in flight.
     const isSaving = (uiId: UiId): boolean => {
         if (!isCommittingChanges.value) return false;
         return has(uiId);
     };
 
-    // Always handed back out of the map: only that copy notifies the calendar of a write.
     const stageSave = (event: PositionableEvent): StagedSaveChange => {
         const staged = get(event.uiId);
         if (staged?.kind === "save") return staged;
@@ -57,8 +55,6 @@ export function useChangeSet() {
         return get(event.uiId) as StagedSaveChange;
     };
 
-    // Staging the create is what brings a draft into existence, and a draft's proposal is
-    // its own createEntry: the two can never drift apart.
     const stageCreate = (event: CreatableEvent): StagedCreateChange => {
         const staged = get(event.uiId);
         if (staged?.kind === "create") return staged;
@@ -69,13 +65,11 @@ export function useChangeSet() {
 
         const change = get(event.uiId) as StagedCreateChange;
 
-        // Creating what was already moved keeps it where the user put it.
         if (proposed) stagePosition(event, proposed);
 
         return change;
     };
 
-    // Whatever is already staged stays: a removal must not turn a pending create into a delete.
     const stageChange = (event: TimeEntryEvent): StagedChange => {
         const staged = get(event.uiId);
         if (staged) return staged;
@@ -84,7 +78,6 @@ export function useChangeSet() {
         return stageSave(event);
     };
 
-    // The one draft with no staged create is the one still being drawn; it owns its dates.
     const getProposal = (event: TimeEntryEvent): StagedPayload => {
         const staged = get(event.uiId);
         if (staged) return staged.payload;
@@ -100,7 +93,6 @@ export function useChangeSet() {
         payload.dateEnded = new Date(position.end);
     };
 
-    // Marking a removal leaves the proposal underneath intact, so Restore can uncover it.
     const stageRemove = (event: TimeEntryEvent): void => {
         const change = stageChange(event);
         change.removed = true;
@@ -110,8 +102,6 @@ export function useChangeSet() {
         stagedChanges.value.delete(uiId);
     };
 
-    // A drag that ended where it started must not mark the event unsaved. Compared whole:
-    // a pending field edit is a change even when the times match what is saved.
     const unstageIfUnchanged = (uiId: UiId): void => {
         const change = get(uiId);
         if (change?.kind !== "save") return;
@@ -123,8 +113,6 @@ export function useChangeSet() {
         unstage(uiId);
     };
 
-    // Uncovers the proposal the removal was hiding. A removal that covered nothing at all
-    // leaves nothing behind, so the entry stops counting as a change.
     const restoreRemoved = (uiId: UiId): void => {
         const change = get(uiId);
         if (!change?.removed) return;
@@ -133,12 +121,10 @@ export function useChangeSet() {
         unstageIfUnchanged(uiId);
     };
 
-    // Nothing to put back: the contract was never written, so dropping the proposal is enough.
     const revertAll = (): void => {
         stagedChanges.value.clear();
     };
 
-    // A removed draft was never saved: there is nothing to send.
     const isCommittable = (change: StagedChange): boolean => {
         return !change.removed || change.kind === "save";
     };
@@ -153,7 +139,6 @@ export function useChangeSet() {
         return buildCreateMutation(change.event, change.payload);
     };
 
-    // A create holds nothing yet, a removal wants nothing.
     const getPersistedRange = (change: StagedChange): EventPosition | null => {
         if (change.kind === "create") return null;
         return getPersistedPosition(change.event);
@@ -164,7 +149,6 @@ export function useChangeSet() {
         return getPayloadPosition(change.payload);
     };
 
-    // Saving into a range another entry still holds is rejected by the backend.
     const isBlocked = (change: StagedChange, pending: StagedChange[]): boolean => {
         const target = getTargetRange(change);
         if (!target) return false;
@@ -179,8 +163,6 @@ export function useChangeSet() {
         });
     };
 
-    // Takes the first change nothing blocks, so freeing space happens before using it.
-    // Two entries swapping places have no valid order; those keep staging order.
     const getOrderedChanges = (): StagedChange[] => {
         const pending = changes.value.filter(isCommittable);
         const ordered: StagedChange[] = [];
@@ -214,8 +196,6 @@ export function useChangeSet() {
         });
     };
 
-    // An event that moved again while the request was in flight stays staged; what was
-    // saved is now in the contract, so everything else can simply let go.
     const settleCommitted = (entry: CommitEntry): void => {
         const uiId = entry.change.event.uiId;
         const staged = get(uiId);
@@ -236,7 +216,6 @@ export function useChangeSet() {
         }
     };
 
-    // Saved changes settle as they go, so a failure leaves only outstanding work staged.
     const commit = async (): Promise<ExecuteAllResult> => {
         if (count.value === 0) return { status: "success" };
 
@@ -259,7 +238,6 @@ export function useChangeSet() {
 
         if (result.status === "success") return result;
 
-        // Superseded by a newer edit that owns the state now.
         if (result.status === "cancelled") return result;
 
         if (!result.validation) revertAll();

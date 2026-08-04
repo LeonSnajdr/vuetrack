@@ -2,8 +2,6 @@ using Vuetrack.Connectors.Jira.Activity.Api;
 
 namespace Vuetrack.Connectors.Jira.Activity;
 
-// Connector-domain container: the per-issue context needed to build and correlate signals, mapped once
-// from a search DTO so the event mappers never touch DTO field names again.
 public sealed record JiraIssueContext
 {
     public required string Key { get; init; }

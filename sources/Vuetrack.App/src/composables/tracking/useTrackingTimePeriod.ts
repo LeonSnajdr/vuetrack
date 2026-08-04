@@ -51,14 +51,12 @@ export function useTrackingTimePeriod() {
         const normalizedStart = startOfDay(from);
         const normalizedEnd = endOfDay(to);
 
-        // Full calendar month → step by month
         if (normalizedStart.getTime() === startOfMonth(from).getTime() && normalizedEnd.getTime() === endOfMonth(from).getTime()) {
             const anchor = new Date(from.getFullYear(), from.getMonth() + direction, 1);
             applyPeriod(startOfMonth(anchor), endOfMonth(anchor));
             return;
         }
 
-        // Work week (Mon–Fri of one week) → step by 7 days, preserving Mon–Fri
         if (normalizedStart.getTime() === startOfWeek(from, 1).getTime() && normalizedEnd.getTime() === endOfWorkWeek(from, 1).getTime()) {
             const anchor = addDays(from, direction * 7);
             applyPeriod(startOfWeek(anchor, 1), endOfWorkWeek(anchor, 1));

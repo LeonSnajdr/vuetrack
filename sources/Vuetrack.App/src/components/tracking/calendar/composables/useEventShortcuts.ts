@@ -50,7 +50,6 @@ export function useEventShortcuts() {
         create.start(event);
     };
 
-    // During a conflict the key stages a removal instead of opening the dialog.
     const startDelete = () => {
         const event = getShortcutTarget();
         if (!event) return;
@@ -68,7 +67,6 @@ export function useEventShortcuts() {
         remove.start(event);
     };
 
-    // Overlays bind escape themselves.
     const dropSelection = () => {
         if (!policy.canOpenTask()) return;
         clearSelection();

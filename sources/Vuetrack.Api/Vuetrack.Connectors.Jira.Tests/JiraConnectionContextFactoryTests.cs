@@ -28,7 +28,6 @@ public class JiraConnectionContextFactoryTests
         first!.AccessToken.Should().Be("access-0");
         second!.AccessToken.Should().Be("access-0");
         oauth.RefreshCalls.Should().Be(1);
-        // CreateAsync publishes the resolved connection on the scoped accessor (cache-hit path too).
         accessor.Current.Should().BeSameAs(second);
     }
 
