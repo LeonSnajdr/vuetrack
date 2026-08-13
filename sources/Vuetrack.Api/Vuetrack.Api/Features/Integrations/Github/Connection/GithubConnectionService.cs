@@ -12,11 +12,11 @@ namespace Vuetrack.Api.Features.Integrations.Github.Connection;
 public class GithubConnectionService(
     IGithubOAuthApiClient oauthClient,
     IConnectionRepository repository,
-    IGithubConnectionContextFactory contextFactory,
+    IGithubSessionFactory sessionFactory,
     IConnectionSecretProtector secretProtector,
     IIntegrationRegistry registry,
     ILogger<GithubConnectionService> logger)
-    : IntegrationConnectionServiceBase(oauthClient, repository, contextFactory, secretProtector, registry, logger)
+    : IntegrationConnectionServiceBase(oauthClient, repository, sessionFactory, secretProtector, registry, logger)
 {
     private IGithubOAuthApiClient GithubOAuthClient { get; } = oauthClient;
 

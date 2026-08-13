@@ -15,11 +15,9 @@ using Vuetrack.Api.Features.Integrations.Jira.Internal;
 namespace Vuetrack.Api.Features.Integrations.Jira;
 
 [InjectAs(typeof(IConnector))]
-public partial class JiraConnector(IJiraApiClient client, IJiraConnectionContextFactory contextFactory, IOptions<JiraOptions> options) : IConnector
+public partial class JiraConnector(IJiraSessionFactory sessions, IOptions<JiraOptions> options) : IConnector
 {
-    private IJiraApiClient Client { get; } = client;
-
-    private IJiraConnectionContextFactory ContextFactory { get; } = contextFactory;
+    private IJiraSessionFactory Sessions { get; } = sessions;
 
     private IOptions<JiraOptions> Options { get; } = options;
 
@@ -30,15 +28,15 @@ public partial class JiraConnector(IJiraApiClient client, IJiraConnectionContext
 
     public async Task<ErrorOr<Success>> ValidateAsync(string userId, CancellationToken cancellationToken)
     {
-        var context = await ContextFactory.CreateAsync(userId, cancellationToken);
-        if (context is null)
+        var session = await Sessions.OpenAsync(userId, cancellationToken);
+        if (session is null)
         {
             return IntegrationError.NotConnected;
         }
 
         try
         {
-            var accountId = await Client.GetMyAccountIdAsync(context, cancellationToken);
+            var accountId = await session.GetMyAccountIdAsync(cancellationToken);
 
             if (string.IsNullOrEmpty(accountId))
             {
@@ -55,16 +53,16 @@ public partial class JiraConnector(IJiraApiClient client, IJiraConnectionContext
 
     public async Task<ErrorOr<IReadOnlyList<ActivitySignal>>> FetchAsync(string userId, DateRange range, CancellationToken cancellationToken)
     {
-        var context = await ContextFactory.CreateAsync(userId, cancellationToken);
-        if (context is null)
+        var session = await Sessions.OpenAsync(userId, cancellationToken);
+        if (session is null)
         {
             return IntegrationError.NotConnected;
         }
 
         try
         {
-            var accountId = await Client.GetMyAccountIdAsync(context, cancellationToken);
-            var issueResponses = await Client.SearchCandidateIssuesAsync(context, range.From, range.To, cancellationToken);
+            var accountId = await session.GetMyAccountIdAsync(cancellationToken);
+            var issueResponses = await session.SearchCandidateIssuesAsync(range, cancellationToken);
             var issues = issueResponses
                 .Where(i => !string.IsNullOrEmpty(i.Key))
                 .Select(JiraIssueContext.FromResponse)
@@ -77,12 +75,12 @@ public partial class JiraConnector(IJiraApiClient client, IJiraConnectionContext
 
             await Parallel.ForEachAsync(issues, parallelOptions, async (issue, ct) =>
             {
-                var worklogTask = AddWorklogSignalsAsync(signals, context, issue, accountId, range, ct);
-                var commentTask = AddCommentSignalsAsync(signals, context, issue, accountId, range, ct);
+                var worklogTask = AddWorklogSignalsAsync(signals, session, issue, accountId, range, ct);
+                var commentTask = AddCommentSignalsAsync(signals, session, issue, accountId, range, ct);
                 await Task.WhenAll(worklogTask, commentTask);
             });
 
-            await AddChangeSignalsAsync(signals, context, issues, accountId, range, cancellationToken);
+            await AddChangeSignalsAsync(signals, session, issues, accountId, range, cancellationToken);
 
             IReadOnlyList<ActivitySignal> result = signals.Values.ToList();
             var errorOr = result.ToErrorOr();
@@ -104,16 +102,16 @@ public partial class JiraConnector(IJiraApiClient client, IJiraConnectionContext
             return empty.ToErrorOr();
         }
 
-        var context = await ContextFactory.CreateAsync(userId, cancellationToken);
-        if (context is null)
+        var session = await Sessions.OpenAsync(userId, cancellationToken);
+        if (session is null)
         {
             return IntegrationError.NotConnected;
         }
 
         try
         {
-            var issue = await Client.GetIssueAsync(context, issueKey, cancellationToken);
-            var fields = issue.ToDetailFields(issueKey, context.SiteUrl);
+            var issue = await session.GetIssueAsync(issueKey, cancellationToken);
+            var fields = issue.ToDetailFields(issueKey, session.SiteUrl);
             return fields.ToErrorOr();
         }
         catch (JiraApiException ex)
@@ -122,9 +120,9 @@ public partial class JiraConnector(IJiraApiClient client, IJiraConnectionContext
         }
     }
 
-    private async Task AddWorklogSignalsAsync(ConcurrentDictionary<string, ActivitySignal> signals, JiraConnectionContext context, JiraIssueContext issue, string accountId, DateRange window, CancellationToken cancellationToken)
+    private async Task AddWorklogSignalsAsync(ConcurrentDictionary<string, ActivitySignal> signals, IJiraSession session, JiraIssueContext issue, string accountId, DateRange window, CancellationToken cancellationToken)
     {
-        var worklogs = await Client.GetWorklogsAsync(context, issue.Key, window.From, cancellationToken);
+        var worklogs = await session.GetWorklogsAsync(issue.Key, window.From, cancellationToken);
 
         foreach (var worklog in worklogs)
         {
@@ -148,9 +146,9 @@ public partial class JiraConnector(IJiraApiClient client, IJiraConnectionContext
         }
     }
 
-    private async Task AddCommentSignalsAsync(ConcurrentDictionary<string, ActivitySignal> signals, JiraConnectionContext context, JiraIssueContext issue, string accountId, DateRange window, CancellationToken cancellationToken)
+    private async Task AddCommentSignalsAsync(ConcurrentDictionary<string, ActivitySignal> signals, IJiraSession session, JiraIssueContext issue, string accountId, DateRange window, CancellationToken cancellationToken)
     {
-        var comments = await Client.GetCommentsAsync(context, issue.Key, cancellationToken);
+        var comments = await session.GetCommentsAsync(issue.Key, cancellationToken);
 
         foreach (var comment in comments)
         {
@@ -174,7 +172,7 @@ public partial class JiraConnector(IJiraApiClient client, IJiraConnectionContext
         }
     }
 
-    private async Task AddChangeSignalsAsync(ConcurrentDictionary<string, ActivitySignal> signals, JiraConnectionContext context, IReadOnlyList<JiraIssueContext> issues, string accountId, DateRange window, CancellationToken cancellationToken)
+    private async Task AddChangeSignalsAsync(ConcurrentDictionary<string, ActivitySignal> signals, IJiraSession session, IReadOnlyList<JiraIssueContext> issues, string accountId, DateRange window, CancellationToken cancellationToken)
     {
         var issueById = new Dictionary<string, JiraIssueContext>(StringComparer.Ordinal);
         var issueIds = new List<string>();
@@ -195,7 +193,7 @@ public partial class JiraConnector(IJiraApiClient client, IJiraConnectionContext
             return;
         }
 
-        var changeLogs = await Client.GetChangelogsAsync(context, issueIds, cancellationToken);
+        var changeLogs = await session.GetChangelogsAsync(issueIds, cancellationToken);
 
         foreach (var changeLog in changeLogs)
         {

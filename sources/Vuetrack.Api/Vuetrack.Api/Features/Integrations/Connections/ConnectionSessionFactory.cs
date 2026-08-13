@@ -3,13 +3,13 @@ using ZiggyCreatures.Caching.Fusion;
 
 namespace Vuetrack.Api.Features.Integrations.Connections;
 
-public abstract class ConnectionContextFactory<TContext>(
+public abstract class ConnectionSessionFactory<TSession>(
     IFusionCache cache,
     IConnectionRepository repository,
     IOAuthApiClientBase oauthClient,
     IConnectionSecretProtector secretProtector)
-    : IConnectionContextFactory<TContext>
-    where TContext : class
+    : IConnectionSessionFactory<TSession>
+    where TSession : class
 {
     // Refresh a little early so a token never expires mid-request.
     private static readonly TimeSpan ExpiryBuffer = TimeSpan.FromSeconds(60);
@@ -24,11 +24,31 @@ public abstract class ConnectionContextFactory<TContext>(
 
     protected abstract IntegrationKey Key { get; }
 
-    public async Task<TContext?> CreateAsync(string userId, CancellationToken cancellationToken)
+    public async Task<TSession?> OpenAsync(string userId, CancellationToken cancellationToken)
+    {
+        var credentials = await ResolveCredentialsAsync(userId, cancellationToken);
+        if (credentials is null)
+        {
+            return null;
+        }
+
+        return CreateSession(credentials);
+    }
+
+    public async Task EvictAsync(string userId, CancellationToken cancellationToken)
     {
         var cacheKey = BuildCacheKey(userId);
 
-        var cached = await Cache.TryGetAsync<TContext>(cacheKey, token: cancellationToken);
+        await Cache.RemoveAsync(cacheKey, token: cancellationToken);
+    }
+
+    protected abstract TSession CreateSession(ConnectionCredentials credentials);
+
+    private async Task<ConnectionCredentials?> ResolveCredentialsAsync(string userId, CancellationToken cancellationToken)
+    {
+        var cacheKey = BuildCacheKey(userId);
+
+        var cached = await Cache.TryGetAsync<ConnectionCredentials>(cacheKey, token: cancellationToken);
         if (cached.HasValue)
         {
             return cached.Value;
@@ -49,35 +69,30 @@ public abstract class ConnectionContextFactory<TContext>(
             await Repository.SetRefreshTokenAsync(userId, Key, rotatedRefreshToken, cancellationToken);
         }
 
-        var context = BuildContext(userId, token.AccessToken, connection);
+        var credentials = new ConnectionCredentials
+        {
+            AccessToken = token.AccessToken,
+            Attributes = connection.Attributes,
+        };
 
         var lifetime = TimeSpan.FromSeconds(token.ExpiresInSeconds) - ExpiryBuffer;
         if (lifetime > TimeSpan.Zero)
         {
-            await Cache.SetAsync(cacheKey, context, lifetime, token: cancellationToken);
+            await Cache.SetAsync(cacheKey, credentials, lifetime, token: cancellationToken);
         }
 
-        return context;
+        return credentials;
     }
-
-    public async Task EvictAsync(string userId, CancellationToken cancellationToken)
-    {
-        var cacheKey = BuildCacheKey(userId);
-
-        await Cache.RemoveAsync(cacheKey, token: cancellationToken);
-    }
-
-    protected abstract TContext BuildContext(string userId, string accessToken, ConnectionModel connection);
 
     private string BuildCacheKey(string userId) => $"connection:{Key}:{userId}";
 }
 
-public interface IConnectionContextFactory
+public interface IConnectionSessionFactory
 {
     Task EvictAsync(string userId, CancellationToken cancellationToken);
 }
 
-public interface IConnectionContextFactory<TContext> : IConnectionContextFactory
+public interface IConnectionSessionFactory<TSession> : IConnectionSessionFactory
 {
-    Task<TContext?> CreateAsync(string userId, CancellationToken cancellationToken);
+    Task<TSession?> OpenAsync(string userId, CancellationToken cancellationToken);
 }

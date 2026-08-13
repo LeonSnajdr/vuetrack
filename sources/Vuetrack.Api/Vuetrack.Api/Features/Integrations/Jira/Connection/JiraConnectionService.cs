@@ -12,11 +12,11 @@ namespace Vuetrack.Api.Features.Integrations.Jira.Connection;
 public class JiraConnectionService(
     IJiraOAuthApiClient oauthClient,
     IConnectionRepository repository,
-    IJiraConnectionContextFactory contextFactory,
+    IJiraSessionFactory sessionFactory,
     IConnectionSecretProtector secretProtector,
     IIntegrationRegistry registry,
     ILogger<JiraConnectionService> logger)
-    : IntegrationConnectionServiceBase(oauthClient, repository, contextFactory, secretProtector, registry, logger)
+    : IntegrationConnectionServiceBase(oauthClient, repository, sessionFactory, secretProtector, registry, logger)
 {
     private IJiraOAuthApiClient JiraOAuthClient { get; } = oauthClient;
 

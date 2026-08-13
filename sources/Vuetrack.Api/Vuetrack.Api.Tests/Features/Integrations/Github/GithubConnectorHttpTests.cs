@@ -231,13 +231,7 @@ public class GithubConnectorHttpTests
             PageSize = pageSize,
             MaxPages = 10,
         });
-        var context = new GithubConnectionContext
-        {
-            UserId = "user-1",
-            AccessToken = "access-token",
-            Login = Login,
-        };
-        var client = new GithubApiClient(httpClient, options, NullLogger<GithubApiClient>.Instance);
-        return new GithubConnector(client, new StubGithubConnectionContextFactory(context));
+        var session = new GithubSession(httpClient, options, NullLogger<GithubSession>.Instance, "access-token", Login);
+        return new GithubConnector(new StubGithubSessionFactory(session));
     }
 }

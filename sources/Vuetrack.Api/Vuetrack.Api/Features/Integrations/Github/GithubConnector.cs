@@ -1,8 +1,6 @@
 using ErrorOr;
 using Samhammer.DependencyInjection.Attributes;
-using Vuetrack.Api.Features.Details;
 using Vuetrack.Api.Features.Details.Contracts;
-using Vuetrack.Api.Features.Integrations;
 using Vuetrack.Api.Features.Integrations.Abstractions;
 using Vuetrack.Api.Features.Integrations.Activity;
 using Vuetrack.Api.Features.Integrations.Github.Api;
@@ -12,25 +10,24 @@ using Vuetrack.Api.Features.Integrations.Github.Internal;
 namespace Vuetrack.Api.Features.Integrations.Github;
 
 [InjectAs(typeof(IConnector))]
-public class GithubConnector(IGithubApiClient client, IGithubConnectionContextFactory contextFactory) : IConnector
+public class GithubConnector(IGithubSessionFactory sessions) : IConnector
 {
-    private IGithubApiClient Client { get; } = client;
-
-    private IGithubConnectionContextFactory ContextFactory { get; } = contextFactory;
+    private IGithubSessionFactory Sessions { get; } = sessions;
 
     public IntegrationKey Key => IntegrationKey.Github;
 
     public async Task<ErrorOr<Success>> ValidateAsync(string userId, CancellationToken cancellationToken)
     {
-        var context = await ContextFactory.CreateAsync(userId, cancellationToken);
-        if (context is null)
+        var session = await Sessions.OpenAsync(userId, cancellationToken);
+        if (session is null)
         {
             return IntegrationError.NotConnected;
         }
 
         try
         {
-            var login = await Client.GetAuthenticatedLoginAsync(context, cancellationToken);
+            // A live call is the point here: it proves the stored token still works.
+            var login = await session.GetAuthenticatedLoginAsync(cancellationToken);
 
             if (string.IsNullOrEmpty(login))
             {
@@ -47,21 +44,20 @@ public class GithubConnector(IGithubApiClient client, IGithubConnectionContextFa
 
     public async Task<ErrorOr<IReadOnlyList<ActivitySignal>>> FetchAsync(string userId, DateRange range, CancellationToken cancellationToken)
     {
-        var context = await ContextFactory.CreateAsync(userId, cancellationToken);
-        if (context is null)
+        var session = await Sessions.OpenAsync(userId, cancellationToken);
+        if (session is null)
         {
             return IntegrationError.NotConnected;
         }
 
+        if (string.IsNullOrEmpty(session.Login))
+        {
+            return Error.Unauthorized();
+        }
+
         try
         {
-            var login = await Client.GetAuthenticatedLoginAsync(context, cancellationToken);
-            if (string.IsNullOrEmpty(login))
-            {
-                return Error.Unauthorized();
-            }
-
-            var commits = await Client.SearchCommitsAsync(context, login, range.From, range.To, cancellationToken);
+            var commits = await session.SearchCommitsAsync(range, cancellationToken);
 
             var signals = new Dictionary<string, ActivitySignal>(StringComparer.Ordinal);
 

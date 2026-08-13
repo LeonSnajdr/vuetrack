@@ -2,44 +2,47 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
-using Vuetrack.Api.Features.Integrations.Timetracking.Connection;
 
 namespace Vuetrack.Api.Features.Integrations.Timetracking.Api;
 
-public class TimetrackingApiClient(HttpClient httpClient) : ITimetrackingApiClient
+public class TimetrackingSession(HttpClient httpClient, string accessToken, string? externalUserId) : ITimetrackingSession
 {
     private HttpClient HttpClient { get; } = httpClient;
 
-    public async Task<IReadOnlyList<TimetrackingTimeEntryResponse>> GetTimeEntriesAsync(TimetrackingConnectionContext context, string from, string to, CancellationToken cancellationToken)
+    private string AccessToken { get; } = accessToken;
+
+    public string? ExternalUserId { get; } = externalUserId;
+
+    public async Task<IReadOnlyList<TimetrackingTimeEntryResponse>> GetTimeEntriesAsync(string from, string to, CancellationToken cancellationToken)
     {
-        using var request = BuildRequest(context.AccessToken, HttpMethod.Get, $"timeEntry?from={Uri.EscapeDataString(from)}&to={Uri.EscapeDataString(to)}");
+        using var request = BuildRequest(HttpMethod.Get, $"timeEntry?from={Uri.EscapeDataString(from)}&to={Uri.EscapeDataString(to)}");
         using var response = await HttpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
 
         return await response.Content.ReadFromJsonAsync<List<TimetrackingTimeEntryResponse>>(cancellationToken) ?? [];
     }
 
-    public async Task<IReadOnlyList<TimetrackingActivityResponse>> GetProjectsAsync(TimetrackingConnectionContext context, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<TimetrackingActivityResponse>> GetProjectsAsync(CancellationToken cancellationToken)
     {
-        using var request = BuildRequest(context.AccessToken, HttpMethod.Get, "project");
+        using var request = BuildRequest(HttpMethod.Get, "project");
         using var response = await HttpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
 
         return await response.Content.ReadFromJsonAsync<List<TimetrackingActivityResponse>>(cancellationToken) ?? [];
     }
 
-    public async Task<IReadOnlyList<TimetrackingActivityResponse>> GetActivitiesAsync(TimetrackingConnectionContext context, string projectId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<TimetrackingActivityResponse>> GetActivitiesAsync(string projectId, CancellationToken cancellationToken)
     {
-        using var request = BuildRequest(context.AccessToken, HttpMethod.Get, $"project/{Uri.EscapeDataString(projectId)}/activity");
+        using var request = BuildRequest(HttpMethod.Get, $"project/{Uri.EscapeDataString(projectId)}/activity");
         using var response = await HttpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
 
         return await response.Content.ReadFromJsonAsync<List<TimetrackingActivityResponse>>(cancellationToken) ?? [];
     }
 
-    public async Task<string?> FindProjectIdByTaskIdAsync(TimetrackingConnectionContext context, string taskId, CancellationToken cancellationToken)
+    public async Task<string?> FindProjectIdByTaskIdAsync(string taskId, CancellationToken cancellationToken)
     {
-        using var request = BuildRequest(context.AccessToken, HttpMethod.Get, $"project/findByTaskId?taskId={Uri.EscapeDataString(taskId)}");
+        using var request = BuildRequest(HttpMethod.Get, $"project/findByTaskId?taskId={Uri.EscapeDataString(taskId)}");
         using var response = await HttpClient.SendAsync(request, cancellationToken);
 
         if (response.StatusCode == HttpStatusCode.NotFound)
@@ -53,18 +56,18 @@ public class TimetrackingApiClient(HttpClient httpClient) : ITimetrackingApiClie
         return string.IsNullOrWhiteSpace(body) ? null : body.Trim();
     }
 
-    public async Task<TimetrackingProfileResponse> GetProfileAsync(string accessToken, CancellationToken cancellationToken)
+    public async Task<TimetrackingProfileResponse> GetProfileAsync(CancellationToken cancellationToken)
     {
-        using var request = BuildRequest(accessToken, HttpMethod.Get, "profile");
+        using var request = BuildRequest(HttpMethod.Get, "profile");
         using var response = await HttpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
 
         return await response.Content.ReadFromJsonAsync<TimetrackingProfileResponse>(cancellationToken) ?? new TimetrackingProfileResponse();
     }
 
-    public async Task<TimetrackingTimeEntryResponse> UpsertTimeEntryAsync(TimetrackingConnectionContext context, IReadOnlyDictionary<string, string> form, CancellationToken cancellationToken)
+    public async Task<TimetrackingTimeEntryResponse> UpsertTimeEntryAsync(IReadOnlyDictionary<string, string> form, CancellationToken cancellationToken)
     {
-        using var request = BuildRequest(context.AccessToken, HttpMethod.Post, "timeEntry/upsert");
+        using var request = BuildRequest(HttpMethod.Post, "timeEntry/upsert");
         request.Content = new FormUrlEncodedContent(form);
         using var response = await HttpClient.SendAsync(request, cancellationToken);
 
@@ -80,9 +83,9 @@ public class TimetrackingApiClient(HttpClient httpClient) : ITimetrackingApiClie
         return await response.Content.ReadFromJsonAsync<TimetrackingTimeEntryResponse>(cancellationToken) ?? throw new InvalidOperationException("Timetracking upsert returned an empty response.");
     }
 
-    public async Task DeleteTimeEntriesAsync(TimetrackingConnectionContext context, string idsToDelete, CancellationToken cancellationToken)
+    public async Task DeleteTimeEntriesAsync(string idsToDelete, CancellationToken cancellationToken)
     {
-        using var request = BuildRequest(context.AccessToken, HttpMethod.Delete, "timeEntry");
+        using var request = BuildRequest(HttpMethod.Delete, "timeEntry");
         request.Content = new FormUrlEncodedContent(new Dictionary<string, string> { ["idsToDelete"] = idsToDelete });
         using var response = await HttpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
@@ -109,28 +112,30 @@ public class TimetrackingApiClient(HttpClient httpClient) : ITimetrackingApiClie
         return errors;
     }
 
-    private static HttpRequestMessage BuildRequest(string accessToken, HttpMethod method, string path)
+    private HttpRequestMessage BuildRequest(HttpMethod method, string path)
     {
         var request = new HttpRequestMessage(method, path);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AccessToken);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         return request;
     }
 }
 
-public interface ITimetrackingApiClient
+public interface ITimetrackingSession
 {
-    Task<IReadOnlyList<TimetrackingTimeEntryResponse>> GetTimeEntriesAsync(TimetrackingConnectionContext context, string from, string to, CancellationToken cancellationToken);
+    string? ExternalUserId { get; }
 
-    Task<IReadOnlyList<TimetrackingActivityResponse>> GetProjectsAsync(TimetrackingConnectionContext context, CancellationToken cancellationToken);
+    Task<IReadOnlyList<TimetrackingTimeEntryResponse>> GetTimeEntriesAsync(string from, string to, CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<TimetrackingActivityResponse>> GetActivitiesAsync(TimetrackingConnectionContext context, string projectId, CancellationToken cancellationToken);
+    Task<IReadOnlyList<TimetrackingActivityResponse>> GetProjectsAsync(CancellationToken cancellationToken);
 
-    Task<string?> FindProjectIdByTaskIdAsync(TimetrackingConnectionContext context, string taskId, CancellationToken cancellationToken);
+    Task<IReadOnlyList<TimetrackingActivityResponse>> GetActivitiesAsync(string projectId, CancellationToken cancellationToken);
 
-    Task<TimetrackingProfileResponse> GetProfileAsync(string accessToken, CancellationToken cancellationToken);
+    Task<string?> FindProjectIdByTaskIdAsync(string taskId, CancellationToken cancellationToken);
 
-    Task<TimetrackingTimeEntryResponse> UpsertTimeEntryAsync(TimetrackingConnectionContext context, IReadOnlyDictionary<string, string> form, CancellationToken cancellationToken);
+    Task<TimetrackingProfileResponse> GetProfileAsync(CancellationToken cancellationToken);
 
-    Task DeleteTimeEntriesAsync(TimetrackingConnectionContext context, string idsToDelete, CancellationToken cancellationToken);
+    Task<TimetrackingTimeEntryResponse> UpsertTimeEntryAsync(IReadOnlyDictionary<string, string> form, CancellationToken cancellationToken);
+
+    Task DeleteTimeEntriesAsync(string idsToDelete, CancellationToken cancellationToken);
 }

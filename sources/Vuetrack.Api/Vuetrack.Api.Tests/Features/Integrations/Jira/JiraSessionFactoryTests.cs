@@ -1,87 +1,82 @@
 using AwesomeAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
-using Vuetrack.Api.Features.Integrations;
 using Vuetrack.Api.Features.Integrations.Abstractions;
 using Vuetrack.Api.Features.Integrations.Connections;
+using Vuetrack.Api.Features.Integrations.Jira;
+using Vuetrack.Api.Features.Integrations.Jira.Api;
 using Vuetrack.Api.Features.Integrations.Jira.Connection;
 using Vuetrack.Api.Features.Integrations.Jira.OAuth;
-using Vuetrack.Api.Tests.Fakes;
 using Xunit;
 using ZiggyCreatures.Caching.Fusion;
 
 namespace Vuetrack.Api.Tests.Features.Integrations.Jira;
 
-public class JiraConnectionContextFactoryTests
+public class JiraSessionFactoryTests
 {
     private const string UserId = "user-1";
 
     [Fact]
-    public async Task CreateAsync_CachesAccessToken_AndDoesNotRefreshTwice()
+    public async Task OpenAsync_CachesCredentials_AndDoesNotRefreshTwice()
     {
         var oauth = new FakeOAuthClient(expiresInSeconds: 3600);
         var factory = BuildFactory(oauth);
 
-        var first = await factory.CreateAsync(UserId, CancellationToken.None);
-        var second = await factory.CreateAsync(UserId, CancellationToken.None);
+        var first = await factory.OpenAsync(UserId, CancellationToken.None);
+        var second = await factory.OpenAsync(UserId, CancellationToken.None);
 
         first.Should().NotBeNull();
         second.Should().NotBeNull();
-        first!.AccessToken.Should().Be("access-0");
-        second!.AccessToken.Should().Be("access-0");
         oauth.RefreshCalls.Should().Be(1);
     }
 
     [Fact]
-    public async Task CreateAsync_MapsAttributesOntoTheContext()
+    public async Task OpenAsync_MapsAttributesOntoTheSession()
     {
         var factory = BuildFactory(new FakeOAuthClient(expiresInSeconds: 3600));
 
-        var context = await factory.CreateAsync(UserId, CancellationToken.None);
+        var session = await factory.OpenAsync(UserId, CancellationToken.None);
 
-        context.Should().NotBeNull();
-        context!.SiteUrl.Should().Be("https://acme.atlassian.net");
-        context.CloudId.Should().Be("cloud-1");
-        context.UserId.Should().Be(UserId);
+        session.Should().NotBeNull();
+        session!.SiteUrl.Should().Be("https://acme.atlassian.net");
     }
 
     [Fact]
-    public async Task CreateAsync_ReturnsNull_WhenNoConnectionStored()
+    public async Task OpenAsync_ReturnsNull_WhenNoConnectionStored()
     {
         var factory = BuildFactoryWithoutConnection(new FakeOAuthClient(expiresInSeconds: 3600));
 
-        var context = await factory.CreateAsync(UserId, CancellationToken.None);
+        var session = await factory.OpenAsync(UserId, CancellationToken.None);
 
-        context.Should().BeNull();
+        session.Should().BeNull();
     }
 
     [Fact]
-    public async Task CreateAsync_RefreshesAgain_AfterEvict()
+    public async Task OpenAsync_RefreshesAgain_AfterEvict()
     {
         var oauth = new FakeOAuthClient(expiresInSeconds: 3600);
         var factory = BuildFactory(oauth);
 
-        var first = await factory.CreateAsync(UserId, CancellationToken.None);
+        await factory.OpenAsync(UserId, CancellationToken.None);
         await factory.EvictAsync(UserId, CancellationToken.None);
-        var second = await factory.CreateAsync(UserId, CancellationToken.None);
+        await factory.OpenAsync(UserId, CancellationToken.None);
 
-        first!.AccessToken.Should().Be("access-0");
-        second!.AccessToken.Should().Be("access-1");
         oauth.RefreshCalls.Should().Be(2);
     }
 
     [Fact]
-    public async Task CreateAsync_DoesNotCache_WhenTokenAlreadyExpired()
+    public async Task OpenAsync_DoesNotCache_WhenTokenAlreadyExpired()
     {
         var oauth = new FakeOAuthClient(expiresInSeconds: 30); // below the 60s buffer
         var factory = BuildFactory(oauth);
 
-        await factory.CreateAsync(UserId, CancellationToken.None);
-        await factory.CreateAsync(UserId, CancellationToken.None);
+        await factory.OpenAsync(UserId, CancellationToken.None);
+        await factory.OpenAsync(UserId, CancellationToken.None);
 
         oauth.RefreshCalls.Should().Be(2);
     }
 
-    private static JiraConnectionContextFactory BuildFactory(FakeOAuthClient oauth)
+    private static JiraSessionFactory BuildFactory(FakeOAuthClient oauth)
     {
         var connection = new ConnectionModel
         {
@@ -98,17 +93,36 @@ public class JiraConnectionContextFactoryTests
         return BuildFactory(oauth, connection);
     }
 
-    private static JiraConnectionContextFactory BuildFactoryWithoutConnection(FakeOAuthClient oauth)
+    private static JiraSessionFactory BuildFactoryWithoutConnection(FakeOAuthClient oauth)
     {
         return BuildFactory(oauth, connection: null);
     }
 
-    private static JiraConnectionContextFactory BuildFactory(FakeOAuthClient oauth, ConnectionModel? connection)
+    private static JiraSessionFactory BuildFactory(FakeOAuthClient oauth, ConnectionModel? connection)
     {
         var repository = new FakeRepository(connection);
         var cache = new FusionCache(Options.Create(new FusionCacheOptions()));
+        var options = Options.Create(new JiraOptions
+        {
+            ApiBaseUrl = "https://api.atlassian.com",
+            AuthorizeEndpoint = "https://auth.atlassian.com/authorize",
+            TokenEndpoint = "https://auth.atlassian.com/oauth/token",
+            ClientId = "client-id",
+            ClientSecret = "client-secret",
+            Scopes = string.Empty,
+            PageSize = 50,
+            MaxPages = 20,
+            MaxConcurrency = 8,
+        });
 
-        return new JiraConnectionContextFactory(repository, oauth, new PassthroughSecretProtector(), cache);
+        return new JiraSessionFactory(
+            new HttpClient { BaseAddress = new Uri("https://api.atlassian.com/") },
+            options,
+            NullLogger<JiraSession>.Instance,
+            repository,
+            oauth,
+            new PassthroughSecretProtector(),
+            cache);
     }
 
     private sealed class FakeOAuthClient(int expiresInSeconds) : IJiraOAuthApiClient

@@ -335,14 +335,7 @@ public class JiraConnectorHttpTests
             MaxPages = 20,
             MaxConcurrency = 8,
         });
-        var context = new JiraConnectionContext
-        {
-            UserId = "user-1",
-            AccessToken = "access-token",
-            CloudId = "cloud-1",
-            SiteUrl = SiteUrl,
-        };
-        var client = new JiraApiClient(httpClient, options, NullLogger<JiraApiClient>.Instance);
-        return new JiraConnector(client, new StubJiraConnectionContextFactory(context), options);
+        var session = new JiraSession(httpClient, options, NullLogger<JiraSession>.Instance, "access-token", "cloud-1", SiteUrl);
+        return new JiraConnector(new StubJiraSessionFactory(session), options);
     }
 }

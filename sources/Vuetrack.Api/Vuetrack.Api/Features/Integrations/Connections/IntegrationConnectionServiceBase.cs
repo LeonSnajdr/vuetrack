@@ -8,7 +8,7 @@ namespace Vuetrack.Api.Features.Integrations.Connections;
 public abstract class IntegrationConnectionServiceBase(
     IOAuthApiClientBase oauthClient,
     IConnectionRepository repository,
-    IConnectionContextFactory contextFactory,
+    IConnectionSessionFactory sessionFactory,
     IConnectionSecretProtector secretProtector,
     IIntegrationRegistry registry,
     ILogger logger)
@@ -20,7 +20,7 @@ public abstract class IntegrationConnectionServiceBase(
 
     private IConnectionRepository Repository { get; } = repository;
 
-    private IConnectionContextFactory ContextFactory { get; } = contextFactory;
+    private IConnectionSessionFactory SessionFactory { get; } = sessionFactory;
 
     private IConnectionSecretProtector SecretProtector { get; } = secretProtector;
 
@@ -75,7 +75,7 @@ public abstract class IntegrationConnectionServiceBase(
     public async Task DisconnectAsync(string userId, CancellationToken cancellationToken)
     {
         await Repository.DeleteAsync(userId, Key, cancellationToken);
-        await ContextFactory.EvictAsync(userId, cancellationToken);
+        await SessionFactory.EvictAsync(userId, cancellationToken);
     }
 
     /// <summary>
@@ -116,7 +116,7 @@ public abstract class IntegrationConnectionServiceBase(
         var encryptedRefreshToken = SecretProtector.Protect(Key, token.RefreshToken);
 
         await Repository.UpsertAsync(userId, Key, encryptedRefreshToken, attributes, cancellationToken);
-        await ContextFactory.EvictAsync(userId, cancellationToken);
+        await SessionFactory.EvictAsync(userId, cancellationToken);
     }
 }
 
