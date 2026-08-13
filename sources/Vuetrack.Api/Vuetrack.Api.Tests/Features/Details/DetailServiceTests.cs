@@ -76,12 +76,33 @@ public class DetailServiceTests
         result.Value.Groups.Should().BeEmpty();
     }
 
+    [Fact]
+    public async Task GetAsync_SourceNotConnected_IsNeverCalled()
+    {
+        var jira = new FakeConnector(IntegrationKey.Jira, NoSignals, (_, _) => Fields(
+        [
+            new TextDetailField { Label = DetailFieldLabel.Title, Value = "Fix the thing" },
+        ]));
+        var github = new FakeConnector(IntegrationKey.Github, NoSignals, (_, _) => FailFields(IntegrationError.NotConnected));
+
+        var registry = new FakeIntegrationRegistry();
+        registry.AddConnected(jira);
+        registry.Add(github);
+        var service = new DetailService(registry, NullLogger<DetailService>.Instance);
+
+        var result = await service.GetAsync(Query(), "user-1", CancellationToken.None);
+
+        github.DetailCount.Should().Be(0);
+        jira.DetailCount.Should().Be(1);
+        result.Value.Groups.Should().ContainSingle(g => g.Key == IntegrationKey.Jira);
+    }
+
     private static DetailService CreateService(params IConnector[] connectors)
     {
         var registry = new FakeIntegrationRegistry();
         foreach (var connector in connectors)
         {
-            registry.Add(connector);
+            registry.AddConnected(connector);
         }
 
         return new DetailService(registry, NullLogger<DetailService>.Instance);

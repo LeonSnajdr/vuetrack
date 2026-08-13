@@ -15,7 +15,7 @@ public class DetailService(IIntegrationRegistry registry, ILogger<DetailService>
 
     public async Task<ErrorOr<DetailsContract>> GetAsync(DetailQuery query, string userId, CancellationToken cancellationToken)
     {
-        var connectors = Registry.ResolveAll<IConnector>();
+        var connectors = await Registry.ResolveAllConnectedAsync<IConnector>(userId, cancellationToken);
 
         var detailTasks = connectors.Select(async connector =>
         {

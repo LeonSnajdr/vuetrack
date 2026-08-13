@@ -18,6 +18,16 @@ public class ConnectionRepository(ILogger<BaseRepositoryMongo<ConnectionModel>> 
         return found;
     }
 
+    public async Task<IReadOnlyList<IntegrationKey>> GetConnectedKeysAsync(string userId, CancellationToken cancellationToken)
+    {
+        var filter = Filter.Where(x => x.UserId == userId);
+
+        var keys = await Collection.Find(filter).Project(x => x.Key).ToListAsync(cancellationToken);
+        var distinct = keys.Distinct().ToList();
+
+        return distinct;
+    }
+
     public async Task UpsertAsync(string userId, IntegrationKey key, string encryptedRefreshToken, IReadOnlyDictionary<string, string> attributes, CancellationToken cancellationToken)
     {
         var update = Update
@@ -65,6 +75,8 @@ public class ConnectionRepository(ILogger<BaseRepositoryMongo<ConnectionModel>> 
 public interface IConnectionRepository : IBaseRepositoryMongo<ConnectionModel>
 {
     Task<ConnectionModel?> GetAsync(string userId, IntegrationKey key, CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<IntegrationKey>> GetConnectedKeysAsync(string userId, CancellationToken cancellationToken);
 
     Task UpsertAsync(string userId, IntegrationKey key, string encryptedRefreshToken, IReadOnlyDictionary<string, string> attributes, CancellationToken cancellationToken);
 

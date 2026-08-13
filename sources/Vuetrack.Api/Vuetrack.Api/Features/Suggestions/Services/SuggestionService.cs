@@ -88,7 +88,7 @@ public class SuggestionService(IIntegrationRegistry registry, ISuggestionReposit
 
     private async Task<ErrorOr<IReadOnlyList<SuggestionContract>>> BuildAsync(string userId, GenerateSuggestionsRequestContract request, bool resetExisting, CancellationToken cancellationToken)
     {
-        var connectors = Registry.ResolveAll<IConnector>();
+        var connectors = await Registry.ResolveAllConnectedAsync<IConnector>(userId, cancellationToken);
         var fetched = await FetchAllAsync(connectors, userId, request.From, request.To, cancellationToken);
 
         if (resetExisting && fetched.SuccessfulKeys.Count > 0)

@@ -29,7 +29,7 @@ public class SuggestionServiceTests
     public async Task GenerateAsync_ConnectorReturnsMultipleSignals_AggregatesAndPersistsAllSuggestions()
     {
         var registry = new FakeIntegrationRegistry();
-        registry.Add(new FakeConnector(IntegrationKey.Jira, (_, _) => Signals(
+        registry.AddConnected(new FakeConnector(IntegrationKey.Jira, (_, _) => Signals(
         [
             Signal(IntegrationKey.Jira, "J-1:worklog:1", "J-1", At(9, 0), At(9, 10)),
             Signal(IntegrationKey.Jira, "J-2:worklog:1", "J-2", At(11, 0), At(11, 10)),
@@ -50,7 +50,7 @@ public class SuggestionServiceTests
     public async Task GenerateAsync_ConnectorFails_IsSwallowedAndReturnsEmpty()
     {
         var registry = new FakeIntegrationRegistry();
-        registry.Add(new FakeConnector(IntegrationKey.Jira, (_, _) => Fail(Error.Failure())));
+        registry.AddConnected(new FakeConnector(IntegrationKey.Jira, (_, _) => Fail(Error.Failure())));
 
         var repository = new FakeSuggestionRepository();
         var service = CreateService(registry, repository);
@@ -66,7 +66,7 @@ public class SuggestionServiceTests
     public async Task GenerateAsync_SourceNotConnected_IsSwallowedAndReturnsEmpty()
     {
         var registry = new FakeIntegrationRegistry();
-        registry.Add(new FakeConnector(IntegrationKey.Jira, (_, _) => Fail(IntegrationError.NotConnected)));
+        registry.AddConnected(new FakeConnector(IntegrationKey.Jira, (_, _) => Fail(IntegrationError.NotConnected)));
 
         var repository = new FakeSuggestionRepository();
         var service = CreateService(registry, repository);
@@ -87,8 +87,8 @@ public class SuggestionServiceTests
         var github = new FakeConnector(IntegrationKey.Github, (_, _) => Fail(IntegrationError.NotConnected));
 
         var registry = new FakeIntegrationRegistry();
-        registry.Add(jira);
-        registry.Add(github);
+        registry.AddConnected(jira);
+        registry.AddConnected(github);
 
         var repository = new FakeSuggestionRepository();
         var service = CreateService(registry, repository);
@@ -104,7 +104,7 @@ public class SuggestionServiceTests
     public async Task ReloadAsync_NoSourceConnected_DoesNotDeleteExistingSuggestions()
     {
         var registry = new FakeIntegrationRegistry();
-        registry.Add(new FakeConnector(IntegrationKey.Jira, (_, _) => Fail(IntegrationError.NotConnected)));
+        registry.AddConnected(new FakeConnector(IntegrationKey.Jira, (_, _) => Fail(IntegrationError.NotConnected)));
 
         var repository = new FakeSuggestionRepository();
         await repository.Save(BuildModel("user-1", "KEEP", At(9, 0), At(9, 30), "J-1"));
@@ -121,7 +121,7 @@ public class SuggestionServiceTests
     public async Task GenerateAsync_SecondRunOverSameRange_InsertsNothingNewAndPreservesEditedStatus()
     {
         var registry = new FakeIntegrationRegistry();
-        registry.Add(new FakeConnector(IntegrationKey.Jira, (_, _) => Signals(
+        registry.AddConnected(new FakeConnector(IntegrationKey.Jira, (_, _) => Signals(
         [
             Signal(IntegrationKey.Jira, "J-1:worklog:1", "J-1", At(9, 0), At(9, 10)),
             Signal(IntegrationKey.Jira, "J-2:worklog:1", "J-2", At(12, 0), At(12, 10)),
@@ -242,7 +242,7 @@ public class SuggestionServiceTests
     public async Task GenerateAsync_ManualEntryWithSameTaskId_SkipsSuggestion()
     {
         var registry = new FakeIntegrationRegistry();
-        registry.Add(new FakeConnector(IntegrationKey.Jira, (_, _) => Signals(
+        registry.AddConnected(new FakeConnector(IntegrationKey.Jira, (_, _) => Signals(
         [
             Signal(IntegrationKey.Jira, "J-1:worklog:1", "J-1", At(9, 0), At(9, 10)),
         ])));
@@ -270,7 +270,7 @@ public class SuggestionServiceTests
         var thursdayEnd = BaseDate.AddDays(3) + TimeSpan.FromHours(9.5);
 
         var registry = new FakeIntegrationRegistry();
-        registry.Add(new FakeConnector(IntegrationKey.Jira, (_, _) => Signals(
+        registry.AddConnected(new FakeConnector(IntegrationKey.Jira, (_, _) => Signals(
         [
             Signal(IntegrationKey.Jira, "J-1:worklog:2", "J-1", thursdayStart, thursdayEnd),
         ])));
@@ -296,7 +296,7 @@ public class SuggestionServiceTests
     public async Task GenerateAsync_ManualEntrySameDayNonOverlappingTime_DoesNotSkipSuggestion()
     {
         var registry = new FakeIntegrationRegistry();
-        registry.Add(new FakeConnector(IntegrationKey.Jira, (_, _) => Signals(
+        registry.AddConnected(new FakeConnector(IntegrationKey.Jira, (_, _) => Signals(
         [
             Signal(IntegrationKey.Jira, "J-1:worklog:2", "J-1", At(17, 0), At(18, 0)),
         ])));
@@ -321,7 +321,7 @@ public class SuggestionServiceTests
     public async Task ReloadAsync_Success_ResetsMutableSuggestionsAndKeepsConfirmed()
     {
         var registry = new FakeIntegrationRegistry();
-        registry.Add(new FakeConnector(IntegrationKey.Jira, (_, _) => Signals(
+        registry.AddConnected(new FakeConnector(IntegrationKey.Jira, (_, _) => Signals(
         [
             Signal(IntegrationKey.Jira, "J-1:worklog:1", "J-1", At(9, 0), At(9, 10)),
             Signal(IntegrationKey.Jira, "J-2:worklog:1", "J-2", At(10, 0), At(10, 10)),
@@ -348,7 +348,7 @@ public class SuggestionServiceTests
     public async Task ReloadAsync_FetchFails_DoesNotDeleteExistingSuggestions()
     {
         var registry = new FakeIntegrationRegistry();
-        registry.Add(new FakeConnector(IntegrationKey.Jira, (_, _) => Fail(Error.Failure())));
+        registry.AddConnected(new FakeConnector(IntegrationKey.Jira, (_, _) => Fail(Error.Failure())));
         var repository = new FakeSuggestionRepository();
         await repository.Save(BuildModel("user-1", "KEEP", At(9, 0), At(9, 30), "J-1"));
         var service = CreateService(registry, repository);
