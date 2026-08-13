@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Vuetrack.Api.Features.Integrations.Jira.Api;
 
 namespace Vuetrack.Api.Features.Integrations.Jira.Api;
 

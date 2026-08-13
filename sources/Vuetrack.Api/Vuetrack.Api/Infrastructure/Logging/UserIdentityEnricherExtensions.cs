@@ -1,6 +1,5 @@
 using Serilog;
 using Serilog.Configuration;
-using Vuetrack.Api.Infrastructure.Logging;
 
 namespace Vuetrack.Api.Infrastructure.Logging;
 

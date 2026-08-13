@@ -4,7 +4,6 @@ using Samhammer.Mongo;
 using Samhammer.Mongo.Abstractions;
 using Vuetrack.Api.Features.Integrations;
 using Vuetrack.Api.Features.Integrations.Abstractions;
-using Vuetrack.Api.Features.Suggestions.Persistence;
 
 namespace Vuetrack.Api.Features.Suggestions.Persistence;
 

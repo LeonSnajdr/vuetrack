@@ -1,7 +1,6 @@
 using ErrorOr;
 using Samhammer.DependencyInjection.Attributes;
 using Vuetrack.Api.Features.Details.Contracts;
-using Vuetrack.Api.Features.Details.Services;
 using Vuetrack.Api.Features.Integrations;
 using Vuetrack.Api.Features.Integrations.Abstractions;
 

@@ -1,7 +1,6 @@
 using ErrorOr;
 using Vuetrack.Api.Features.Details;
 using Vuetrack.Api.Features.Details.Contracts;
-using Vuetrack.Api.Features.Integrations.Abstractions;
 using Vuetrack.Api.Features.Integrations.Activity;
 
 namespace Vuetrack.Api.Features.Integrations.Abstractions;

@@ -1,5 +1,4 @@
 using ErrorOr;
-using Vuetrack.Api.Features.Integrations.Abstractions;
 
 namespace Vuetrack.Api.Features.Integrations.Abstractions;
 

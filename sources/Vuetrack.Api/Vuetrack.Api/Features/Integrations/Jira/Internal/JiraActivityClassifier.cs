@@ -1,7 +1,6 @@
 using Vuetrack.Api.Features.Integrations;
 using Vuetrack.Api.Features.Integrations.Activity;
 using Vuetrack.Api.Features.Integrations.Jira.Api;
-using Vuetrack.Api.Features.Integrations.Jira.Internal;
 
 namespace Vuetrack.Api.Features.Integrations.Jira.Internal;
 

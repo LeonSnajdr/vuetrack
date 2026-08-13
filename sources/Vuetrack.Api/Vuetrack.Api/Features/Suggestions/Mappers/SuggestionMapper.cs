@@ -1,6 +1,5 @@
 using Vuetrack.Api.Features.Suggestions.Contracts;
 using Vuetrack.Api.Features.Suggestions.Engine;
-using Vuetrack.Api.Features.Suggestions.Mappers;
 using Vuetrack.Api.Features.Suggestions.Persistence;
 
 namespace Vuetrack.Api.Features.Suggestions.Mappers;

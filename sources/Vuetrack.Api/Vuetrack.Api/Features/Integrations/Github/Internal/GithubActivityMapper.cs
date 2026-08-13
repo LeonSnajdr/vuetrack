@@ -3,7 +3,6 @@ using Vuetrack.Api.Features.Integrations.Abstractions;
 using Vuetrack.Api.Features.Integrations.Activity;
 using Vuetrack.Api.Features.Integrations.Github;
 using Vuetrack.Api.Features.Integrations.Github.Api;
-using Vuetrack.Api.Features.Integrations.Github.Internal;
 
 namespace Vuetrack.Api.Features.Integrations.Github.Internal;
 

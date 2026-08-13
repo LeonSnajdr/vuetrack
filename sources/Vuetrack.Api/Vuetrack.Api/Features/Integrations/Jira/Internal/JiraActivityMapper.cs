@@ -3,7 +3,6 @@ using Vuetrack.Api.Features.Integrations.Abstractions;
 using Vuetrack.Api.Features.Integrations.Activity;
 using Vuetrack.Api.Features.Integrations.Jira;
 using Vuetrack.Api.Features.Integrations.Jira.Api;
-using Vuetrack.Api.Features.Integrations.Jira.Internal;
 
 namespace Vuetrack.Api.Features.Integrations.Jira.Internal;
 

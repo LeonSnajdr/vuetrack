@@ -3,7 +3,6 @@ using MongoDB.Bson.Serialization.Attributes;
 using Vuetrack.Api.Features.Integrations;
 using Vuetrack.Api.Features.Integrations.Abstractions;
 using Vuetrack.Api.Features.Integrations.Activity;
-using Vuetrack.Api.Features.Suggestions.Persistence;
 
 namespace Vuetrack.Api.Features.Suggestions.Persistence;
 

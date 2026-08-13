@@ -1,7 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using Samhammer.Mongo.Abstractions;
-using Vuetrack.Api.Features.Suggestions.Persistence;
 
 namespace Vuetrack.Api.Features.Suggestions.Persistence;
 

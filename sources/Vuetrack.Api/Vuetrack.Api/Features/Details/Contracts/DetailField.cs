@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using Vuetrack.Api.Features.Details.Contracts;
 
 namespace Vuetrack.Api.Features.Details.Contracts;
 
