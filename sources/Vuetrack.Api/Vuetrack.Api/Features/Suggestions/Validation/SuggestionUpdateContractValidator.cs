@@ -1,0 +1,15 @@
+using FluentValidation;
+using Samhammer.DependencyInjection.Attributes;
+using Vuetrack.Api.Features.Suggestions.Contracts;
+
+namespace Vuetrack.Api.Features.Suggestions.Validation;
+
+[InjectAs(typeof(IValidator<SuggestionUpdateContract>))]
+public class SuggestionUpdateContractValidator : AbstractValidator<SuggestionUpdateContract>
+{
+    public SuggestionUpdateContractValidator()
+    {
+        RuleFor(x => x.Comment).MaximumLength(2000);
+        RuleFor(x => x.DateStarted).LessThan(x => x.DateEnded).WithMessage("Start must be before End.");
+    }
+}

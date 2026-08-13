@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Samhammer.DependencyInjection.Attributes;
 using Vuetrack.Api.Features.Integrations;
+using Vuetrack.Api.Features.Integrations.Abstractions;
 using Vuetrack.Api.Features.Integrations.Connections;
 
 namespace Vuetrack.Api.Features.Integrations.Timetracking.OAuth;

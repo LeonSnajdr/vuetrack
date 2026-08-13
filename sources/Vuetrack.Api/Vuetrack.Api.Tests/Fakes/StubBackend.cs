@@ -1,5 +1,6 @@
 using ErrorOr;
 using Vuetrack.Api.Features.Integrations;
+using Vuetrack.Api.Features.Integrations.Abstractions;
 using Vuetrack.Api.Features.Integrations.Contracts;
 using Vuetrack.Api.Features.Project.Contracts;
 using Vuetrack.Api.Features.TimeEntry.Contracts;

@@ -2,6 +2,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Vuetrack.Api.Features.Integrations;
+using Vuetrack.Api.Features.Integrations.Abstractions;
 using Vuetrack.Api.Features.Integrations.Contracts;
 using Vuetrack.Api.Features.TimeEntry.Contracts;
 using Vuetrack.Api.Infrastructure.Authentication;

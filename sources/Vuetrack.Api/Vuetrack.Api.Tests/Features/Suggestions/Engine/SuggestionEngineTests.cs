@@ -2,6 +2,8 @@ using AwesomeAssertions;
 using ErrorOr;
 using Microsoft.Extensions.Logging.Abstractions;
 using Vuetrack.Api.Features.Integrations;
+using Vuetrack.Api.Features.Integrations.Abstractions;
+using Vuetrack.Api.Features.Integrations.Activity;
 using Vuetrack.Api.Features.Suggestions.Engine;
 using Vuetrack.Api.Features.Suggestions.Engine.Provider;
 using Vuetrack.Api.Tests.Fakes;

@@ -1,5 +1,7 @@
 using Vuetrack.Api.Features.Integrations;
-using Vuetrack.Api.Features.Suggestions.Core;
+using Vuetrack.Api.Features.Integrations.Abstractions;
+using Vuetrack.Api.Features.Suggestions;
+using Vuetrack.Api.Features.Suggestions.Persistence;
 
 namespace Vuetrack.Api.Tests.Fakes;
 

@@ -1,4 +1,5 @@
 using Samhammer.Mongo.Abstractions;
+using Vuetrack.Api.Features.Integrations.Abstractions;
 
 namespace Vuetrack.Api.Features.Integrations.Connections;
 

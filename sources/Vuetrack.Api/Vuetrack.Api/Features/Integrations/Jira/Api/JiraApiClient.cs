@@ -5,6 +5,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Vuetrack.Api.Features.Integrations;
+using Vuetrack.Api.Features.Integrations.Abstractions;
 using Vuetrack.Api.Features.Integrations.Connections;
 using Vuetrack.Api.Features.Integrations.Jira.Api;
 using Vuetrack.Api.Features.Integrations.Jira.Connection;

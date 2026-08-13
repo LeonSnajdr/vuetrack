@@ -4,9 +4,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Samhammer.Logging.Logstash;
 using Serilog;
-using Vuetrack.Api.Infrastructure.Logging.Extensions;
-using LoggingOptions = Vuetrack.Api.Infrastructure.Logging.Options.LoggingOptions;
-using LogstashOptions = Vuetrack.Api.Infrastructure.Logging.Options.LogstashOptions;
+using LoggingOptions = Vuetrack.Api.Infrastructure.Logging.LoggingOptions;
+using LogstashOptions = Vuetrack.Api.Infrastructure.Logging.LogstashOptions;
 
 namespace Vuetrack.Api.Infrastructure.Logging;
 

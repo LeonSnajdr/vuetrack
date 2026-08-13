@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
 using Samhammer.DependencyInjection.Attributes;
+using Vuetrack.Api.Features.Integrations.Abstractions;
 
 namespace Vuetrack.Api.Features.Integrations.Connections;
 

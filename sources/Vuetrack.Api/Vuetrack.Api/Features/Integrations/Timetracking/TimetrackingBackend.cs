@@ -2,11 +2,13 @@ using ErrorOr;
 using Microsoft.Extensions.Logging;
 using Samhammer.DependencyInjection.Attributes;
 using Vuetrack.Api.Features.Integrations;
+using Vuetrack.Api.Features.Integrations.Abstractions;
 using Vuetrack.Api.Features.Integrations.Contracts;
 using Vuetrack.Api.Features.Integrations.Timetracking.Api;
 using Vuetrack.Api.Features.Integrations.Timetracking.Connection;
 using Vuetrack.Api.Features.Integrations.Timetracking.Internal;
 using Vuetrack.Api.Features.Project.Contracts;
+using Vuetrack.Api.Features.Suggestions.Mappers;
 using Vuetrack.Api.Features.TimeEntry.Contracts;
 
 namespace Vuetrack.Api.Features.Integrations.Timetracking;

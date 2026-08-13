@@ -1,7 +1,10 @@
 using ErrorOr;
 using Samhammer.DependencyInjection.Attributes;
 using Vuetrack.Api.Features.Details;
+using Vuetrack.Api.Features.Details.Contracts;
 using Vuetrack.Api.Features.Integrations;
+using Vuetrack.Api.Features.Integrations.Abstractions;
+using Vuetrack.Api.Features.Integrations.Activity;
 using Vuetrack.Api.Features.Integrations.Github.Api;
 using Vuetrack.Api.Features.Integrations.Github.Connection;
 using Vuetrack.Api.Features.Integrations.Github.Internal;
@@ -42,7 +45,7 @@ public class GithubConnector(IGithubApiClient client, IGithubConnectionContextFa
         }
     }
 
-    public async Task<ErrorOr<IReadOnlyList<ActivitySignal>>> FetchAsync(string userId, ActivityFetchContainer container, CancellationToken cancellationToken)
+    public async Task<ErrorOr<IReadOnlyList<ActivitySignal>>> FetchAsync(string userId, DateRange range, CancellationToken cancellationToken)
     {
         var context = await ContextFactory.CreateAsync(userId, cancellationToken);
         if (context is null)
@@ -58,7 +61,7 @@ public class GithubConnector(IGithubApiClient client, IGithubConnectionContextFa
                 return Error.Unauthorized();
             }
 
-            var commits = await Client.SearchCommitsAsync(context, login, container.From, container.To, cancellationToken);
+            var commits = await Client.SearchCommitsAsync(context, login, range.From, range.To, cancellationToken);
 
             var signals = new Dictionary<string, ActivitySignal>(StringComparer.Ordinal);
 

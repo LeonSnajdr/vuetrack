@@ -3,6 +3,7 @@ using ErrorOr;
 using Microsoft.Extensions.Logging;
 using Samhammer.DependencyInjection.Attributes;
 using Vuetrack.Api.Features.Integrations;
+using Vuetrack.Api.Features.Integrations.Abstractions;
 using Vuetrack.Api.Features.Integrations.Connections;
 using Vuetrack.Api.Features.Integrations.Timetracking.Api;
 using Vuetrack.Api.Features.Integrations.Timetracking.OAuth;

@@ -1,5 +1,6 @@
 using ErrorOr;
 using Microsoft.Extensions.Logging;
+using Vuetrack.Api.Features.Integrations.Abstractions;
 using Vuetrack.Api.Features.Integrations.Contracts;
 
 namespace Vuetrack.Api.Features.Integrations.Connections;

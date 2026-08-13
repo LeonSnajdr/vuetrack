@@ -1,4 +1,5 @@
 using Vuetrack.Api.Features.Integrations;
+using Vuetrack.Api.Features.Integrations.Abstractions;
 
 namespace Vuetrack.Api.Tests.Fakes;
 

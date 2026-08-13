@@ -1,4 +1,5 @@
 using Vuetrack.Api.Features.Integrations;
+using Vuetrack.Api.Features.Integrations.Activity;
 
 namespace Vuetrack.Api.Features.Integrations.Github;
 

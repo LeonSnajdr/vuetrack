@@ -1,5 +1,6 @@
 using Samhammer.DependencyInjection.Attributes;
 using Vuetrack.Api.Features.Integrations;
+using Vuetrack.Api.Features.Integrations.Abstractions;
 using Vuetrack.Api.Features.Integrations.Connections;
 using Vuetrack.Api.Features.Integrations.Github.OAuth;
 using ZiggyCreatures.Caching.Fusion;

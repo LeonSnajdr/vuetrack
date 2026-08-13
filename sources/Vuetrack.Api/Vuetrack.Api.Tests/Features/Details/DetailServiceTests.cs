@@ -2,7 +2,11 @@ using AwesomeAssertions;
 using ErrorOr;
 using Microsoft.Extensions.Logging.Abstractions;
 using Vuetrack.Api.Features.Details;
+using Vuetrack.Api.Features.Details.Contracts;
+using Vuetrack.Api.Features.Details.Services;
 using Vuetrack.Api.Features.Integrations;
+using Vuetrack.Api.Features.Integrations.Abstractions;
+using Vuetrack.Api.Features.Integrations.Activity;
 using Vuetrack.Api.Tests.Fakes;
 using Xunit;
 
@@ -83,7 +87,7 @@ public class DetailServiceTests
         return new DetailService(registry, NullLogger<DetailService>.Instance);
     }
 
-    private static Task<ErrorOr<IReadOnlyList<ActivitySignal>>> NoSignals(ActivityFetchContainer container, CancellationToken cancellationToken)
+    private static Task<ErrorOr<IReadOnlyList<ActivitySignal>>> NoSignals(DateRange range, CancellationToken cancellationToken)
     {
         IReadOnlyList<ActivitySignal> empty = [];
         return Task.FromResult(empty.ToErrorOr());

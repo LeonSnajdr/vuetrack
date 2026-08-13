@@ -1,6 +1,7 @@
 using Duende.IdentityModel.Client;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Vuetrack.Api.Features.Integrations.Abstractions;
 
 namespace Vuetrack.Api.Features.Integrations.Connections;
 

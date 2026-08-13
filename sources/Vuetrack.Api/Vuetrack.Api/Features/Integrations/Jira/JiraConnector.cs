@@ -4,7 +4,10 @@ using ErrorOr;
 using Microsoft.Extensions.Options;
 using Samhammer.DependencyInjection.Attributes;
 using Vuetrack.Api.Features.Details;
+using Vuetrack.Api.Features.Details.Contracts;
 using Vuetrack.Api.Features.Integrations;
+using Vuetrack.Api.Features.Integrations.Abstractions;
+using Vuetrack.Api.Features.Integrations.Activity;
 using Vuetrack.Api.Features.Integrations.Jira.Api;
 using Vuetrack.Api.Features.Integrations.Jira.Connection;
 using Vuetrack.Api.Features.Integrations.Jira.Internal;
@@ -50,7 +53,7 @@ public partial class JiraConnector(IJiraApiClient client, IJiraConnectionContext
         }
     }
 
-    public async Task<ErrorOr<IReadOnlyList<ActivitySignal>>> FetchAsync(string userId, ActivityFetchContainer container, CancellationToken cancellationToken)
+    public async Task<ErrorOr<IReadOnlyList<ActivitySignal>>> FetchAsync(string userId, DateRange range, CancellationToken cancellationToken)
     {
         var context = await ContextFactory.CreateAsync(userId, cancellationToken);
         if (context is null)
@@ -61,7 +64,7 @@ public partial class JiraConnector(IJiraApiClient client, IJiraConnectionContext
         try
         {
             var accountId = await Client.GetMyAccountIdAsync(context, cancellationToken);
-            var issueResponses = await Client.SearchCandidateIssuesAsync(context, container.From, container.To, cancellationToken);
+            var issueResponses = await Client.SearchCandidateIssuesAsync(context, range.From, range.To, cancellationToken);
             var issues = issueResponses
                 .Where(i => !string.IsNullOrEmpty(i.Key))
                 .Select(JiraIssueContext.FromResponse)
@@ -74,12 +77,12 @@ public partial class JiraConnector(IJiraApiClient client, IJiraConnectionContext
 
             await Parallel.ForEachAsync(issues, parallelOptions, async (issue, ct) =>
             {
-                var worklogTask = AddWorklogSignalsAsync(signals, context, issue, accountId, container, ct);
-                var commentTask = AddCommentSignalsAsync(signals, context, issue, accountId, container, ct);
+                var worklogTask = AddWorklogSignalsAsync(signals, context, issue, accountId, range, ct);
+                var commentTask = AddCommentSignalsAsync(signals, context, issue, accountId, range, ct);
                 await Task.WhenAll(worklogTask, commentTask);
             });
 
-            await AddChangeSignalsAsync(signals, context, issues, accountId, container, cancellationToken);
+            await AddChangeSignalsAsync(signals, context, issues, accountId, range, cancellationToken);
 
             IReadOnlyList<ActivitySignal> result = signals.Values.ToList();
             var errorOr = result.ToErrorOr();
@@ -119,7 +122,7 @@ public partial class JiraConnector(IJiraApiClient client, IJiraConnectionContext
         }
     }
 
-    private async Task AddWorklogSignalsAsync(ConcurrentDictionary<string, ActivitySignal> signals, JiraConnectionContext context, JiraIssueContext issue, string accountId, ActivityFetchContainer window, CancellationToken cancellationToken)
+    private async Task AddWorklogSignalsAsync(ConcurrentDictionary<string, ActivitySignal> signals, JiraConnectionContext context, JiraIssueContext issue, string accountId, DateRange window, CancellationToken cancellationToken)
     {
         var worklogs = await Client.GetWorklogsAsync(context, issue.Key, window.From, cancellationToken);
 
@@ -145,7 +148,7 @@ public partial class JiraConnector(IJiraApiClient client, IJiraConnectionContext
         }
     }
 
-    private async Task AddCommentSignalsAsync(ConcurrentDictionary<string, ActivitySignal> signals, JiraConnectionContext context, JiraIssueContext issue, string accountId, ActivityFetchContainer window, CancellationToken cancellationToken)
+    private async Task AddCommentSignalsAsync(ConcurrentDictionary<string, ActivitySignal> signals, JiraConnectionContext context, JiraIssueContext issue, string accountId, DateRange window, CancellationToken cancellationToken)
     {
         var comments = await Client.GetCommentsAsync(context, issue.Key, cancellationToken);
 
@@ -171,7 +174,7 @@ public partial class JiraConnector(IJiraApiClient client, IJiraConnectionContext
         }
     }
 
-    private async Task AddChangeSignalsAsync(ConcurrentDictionary<string, ActivitySignal> signals, JiraConnectionContext context, IReadOnlyList<JiraIssueContext> issues, string accountId, ActivityFetchContainer window, CancellationToken cancellationToken)
+    private async Task AddChangeSignalsAsync(ConcurrentDictionary<string, ActivitySignal> signals, JiraConnectionContext context, IReadOnlyList<JiraIssueContext> issues, string accountId, DateRange window, CancellationToken cancellationToken)
     {
         var issueById = new Dictionary<string, JiraIssueContext>(StringComparer.Ordinal);
         var issueIds = new List<string>();
@@ -213,7 +216,7 @@ public partial class JiraConnector(IJiraApiClient client, IJiraConnectionContext
         }
     }
 
-    private static void AddHistorySignals(ConcurrentDictionary<string, ActivitySignal> signals, JiraIssueContext issue, JiraChangelogResponse history, string accountId, ActivityFetchContainer window)
+    private static void AddHistorySignals(ConcurrentDictionary<string, ActivitySignal> signals, JiraIssueContext issue, JiraChangelogResponse history, string accountId, DateRange window)
     {
         if (!IsAuthor(history.Author, accountId) || string.IsNullOrEmpty(history.Id) || history.Items is null)
         {

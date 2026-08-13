@@ -1,12 +1,15 @@
 using ErrorOr;
 using Vuetrack.Api.Features.Details;
+using Vuetrack.Api.Features.Details.Contracts;
 using Vuetrack.Api.Features.Integrations;
+using Vuetrack.Api.Features.Integrations.Abstractions;
+using Vuetrack.Api.Features.Integrations.Activity;
 
 namespace Vuetrack.Api.Tests.Fakes;
 
 public sealed class FakeConnector(
     IntegrationKey key,
-    Func<ActivityFetchContainer, CancellationToken, Task<ErrorOr<IReadOnlyList<ActivitySignal>>>> fetch,
+    Func<DateRange, CancellationToken, Task<ErrorOr<IReadOnlyList<ActivitySignal>>>> fetch,
     Func<DetailQuery, CancellationToken, Task<ErrorOr<IReadOnlyList<DetailField>>>>? details = null) : IConnector
 {
     public IntegrationKey Key { get; } = key;
@@ -18,10 +21,10 @@ public sealed class FakeConnector(
     public Task<ErrorOr<Success>> ValidateAsync(string userId, CancellationToken cancellationToken) =>
         Task.FromResult<ErrorOr<Success>>(Result.Success);
 
-    public Task<ErrorOr<IReadOnlyList<ActivitySignal>>> FetchAsync(string userId, ActivityFetchContainer container, CancellationToken cancellationToken)
+    public Task<ErrorOr<IReadOnlyList<ActivitySignal>>> FetchAsync(string userId, DateRange range, CancellationToken cancellationToken)
     {
         FetchCount++;
-        return fetch(container, cancellationToken);
+        return fetch(range, cancellationToken);
     }
 
     public Task<ErrorOr<IReadOnlyList<DetailField>>> GetDetailsAsync(string userId, DetailQuery query, CancellationToken cancellationToken)

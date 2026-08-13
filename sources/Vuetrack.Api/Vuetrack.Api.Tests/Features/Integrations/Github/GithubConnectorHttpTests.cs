@@ -4,6 +4,8 @@ using ErrorOr;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Vuetrack.Api.Features.Integrations;
+using Vuetrack.Api.Features.Integrations.Abstractions;
+using Vuetrack.Api.Features.Integrations.Activity;
 using Vuetrack.Api.Features.Integrations.Github;
 using Vuetrack.Api.Features.Integrations.Github.Api;
 using Vuetrack.Api.Features.Integrations.Github.Connection;
@@ -21,7 +23,7 @@ public class GithubConnectorHttpTests
 
     private const string EmptyCommits = """{ "total_count": 0, "items": [] }""";
 
-    private static readonly ActivityFetchContainer Container = new()
+    private static readonly DateRange Container = new()
     {
         From = new DateTime(2026, 7, 1, 0, 0, 0, DateTimeKind.Utc),
         To = new DateTime(2026, 7, 2, 0, 0, 0, DateTimeKind.Utc),

@@ -3,6 +3,7 @@ using MongoDB.Driver;
 using Samhammer.DependencyInjection.Attributes;
 using Samhammer.Mongo;
 using Samhammer.Mongo.Abstractions;
+using Vuetrack.Api.Features.Integrations.Abstractions;
 
 namespace Vuetrack.Api.Features.Integrations.Connections;
 

@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using Microsoft.Extensions.Options;
 using Vuetrack.Api.Features.Integrations;
+using Vuetrack.Api.Features.Integrations.Abstractions;
 using Vuetrack.Api.Features.Integrations.Connections;
 using Vuetrack.Api.Features.Integrations.Jira.Connection;
 using Vuetrack.Api.Features.Integrations.Jira.OAuth;

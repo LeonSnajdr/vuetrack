@@ -1,6 +1,6 @@
 using ErrorOr;
-using Vuetrack.Api.Features.Suggestions.Core.Contracts;
-using Vuetrack.Api.Features.Suggestions.Core.Services;
+using Vuetrack.Api.Features.Suggestions.Contracts;
+using Vuetrack.Api.Features.Suggestions.Services;
 
 namespace Vuetrack.Api.Tests.Fakes;
 

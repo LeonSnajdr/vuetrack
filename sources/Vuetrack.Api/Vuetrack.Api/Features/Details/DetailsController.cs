@@ -1,6 +1,8 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Vuetrack.Api.Features.Details.Contracts;
+using Vuetrack.Api.Features.Details.Services;
 using Vuetrack.Api.Features.Integrations;
 using Vuetrack.Api.Infrastructure.Authentication;
 using Vuetrack.Api.Infrastructure.Validation;
