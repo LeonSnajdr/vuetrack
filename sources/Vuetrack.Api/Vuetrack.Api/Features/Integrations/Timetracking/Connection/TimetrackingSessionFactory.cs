@@ -1,4 +1,3 @@
-using Samhammer.DependencyInjection.Attributes;
 using Vuetrack.Api.Features.Integrations.Abstractions;
 using Vuetrack.Api.Features.Integrations.Connections;
 using Vuetrack.Api.Features.Integrations.Timetracking.Api;
@@ -7,7 +6,6 @@ using ZiggyCreatures.Caching.Fusion;
 
 namespace Vuetrack.Api.Features.Integrations.Timetracking.Connection;
 
-[Inject]
 public class TimetrackingSessionFactory(
     HttpClient httpClient,
     IConnectionRepository repository,

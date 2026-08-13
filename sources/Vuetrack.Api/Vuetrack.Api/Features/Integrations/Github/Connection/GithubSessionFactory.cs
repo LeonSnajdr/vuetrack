@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Options;
-using Samhammer.DependencyInjection.Attributes;
 using Vuetrack.Api.Features.Integrations.Abstractions;
 using Vuetrack.Api.Features.Integrations.Connections;
 using Vuetrack.Api.Features.Integrations.Github.Api;
@@ -8,7 +7,6 @@ using ZiggyCreatures.Caching.Fusion;
 
 namespace Vuetrack.Api.Features.Integrations.Github.Connection;
 
-[Inject]
 public class GithubSessionFactory(
     HttpClient httpClient,
     IOptions<GithubOptions> options,
