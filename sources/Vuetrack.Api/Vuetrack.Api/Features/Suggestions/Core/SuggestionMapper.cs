@@ -45,7 +45,7 @@ public static class SuggestionMapper
     {
         return new SuggestionEvidenceModel
         {
-            ConnectorKey = evidence.ConnectorKey,
+            Key = evidence.Key,
             ExternalId = evidence.ExternalId,
             Kind = evidence.Kind,
             DateStarted = evidence.DateStarted,
@@ -57,7 +57,7 @@ public static class SuggestionMapper
     private static SuggestionEvidenceContract ToEvidenceContract(SuggestionEvidenceModel model)
     {
         return new SuggestionEvidenceContract(
-            model.ConnectorKey,
+            model.Key,
             model.ExternalId,
             model.Kind,
             model.DateStarted,

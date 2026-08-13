@@ -2,8 +2,8 @@ using FluentValidation;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Vuetrack.Api.Features.Integrations.Contracts;
 using Vuetrack.Api.Infrastructure.Problems;
-using Vuetrack.Backends.Abstractions.Contracts;
 
 namespace Vuetrack.Api.Infrastructure.Validation;
 
@@ -32,17 +32,9 @@ public class ValidationActionFilter(IServiceProvider serviceProvider) : IAsyncAc
                 continue;
             }
 
-            var modelState = new ModelStateDictionary();
-            foreach (var failure in result.Errors)
-            {
-                var error = ToValidationError(failure.ErrorCode);
-                modelState.AddModelError(failure.PropertyName, error);
-            }
+            var failures = result.Errors.Select(failure => (failure.PropertyName, ToValidationError(failure.ErrorCode)));
 
-            var factory = context.HttpContext.RequestServices.GetRequiredService<ProblemDetailsFactory>();
-            var problem = factory.CreateValidationProblemDetails(context.HttpContext, modelState, StatusCodes.Status400BadRequest);
-
-            context.Result = ProblemResults.From(problem);
+            context.Result = ProblemResults.Validation(context.HttpContext, failures);
 
             return;
         }

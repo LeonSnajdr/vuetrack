@@ -13,11 +13,9 @@ public static class ValidationErrorOr
 
         public IActionResult ToActionResult(ErrorOr<Success> result) => result.Match(_ => controller.NoContent(), controller.ToProblem);
 
-        public IActionResult ToActionResult(ErrorOr<Created> result) => result.Match(_ => controller.StatusCode(StatusCodes.Status201Created), controller.ToProblem);
-
-        public IActionResult ToActionResult(ErrorOr<Updated> result) => result.Match(_ => controller.NoContent(), controller.ToProblem);
-
         public IActionResult ToActionResult(ErrorOr<Deleted> result) => result.Match(_ => controller.NoContent(), controller.ToProblem);
+
+        public IActionResult ToCreatedResult<T>(ErrorOr<T> result) => result.Match<IActionResult>(value => controller.StatusCode(StatusCodes.Status201Created, value), controller.ToProblem);
 
         private IActionResult ToProblem(List<Error> errors)
         {
@@ -31,13 +29,9 @@ public static class ValidationErrorOr
 
             if (errors.All(e => e.Type == ErrorType.Validation))
             {
-                var modelState = new ModelStateDictionary();
-                foreach (var error in errors)
-                {
-                    modelState.AddModelError(error.Code, error.Description);
-                }
+                var failures = errors.Select(error => (error.Code, error.Description));
 
-                return ProblemResults.From(factory.CreateValidationProblemDetails(httpContext, modelState, StatusCodes.Status400BadRequest));
+                return ProblemResults.Validation(httpContext, factory, failures);
             }
 
             var firstError = errors[0];

@@ -17,11 +17,13 @@ public class SuggestionsController(ISuggestionService suggestionService) : Contr
     private ISuggestionService SuggestionService { get; } = suggestionService;
 
     [HttpGet]
-    public async Task<IActionResult> List([FromQuery] DateTime from, [FromQuery] DateTime to)
+    public async Task<IActionResult> List([FromQuery] DateTime from, [FromQuery] DateTime to, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
 
-        return Ok(await SuggestionService.ListAsync(userId, from, to));
+        var result = await SuggestionService.ListAsync(userId, from, to, cancellationToken);
+
+        return this.ToActionResult(result);
     }
 
     [HttpPost("generate")]

@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Vuetrack.Api.Features.Integrations.Contracts;
 using Vuetrack.Api.Infrastructure.Problems;
-using Vuetrack.Backends.Abstractions.Contracts;
 
 namespace Vuetrack.Api.Infrastructure.Validation;
 
@@ -10,25 +10,11 @@ public static class ModelBindingProblemFactory
 {
     public static IActionResult Create(ActionContext context)
     {
-        var modelState = new ModelStateDictionary();
+        var failures = context.ModelState
+            .Where(entry => entry.Value is { ValidationState: ModelValidationState.Invalid })
+            .Select(entry => (NormalizeKey(entry.Key), ToValidationError(entry.Value!)));
 
-        foreach (var entry in context.ModelState)
-        {
-            if (entry.Value.ValidationState != ModelValidationState.Invalid)
-            {
-                continue;
-            }
-
-            var field = NormalizeKey(entry.Key);
-            var error = ToValidationError(entry.Value);
-
-            modelState.AddModelError(field, error);
-        }
-
-        var factory = context.HttpContext.RequestServices.GetRequiredService<ProblemDetailsFactory>();
-        var problem = factory.CreateValidationProblemDetails(context.HttpContext, modelState, StatusCodes.Status400BadRequest);
-
-        var result = ProblemResults.From(problem);
+        var result = ProblemResults.Validation(context.HttpContext, failures);
         return result;
     }
 

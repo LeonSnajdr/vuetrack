@@ -1,5 +1,5 @@
-using Vuetrack.Connectors.Abstractions;
+using Vuetrack.Api.Features.Integrations;
 
 namespace Vuetrack.Api.Tests.Fakes;
 
-public sealed record FakeSignalDetail(string? TaskId, string? Project, string? Comment) : IConnectorSignalDetail;
+public sealed record FakeSignalDetail(string? TaskId, string? Project, string? Comment) : IActivitySignalDetail;

@@ -21,10 +21,10 @@
                         <AppSettingsList />
                     </VTabsWindowItem>
                     <VTabsWindowItem value="connectors">
-                        <AppSettingsConnectors />
+                        <AppSettingsIntegrations :keys="connectorKeys" />
                     </VTabsWindowItem>
                     <VTabsWindowItem value="backends">
-                        <AppSettingsBackends />
+                        <AppSettingsIntegrations :keys="backendKeys" />
                     </VTabsWindowItem>
                 </VTabsWindow>
             </VCardText>
@@ -37,6 +37,11 @@
 </template>
 
 <script setup lang="ts">
+import { IntegrationKey } from "@/contracts/IntegrationContract";
+
 const settingsDialogStore = useSettingsDialogStore();
 const { isOpen, activeTab } = storeToRefs(settingsDialogStore);
+
+const connectorKeys = [IntegrationKey.Jira, IntegrationKey.Github];
+const backendKeys = [IntegrationKey.Timetracking];
 </script>

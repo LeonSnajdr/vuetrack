@@ -2,37 +2,32 @@ using MongoDB.Driver;
 using Samhammer.DependencyInjection.Attributes;
 using Samhammer.Mongo;
 using Samhammer.Mongo.Abstractions;
-using Vuetrack.Connectors.Abstractions;
+using Vuetrack.Api.Features.Integrations;
 
 namespace Vuetrack.Api.Features.Suggestions.Core;
 
 [Inject]
-public class SuggestionRepository : BaseRepositoryMongo<SuggestionModel>, ISuggestionRepository
+public class SuggestionRepository(ILogger<BaseRepositoryMongo<SuggestionModel>> logger, IMongoDbConnector connector) : BaseRepositoryMongo<SuggestionModel>(logger, connector), ISuggestionRepository
 {
-    public SuggestionRepository(ILogger<SuggestionRepository> logger, IMongoDbConnector connector)
-        : base(logger, connector)
-    {
-    }
-
-    public async Task<List<SuggestionModel>> ListAsync(string userId, DateTime from, DateTime to)
+    public async Task<List<SuggestionModel>> ListAsync(string userId, DateTime from, DateTime to, CancellationToken cancellationToken)
     {
         return await Collection
             .Find(x => x.UserId == userId && x.Status != SuggestionStatus.Dismissed && x.Status != SuggestionStatus.Confirmed && x.DateStarted >= from && x.DateStarted < to)
             .SortBy(x => x.DateStarted)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task InsertManyAsync(IReadOnlyList<SuggestionModel> items)
+    public async Task InsertManyAsync(IReadOnlyList<SuggestionModel> items, CancellationToken cancellationToken)
     {
         if (items.Count == 0)
         {
             return;
         }
 
-        await Collection.InsertManyAsync(items);
+        await Collection.InsertManyAsync(items, cancellationToken: cancellationToken);
     }
 
-    public async Task<IReadOnlyList<SuggestionEvidenceModel>> GetSourcesByExternalIdsAsync(string userId, IReadOnlyList<string> externalIds)
+    public async Task<IReadOnlyList<SuggestionEvidenceModel>> GetSourcesByExternalIdsAsync(string userId, IReadOnlyList<string> externalIds, CancellationToken cancellationToken)
     {
         if (externalIds.Count == 0)
         {
@@ -42,12 +37,12 @@ public class SuggestionRepository : BaseRepositoryMongo<SuggestionModel>, ISugge
         var sourceLists = await Collection
             .Find(x => x.UserId == userId && x.Sources.Any(s => externalIds.Contains(s.ExternalId)))
             .Project(x => x.Sources)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return sourceLists.SelectMany(sources => sources).ToList();
     }
 
-    public async Task<SuggestionModel?> UpdateFieldsAsync(string id, string userId, string? taskId, string? projectId, string? activityId, DateTime start, DateTime end, string? comment, DateTime updatedAt)
+    public async Task<SuggestionModel?> UpdateFieldsAsync(string id, string userId, string? taskId, string? projectId, string? activityId, DateTime start, DateTime end, string? comment, DateTime updatedAt, CancellationToken cancellationToken)
     {
         var update = Update
             .Set(x => x.TaskId, taskId)
@@ -59,60 +54,57 @@ public class SuggestionRepository : BaseRepositoryMongo<SuggestionModel>, ISugge
             .Set(x => x.Status, SuggestionStatus.Edited)
             .Set(x => x.DateUpdated, updatedAt);
 
-        var filters = new List<FilterDefinition<SuggestionModel>>
-        {
-            Filter.Where(x => x.Id == id),
-            Filter.Where(x => x.UserId == userId),
-        };
+        var filter = BuildFilter(id, userId);
+        var options = new FindOneAndUpdateOptions<SuggestionModel> { ReturnDocument = ReturnDocument.After };
 
-        return await Collection.FindOneAndUpdateAsync(
-            Filter.And(filters),
-            update,
-            new FindOneAndUpdateOptions<SuggestionModel> { ReturnDocument = ReturnDocument.After });
+        return await Collection.FindOneAndUpdateAsync(filter, update, options, cancellationToken);
     }
 
-    public async Task<bool> SetStatusAsync(string id, string userId, SuggestionStatus status, DateTime updatedAt)
+    public async Task<bool> SetStatusAsync(string id, string userId, SuggestionStatus status, DateTime updatedAt, CancellationToken cancellationToken)
     {
         var update = Update
             .Set(x => x.Status, status)
             .Set(x => x.DateUpdated, updatedAt);
 
-        var filters = new List<FilterDefinition<SuggestionModel>>
-        {
-            Filter.Where(x => x.Id == id),
-            Filter.Where(x => x.UserId == userId),
-        };
+        var filter = BuildFilter(id, userId);
 
-        var result = await Collection.UpdateOneAsync(Filter.And(filters), update);
+        var result = await Collection.UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
 
         return result.MatchedCount > 0;
     }
 
-    public async Task DeleteResettableAsync(string userId, DateTime from, DateTime to, IReadOnlyList<ConnectorKey>? connectorKeys)
+    public async Task DeleteResettableAsync(string userId, DateTime from, DateTime to, IReadOnlyList<IntegrationKey>? keys, CancellationToken cancellationToken)
     {
         var resettableStatuses = new[] { SuggestionStatus.Pending, SuggestionStatus.Edited, SuggestionStatus.Dismissed };
         var filter = Filter.Where(x => x.UserId == userId && x.DateStarted >= from && x.DateStarted < to && resettableStatuses.Contains(x.Status));
 
-        if (connectorKeys is not null)
+        if (keys is not null)
         {
-            filter &= Filter.Where(x => x.Sources.Any(s => connectorKeys.Contains(s.ConnectorKey)));
+            filter &= Filter.Where(x => x.Sources.Any(s => keys.Contains(s.Key)));
         }
 
-        await Collection.DeleteManyAsync(filter);
+        await Collection.DeleteManyAsync(filter, cancellationToken);
+    }
+
+    private FilterDefinition<SuggestionModel> BuildFilter(string id, string userId)
+    {
+        var filter = Filter.Where(x => x.Id == id && x.UserId == userId);
+
+        return filter;
     }
 }
 
 public interface ISuggestionRepository : IBaseRepositoryMongo<SuggestionModel>
 {
-    Task<List<SuggestionModel>> ListAsync(string userId, DateTime from, DateTime to);
+    Task<List<SuggestionModel>> ListAsync(string userId, DateTime from, DateTime to, CancellationToken cancellationToken);
 
-    Task InsertManyAsync(IReadOnlyList<SuggestionModel> items);
+    Task InsertManyAsync(IReadOnlyList<SuggestionModel> items, CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<SuggestionEvidenceModel>> GetSourcesByExternalIdsAsync(string userId, IReadOnlyList<string> externalIds);
+    Task<IReadOnlyList<SuggestionEvidenceModel>> GetSourcesByExternalIdsAsync(string userId, IReadOnlyList<string> externalIds, CancellationToken cancellationToken);
 
-    Task<SuggestionModel?> UpdateFieldsAsync(string id, string userId, string? taskId, string? projectId, string? activityId, DateTime start, DateTime end, string? comment, DateTime updatedAt);
+    Task<SuggestionModel?> UpdateFieldsAsync(string id, string userId, string? taskId, string? projectId, string? activityId, DateTime start, DateTime end, string? comment, DateTime updatedAt, CancellationToken cancellationToken);
 
-    Task<bool> SetStatusAsync(string id, string userId, SuggestionStatus status, DateTime updatedAt);
+    Task<bool> SetStatusAsync(string id, string userId, SuggestionStatus status, DateTime updatedAt, CancellationToken cancellationToken);
 
-    Task DeleteResettableAsync(string userId, DateTime from, DateTime to, IReadOnlyList<ConnectorKey>? connectorKeys);
+    Task DeleteResettableAsync(string userId, DateTime from, DateTime to, IReadOnlyList<IntegrationKey>? keys, CancellationToken cancellationToken);
 }

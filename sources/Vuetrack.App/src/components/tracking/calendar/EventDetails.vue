@@ -22,7 +22,7 @@
                     <VProgressCircular size="16" width="2" indeterminate />
                     <span>{{ $t("calendar.event.details.loading") }}</span>
                 </div>
-                <template v-for="(group, groupIndex) in detailGroups" v-else :key="`${group.connectorKey}-${groupIndex}`">
+                <template v-for="(group, groupIndex) in detailGroups" v-else :key="`${group.key}-${groupIndex}`">
                     <div v-if="group.chips.length" class="v-chip-group">
                         <VChip v-for="(chip, chipIndex) in group.chips" :key="chipIndex" density="comfortable" size="small">
                             {{ chip.value }}
@@ -31,7 +31,6 @@
                     <div v-for="(row, rowIndex) in group.rows" :key="rowIndex" class="d-flex ga-3">
                         <span class="text-medium-emphasis flex-shrink-0 text-no-wrap" style="width: 84px">{{ $t(`detail.field.${row.label}`) }}</span>
                         <span v-if="row.kind === 'text'">{{ row.value }}</span>
-                        <span v-else-if="row.kind === 'date'">{{ dateFormatter.format(row.value, "fullDate") }}</span>
                         <a v-else-if="row.kind === 'link'" :href="row.url" class="d-inline-flex align-center ga-1" rel="noopener" target="_blank">
                             {{ row.text }}
                             <VIcon :icon="mdiOpenInNew" size="14" />
@@ -65,10 +64,11 @@
 <script setup lang="ts">
 import { useEventDetails } from "./composables/useEventDetails";
 import type { ChipDetailField, DetailField } from "@/contracts/DetailsContract";
+import type { IntegrationKey } from "@/contracts/IntegrationContract";
 import DetailsService from "@/services/DetailsService";
 
 type DetailFieldGroup = {
-    connectorKey: string;
+    key: IntegrationKey;
     chips: ChipDetailField[];
     rows: Exclude<DetailField, ChipDetailField>[];
 };
@@ -119,7 +119,7 @@ const details = useAsyncState((taskId: string) => DetailsService.get(taskId));
 const detailGroups = computed<DetailFieldGroup[]>(() => {
     const groups = details.data.value?.groups ?? [];
     return groups.map((group) => ({
-        connectorKey: group.connectorKey,
+        key: group.key,
         chips: group.fields.filter((field): field is ChipDetailField => field.kind === "chip"),
         rows: group.fields.filter((field): field is Exclude<DetailField, ChipDetailField> => field.kind !== "chip")
     }));

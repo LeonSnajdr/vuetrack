@@ -1,11 +1,11 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Vuetrack.Api.Features.Backends;
-using Vuetrack.Api.Features.TimeEntry.Services;
+using Vuetrack.Api.Features.Integrations;
+using Vuetrack.Api.Features.Integrations.Contracts;
+using Vuetrack.Api.Features.TimeEntry.Contracts;
 using Vuetrack.Api.Infrastructure.Authentication;
 using Vuetrack.Api.Infrastructure.Validation;
-using Vuetrack.Backends.Abstractions.Contracts;
 
 namespace Vuetrack.Api.Features.TimeEntry;
 
@@ -13,16 +13,17 @@ namespace Vuetrack.Api.Features.TimeEntry;
 [ApiVersion("1")]
 [Route("api/v{version:apiVersion}/timeEntry")]
 [Authorize(Roles = "User")]
-public class TimeEntryController(ITimeEntryService timeEntryService) : ControllerBase
+public class TimeEntryController(IBackend store) : ControllerBase
 {
-    private ITimeEntryService TimeEntryService { get; } = timeEntryService;
+    private IBackend Store { get; } = store;
 
     [HttpGet]
     public async Task<IActionResult> List([FromQuery] DateTime from, [FromQuery] DateTime to, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
 
-        var result = await TimeEntryService.ListAsync(userId, from, to, cancellationToken);
+        var range = new DateRange { From = from, To = to };
+        var result = await Store.GetTimeEntriesAsync(userId, range, cancellationToken);
 
         return this.ToActionResult(result);
     }
@@ -32,9 +33,9 @@ public class TimeEntryController(ITimeEntryService timeEntryService) : Controlle
     {
         var userId = User.GetUserId();
 
-        var result = await TimeEntryService.CreateAsync(userId, contract, cancellationToken);
+        var result = await Store.CreateTimeEntryAsync(userId, contract, cancellationToken);
 
-        return this.ToActionResult(result);
+        return this.ToCreatedResult(result);
     }
 
     [HttpPut("{id}")]
@@ -42,7 +43,7 @@ public class TimeEntryController(ITimeEntryService timeEntryService) : Controlle
     {
         var userId = User.GetUserId();
 
-        var result = await TimeEntryService.UpdateAsync(userId, id, contract, cancellationToken);
+        var result = await Store.UpdateTimeEntryAsync(userId, id, contract, cancellationToken);
 
         return this.ToActionResult(result);
     }
@@ -52,7 +53,7 @@ public class TimeEntryController(ITimeEntryService timeEntryService) : Controlle
     {
         var userId = User.GetUserId();
 
-        var result = await TimeEntryService.DeleteAsync(userId, id, cancellationToken);
+        var result = await Store.DeleteTimeEntryAsync(userId, id, cancellationToken);
 
         return this.ToActionResult(result);
     }

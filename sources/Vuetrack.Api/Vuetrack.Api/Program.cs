@@ -11,17 +11,19 @@ using Samhammer.Swagger.Authentication;
 using Samhammer.Swagger.Versioning;
 using Samhammer.Web.Common.Extensions;
 using Serilog;
+using Vuetrack.Api.Features.Integrations.Github;
+using Vuetrack.Api.Features.Integrations.Github.Api;
+using Vuetrack.Api.Features.Integrations.Github.Internal;
+using Vuetrack.Api.Features.Integrations.Jira;
+using Vuetrack.Api.Features.Integrations.Jira.Api;
+using Vuetrack.Api.Features.Integrations.Jira.Internal;
+using Vuetrack.Api.Features.Integrations.Timetracking;
+using Vuetrack.Api.Features.Integrations.Timetracking.Api;
 using Vuetrack.Api.Infrastructure.Config;
 using Vuetrack.Api.Infrastructure.Cors;
+using Vuetrack.Api.Infrastructure.Logging;
 using Vuetrack.Api.Infrastructure.ModelBinding;
 using Vuetrack.Api.Infrastructure.Validation;
-using Vuetrack.Backends.Timetracking;
-using Vuetrack.Backends.Timetracking.Api;
-using Vuetrack.Connectors.Github;
-using Vuetrack.Connectors.Github.Activity;
-using Vuetrack.Connectors.Jira;
-using Vuetrack.Connectors.Jira.Activity;
-using Vuetrack.Logging;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console(outputTemplate: SerilogConfig.ConsoleTemplate)

@@ -1,11 +1,12 @@
 import type { Branded } from "typings/brand";
 import type { ActivityId } from "@/contracts/ActivityContract";
+import type { IntegrationKey } from "@/contracts/IntegrationContract";
 import type { ProjectId } from "@/contracts/ProjectContract";
 
 export type TimeEntrySuggestionId = Branded<string, "timeEntrySuggestionId">;
 
 export type TimeEntrySuggestionEvidenceContract = {
-    connectorKey: string;
+    key: IntegrationKey;
     externalId: string;
     kind: string;
     dateStarted: Date;

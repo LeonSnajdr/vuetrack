@@ -1,5 +1,5 @@
+using Vuetrack.Api.Features.Integrations;
 using Vuetrack.Api.Features.Suggestions.Core;
-using Vuetrack.Connectors.Abstractions;
 
 namespace Vuetrack.Api.Tests.Fakes;
 
@@ -9,7 +9,7 @@ public sealed class FakeSuggestionRepository : ISuggestionRepository
 
     public IReadOnlyList<SuggestionModel> Items => items;
 
-    public Task<List<SuggestionModel>> ListAsync(string userId, DateTime from, DateTime to)
+    public Task<List<SuggestionModel>> ListAsync(string userId, DateTime from, DateTime to, CancellationToken cancellationToken)
     {
         var result = items
             .Where(x => x.UserId == userId && x.Status != SuggestionStatus.Dismissed && x.Status != SuggestionStatus.Confirmed && x.DateStarted >= from && x.DateStarted < to)
@@ -19,7 +19,7 @@ public sealed class FakeSuggestionRepository : ISuggestionRepository
         return Task.FromResult(result);
     }
 
-    public Task InsertManyAsync(IReadOnlyList<SuggestionModel> newItems)
+    public Task InsertManyAsync(IReadOnlyList<SuggestionModel> newItems, CancellationToken cancellationToken)
     {
         foreach (var item in newItems)
         {
@@ -34,7 +34,7 @@ public sealed class FakeSuggestionRepository : ISuggestionRepository
         return Task.CompletedTask;
     }
 
-    public Task<IReadOnlyList<SuggestionEvidenceModel>> GetSourcesByExternalIdsAsync(string userId, IReadOnlyList<string> externalIds)
+    public Task<IReadOnlyList<SuggestionEvidenceModel>> GetSourcesByExternalIdsAsync(string userId, IReadOnlyList<string> externalIds, CancellationToken cancellationToken)
     {
         var idSet = externalIds.ToHashSet(StringComparer.Ordinal);
         IReadOnlyList<SuggestionEvidenceModel> sources = items
@@ -46,7 +46,7 @@ public sealed class FakeSuggestionRepository : ISuggestionRepository
         return Task.FromResult(sources);
     }
 
-    public Task<SuggestionModel?> UpdateFieldsAsync(string id, string userId, string? taskId, string? projectId, string? activityId, DateTime start, DateTime end, string? comment, DateTime updatedAt)
+    public Task<SuggestionModel?> UpdateFieldsAsync(string id, string userId, string? taskId, string? projectId, string? activityId, DateTime start, DateTime end, string? comment, DateTime updatedAt, CancellationToken cancellationToken)
     {
         var model = items.FirstOrDefault(x => x.Id == id && x.UserId == userId);
         if (model is null)
@@ -66,7 +66,7 @@ public sealed class FakeSuggestionRepository : ISuggestionRepository
         return Task.FromResult<SuggestionModel?>(model);
     }
 
-    public Task<bool> SetStatusAsync(string id, string userId, SuggestionStatus status, DateTime updatedAt)
+    public Task<bool> SetStatusAsync(string id, string userId, SuggestionStatus status, DateTime updatedAt, CancellationToken cancellationToken)
     {
         var model = items.FirstOrDefault(x => x.Id == id && x.UserId == userId);
         if (model is null)
@@ -80,14 +80,14 @@ public sealed class FakeSuggestionRepository : ISuggestionRepository
         return Task.FromResult(true);
     }
 
-    public Task DeleteResettableAsync(string userId, DateTime from, DateTime to, IReadOnlyList<ConnectorKey>? connectorKeys)
+    public Task DeleteResettableAsync(string userId, DateTime from, DateTime to, IReadOnlyList<IntegrationKey>? keys, CancellationToken cancellationToken)
     {
         items.RemoveAll(x =>
             x.UserId == userId &&
             x.DateStarted >= from &&
             x.DateStarted < to &&
             x.Status is SuggestionStatus.Pending or SuggestionStatus.Edited or SuggestionStatus.Dismissed &&
-            (connectorKeys is null || x.Sources.Any(s => connectorKeys.Contains(s.ConnectorKey))));
+            (keys is null || x.Sources.Any(s => keys.Contains(s.Key))));
 
         return Task.CompletedTask;
     }

@@ -1,10 +1,9 @@
 using AwesomeAssertions;
 using ErrorOr;
 using Microsoft.Extensions.Logging.Abstractions;
-using Vuetrack.Api.Features.Connectors;
 using Vuetrack.Api.Features.Details;
+using Vuetrack.Api.Features.Integrations;
 using Vuetrack.Api.Tests.Fakes;
-using Vuetrack.Connectors.Abstractions;
 using Xunit;
 
 namespace Vuetrack.Api.Tests.Features.Details;
@@ -12,95 +11,76 @@ namespace Vuetrack.Api.Tests.Features.Details;
 public class DetailServiceTests
 {
     [Fact]
-    public async Task GetAsync_ConnectedConnector_ReturnsFieldsGroupedUnderItsKey()
+    public async Task GetAsync_SourceReturnsFields_GroupsThemUnderItsKey()
     {
-        var jira = new FakeConnector(Descriptor(ConnectorKey.Jira), NoSignals, (_, _) => Fields(
+        var jira = new FakeConnector(IntegrationKey.Jira, NoSignals, (_, _) => Fields(
         [
             new TextDetailField { Label = DetailFieldLabel.Title, Value = "Fix the thing" },
         ]));
 
-        var registry = new FakeConnectorRegistry();
-        registry.Add(jira);
-
-        var service = CreateService(registry, [new FakeConnectorContextInitializer(ConnectorKey.Jira, true)]);
+        var service = CreateService(jira);
 
         var result = await service.GetAsync(Query(), "user-1", CancellationToken.None);
 
-        result.Groups.Should().ContainSingle();
-        result.Groups[0].ConnectorKey.Should().Be(ConnectorKey.Jira);
-        result.Groups[0].Fields.Should().ContainSingle(f => f.Label == DetailFieldLabel.Title);
+        result.IsError.Should().BeFalse();
+        result.Value.Groups.Should().ContainSingle();
+        result.Value.Groups[0].Key.Should().Be(IntegrationKey.Jira);
+        result.Value.Groups[0].Fields.Should().ContainSingle(f => f.Label == DetailFieldLabel.Title);
     }
 
     [Fact]
-    public async Task GetAsync_ConnectorNotConnected_IsNeverAskedForDetails()
+    public async Task GetAsync_SourceNotConnected_OmitsItsGroup()
     {
-        var jira = new FakeConnector(Descriptor(ConnectorKey.Jira), NoSignals, (_, _) => Fields(
-        [
-            new TextDetailField { Label = DetailFieldLabel.Title, Value = "Fix the thing" },
-        ]));
+        var jira = new FakeConnector(IntegrationKey.Jira, NoSignals, (_, _) => FailFields(IntegrationError.NotConnected));
 
-        var registry = new FakeConnectorRegistry();
-        registry.Add(jira);
-
-        var service = CreateService(registry, [new FakeConnectorContextInitializer(ConnectorKey.Jira, false)]);
+        var service = CreateService(jira);
 
         var result = await service.GetAsync(Query(), "user-1", CancellationToken.None);
 
-        jira.DetailCount.Should().Be(0);
-        result.Groups.Should().BeEmpty();
+        result.IsError.Should().BeFalse();
+        result.Value.Groups.Should().BeEmpty();
     }
 
     [Fact]
-    public async Task GetAsync_OnlyOneConnectorConnected_AsksConnectedOneOnly()
+    public async Task GetAsync_OneSourceFails_KeepsTheOtherGroup()
     {
-        var jira = new FakeConnector(Descriptor(ConnectorKey.Jira), NoSignals, (_, _) => Fields(
+        var jira = new FakeConnector(IntegrationKey.Jira, NoSignals, (_, _) => Fields(
         [
             new TextDetailField { Label = DetailFieldLabel.Title, Value = "Fix the thing" },
         ]));
-        var github = new FakeConnector(Descriptor(ConnectorKey.Github), NoSignals, (_, _) => Fields(
-        [
-            new TextDetailField { Label = DetailFieldLabel.Status, Value = "open" },
-        ]));
+        var github = new FakeConnector(IntegrationKey.Github, NoSignals, (_, _) => FailFields(Error.Failure()));
 
-        var registry = new FakeConnectorRegistry();
-        registry.Add(jira);
-        registry.Add(github);
+        var service = CreateService(jira, github);
 
-        var initializers = new IConnectorContextInitializer[]
+        var result = await service.GetAsync(Query(), "user-1", CancellationToken.None);
+
+        jira.DetailCount.Should().Be(1);
+        github.DetailCount.Should().Be(1);
+        result.Value.Groups.Should().ContainSingle(g => g.Key == IntegrationKey.Jira);
+    }
+
+    [Fact]
+    public async Task GetAsync_SourceReturnsNoFields_OmitsItsGroup()
+    {
+        var jira = new FakeConnector(IntegrationKey.Jira, NoSignals, (_, _) => Fields([]));
+
+        var service = CreateService(jira);
+
+        var result = await service.GetAsync(Query(), "user-1", CancellationToken.None);
+
+        jira.DetailCount.Should().Be(1);
+        result.Value.Groups.Should().BeEmpty();
+    }
+
+    private static DetailService CreateService(params IConnector[] connectors)
+    {
+        var registry = new FakeIntegrationRegistry();
+        foreach (var connector in connectors)
         {
-            new FakeConnectorContextInitializer(ConnectorKey.Jira, true),
-            new FakeConnectorContextInitializer(ConnectorKey.Github, false),
-        };
+            registry.Add(connector);
+        }
 
-        var service = CreateService(registry, initializers);
-
-        var result = await service.GetAsync(Query(), "user-1", CancellationToken.None);
-
-        jira.DetailCount.Should().Be(1);
-        github.DetailCount.Should().Be(0);
-        result.Groups.Should().ContainSingle(g => g.ConnectorKey == ConnectorKey.Jira);
-    }
-
-    [Fact]
-    public async Task GetAsync_ConnectorFails_IsSwallowedAndOmitsItsGroup()
-    {
-        var jira = new FakeConnector(Descriptor(ConnectorKey.Jira), NoSignals, (_, _) => FailFields(Error.Failure()));
-
-        var registry = new FakeConnectorRegistry();
-        registry.Add(jira);
-
-        var service = CreateService(registry, [new FakeConnectorContextInitializer(ConnectorKey.Jira, true)]);
-
-        var result = await service.GetAsync(Query(), "user-1", CancellationToken.None);
-
-        jira.DetailCount.Should().Be(1);
-        result.Groups.Should().BeEmpty();
-    }
-
-    private static DetailService CreateService(FakeConnectorRegistry registry, IEnumerable<IConnectorContextInitializer> initializers)
-    {
-        var resolver = new ConnectorResolver(registry, initializers);
-        return new DetailService(resolver, NullLogger<DetailService>.Instance);
+        return new DetailService(registry, NullLogger<DetailService>.Instance);
     }
 
     private static Task<ErrorOr<IReadOnlyList<ActivitySignal>>> NoSignals(ActivityFetchContainer container, CancellationToken cancellationToken)
@@ -116,10 +96,4 @@ public class DetailServiceTests
         Task.FromResult<ErrorOr<IReadOnlyList<DetailField>>>(error);
 
     private static DetailQuery Query() => new() { TaskId = "J-1" };
-
-    private static ConnectorDescriptor Descriptor(ConnectorKey key) => new()
-    {
-        Key = key,
-        Capabilities = [],
-    };
 }

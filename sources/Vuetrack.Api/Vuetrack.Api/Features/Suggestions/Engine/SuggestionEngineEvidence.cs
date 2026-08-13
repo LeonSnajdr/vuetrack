@@ -1,10 +1,10 @@
-using Vuetrack.Connectors.Abstractions;
+using Vuetrack.Api.Features.Integrations;
 
 namespace Vuetrack.Api.Features.Suggestions.Engine;
 
 public sealed record SuggestionEngineEvidence
 {
-    public required ConnectorKey ConnectorKey { get; init; }
+    public required IntegrationKey Key { get; init; }
 
     public required string ExternalId { get; init; }
 

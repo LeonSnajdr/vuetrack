@@ -4,9 +4,10 @@ using ErrorOr;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
+using Vuetrack.Api.Features.Integrations.Contracts;
 using Vuetrack.Api.Features.TimeEntry;
+using Vuetrack.Api.Features.TimeEntry.Contracts;
 using Vuetrack.Api.Tests.Fakes;
-using Vuetrack.Backends.Abstractions.Contracts;
 using Xunit;
 
 namespace Vuetrack.Api.Tests.Features.TimeEntry;
@@ -17,7 +18,7 @@ public class ErrorOrResultMappingTests
     public async Task List_WhenServiceReturnsConflict_ReturnsProblemDetailsWithStatusAndDetail()
     {
         var error = Error.Conflict(code: "Backend.NotConnected", description: "The backend is not connected");
-        var controller = CreateController(new StubTimeEntryService { ListResult = error });
+        var controller = CreateController(new StubBackend { ListResult = error });
 
         var result = await controller.List(DateTime.UnixEpoch, DateTime.UnixEpoch.AddHours(1), CancellationToken.None);
 
@@ -38,7 +39,7 @@ public class ErrorOrResultMappingTests
             Error.Validation(code: "ProjectId", description: "Project is required"),
             Error.Validation(code: "ActivityId", description: "Activity is required"),
         };
-        var controller = CreateController(new StubTimeEntryService { CreateResult = errors });
+        var controller = CreateController(new StubBackend { CreateResult = errors });
 
         var result = await controller.Create(new TimeEntryCreateContract(), CancellationToken.None);
 
@@ -55,7 +56,7 @@ public class ErrorOrResultMappingTests
     [Fact]
     public async Task Delete_WhenServiceReturnsNotFound_ReturnsProblemDetailsWith404()
     {
-        var controller = CreateController(new StubTimeEntryService { DeleteResult = Error.NotFound(description: "Time entry not found") });
+        var controller = CreateController(new StubBackend { DeleteResult = Error.NotFound(description: "Time entry not found") });
 
         var result = await controller.Delete("missing", CancellationToken.None);
 
@@ -68,7 +69,7 @@ public class ErrorOrResultMappingTests
         problem.Detail.Should().Be("Time entry not found");
     }
 
-    private static TimeEntryController CreateController(StubTimeEntryService service)
+    private static TimeEntryController CreateController(StubBackend service)
     {
         var provider = new ServiceCollection()
             .AddLogging()

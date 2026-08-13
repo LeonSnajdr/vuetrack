@@ -34,25 +34,26 @@ public class ValidationErrorOrTests
     }
 
     [Fact]
-    public void ToActionResult_WhenCreated_Returns201()
+    public void ToCreatedResult_WhenValue_Returns201WithBody()
     {
         var controller = CreateController();
 
-        var result = controller.ToActionResult(Result.Created);
+        var result = controller.ToCreatedResult<string>("created-id");
 
-        result.Should().BeOfType<StatusCodeResult>()
-            .Which.StatusCode.Should().Be(StatusCodes.Status201Created);
+        var objectResult = result.Should().BeOfType<ObjectResult>().Which;
+        objectResult.StatusCode.Should().Be(StatusCodes.Status201Created);
+        objectResult.Value.Should().Be("created-id");
     }
 
     [Fact]
-    public void ToActionResult_WhenUpdated_ReturnsNoContent()
+    public void ToCreatedResult_WhenError_ReturnsProblem()
     {
         var controller = CreateController();
 
-        var result = controller.ToActionResult(Result.Updated);
+        var result = controller.ToCreatedResult<string>(Error.NotFound());
 
-        result.Should().BeOfType<NoContentResult>()
-            .Which.StatusCode.Should().Be(StatusCodes.Status204NoContent);
+        result.Should().BeOfType<ObjectResult>()
+            .Which.StatusCode.Should().Be(StatusCodes.Status404NotFound);
     }
 
     [Fact]

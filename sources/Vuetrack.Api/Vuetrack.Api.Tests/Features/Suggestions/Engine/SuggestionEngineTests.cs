@@ -1,9 +1,10 @@
 using AwesomeAssertions;
 using ErrorOr;
+using Microsoft.Extensions.Logging.Abstractions;
+using Vuetrack.Api.Features.Integrations;
 using Vuetrack.Api.Features.Suggestions.Engine;
 using Vuetrack.Api.Features.Suggestions.Engine.Provider;
 using Vuetrack.Api.Tests.Fakes;
-using Vuetrack.Connectors.Abstractions;
 using Xunit;
 
 namespace Vuetrack.Api.Tests.Features.Suggestions.Engine;
@@ -20,7 +21,7 @@ public class SuggestionEngineTests
     public async Task BuildAsync_EmptyInput_ReturnsEmptyAndDoesNotCallProvider()
     {
         var provider = new FakeSuggestionProvider();
-        var engine = new SuggestionEngine(provider);
+        var engine = new SuggestionEngine(provider, NullLogger<SuggestionEngine>.Instance);
 
         var result = (await engine.BuildAsync([], From, To, CancellationToken.None)).Value;
 
@@ -32,7 +33,7 @@ public class SuggestionEngineTests
     public async Task BuildAsync_SendsEverySignalToProvider()
     {
         var provider = new FakeSuggestionProvider();
-        var engine = new SuggestionEngine(provider);
+        var engine = new SuggestionEngine(provider, NullLogger<SuggestionEngine>.Instance);
         var worklog = Worklog("PROJ-1:worklog:1", "PROJ-1", At(9, 0), At(9, 30));
         var comment = Point("PROJ-2:comment:1", "PROJ-2", At(10, 0), ActivityKind.Comment);
 
@@ -63,7 +64,7 @@ public class SuggestionEngineTests
             SourceExternalIds = ["PROJ-1:worklog:1"],
         };
         var provider = new FakeSuggestionProvider(candidate);
-        var engine = new SuggestionEngine(provider);
+        var engine = new SuggestionEngine(provider, NullLogger<SuggestionEngine>.Instance);
 
         var result = (await engine.BuildAsync([signal], From, To, CancellationToken.None)).Value;
 
@@ -74,7 +75,7 @@ public class SuggestionEngineTests
         suggestion.DateEnded.Should().Be(At(9, 30));
         suggestion.Confidence.Should().BeApproximately(0.9, 0.0001);
         var evidence = suggestion.Sources.Should().ContainSingle().Which;
-        evidence.ConnectorKey.Should().Be(ConnectorKey.Jira);
+        evidence.Key.Should().Be(IntegrationKey.Jira);
         evidence.ExternalId.Should().Be("PROJ-1:worklog:1");
         evidence.Kind.Should().Be(ActivityKind.Worklog);
         evidence.DateStarted.Should().Be(At(9, 0));
@@ -93,7 +94,7 @@ public class SuggestionEngineTests
             SourceExternalIds = ["PROJ-2:comment:1"],
         };
         var provider = new FakeSuggestionProvider(candidate);
-        var engine = new SuggestionEngine(provider);
+        var engine = new SuggestionEngine(provider, NullLogger<SuggestionEngine>.Instance);
 
         var result = (await engine.BuildAsync([signal], From, To, CancellationToken.None)).Value;
 
@@ -121,7 +122,7 @@ public class SuggestionEngineTests
             SourceExternalIds = ["ghost:1"],
         };
         var provider = new FakeSuggestionProvider(withUnknown, allUnknown);
-        var engine = new SuggestionEngine(provider);
+        var engine = new SuggestionEngine(provider, NullLogger<SuggestionEngine>.Instance);
 
         var result = (await engine.BuildAsync([known], From, To, CancellationToken.None)).Value;
 
@@ -143,7 +144,7 @@ public class SuggestionEngineTests
             SourceExternalIds = ["PROJ-1:worklog:1"],
         };
         var provider = new FakeSuggestionProvider(spillsOver);
-        var engine = new SuggestionEngine(provider);
+        var engine = new SuggestionEngine(provider, NullLogger<SuggestionEngine>.Instance);
 
         var result = (await engine.BuildAsync([signal], customFrom, customTo, CancellationToken.None)).Value;
 
@@ -164,7 +165,7 @@ public class SuggestionEngineTests
             SourceExternalIds = ["PROJ-1:worklog:1"],
         };
         var provider = new FakeSuggestionProvider(candidate);
-        var engine = new SuggestionEngine(provider);
+        var engine = new SuggestionEngine(provider, NullLogger<SuggestionEngine>.Instance);
 
         var result = (await engine.BuildAsync([signal], From, To, CancellationToken.None)).Value;
 
@@ -177,7 +178,7 @@ public class SuggestionEngineTests
         var first = Worklog("PROJ-6:worklog:1", "PROJ-6", At(13, 0), At(13, 10));
         var duplicate = Worklog("PROJ-6:worklog:1", "PROJ-6", At(13, 0), At(13, 10));
         var provider = new FakeSuggestionProvider();
-        var engine = new SuggestionEngine(provider);
+        var engine = new SuggestionEngine(provider, NullLogger<SuggestionEngine>.Instance);
 
         await engine.BuildAsync([first, duplicate], From, To, CancellationToken.None);
 
@@ -197,7 +198,7 @@ public class SuggestionEngineTests
             Candidate("PROJ-B:worklog:1", At(19, 0), At(19, 10)),
         };
         var provider = new FakeSuggestionProvider(candidates);
-        var engine = new SuggestionEngine(provider);
+        var engine = new SuggestionEngine(provider, NullLogger<SuggestionEngine>.Instance);
 
         var result = (await engine.BuildAsync([charlie, alpha, bravo], From, To, CancellationToken.None)).Value;
 
@@ -231,7 +232,7 @@ public class SuggestionEngineTests
     {
         return new ActivitySignal
         {
-            ConnectorKey = ConnectorKey.Jira,
+            Key = IntegrationKey.Jira,
             ExternalId = externalId,
             DateStarted = start,
             DateEnded = end,

@@ -1,8 +1,7 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Vuetrack.Api.Features.Backends;
-using Vuetrack.Api.Features.Project.Services;
+using Vuetrack.Api.Features.Integrations;
 using Vuetrack.Api.Infrastructure.Authentication;
 using Vuetrack.Api.Infrastructure.Validation;
 
@@ -12,16 +11,16 @@ namespace Vuetrack.Api.Features.Project;
 [ApiVersion("1")]
 [Route("api/v{version:apiVersion}/project")]
 [Authorize(Roles = "User")]
-public class ProjectController(IProjectService projectService) : ControllerBase
+public class ProjectController(IBackend store) : ControllerBase
 {
-    private IProjectService ProjectService { get; } = projectService;
+    private IBackend Store { get; } = store;
 
     [HttpGet]
     public async Task<IActionResult> List(CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
 
-        var result = await ProjectService.ListAsync(userId, cancellationToken);
+        var result = await Store.GetProjectsAsync(userId, cancellationToken);
 
         return this.ToActionResult(result);
     }
@@ -31,7 +30,7 @@ public class ProjectController(IProjectService projectService) : ControllerBase
     {
         var userId = User.GetUserId();
 
-        var result = await ProjectService.ListActivitiesAsync(userId, projectId, cancellationToken);
+        var result = await Store.GetActivitiesAsync(userId, projectId, cancellationToken);
 
         return this.ToActionResult(result);
     }
@@ -41,7 +40,7 @@ public class ProjectController(IProjectService projectService) : ControllerBase
     {
         var userId = User.GetUserId();
 
-        var result = await ProjectService.FindByTaskIdAsync(userId, taskId, cancellationToken);
+        var result = await Store.FindProjectIdByTaskIdAsync(userId, taskId, cancellationToken);
 
         return this.ToActionResult(result);
     }

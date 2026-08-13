@@ -1,0 +1,97 @@
+using Duende.IdentityModel.Client;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
+namespace Vuetrack.Api.Features.Integrations.Connections;
+
+public abstract class OAuthApiClientBase(HttpClient httpClient, ILogger logger, IOptions<OAuthOptions> oAuthOptions) : IOAuthApiClientBase
+{
+    protected HttpClient HttpClient { get; } = httpClient;
+
+    private ILogger Logger { get; } = logger;
+
+    private IOptions<OAuthOptions> OAuthOptions { get; } = oAuthOptions;
+
+    protected abstract IntegrationKey Key { get; }
+
+    protected virtual string? AuthorizePrompt => null;
+
+    protected virtual Parameters? ExtraAuthorizeParameters => null;
+
+    public string BuildAuthorizationUrl(string state, string redirectUri)
+    {
+        var request = new RequestUrl(OAuthOptions.Value.AuthorizeEndpoint);
+        return request.CreateAuthorizeUrl(
+            clientId: OAuthOptions.Value.ClientId,
+            responseType: "code",
+            scope: OAuthOptions.Value.Scopes,
+            redirectUri: redirectUri,
+            state: state,
+            prompt: AuthorizePrompt,
+            extra: ExtraAuthorizeParameters);
+    }
+
+    public async Task<OAuthTokenResponse> ExchangeCodeAsync(string code, string redirectUri, CancellationToken cancellationToken)
+    {
+        var tokenRequest = new AuthorizationCodeTokenRequest
+        {
+            Address = OAuthOptions.Value.TokenEndpoint,
+            ClientId = OAuthOptions.Value.ClientId,
+            ClientSecret = OAuthOptions.Value.ClientSecret,
+            ClientCredentialStyle = ClientCredentialStyle.PostBody,
+            Code = code,
+            RedirectUri = redirectUri,
+        };
+
+        var response = await HttpClient.RequestAuthorizationCodeTokenAsync(tokenRequest, cancellationToken);
+        return MapToken(response);
+    }
+
+    public async Task<OAuthTokenResponse> RefreshAsync(string refreshToken, CancellationToken cancellationToken)
+    {
+        var tokenRequest = new RefreshTokenRequest
+        {
+            Address = OAuthOptions.Value.TokenEndpoint,
+            ClientId = OAuthOptions.Value.ClientId,
+            ClientSecret = OAuthOptions.Value.ClientSecret,
+            ClientCredentialStyle = ClientCredentialStyle.PostBody,
+            RefreshToken = refreshToken,
+        };
+
+        var response = await HttpClient.RequestRefreshTokenAsync(tokenRequest, cancellationToken);
+        return MapToken(response);
+    }
+
+    private OAuthTokenResponse MapToken(TokenResponse response)
+    {
+        if (response.IsError)
+        {
+            Logger.LogWarning("{Integration} token endpoint failed: {Error} ({StatusCode})", Key, response.Error, (int)response.HttpStatusCode);
+            var reason = response.Error ?? response.HttpStatusCode.ToString();
+            throw new InvalidOperationException($"{Key} token request failed ({reason}).");
+        }
+
+        if (string.IsNullOrEmpty(response.AccessToken))
+        {
+            throw new InvalidOperationException($"{Key} token response was empty.");
+        }
+
+        return new OAuthTokenResponse
+        {
+            AccessToken = response.AccessToken,
+            RefreshToken = response.RefreshToken,
+            ExpiresInSeconds = response.ExpiresIn,
+            Scope = response.Scope,
+            TokenType = response.TokenType,
+        };
+    }
+}
+
+public interface IOAuthApiClientBase
+{
+    string BuildAuthorizationUrl(string state, string redirectUri);
+
+    Task<OAuthTokenResponse> ExchangeCodeAsync(string code, string redirectUri, CancellationToken cancellationToken);
+
+    Task<OAuthTokenResponse> RefreshAsync(string refreshToken, CancellationToken cancellationToken);
+}

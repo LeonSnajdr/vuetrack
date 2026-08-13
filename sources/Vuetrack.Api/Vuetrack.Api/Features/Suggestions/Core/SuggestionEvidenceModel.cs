@@ -1,13 +1,13 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
-using Vuetrack.Connectors.Abstractions;
+using Vuetrack.Api.Features.Integrations;
 
 namespace Vuetrack.Api.Features.Suggestions.Core;
 
 public sealed class SuggestionEvidenceModel
 {
     [BsonRepresentation(BsonType.String)]
-    public required ConnectorKey ConnectorKey { get; set; }
+    public required IntegrationKey Key { get; set; }
 
     public required string ExternalId { get; set; }
 

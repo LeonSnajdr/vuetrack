@@ -1,29 +1,30 @@
 using ErrorOr;
-using Vuetrack.Connectors.Abstractions;
+using Vuetrack.Api.Features.Details;
+using Vuetrack.Api.Features.Integrations;
 
 namespace Vuetrack.Api.Tests.Fakes;
 
 public sealed class FakeConnector(
-    ConnectorDescriptor descriptor,
+    IntegrationKey key,
     Func<ActivityFetchContainer, CancellationToken, Task<ErrorOr<IReadOnlyList<ActivitySignal>>>> fetch,
     Func<DetailQuery, CancellationToken, Task<ErrorOr<IReadOnlyList<DetailField>>>>? details = null) : IConnector
 {
-    public ConnectorDescriptor Descriptor { get; } = descriptor;
+    public IntegrationKey Key { get; } = key;
 
     public int FetchCount { get; private set; }
 
     public int DetailCount { get; private set; }
 
-    public Task<ErrorOr<Success>> ValidateAsync(CancellationToken cancellationToken) =>
+    public Task<ErrorOr<Success>> ValidateAsync(string userId, CancellationToken cancellationToken) =>
         Task.FromResult<ErrorOr<Success>>(Result.Success);
 
-    public Task<ErrorOr<IReadOnlyList<ActivitySignal>>> FetchAsync(ActivityFetchContainer container, CancellationToken cancellationToken)
+    public Task<ErrorOr<IReadOnlyList<ActivitySignal>>> FetchAsync(string userId, ActivityFetchContainer container, CancellationToken cancellationToken)
     {
         FetchCount++;
         return fetch(container, cancellationToken);
     }
 
-    public Task<ErrorOr<IReadOnlyList<DetailField>>> GetDetailsAsync(DetailQuery query, CancellationToken cancellationToken)
+    public Task<ErrorOr<IReadOnlyList<DetailField>>> GetDetailsAsync(string userId, DetailQuery query, CancellationToken cancellationToken)
     {
         DetailCount++;
 

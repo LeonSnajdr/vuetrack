@@ -1,4 +1,4 @@
-using Vuetrack.Connectors.Abstractions;
+using Vuetrack.Api.Features.Integrations;
 
 namespace Vuetrack.Api.Features.Suggestions.Engine.Provider;
 

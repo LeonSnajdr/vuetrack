@@ -1,15 +1,15 @@
 using AwesomeAssertions;
 using ErrorOr;
 using Microsoft.Extensions.Logging.Abstractions;
-using Vuetrack.Api.Features.Connectors;
+using Vuetrack.Api.Features.Integrations;
+using Vuetrack.Api.Features.Integrations.Contracts;
+using Vuetrack.Api.Features.Project.Contracts;
 using Vuetrack.Api.Features.Suggestions.Core;
 using Vuetrack.Api.Features.Suggestions.Core.Contracts;
 using Vuetrack.Api.Features.Suggestions.Core.Services;
 using Vuetrack.Api.Features.Suggestions.Engine;
-using Vuetrack.Api.Features.TimeEntry.Services;
+using Vuetrack.Api.Features.TimeEntry.Contracts;
 using Vuetrack.Api.Tests.Fakes;
-using Vuetrack.Backends.Abstractions.Contracts;
-using Vuetrack.Connectors.Abstractions;
 using Xunit;
 
 namespace Vuetrack.Api.Tests.Features.Suggestions.Core;
@@ -25,17 +25,16 @@ public class SuggestionServiceTests
     [Fact]
     public async Task GenerateAsync_ConnectorReturnsMultipleSignals_AggregatesAndPersistsAllSuggestions()
     {
-        var registry = new FakeConnectorRegistry();
-        registry.Add(new FakeConnector(Descriptor(ConnectorKey.Jira), (_, _) => Signals(
+        var registry = new FakeIntegrationRegistry();
+        registry.Add(new FakeConnector(IntegrationKey.Jira, (_, _) => Signals(
         [
-            Signal(ConnectorKey.Jira, "J-1:worklog:1", "J-1", At(9, 0), At(9, 10)),
-            Signal(ConnectorKey.Jira, "J-2:worklog:1", "J-2", At(11, 0), At(11, 10)),
+            Signal(IntegrationKey.Jira, "J-1:worklog:1", "J-1", At(9, 0), At(9, 10)),
+            Signal(IntegrationKey.Jira, "J-2:worklog:1", "J-2", At(11, 0), At(11, 10)),
         ])));
 
-        var initializers = new IConnectorContextInitializer[] { new FakeConnectorContextInitializer(ConnectorKey.Jira, true) };
 
         var repository = new FakeSuggestionRepository();
-        var service = CreateService(registry, initializers, repository);
+        var service = CreateService(registry, repository);
 
         var result = await service.GenerateAsync("user-1", Request(), CancellationToken.None);
 
@@ -47,12 +46,11 @@ public class SuggestionServiceTests
     [Fact]
     public async Task GenerateAsync_ConnectorFails_IsSwallowedAndReturnsEmpty()
     {
-        var registry = new FakeConnectorRegistry();
-        registry.Add(new FakeConnector(Descriptor(ConnectorKey.Jira), (_, _) => Fail(Error.Failure())));
+        var registry = new FakeIntegrationRegistry();
+        registry.Add(new FakeConnector(IntegrationKey.Jira, (_, _) => Fail(Error.Failure())));
 
-        var initializers = new IConnectorContextInitializer[] { new FakeConnectorContextInitializer(ConnectorKey.Jira, true) };
         var repository = new FakeSuggestionRepository();
-        var service = CreateService(registry, initializers, repository);
+        var service = CreateService(registry, repository);
 
         var result = await service.GenerateAsync("user-1", Request(), CancellationToken.None);
 
@@ -62,14 +60,13 @@ public class SuggestionServiceTests
     }
 
     [Fact]
-    public async Task GenerateAsync_ConnectorNotConnected_IsSwallowedAndReturnsEmpty()
+    public async Task GenerateAsync_SourceNotConnected_IsSwallowedAndReturnsEmpty()
     {
-        var registry = new FakeConnectorRegistry();
-        registry.Add(new FakeConnector(Descriptor(ConnectorKey.Jira), (_, _) => throw new InvalidOperationException("should never be called")));
+        var registry = new FakeIntegrationRegistry();
+        registry.Add(new FakeConnector(IntegrationKey.Jira, (_, _) => Fail(IntegrationError.NotConnected)));
 
-        var initializers = new IConnectorContextInitializer[] { new FakeConnectorContextInitializer(ConnectorKey.Jira, false) };
         var repository = new FakeSuggestionRepository();
-        var service = CreateService(registry, initializers, repository);
+        var service = CreateService(registry, repository);
 
         var result = await service.GenerateAsync("user-1", Request(), CancellationToken.None);
 
@@ -78,88 +75,57 @@ public class SuggestionServiceTests
     }
 
     [Fact]
-    public async Task GenerateAsync_ConnectorNotConnected_IsNeverFetched()
+    public async Task GenerateAsync_OneSourceNotConnected_UsesTheConnectedOneOnly()
     {
-        var connector = new FakeConnector(Descriptor(ConnectorKey.Jira), (_, _) => Signals([]));
-        var registry = new FakeConnectorRegistry();
-        registry.Add(connector);
-
-        var initializers = new IConnectorContextInitializer[] { new FakeConnectorContextInitializer(ConnectorKey.Jira, false) };
-        var repository = new FakeSuggestionRepository();
-        var service = CreateService(registry, initializers, repository);
-
-        var result = await service.GenerateAsync("user-1", Request(), CancellationToken.None);
-
-        result.IsError.Should().BeFalse();
-        connector.FetchCount.Should().Be(0);
-    }
-
-    [Fact]
-    public async Task GenerateAsync_OnlyOneConnectorConnected_FetchesConnectedOneOnly()
-    {
-        var jira = new FakeConnector(Descriptor(ConnectorKey.Jira), (_, _) => Signals(
+        var jira = new FakeConnector(IntegrationKey.Jira, (_, _) => Signals(
         [
-            Signal(ConnectorKey.Jira, "J-1:worklog:1", "J-1", At(9, 0), At(9, 10)),
+            Signal(IntegrationKey.Jira, "J-1:worklog:1", "J-1", At(9, 0), At(9, 10)),
         ]));
-        var github = new FakeConnector(Descriptor(ConnectorKey.Github), (_, _) => Signals(
-        [
-            Signal(ConnectorKey.Github, "G-1:commit:1", "G-1", At(13, 0), At(13, 10)),
-        ]));
+        var github = new FakeConnector(IntegrationKey.Github, (_, _) => Fail(IntegrationError.NotConnected));
 
-        var registry = new FakeConnectorRegistry();
+        var registry = new FakeIntegrationRegistry();
         registry.Add(jira);
         registry.Add(github);
 
-        var initializers = new IConnectorContextInitializer[]
-        {
-            new FakeConnectorContextInitializer(ConnectorKey.Jira, true),
-            new FakeConnectorContextInitializer(ConnectorKey.Github, false),
-        };
-
         var repository = new FakeSuggestionRepository();
-        var service = CreateService(registry, initializers, repository);
+        var service = CreateService(registry, repository);
 
         var result = await service.GenerateAsync("user-1", Request(), CancellationToken.None);
 
         result.IsError.Should().BeFalse();
-        jira.FetchCount.Should().Be(1);
-        github.FetchCount.Should().Be(0);
-        repository.Items.Should().ContainSingle(x => x.Sources.Any(s => s.ConnectorKey == ConnectorKey.Jira));
+        repository.Items.Should().ContainSingle(x => x.Sources.Any(s => s.Key == IntegrationKey.Jira));
+        repository.Items.Should().NotContain(x => x.Sources.Any(s => s.Key == IntegrationKey.Github));
     }
 
     [Fact]
-    public async Task ReloadAsync_NoConnectorConnected_DoesNotDeleteExistingSuggestions()
+    public async Task ReloadAsync_NoSourceConnected_DoesNotDeleteExistingSuggestions()
     {
-        var connector = new FakeConnector(Descriptor(ConnectorKey.Jira), (_, _) => Signals([]));
-        var registry = new FakeConnectorRegistry();
-        registry.Add(connector);
+        var registry = new FakeIntegrationRegistry();
+        registry.Add(new FakeConnector(IntegrationKey.Jira, (_, _) => Fail(IntegrationError.NotConnected)));
 
-        var initializers = new IConnectorContextInitializer[] { new FakeConnectorContextInitializer(ConnectorKey.Jira, false) };
         var repository = new FakeSuggestionRepository();
         await repository.Save(BuildModel("user-1", "KEEP", At(9, 0), At(9, 30), "J-1"));
-        var service = CreateService(registry, initializers, repository);
+        var service = CreateService(registry, repository);
 
         var result = await service.ReloadAsync("user-1", Request(), CancellationToken.None);
 
         result.IsError.Should().BeFalse();
         result.Value.Should().BeEmpty();
-        connector.FetchCount.Should().Be(0);
         repository.Items.Should().ContainSingle(x => x.TaskId == "KEEP");
     }
 
     [Fact]
     public async Task GenerateAsync_SecondRunOverSameRange_InsertsNothingNewAndPreservesEditedStatus()
     {
-        var registry = new FakeConnectorRegistry();
-        registry.Add(new FakeConnector(Descriptor(ConnectorKey.Jira), (_, _) => Signals(
+        var registry = new FakeIntegrationRegistry();
+        registry.Add(new FakeConnector(IntegrationKey.Jira, (_, _) => Signals(
         [
-            Signal(ConnectorKey.Jira, "J-1:worklog:1", "J-1", At(9, 0), At(9, 10)),
-            Signal(ConnectorKey.Jira, "J-2:worklog:1", "J-2", At(12, 0), At(12, 10)),
+            Signal(IntegrationKey.Jira, "J-1:worklog:1", "J-1", At(9, 0), At(9, 10)),
+            Signal(IntegrationKey.Jira, "J-2:worklog:1", "J-2", At(12, 0), At(12, 10)),
         ])));
 
-        var initializers = new IConnectorContextInitializer[] { new FakeConnectorContextInitializer(ConnectorKey.Jira, true) };
         var repository = new FakeSuggestionRepository();
-        var service = CreateService(registry, initializers, repository);
+        var service = CreateService(registry, repository);
 
         var first = await service.GenerateAsync("user-1", Request(), CancellationToken.None);
         first.IsError.Should().BeFalse();
@@ -184,12 +150,12 @@ public class SuggestionServiceTests
         await repository.Save(BuildModel("user-a", "MINE", At(9, 0), At(9, 30)));
         await repository.Save(BuildModel("user-b", "OTHER", At(9, 0), At(9, 30)));
 
-        var service = CreateService(new FakeConnectorRegistry(), [], repository);
+        var service = CreateService(new FakeIntegrationRegistry(), repository);
 
-        var result = await service.ListAsync("user-a", From, To);
+        var result = await service.ListAsync("user-a", From, To, CancellationToken.None);
 
-        result.Should().ContainSingle();
-        result[0].TaskId.Should().Be("MINE");
+        result.Value.Should().ContainSingle();
+        result.Value[0].TaskId.Should().Be("MINE");
     }
 
     [Fact]
@@ -199,7 +165,7 @@ public class SuggestionServiceTests
         var model = BuildModel("user-a", "MINE", At(9, 0), At(9, 30));
         await repository.Save(model);
 
-        var service = CreateService(new FakeConnectorRegistry(), [], repository);
+        var service = CreateService(new FakeIntegrationRegistry(), repository);
 
         var result = await service.UpdateAsync("user-b", model.Id, UpdateContract("CHANGED", At(9, 0), At(10, 0)), CancellationToken.None);
 
@@ -214,7 +180,7 @@ public class SuggestionServiceTests
         var model = BuildModel("user-a", "ORIGINAL", At(9, 0), At(9, 30));
         await repository.Save(model);
 
-        var service = CreateService(new FakeConnectorRegistry(), [], repository);
+        var service = CreateService(new FakeIntegrationRegistry(), repository);
 
         var result = await service.UpdateAsync("user-a", model.Id, UpdateContract("CHANGED", At(10, 0), At(11, 0)), CancellationToken.None);
 
@@ -230,7 +196,7 @@ public class SuggestionServiceTests
     public async Task UpdateAsync_MissingSuggestion_ReturnsNotFound()
     {
         var repository = new FakeSuggestionRepository();
-        var service = CreateService(new FakeConnectorRegistry(), [], repository);
+        var service = CreateService(new FakeIntegrationRegistry(), repository);
 
         var result = await service.UpdateAsync("user-a", "missing-id", UpdateContract("CHANGED", At(9, 0), At(10, 0)), CancellationToken.None);
 
@@ -245,7 +211,7 @@ public class SuggestionServiceTests
         var model = BuildModel("user-a", "ORIGINAL", At(9, 0), At(9, 30));
         await repository.Save(model);
 
-        var service = CreateService(new FakeConnectorRegistry(), [], repository);
+        var service = CreateService(new FakeIntegrationRegistry(), repository);
 
         var result = await service.DismissAsync("user-a", model.Id, CancellationToken.None);
 
@@ -259,25 +225,25 @@ public class SuggestionServiceTests
         var repository = new FakeSuggestionRepository();
         var model = BuildModel("user-a", "ORIGINAL", At(9, 0), At(9, 30));
         await repository.Save(model);
-        var service = CreateService(new FakeConnectorRegistry(), [], repository);
+        var service = CreateService(new FakeIntegrationRegistry(), repository);
 
         var result = await service.AcceptAsync("user-a", model.Id, CancellationToken.None);
-        var listed = await service.ListAsync("user-a", From, To);
+        var listed = await service.ListAsync("user-a", From, To, CancellationToken.None);
 
         result.IsError.Should().BeFalse();
         repository.Items.Should().ContainSingle(x => x.Status == SuggestionStatus.Confirmed);
-        listed.Should().BeEmpty();
+        listed.Value.Should().BeEmpty();
     }
 
     [Fact]
     public async Task GenerateAsync_ManualEntryWithSameTaskId_SkipsSuggestion()
     {
-        var registry = new FakeConnectorRegistry();
-        registry.Add(new FakeConnector(Descriptor(ConnectorKey.Jira), (_, _) => Signals(
+        var registry = new FakeIntegrationRegistry();
+        registry.Add(new FakeConnector(IntegrationKey.Jira, (_, _) => Signals(
         [
-            Signal(ConnectorKey.Jira, "J-1:worklog:1", "J-1", At(9, 0), At(9, 10)),
+            Signal(IntegrationKey.Jira, "J-1:worklog:1", "J-1", At(9, 0), At(9, 10)),
         ])));
-        var timeEntries = new StubTimeEntryService
+        var timeEntries = new StubBackend
         {
             ListResult = ((IReadOnlyList<TimeEntryContract>)new List<TimeEntryContract>
             {
@@ -285,7 +251,7 @@ public class SuggestionServiceTests
             }).ToErrorOr(),
         };
         var repository = new FakeSuggestionRepository();
-        var service = CreateService(registry, [new FakeConnectorContextInitializer(ConnectorKey.Jira, true)], repository, timeEntries);
+        var service = CreateService(registry, repository, timeEntries);
 
         var result = await service.GenerateAsync("user-1", Request(), CancellationToken.None);
 
@@ -300,12 +266,12 @@ public class SuggestionServiceTests
         var thursdayStart = BaseDate.AddDays(3) + TimeSpan.FromHours(9);
         var thursdayEnd = BaseDate.AddDays(3) + TimeSpan.FromHours(9.5);
 
-        var registry = new FakeConnectorRegistry();
-        registry.Add(new FakeConnector(Descriptor(ConnectorKey.Jira), (_, _) => Signals(
+        var registry = new FakeIntegrationRegistry();
+        registry.Add(new FakeConnector(IntegrationKey.Jira, (_, _) => Signals(
         [
-            Signal(ConnectorKey.Jira, "J-1:worklog:2", "J-1", thursdayStart, thursdayEnd),
+            Signal(IntegrationKey.Jira, "J-1:worklog:2", "J-1", thursdayStart, thursdayEnd),
         ])));
-        var timeEntries = new StubTimeEntryService
+        var timeEntries = new StubBackend
         {
             ListResult = ((IReadOnlyList<TimeEntryContract>)new List<TimeEntryContract>
             {
@@ -313,7 +279,7 @@ public class SuggestionServiceTests
             }).ToErrorOr(),
         };
         var repository = new FakeSuggestionRepository();
-        var service = CreateService(registry, [new FakeConnectorContextInitializer(ConnectorKey.Jira, true)], repository, timeEntries);
+        var service = CreateService(registry, repository, timeEntries);
 
         var request = new GenerateSuggestionsRequestContract { From = BaseDate, To = BaseDate.AddDays(4) };
         var result = await service.GenerateAsync("user-1", request, CancellationToken.None);
@@ -326,12 +292,12 @@ public class SuggestionServiceTests
     [Fact]
     public async Task GenerateAsync_ManualEntrySameDayNonOverlappingTime_DoesNotSkipSuggestion()
     {
-        var registry = new FakeConnectorRegistry();
-        registry.Add(new FakeConnector(Descriptor(ConnectorKey.Jira), (_, _) => Signals(
+        var registry = new FakeIntegrationRegistry();
+        registry.Add(new FakeConnector(IntegrationKey.Jira, (_, _) => Signals(
         [
-            Signal(ConnectorKey.Jira, "J-1:worklog:2", "J-1", At(17, 0), At(18, 0)),
+            Signal(IntegrationKey.Jira, "J-1:worklog:2", "J-1", At(17, 0), At(18, 0)),
         ])));
-        var timeEntries = new StubTimeEntryService
+        var timeEntries = new StubBackend
         {
             ListResult = ((IReadOnlyList<TimeEntryContract>)new List<TimeEntryContract>
             {
@@ -339,7 +305,7 @@ public class SuggestionServiceTests
             }).ToErrorOr(),
         };
         var repository = new FakeSuggestionRepository();
-        var service = CreateService(registry, [new FakeConnectorContextInitializer(ConnectorKey.Jira, true)], repository, timeEntries);
+        var service = CreateService(registry, repository, timeEntries);
 
         var result = await service.GenerateAsync("user-1", Request(), CancellationToken.None);
 
@@ -351,11 +317,11 @@ public class SuggestionServiceTests
     [Fact]
     public async Task ReloadAsync_Success_ResetsMutableSuggestionsAndKeepsConfirmed()
     {
-        var registry = new FakeConnectorRegistry();
-        registry.Add(new FakeConnector(Descriptor(ConnectorKey.Jira), (_, _) => Signals(
+        var registry = new FakeIntegrationRegistry();
+        registry.Add(new FakeConnector(IntegrationKey.Jira, (_, _) => Signals(
         [
-            Signal(ConnectorKey.Jira, "J-1:worklog:1", "J-1", At(9, 0), At(9, 10)),
-            Signal(ConnectorKey.Jira, "J-2:worklog:1", "J-2", At(10, 0), At(10, 10)),
+            Signal(IntegrationKey.Jira, "J-1:worklog:1", "J-1", At(9, 0), At(9, 10)),
+            Signal(IntegrationKey.Jira, "J-2:worklog:1", "J-2", At(10, 0), At(10, 10)),
         ])));
         var repository = new FakeSuggestionRepository();
         var edited = BuildModel("user-1", "J-1", At(9, 0), At(9, 30), "J-1:worklog:1");
@@ -364,7 +330,7 @@ public class SuggestionServiceTests
         confirmed.Status = SuggestionStatus.Confirmed;
         await repository.Save(edited);
         await repository.Save(confirmed);
-        var service = CreateService(registry, [new FakeConnectorContextInitializer(ConnectorKey.Jira, true)], repository);
+        var service = CreateService(registry, repository);
 
         var result = await service.ReloadAsync("user-1", Request(), CancellationToken.None);
 
@@ -378,11 +344,11 @@ public class SuggestionServiceTests
     [Fact]
     public async Task ReloadAsync_FetchFails_DoesNotDeleteExistingSuggestions()
     {
-        var registry = new FakeConnectorRegistry();
-        registry.Add(new FakeConnector(Descriptor(ConnectorKey.Jira), (_, _) => Fail(Error.Failure())));
+        var registry = new FakeIntegrationRegistry();
+        registry.Add(new FakeConnector(IntegrationKey.Jira, (_, _) => Fail(Error.Failure())));
         var repository = new FakeSuggestionRepository();
         await repository.Save(BuildModel("user-1", "KEEP", At(9, 0), At(9, 30), "J-1"));
-        var service = CreateService(registry, [new FakeConnectorContextInitializer(ConnectorKey.Jira, true)], repository);
+        var service = CreateService(registry, repository);
 
         var result = await service.ReloadAsync("user-1", Request(), CancellationToken.None);
 
@@ -391,12 +357,11 @@ public class SuggestionServiceTests
         repository.Items.Should().ContainSingle(x => x.TaskId == "KEEP");
     }
 
-    private static SuggestionService CreateService(FakeConnectorRegistry registry, IEnumerable<IConnectorContextInitializer> initializers, FakeSuggestionRepository repository, ITimeEntryService? timeEntryService = null)
+    private static SuggestionService CreateService(FakeIntegrationRegistry registry, FakeSuggestionRepository repository, IBackend? backend = null)
     {
-        var engine = new SuggestionEngine(new EchoSuggestionProvider());
-        var resolver = new ConnectorResolver(registry, initializers);
-        timeEntryService ??= new StubTimeEntryService { ListResult = ((IReadOnlyList<TimeEntryContract>)Array.Empty<TimeEntryContract>()).ToErrorOr() };
-        return new SuggestionService(resolver, repository, engine, timeEntryService, NullLogger<SuggestionService>.Instance);
+        var engine = new SuggestionEngine(new EchoSuggestionProvider(), NullLogger<SuggestionEngine>.Instance);
+        backend ??= new StubBackend { ListResult = ((IReadOnlyList<TimeEntryContract>)Array.Empty<TimeEntryContract>()).ToErrorOr() };
+        return new SuggestionService(registry, repository, engine, backend, NullLogger<SuggestionService>.Instance);
     }
 
     private static Task<ErrorOr<IReadOnlyList<ActivitySignal>>> Signals(IReadOnlyList<ActivitySignal> signals) =>
@@ -421,25 +386,19 @@ public class SuggestionServiceTests
         DateStarted = start,
         DateEnded = end,
         Status = SuggestionStatus.Pending,
-        Sources = externalId is null ? [] : [new SuggestionEvidenceModel { ConnectorKey = ConnectorKey.Jira, ExternalId = externalId }],
+        Sources = externalId is null ? [] : [new SuggestionEvidenceModel { Key = IntegrationKey.Jira, ExternalId = externalId }],
         Confidence = 0.5,
         DateCreated = start,
         DateUpdated = start,
     };
 
-    private static ConnectorDescriptor Descriptor(ConnectorKey key) => new()
-    {
-        Key = key,
-        Capabilities = [],
-    };
-
     private static DateTime At(int hour, int minute) => BaseDate + TimeSpan.FromHours(hour) + TimeSpan.FromMinutes(minute);
 
-    private static ActivitySignal Signal(ConnectorKey connectorKey, string externalId, string subject, DateTime start, DateTime? end = null)
+    private static ActivitySignal Signal(IntegrationKey key, string externalId, string subject, DateTime start, DateTime? end = null)
     {
         return new ActivitySignal
         {
-            ConnectorKey = connectorKey,
+            Key = key,
             ExternalId = externalId,
             DateStarted = start,
             DateEnded = end,

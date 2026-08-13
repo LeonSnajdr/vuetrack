@@ -1,6 +1,8 @@
 using FluentValidation;
 using Samhammer.DependencyInjection.Attributes;
-using Vuetrack.Backends.Abstractions.Contracts;
+using Vuetrack.Api.Features.Integrations.Contracts;
+using Vuetrack.Api.Features.TimeEntry.Contracts;
+using Vuetrack.Api.Infrastructure.Validation;
 
 namespace Vuetrack.Api.Features.TimeEntry.Validation;
 
