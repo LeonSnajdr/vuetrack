@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Vuetrack.Api.Features.Integrations.Abstractions;
 using ZiggyCreatures.Caching.Fusion;
 
@@ -13,6 +14,8 @@ public abstract class ConnectionSessionFactory<TSession>(
 {
     // Refresh a little early so a token never expires mid-request.
     private static readonly TimeSpan ExpiryBuffer = TimeSpan.FromSeconds(60);
+
+    private static readonly ConcurrentDictionary<string, SemaphoreSlim> RefreshLocks = new();
 
     private IFusionCache Cache { get; } = cache;
 
@@ -54,34 +57,54 @@ public abstract class ConnectionSessionFactory<TSession>(
             return cached.Value;
         }
 
-        var connection = await Repository.GetAsync(userId, Key, cancellationToken);
-        if (connection is null)
+        var refreshLock = RefreshLocks.GetOrAdd(cacheKey, _ => new SemaphoreSlim(1, 1));
+        await refreshLock.WaitAsync(cancellationToken);
+        try
         {
-            return null;
+            cached = await Cache.TryGetAsync<ConnectionCredentials>(cacheKey, token: cancellationToken);
+            if (cached.HasValue)
+            {
+                return cached.Value;
+            }
+
+            var connection = await Repository.GetAsync(userId, Key, cancellationToken);
+            if (connection is null)
+            {
+                return null;
+            }
+
+            var refreshToken = SecretProtector.Unprotect(Key, connection.EncryptedRefreshToken);
+            var token = await OAuthClient.RefreshAsync(refreshToken, cancellationToken);
+
+            if (!string.IsNullOrEmpty(token.RefreshToken) && token.RefreshToken != refreshToken)
+            {
+                var rotatedRefreshToken = SecretProtector.Protect(Key, token.RefreshToken);
+                await Repository.TrySetRefreshTokenAsync(
+                    userId,
+                    Key,
+                    connection.EncryptedRefreshToken,
+                    rotatedRefreshToken,
+                    cancellationToken);
+            }
+
+            var credentials = new ConnectionCredentials
+            {
+                AccessToken = token.AccessToken,
+                Attributes = connection.Attributes,
+            };
+
+            var lifetime = TimeSpan.FromSeconds(token.ExpiresInSeconds) - ExpiryBuffer;
+            if (lifetime > TimeSpan.Zero)
+            {
+                await Cache.SetAsync(cacheKey, credentials, lifetime, token: cancellationToken);
+            }
+
+            return credentials;
         }
-
-        var refreshToken = SecretProtector.Unprotect(Key, connection.EncryptedRefreshToken);
-        var token = await OAuthClient.RefreshAsync(refreshToken, cancellationToken);
-
-        if (!string.IsNullOrEmpty(token.RefreshToken) && token.RefreshToken != refreshToken)
+        finally
         {
-            var rotatedRefreshToken = SecretProtector.Protect(Key, token.RefreshToken);
-            await Repository.SetRefreshTokenAsync(userId, Key, rotatedRefreshToken, cancellationToken);
+            refreshLock.Release();
         }
-
-        var credentials = new ConnectionCredentials
-        {
-            AccessToken = token.AccessToken,
-            Attributes = connection.Attributes,
-        };
-
-        var lifetime = TimeSpan.FromSeconds(token.ExpiresInSeconds) - ExpiryBuffer;
-        if (lifetime > TimeSpan.Zero)
-        {
-            await Cache.SetAsync(cacheKey, credentials, lifetime, token: cancellationToken);
-        }
-
-        return credentials;
     }
 
     private string BuildCacheKey(string userId) => $"connection:{Key}:{userId}";

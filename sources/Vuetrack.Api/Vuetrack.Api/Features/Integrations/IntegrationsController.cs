@@ -29,7 +29,7 @@ public class IntegrationsController(IIntegrationService integrationService) : Co
     }
 
     [HttpGet("{key}/authorize")]
-    public IActionResult Authorize(IntegrationKey key, [FromQuery] string redirectUri)
+    public async Task<IActionResult> Authorize(IntegrationKey key, [FromQuery] string redirectUri, CancellationToken cancellationToken)
     {
         if (!Uri.TryCreate(redirectUri, UriKind.Absolute, out _))
         {
@@ -43,7 +43,10 @@ public class IntegrationsController(IIntegrationService integrationService) : Co
             return NotFound();
         }
 
-        return Ok(connectionService.BuildAuthorization(redirectUri));
+        var userId = User.GetUserId();
+        var result = await connectionService.BuildAuthorizationAsync(userId, redirectUri, cancellationToken);
+
+        return this.ToActionResult(result);
     }
 
     [HttpGet("{key}/status")]

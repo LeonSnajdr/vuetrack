@@ -1,5 +1,6 @@
 using ErrorOr;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Samhammer.DependencyInjection.Attributes;
 using Vuetrack.Api.Features.Integrations;
 using Vuetrack.Api.Features.Integrations.Abstractions;
@@ -11,12 +12,14 @@ namespace Vuetrack.Api.Features.Integrations.Jira.Connection;
 [InjectAs(typeof(IIntegrationConnectionService))]
 public class JiraConnectionService(
     IJiraOAuthApiClient oauthClient,
+    IOptions<JiraOptions> oauthOptions,
     IConnectionRepository repository,
+    IOAuthTransactionRepository transactionRepository,
     IJiraSessionFactory sessionFactory,
     IConnectionSecretProtector secretProtector,
     IIntegrationRegistry registry,
     ILogger<JiraConnectionService> logger)
-    : IntegrationConnectionServiceBase(oauthClient, repository, sessionFactory, secretProtector, registry, logger)
+    : IntegrationConnectionServiceBase(oauthClient, oauthOptions, repository, transactionRepository, sessionFactory, secretProtector, registry, logger)
 {
     private IJiraOAuthApiClient JiraOAuthClient { get; } = oauthClient;
 

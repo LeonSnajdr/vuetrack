@@ -1,5 +1,6 @@
 using ErrorOr;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Samhammer.DependencyInjection.Attributes;
 using Vuetrack.Api.Features.Integrations;
 using Vuetrack.Api.Features.Integrations.Abstractions;
@@ -11,12 +12,14 @@ namespace Vuetrack.Api.Features.Integrations.Github.Connection;
 [InjectAs(typeof(IIntegrationConnectionService))]
 public class GithubConnectionService(
     IGithubOAuthApiClient oauthClient,
+    IOptions<GithubOptions> oauthOptions,
     IConnectionRepository repository,
+    IOAuthTransactionRepository transactionRepository,
     IGithubSessionFactory sessionFactory,
     IConnectionSecretProtector secretProtector,
     IIntegrationRegistry registry,
     ILogger<GithubConnectionService> logger)
-    : IntegrationConnectionServiceBase(oauthClient, repository, sessionFactory, secretProtector, registry, logger)
+    : IntegrationConnectionServiceBase(oauthClient, oauthOptions, repository, transactionRepository, sessionFactory, secretProtector, registry, logger)
 {
     private IGithubOAuthApiClient GithubOAuthClient { get; } = oauthClient;
 

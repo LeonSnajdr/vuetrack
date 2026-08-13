@@ -76,6 +76,17 @@ public class JiraSessionFactoryTests
         oauth.RefreshCalls.Should().Be(2);
     }
 
+    [Fact]
+    public async Task OpenAsync_RefreshesOnlyOnce_WhenRequestsAreConcurrent()
+    {
+        var oauth = new FakeOAuthClient(expiresInSeconds: 3600);
+        var factory = BuildFactory(oauth);
+
+        await Task.WhenAll(Enumerable.Range(0, 10).Select(_ => factory.OpenAsync(UserId, CancellationToken.None)));
+
+        oauth.RefreshCalls.Should().Be(1);
+    }
+
     private static JiraSessionFactory BuildFactory(FakeOAuthClient oauth)
     {
         var connection = new ConnectionModel
@@ -129,13 +140,14 @@ public class JiraSessionFactoryTests
     {
         public int RefreshCalls { get; private set; }
 
-        public string BuildAuthorizationUrl(string state, string redirectUri) => string.Empty;
+        public string BuildAuthorizationUrl(string state, string redirectUri, string codeChallenge) => string.Empty;
 
-        public Task<OAuthTokenResponse> ExchangeCodeAsync(string code, string redirectUri, CancellationToken cancellationToken)
+        public Task<OAuthTokenResponse> ExchangeCodeAsync(string code, string redirectUri, string codeVerifier, CancellationToken cancellationToken)
             => throw new NotSupportedException();
 
-        public Task<OAuthTokenResponse> RefreshAsync(string refreshToken, CancellationToken cancellationToken)
+        public async Task<OAuthTokenResponse> RefreshAsync(string refreshToken, CancellationToken cancellationToken)
         {
+            await Task.Delay(20, cancellationToken);
             var response = new OAuthTokenResponse
             {
                 AccessToken = $"access-{RefreshCalls}",
@@ -143,7 +155,7 @@ public class JiraSessionFactoryTests
                 ExpiresInSeconds = expiresInSeconds,
             };
             RefreshCalls++;
-            return Task.FromResult(response);
+            return response;
         }
 
         public Task<IReadOnlyList<JiraAccessibleResourceResponse>> GetAccessibleResourcesAsync(string accessToken, CancellationToken cancellationToken)
@@ -166,14 +178,14 @@ public class JiraSessionFactoryTests
         public Task UpsertAsync(string userId, IntegrationKey key, string encryptedRefreshToken, IReadOnlyDictionary<string, string> attributes, CancellationToken cancellationToken)
             => throw new NotSupportedException();
 
-        public Task SetRefreshTokenAsync(string userId, IntegrationKey key, string encryptedRefreshToken, CancellationToken cancellationToken)
+        public Task<bool> TrySetRefreshTokenAsync(string userId, IntegrationKey key, string currentEncryptedRefreshToken, string rotatedEncryptedRefreshToken, CancellationToken cancellationToken)
         {
             if (Connection is not null)
             {
-                Connection.EncryptedRefreshToken = encryptedRefreshToken;
+                Connection.EncryptedRefreshToken = rotatedEncryptedRefreshToken;
             }
 
-            return Task.CompletedTask;
+            return Task.FromResult(true);
         }
 
         public Task DeleteAsync(string userId, IntegrationKey key, CancellationToken cancellationToken)

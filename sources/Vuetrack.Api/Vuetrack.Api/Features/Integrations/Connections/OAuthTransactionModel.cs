@@ -6,14 +6,18 @@ using Vuetrack.Api.Features.Integrations.Abstractions;
 namespace Vuetrack.Api.Features.Integrations.Connections;
 
 [MongoCollection]
-public class ConnectionModel : BaseModelMongo
+public class OAuthTransactionModel : BaseModelMongo
 {
+    public required string State { get; init; }
+
     public required string UserId { get; init; }
 
     [BsonRepresentation(BsonType.String)]
     public required IntegrationKey Key { get; init; }
 
-    public required string EncryptedRefreshToken { get; set; }
+    public required string RedirectUri { get; init; }
 
-    public Dictionary<string, string> Attributes { get; set; } = [];
+    public required string CodeVerifier { get; init; }
+
+    public required DateTime DateExpires { get; init; }
 }

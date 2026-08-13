@@ -10,5 +10,7 @@ public abstract class OAuthOptions
 
     public required string ClientSecret { get; init; }
 
+    public IReadOnlyList<string> RedirectUris { get; init; } = [];
+
     public required string Scopes { get; init; }
 }

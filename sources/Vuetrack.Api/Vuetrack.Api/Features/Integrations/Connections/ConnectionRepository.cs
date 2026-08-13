@@ -32,12 +32,19 @@ public class ConnectionRepository(ILogger<BaseRepositoryMongo<ConnectionModel>> 
         await Collection.UpdateOneAsync(filter, update, options, cancellationToken);
     }
 
-    public async Task SetRefreshTokenAsync(string userId, IntegrationKey key, string encryptedRefreshToken, CancellationToken cancellationToken)
+    public async Task<bool> TrySetRefreshTokenAsync(
+        string userId,
+        IntegrationKey key,
+        string currentEncryptedRefreshToken,
+        string rotatedEncryptedRefreshToken,
+        CancellationToken cancellationToken)
     {
-        var update = Update.Set(x => x.EncryptedRefreshToken, encryptedRefreshToken);
-        var filter = BuildFilter(userId, key);
+        var update = Update.Set(x => x.EncryptedRefreshToken, rotatedEncryptedRefreshToken);
+        var filter = BuildFilter(userId, key) & Filter.Eq(x => x.EncryptedRefreshToken, currentEncryptedRefreshToken);
 
-        await Collection.UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
+        var result = await Collection.UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
+
+        return result.ModifiedCount == 1;
     }
 
     public async Task DeleteAsync(string userId, IntegrationKey key, CancellationToken cancellationToken)
@@ -61,7 +68,12 @@ public interface IConnectionRepository : IBaseRepositoryMongo<ConnectionModel>
 
     Task UpsertAsync(string userId, IntegrationKey key, string encryptedRefreshToken, IReadOnlyDictionary<string, string> attributes, CancellationToken cancellationToken);
 
-    Task SetRefreshTokenAsync(string userId, IntegrationKey key, string encryptedRefreshToken, CancellationToken cancellationToken);
+    Task<bool> TrySetRefreshTokenAsync(
+        string userId,
+        IntegrationKey key,
+        string currentEncryptedRefreshToken,
+        string rotatedEncryptedRefreshToken,
+        CancellationToken cancellationToken);
 
     Task DeleteAsync(string userId, IntegrationKey key, CancellationToken cancellationToken);
 }

@@ -1,5 +1,9 @@
+using System.Security.Cryptography;
+using System.Text;
 using ErrorOr;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Vuetrack.Api.Features.Integrations.Abstractions;
 using Vuetrack.Api.Features.Integrations.Contracts;
 
@@ -7,18 +11,26 @@ namespace Vuetrack.Api.Features.Integrations.Connections;
 
 public abstract class IntegrationConnectionServiceBase(
     IOAuthApiClientBase oauthClient,
+    IOptions<OAuthOptions> oauthOptions,
     IConnectionRepository repository,
+    IOAuthTransactionRepository transactionRepository,
     IConnectionSessionFactory sessionFactory,
     IConnectionSecretProtector secretProtector,
     IIntegrationRegistry registry,
     ILogger logger)
     : IIntegrationConnectionService
 {
+    private static readonly TimeSpan TransactionLifetime = TimeSpan.FromMinutes(10);
+
     protected IOAuthApiClientBase OAuthClient { get; } = oauthClient;
 
     protected ILogger Logger { get; } = logger;
 
     private IConnectionRepository Repository { get; } = repository;
+
+    private IOptions<OAuthOptions> OAuthOptions { get; } = oauthOptions;
+
+    private IOAuthTransactionRepository TransactionRepository { get; } = transactionRepository;
 
     private IConnectionSessionFactory SessionFactory { get; } = sessionFactory;
 
@@ -28,10 +40,30 @@ public abstract class IntegrationConnectionServiceBase(
 
     public abstract IntegrationKey Key { get; }
 
-    public OAuthAuthorizeContract BuildAuthorization(string redirectUri)
+    public async Task<ErrorOr<OAuthAuthorizeContract>> BuildAuthorizationAsync(string userId, string redirectUri, CancellationToken cancellationToken)
     {
-        var state = Guid.NewGuid().ToString("N");
-        var url = OAuthClient.BuildAuthorizationUrl(state, redirectUri);
+        if (!OAuthOptions.Value.RedirectUris.Contains(redirectUri, StringComparer.Ordinal))
+        {
+            return Error.Validation(code: "OAuth.RedirectUriNotAllowed", description: "Redirect URI is not allowed.");
+        }
+
+        var state = WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(32));
+        var codeVerifier = WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(32));
+        var challengeBytes = SHA256.HashData(Encoding.ASCII.GetBytes(codeVerifier));
+        var codeChallenge = WebEncoders.Base64UrlEncode(challengeBytes);
+
+        var transaction = new OAuthTransactionModel
+        {
+            State = state,
+            UserId = userId,
+            Key = Key,
+            RedirectUri = redirectUri,
+            CodeVerifier = codeVerifier,
+            DateExpires = DateTime.UtcNow.Add(TransactionLifetime),
+        };
+        await TransactionRepository.CreateAsync(transaction, cancellationToken);
+
+        var url = OAuthClient.BuildAuthorizationUrl(state, redirectUri, codeChallenge);
 
         return new OAuthAuthorizeContract(url, state);
     }
@@ -53,7 +85,19 @@ public abstract class IntegrationConnectionServiceBase(
     {
         try
         {
-            var token = await OAuthClient.ExchangeCodeAsync(request.Code, request.RedirectUri, cancellationToken);
+            var transaction = await TransactionRepository.ConsumeAsync(
+                request.State,
+                userId,
+                Key,
+                request.RedirectUri,
+                DateTime.UtcNow,
+                cancellationToken);
+            if (transaction is null)
+            {
+                return Error.Validation(code: "OAuth.InvalidState", description: "OAuth transaction is invalid or expired.");
+            }
+
+            var token = await OAuthClient.ExchangeCodeAsync(request.Code, request.RedirectUri, transaction.CodeVerifier, cancellationToken);
 
             var established = await EstablishAsync(token, cancellationToken);
             if (established.IsError)
@@ -61,7 +105,11 @@ public abstract class IntegrationConnectionServiceBase(
                 return established.Errors;
             }
 
-            await PersistAsync(userId, token, established.Value, cancellationToken);
+            var persisted = await PersistAsync(userId, token, established.Value, cancellationToken);
+            if (!persisted)
+            {
+                return Error.Validation(code: "OAuth.MissingRefreshToken", description: "OAuth provider did not return a refresh token.");
+            }
 
             return new OAuthConnectContract(true);
         }
@@ -105,18 +153,20 @@ public abstract class IntegrationConnectionServiceBase(
         }
     }
 
-    private async Task PersistAsync(string userId, OAuthTokenResponse token, Dictionary<string, string> attributes, CancellationToken cancellationToken)
+    private async Task<bool> PersistAsync(string userId, OAuthTokenResponse token, Dictionary<string, string> attributes, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(token.RefreshToken))
         {
             Logger.LogWarning("{Integration} token response had no refresh token; connection not persisted", Key);
-            return;
+            return false;
         }
 
         var encryptedRefreshToken = SecretProtector.Protect(Key, token.RefreshToken);
 
         await Repository.UpsertAsync(userId, Key, encryptedRefreshToken, attributes, cancellationToken);
         await SessionFactory.EvictAsync(userId, cancellationToken);
+
+        return true;
     }
 }
 
@@ -124,7 +174,7 @@ public interface IIntegrationConnectionService
 {
     IntegrationKey Key { get; }
 
-    OAuthAuthorizeContract BuildAuthorization(string redirectUri);
+    Task<ErrorOr<OAuthAuthorizeContract>> BuildAuthorizationAsync(string userId, string redirectUri, CancellationToken cancellationToken);
 
     Task<OAuthStatusContract> GetStatusAsync(string userId, CancellationToken cancellationToken);
 

@@ -19,7 +19,7 @@ public abstract class OAuthApiClientBase(HttpClient httpClient, ILogger logger, 
 
     protected virtual Parameters? ExtraAuthorizeParameters => null;
 
-    public string BuildAuthorizationUrl(string state, string redirectUri)
+    public string BuildAuthorizationUrl(string state, string redirectUri, string codeChallenge)
     {
         var request = new RequestUrl(OAuthOptions.Value.AuthorizeEndpoint);
         return request.CreateAuthorizeUrl(
@@ -29,10 +29,12 @@ public abstract class OAuthApiClientBase(HttpClient httpClient, ILogger logger, 
             redirectUri: redirectUri,
             state: state,
             prompt: AuthorizePrompt,
+            codeChallenge: codeChallenge,
+            codeChallengeMethod: "S256",
             extra: ExtraAuthorizeParameters);
     }
 
-    public async Task<OAuthTokenResponse> ExchangeCodeAsync(string code, string redirectUri, CancellationToken cancellationToken)
+    public async Task<OAuthTokenResponse> ExchangeCodeAsync(string code, string redirectUri, string codeVerifier, CancellationToken cancellationToken)
     {
         var tokenRequest = new AuthorizationCodeTokenRequest
         {
@@ -42,6 +44,7 @@ public abstract class OAuthApiClientBase(HttpClient httpClient, ILogger logger, 
             ClientCredentialStyle = ClientCredentialStyle.PostBody,
             Code = code,
             RedirectUri = redirectUri,
+            CodeVerifier = codeVerifier,
         };
 
         var response = await HttpClient.RequestAuthorizationCodeTokenAsync(tokenRequest, cancellationToken);
@@ -90,9 +93,9 @@ public abstract class OAuthApiClientBase(HttpClient httpClient, ILogger logger, 
 
 public interface IOAuthApiClientBase
 {
-    string BuildAuthorizationUrl(string state, string redirectUri);
+    string BuildAuthorizationUrl(string state, string redirectUri, string codeChallenge);
 
-    Task<OAuthTokenResponse> ExchangeCodeAsync(string code, string redirectUri, CancellationToken cancellationToken);
+    Task<OAuthTokenResponse> ExchangeCodeAsync(string code, string redirectUri, string codeVerifier, CancellationToken cancellationToken);
 
     Task<OAuthTokenResponse> RefreshAsync(string refreshToken, CancellationToken cancellationToken);
 }

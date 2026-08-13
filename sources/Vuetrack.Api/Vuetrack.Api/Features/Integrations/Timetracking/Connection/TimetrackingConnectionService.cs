@@ -1,6 +1,7 @@
 using System.Globalization;
 using ErrorOr;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Samhammer.DependencyInjection.Attributes;
 using Vuetrack.Api.Features.Integrations;
 using Vuetrack.Api.Features.Integrations.Abstractions;
@@ -13,12 +14,14 @@ namespace Vuetrack.Api.Features.Integrations.Timetracking.Connection;
 [InjectAs(typeof(IIntegrationConnectionService))]
 public class TimetrackingConnectionService(
     ITimetrackingOAuthApiClient oauthClient,
+    IOptions<TimetrackingOptions> oauthOptions,
     IConnectionRepository repository,
+    IOAuthTransactionRepository transactionRepository,
     ITimetrackingSessionFactory sessionFactory,
     IConnectionSecretProtector secretProtector,
     IIntegrationRegistry registry,
     ILogger<TimetrackingConnectionService> logger)
-    : IntegrationConnectionServiceBase(oauthClient, repository, sessionFactory, secretProtector, registry, logger)
+    : IntegrationConnectionServiceBase(oauthClient, oauthOptions, repository, transactionRepository, sessionFactory, secretProtector, registry, logger)
 {
     private ITimetrackingOAuthApiClient OAuthApiClient { get; } = oauthClient;
 
