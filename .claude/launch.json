@@ -4,7 +4,7 @@
         {
             "name": "app",
             "runtimeExecutable": "npm",
-            "runtimeArgs": ["--prefix", "sources/app", "run", "dev"],
+            "runtimeArgs": ["--prefix", "sources/Vuetrack.App", "run", "dev"],
             "port": 9100,
             "autoPort": true
         },
@@ -13,6 +13,12 @@
             "runtimeExecutable": "npm",
             "runtimeArgs": ["--prefix", "sources/fake-api", "run", "dev"],
             "port": 5001
+        },
+        {
+            "name": "api",
+            "runtimeExecutable": "dotnet",
+            "runtimeArgs": ["run", "--project", "sources/Vuetrack.Api/Vuetrack.Api", "--launch-profile", "core"],
+            "port": 9200
         }
     ]
 }

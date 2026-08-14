@@ -1,0 +1,13 @@
+using Vuetrack.Api.Features.Integrations;
+using Vuetrack.Api.Features.Integrations.Activity;
+
+namespace Vuetrack.Api.Features.Suggestions.Engine.Provider;
+
+public sealed record SuggestionProviderContext
+{
+    public required DateTime From { get; init; }
+
+    public required DateTime To { get; init; }
+
+    public required IReadOnlyList<ActivitySignal> Signals { get; init; }
+}

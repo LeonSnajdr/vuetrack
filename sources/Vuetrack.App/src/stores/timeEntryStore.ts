@@ -1,0 +1,80 @@
+import type { TimeEntryContract, TimeEntryCreateContract, TimeEntryId, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
+import { type ActionResult } from "@/util/ActionResult";
+import { type Nullable } from "@/util/Nullable";
+import typia from "typia";
+import { omit } from "lodash";
+
+export const useTimeEntryStore = defineStore("timeEntry", () => {
+    const { filter } = useTrackingFilter();
+
+    const notify = useNotify();
+    const { t } = useI18n();
+
+    const { data: timeEntries, execute: executeLoad, isLoading } = useAsyncState(TimeEntryService.load, { initialValue: [], shallow: false });
+    const { execute: executeCreate, isLoading: isCreating } = useAsyncTask(TimeEntryService.create);
+    const {
+        execute: executeUpdate,
+        cancel: cancelPendingUpdate,
+        isLoading: isUpdating
+    } = useAsyncTask(TimeEntryService.update, {
+        cancelPolicy: "byKey",
+        key: (x) => x.args[0]
+    });
+    const { execute: executeDelete, isLoading: isDeleting } = useAsyncTask(TimeEntryService.delete, {
+        key: (x) => x.args[0]
+    });
+
+    const executeLoadWithFilters = async () => {
+        await executeLoad(filter.value);
+    };
+
+    watch(filter, executeLoadWithFilters, { deep: true });
+
+    const create = async (createContract: Nullable<TimeEntryCreateContract>): Promise<ActionResult<TimeEntryContract>> => {
+        if (!typia.is<TimeEntryCreateContract>(createContract)) return error();
+
+        const createResult = await executeCreate(createContract);
+
+        if (createResult.status === "success") {
+            timeEntries.value.push(createResult.data);
+        }
+
+        return createResult;
+    };
+
+    const update = async (id: TimeEntryId, updateContract: TimeEntryUpdateContract): Promise<ActionResult<TimeEntryContract>> => {
+        const updateResult = await executeUpdate(id, updateContract);
+
+        if (updateResult.status === "success") {
+            const existing = timeEntries.value.find((x) => x.id === id);
+
+            // Times come from the request: those are the ones the backend accepted,
+            // so nothing depends on how the response spells its dates.
+            const serverFields = omit(updateResult.data, "dateStarted", "dateEnded");
+
+            if (existing) {
+                Object.assign(existing, serverFields);
+                existing.dateStarted = new Date(updateContract.dateStarted);
+                existing.dateEnded = new Date(updateContract.dateEnded);
+            }
+        }
+
+        return updateResult;
+    };
+
+    const remove = async (id: TimeEntryId): Promise<ActionResult> => {
+        const deleteResult = await executeDelete(id);
+
+        if (deleteResult.status === "success") {
+            timeEntries.value = timeEntries.value.filter((x) => x.id !== id);
+        }
+
+        if (deleteResult.status === "error") {
+            notify.error(t("action.delete.error", { type: t("timeEntry.singular") }), { timeout: 5000 });
+        }
+
+        return deleteResult;
+    };
+
+    return { timeEntries, executeLoadWithFilters, isLoading, create, isCreating, update, isUpdating, remove, isDeleting, cancelPendingUpdate };
+});

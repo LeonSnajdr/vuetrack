@@ -27,3 +27,6 @@ Plans typically have acceptance criteria with check boxes. Check each box when y
 ## Here is Your Space
 
 If you encounter something worth noting while you are working on this code base, write it down here in this section. Once you are finished, I will discuss it with you, and we can decide where to put your notes.
+
+- Repository-wide `volta run yarn lint` currently fails in three files unrelated to the suggestion feature: `components/timeEntry/field/Container.vue`, `composables/useClonedMapped.ts`, and `util/Nullable.ts`. Linting the suggestion files succeeds.
+- Translation files already differ by one unrelated key: `timeEntry.field.dateEnded.duration.option` exists only in `de.json`. The new suggestion key was added to both languages.
