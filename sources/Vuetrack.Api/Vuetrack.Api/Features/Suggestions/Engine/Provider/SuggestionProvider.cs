@@ -5,7 +5,7 @@ using Microsoft.Extensions.Options;
 using OpenAI;
 using OpenAI.Chat;
 using Samhammer.DependencyInjection.Attributes;
-using Vuetrack.Connectors.Abstractions;
+using Vuetrack.Api.Features.Integrations;
 
 namespace Vuetrack.Api.Features.Suggestions.Engine.Provider;
 
@@ -43,6 +43,8 @@ public sealed class SuggestionProvider : ISuggestionProvider
 
     private static readonly JsonSerializerOptions JsonOptions = BuildJsonOptions();
 
+    private static readonly string SystemPrompt = LoadSystemPrompt();
+
     public SuggestionProvider(IOptions<ProviderOpenAiOptions> options, ILogger<SuggestionProvider> logger)
     {
         Options = options.Value;
@@ -60,7 +62,7 @@ public sealed class SuggestionProvider : ISuggestionProvider
     {
         var payload = JsonSerializer.Serialize(context, JsonOptions);
 
-        var systemMessage = ChatMessage.CreateSystemMessage(Options.SystemPrompt);
+        var systemMessage = ChatMessage.CreateSystemMessage(SystemPrompt);
         var userMessage = ChatMessage.CreateUserMessage(payload);
         List<ChatMessage> messages = [systemMessage, userMessage];
 
@@ -92,7 +94,19 @@ public sealed class SuggestionProvider : ISuggestionProvider
     {
         var schema = BinaryData.FromString(CandidatesSchema);
         var format = ChatResponseFormat.CreateJsonSchemaFormat("suggestion_candidates", schema, jsonSchemaIsStrict: true);
-        return new ChatCompletionOptions { ResponseFormat = format };
+        return new ChatCompletionOptions { ResponseFormat = format, MaxOutputTokenCount = options.MaxOutputTokens };
+    }
+
+    private static string LoadSystemPrompt()
+    {
+        var assembly = typeof(SuggestionProvider).Assembly;
+        const string resourceName = "Vuetrack.Api.Features.Suggestions.Engine.Provider.SystemPrompt.md";
+
+        using var stream = assembly.GetManifestResourceStream(resourceName)
+            ?? throw new InvalidOperationException($"Embedded resource {resourceName} was not found.");
+        using var reader = new StreamReader(stream);
+
+        return reader.ReadToEnd();
     }
 
     private static ChatClient BuildChatClient(ProviderOpenAiOptions options)
@@ -128,7 +142,7 @@ public sealed class SuggestionProvider : ISuggestionProvider
     private static JsonSerializerOptions BuildJsonOptions()
     {
         var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
-        jsonOptions.Converters.Add(new ActivityConnectorSignalDetailJsonConverter());
+        jsonOptions.Converters.Add(new ActivitySignalDetailJsonConverter());
         return jsonOptions;
     }
 

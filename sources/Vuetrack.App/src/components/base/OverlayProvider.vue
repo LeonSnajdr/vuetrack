@@ -5,33 +5,47 @@
             v-model="overlayOpen"
             v-bind="$attrs"
             :closeOnContentClick="false"
-            :persistent="loading"
+            :contentProps="{ style: dragStyle }"
+            :persistent="isPersistent"
             location="right"
             minWidth="350"
         >
             <VCard>
-                <VCardTitle>
+                <VCardTitle @mousedown="startDrag" class="cursor-move">
+                    <VIcon v-if="interactive" :icon="mdiDragHorizontalVariant" class="mr-2" size="small" />
                     <slot name="title" />
                 </VCardTitle>
                 <VCardText>
                     <slot name="content" />
                 </VCardText>
                 <VCardActions>
+                    <slot name="actionPrepend" />
                     <VSpacer />
                     <VBtn @click="overlayOpen = false" :disabled="loading" variant="flat">{{ $t("action.cancel") }}</VBtn>
                     <slot :valid="valid" name="actions" />
                 </VCardActions>
             </VCard>
         </VMenu>
-        <VDialog v-if="overlayType === OverlayType.Dialog" v-model="overlayOpen" v-bind="$attrs" :closeOnContentClick="false" :persistent="loading" width="800">
+        <VDialog
+            v-if="overlayType === OverlayType.Dialog"
+            v-model="overlayOpen"
+            v-bind="$attrs"
+            :closeOnContentClick="false"
+            :contentProps="{ style: dragStyle }"
+            :persistent="isPersistent"
+            :scrim="!interactive"
+            width="800"
+        >
             <VCard>
-                <VCardTitle>
+                <VCardTitle @mousedown="startDrag" class="cursor-move">
+                    <VIcon v-if="interactive" :icon="mdiDragHorizontalVariant" class="mr-2" size="small" />
                     <slot name="title" />
                 </VCardTitle>
                 <VCardText>
                     <slot name="content" />
                 </VCardText>
                 <VCardActions>
+                    <slot name="actionPrepend" />
                     <VSpacer />
                     <VBtn @click="overlayOpen = false" :disabled="loading" variant="flat">{{ $t("action.cancel") }}</VBtn>
                     <slot :valid="valid" name="actions" />
@@ -72,6 +86,7 @@ const emit = defineEmits(["closed", "submit"]);
 
 const props = defineProps<{
     loading: boolean;
+    interactive?: boolean;
 }>();
 
 const overlayOpen = defineModel<boolean>({ default: true });
@@ -79,8 +94,16 @@ const overlayOpen = defineModel<boolean>({ default: true });
 const settingsStore = useSettingsStore();
 const { generalSettings } = storeToRefs(settingsStore);
 const overlayType = computed<OverlayType>(() => generalSettings.value.overlayType);
+const isPersistent = computed(() => props.loading || props.interactive === true);
+
+const { style: dragStyle, start: beginDrag } = useDraggableOverlay();
 
 const valid = ref(false);
+
+const startDrag = (nativeEvent: MouseEvent) => {
+    if (!props.interactive) return;
+    beginDrag(nativeEvent);
+};
 
 useHotkey(
     "escape",

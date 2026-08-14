@@ -32,7 +32,7 @@ const projectStore = useProjectStore();
 const { projects } = storeToRefs(projectStore);
 
 const rules = useRules();
-const { execute: findProjectByTaskId, isLoading } = useAsyncTask(ProjectService.findProjectByTaskId);
+const { execute: findProjectIdByTaskId, isLoading } = useAsyncTask(ProjectService.findProjectIdByTaskId, { cancelPolicy: "previous" });
 
 const search = ref<string>();
 const menu = ref(false);
@@ -52,13 +52,16 @@ const updateProjectId = useDebounceFn(async () => {
     if (!props.taskId) return;
 
     const capturedTaskId = props.taskId;
-    const findResult = await findProjectByTaskId(props.taskId);
+    const findResult = await findProjectIdByTaskId(props.taskId);
     if (props.taskId !== capturedTaskId) return;
     if (findResult.status !== "success" || !findResult.data) return;
 
+    const foundProjectId = findResult.data;
+    const project = projects.value.find((p) => p.id === foundProjectId);
+
     suppressMenu.value = true;
-    projectId.value = findResult.data.id;
-    search.value = findResult.data.name;
+    projectId.value = foundProjectId;
+    search.value = project?.name;
     await nextTick();
     suppressMenu.value = false;
 }, 500);

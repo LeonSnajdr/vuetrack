@@ -1,51 +1,33 @@
-import type { DraftTimeEntryEvent, SuggestionTimeEntryEvent } from "@/components/tracking/calendar/types";
-import { useCalendarHelper } from "./useCalendarHelper";
-import { useEventMutation } from "./useEventMutation";
+import type { CreatableEvent } from "@/components/tracking/calendar/types";
+import { useChangeSet } from "./useChangeSet";
+import { useEventCommit } from "./useEventCommit";
 
 export function useCreate() {
     const calendarStore = useCalendarStore();
-    const mutation = useEventMutation();
-    const { buildCreateMutation } = useCalendarHelper();
+    const changeSet = useChangeSet();
+    const commit = useEventCommit();
 
-    const { interaction } = storeToRefs(calendarStore);
+    const { task } = storeToRefs(calendarStore);
 
-    const start = (event: DraftTimeEntryEvent | SuggestionTimeEntryEvent) => {
-        const createMutation = buildCreateMutation(event);
-        interaction.value = { kind: "create", event, mutation: createMutation };
+    const start = (event: CreatableEvent) => {
+        if (changeSet.isRemoved(event.uiId)) return;
+
+        const change = changeSet.stageCreate(event);
+        task.value = { kind: "create", event, payload: change.payload };
     };
 
     const finish = async () => {
-        if (interaction.value.kind !== "create") return;
+        if (task.value.kind !== "create") return;
 
-        const { event, mutation: createMutation, pendingMutations } = interaction.value;
-
-        if (!pendingMutations && mutation.tryEnterConflict(event, createMutation)) return;
-
-        const createResult = await mutation.execute(createMutation);
-
-        if (createResult.status === "error") {
-            if (createResult.validation) {
-                interaction.value.errors = createResult.validation;
-            }
-            return;
-        }
-
-        if (pendingMutations?.length) {
-            const shouldIdle = await mutation.drainPending(pendingMutations);
-            if (!shouldIdle) return;
-        }
-
-        interaction.value = { kind: "idle" };
+        const { event } = task.value;
+        await commit.commitOrEscalate(event);
     };
 
     const cancel = () => {
-        if (interaction.value.kind !== "create") return;
-        const { event, pendingMutations } = interaction.value;
+        if (task.value.kind !== "create") return;
 
-        mutation.deleteIfDraft(event);
-        mutation.cancelPending(pendingMutations);
-
-        interaction.value = { kind: "idle" };
+        task.value = { kind: "none" };
+        changeSet.revertAll();
     };
 
     return { start, finish, cancel };

@@ -195,9 +195,15 @@ prefer splitting it so each layer keeps its own shape and mapping stays explicit
 
 ## Applying it
 
-- The **file name matches the type name**: `UserContract` lives in
-  `UserContract.cs`. This is standard C# and it means the suffix is visible in
-  the file tree, not just in code.
+- The **file name matches the primary type name**: `UserContract` lives in
+  `UserContract.cs`. The suffix is visible in the file tree, not just in code.
+  This is enforced as a build error (StyleCop SA1649).
+- One **primary** type per file. Types that only exist as part of it may share
+  the file: a page/wrapper `Response` around it, the derived records of a
+  polymorphic hierarchy, a companion `enum`, an attributes class. Put the
+  primary type **first** — that is the one SA1649 checks.
+- Unrelated types get their own file. A file named after none of its types is a
+  bug, not a style preference.
 - Prefix with the concept, suffix with the role: `<Concept><Suffix>` —
   `OrderContract`, `OrderModel`, `OrderContainer`.
 - When adding a new data-carrying type, pick the suffix from the flow above

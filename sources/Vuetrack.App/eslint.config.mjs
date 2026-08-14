@@ -16,6 +16,7 @@ export default defineConfigWithVueTs(
             import: importPlugin
         },
         rules: {
+            "func-style": ["error", "expression", { allowArrowFunctions: true, overrides: { namedExports: "ignore" } }],
             "no-relative-import-paths/no-relative-import-paths": ["warn", { allowSameFolder: true, rootDir: "src", prefix: "@" }],
             "import/first": "error",
             "import/newline-after-import": "error",

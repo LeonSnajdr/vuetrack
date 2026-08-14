@@ -1,14 +1,18 @@
 using ErrorOr;
 using Samhammer.DependencyInjection.Attributes;
+using Vuetrack.Api.Features.Integrations;
+using Vuetrack.Api.Features.Integrations.Abstractions;
+using Vuetrack.Api.Features.Integrations.Activity;
 using Vuetrack.Api.Features.Suggestions.Engine.Provider;
-using Vuetrack.Connectors.Abstractions;
 
 namespace Vuetrack.Api.Features.Suggestions.Engine;
 
 [Inject]
-public sealed class SuggestionEngine(ISuggestionProvider provider) : ISuggestionEngine
+public sealed class SuggestionEngine(ISuggestionProvider provider, ILogger<SuggestionEngine> logger) : ISuggestionEngine
 {
     private ISuggestionProvider Provider { get; } = provider;
+
+    private ILogger<SuggestionEngine> Logger { get; } = logger;
 
     public async Task<ErrorOr<IReadOnlyList<SuggestionEngineResult>>> BuildAsync(IReadOnlyList<ActivitySignal> signals, DateTime from, DateTime to, CancellationToken cancellationToken)
     {
@@ -28,15 +32,22 @@ public sealed class SuggestionEngine(ISuggestionProvider provider) : ISuggestion
 
         var byExternalId = IndexByExternalId(deduplicated);
         var suggestions = new List<SuggestionEngineResult>();
+        var discarded = 0;
         foreach (var candidate in candidates.Value)
         {
             var mapped = MapCandidate(candidate, byExternalId, from, to);
-            if (mapped.IsError)
+            if (mapped is null)
             {
+                discarded++;
                 continue;
             }
 
-            suggestions.Add(mapped.Value);
+            suggestions.Add(mapped);
+        }
+
+        if (discarded > 0)
+        {
+            Logger.LogInformation("Discarded {DiscardedCount} suggestion candidates with unknown sources or an empty time range", discarded);
         }
 
         var ordered = suggestions
@@ -49,11 +60,11 @@ public sealed class SuggestionEngine(ISuggestionProvider provider) : ISuggestion
 
     private static List<ActivitySignal> Deduplicate(IReadOnlyList<ActivitySignal> signals)
     {
-        var byKey = new Dictionary<(ConnectorKey ConnectorKey, string ExternalId), ActivitySignal>();
+        var byKey = new Dictionary<(IntegrationKey Key, string ExternalId), ActivitySignal>();
 
         foreach (var signal in signals)
         {
-            var key = (signal.ConnectorKey, signal.ExternalId);
+            var key = (signal.Key, signal.ExternalId);
             if (!byKey.TryGetValue(key, out var existing))
             {
                 byKey[key] = signal;
@@ -104,19 +115,19 @@ public sealed class SuggestionEngine(ISuggestionProvider provider) : ISuggestion
         };
     }
 
-    private static ErrorOr<SuggestionEngineResult> MapCandidate(SuggestionProviderCandidate candidate, Dictionary<string, ActivitySignal> byExternalId, DateTime from, DateTime to)
+    private static SuggestionEngineResult? MapCandidate(SuggestionProviderCandidate candidate, Dictionary<string, ActivitySignal> byExternalId, DateTime from, DateTime to)
     {
         var sources = ResolveSources(candidate.SourceExternalIds, byExternalId);
         if (sources.Count == 0)
         {
-            return Error.Validation();
+            return null;
         }
 
         var start = candidate.DateStarted < from ? from : candidate.DateStarted;
         var end = candidate.DateEnded > to ? to : candidate.DateEnded;
         if (end <= start)
         {
-            return Error.Validation();
+            return null;
         }
 
         var confidence = Math.Min(1.0, candidate.Confidence);
@@ -167,7 +178,7 @@ public sealed class SuggestionEngine(ISuggestionProvider provider) : ISuggestion
             var end = signal.DateEnded ?? signal.DateStarted;
             var item = new SuggestionEngineEvidence
             {
-                ConnectorKey = signal.ConnectorKey,
+                Key = signal.Key,
                 ExternalId = signal.ExternalId,
                 Kind = signal.Kind,
                 DateStarted = signal.DateStarted,

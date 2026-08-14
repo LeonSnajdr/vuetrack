@@ -21,8 +21,8 @@ const projectStore = useProjectStore();
 const timeEntryStore = useTimeEntryStore();
 const timeEntrySuggestionStore = useTimeEntrySuggestionStore();
 
-const backendStore = useBackendStore();
-const { hasUsableBackend, isLoading } = storeToRefs(backendStore);
+const integrationStore = useIntegrationStore();
+const { hasUsableBackend, isLoading } = storeToRefs(integrationStore);
 
 whenever(
     hasUsableBackend,

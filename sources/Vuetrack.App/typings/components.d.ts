@@ -13,11 +13,10 @@ declare module 'vue' {
   export interface GlobalComponents {
     AppHeader: typeof import('./../src/components/app/Header.vue')['default']
     AppNotificationView: typeof import('./../src/components/app/NotificationView.vue')['default']
-    AppSettingsBackends: typeof import('./../src/components/app/settings/Backends.vue')['default']
     AppSettingsCalendar: typeof import('./../src/components/app/settings/Calendar.vue')['default']
-    AppSettingsConnectors: typeof import('./../src/components/app/settings/Connectors.vue')['default']
     AppSettingsDialog: typeof import('./../src/components/app/settings/Dialog.vue')['default']
     AppSettingsGeneral: typeof import('./../src/components/app/settings/General.vue')['default']
+    AppSettingsIntegrations: typeof import('./../src/components/app/settings/Integrations.vue')['default']
     AppSettingsList: typeof import('./../src/components/app/settings/List.vue')['default']
     AppSettingsTheme: typeof import('./../src/components/app/settings/Theme.vue')['default']
     BaseBtnExpand: typeof import('./../src/components/base/btn/Expand.vue')['default']

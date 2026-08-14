@@ -3,6 +3,9 @@ import type { TimeEntrySuggestionContract, TimeEntrySuggestionUpdateContract, Ti
 import type { Nullable } from "@/util/Nullable";
 import type { ValidationErrors } from "@/util/ValidationProblem";
 import type { CalendarEvent } from "vuetify/lib/components/VCalendar/types.mjs";
+import type { Branded } from "typings/brand";
+
+export type UiId = Branded<string, "uiId">;
 
 export type EventEdge = "start" | "end";
 
@@ -12,9 +15,11 @@ export type EventPosition = {
 };
 
 export type BaseCalendarEvent = {
-    uiId: string;
+    uiId: UiId;
     timed: boolean;
-} & EventPosition;
+    readonly start: number;
+    readonly end: number;
+};
 
 export type DraftTimeEntryEvent = {
     kind: "draft";
@@ -26,11 +31,22 @@ export type ExistingTimeEntryEvent = {
     timeEntry: TimeEntryContract;
 } & BaseCalendarEvent;
 
+export type SuggestionTimeEntryEvent = {
+    kind: "suggestion";
+    timeEntry: TimeEntrySuggestionContract;
+} & BaseCalendarEvent;
+
+export type TimeEntryEvent = DraftTimeEntryEvent | ExistingTimeEntryEvent | SuggestionTimeEntryEvent;
+export type PositionableEvent = ExistingTimeEntryEvent | SuggestionTimeEntryEvent;
+export type CreatableEvent = DraftTimeEntryEvent | SuggestionTimeEntryEvent;
+
+export type TimeEntryUpdatePayload = TimeEntryUpdateContract | TimeEntrySuggestionUpdateContract;
+export type TimeEntryCreatePayload = Nullable<TimeEntryCreateContract>;
+
 export type ExistingTimeEntryUpdateMutation = {
     kind: "update";
     event: ExistingTimeEntryEvent;
     update: TimeEntryUpdateContract;
-    originalPosition: EventPosition;
 };
 
 export type ExistingTimeEntryDeleteMutation = {
@@ -39,22 +55,10 @@ export type ExistingTimeEntryDeleteMutation = {
     id: TimeEntryId;
 };
 
-export type SuggestionTimeEntryEvent = {
-    kind: "suggestion";
-    timeEntry: TimeEntrySuggestionContract;
-} & BaseCalendarEvent;
-
 export type SuggestionTimeEntryUpdateMutation = {
     kind: "update";
     event: SuggestionTimeEntryEvent;
     update: TimeEntrySuggestionUpdateContract;
-    originalPosition: EventPosition;
-};
-
-export type SuggestionTimeEntryCreateMutation = {
-    kind: "create";
-    event: SuggestionTimeEntryEvent;
-    create: Nullable<TimeEntryCreateContract>;
 };
 
 export type SuggestionTimeEntryDeleteMutation = {
@@ -63,86 +67,101 @@ export type SuggestionTimeEntryDeleteMutation = {
     id: TimeEntrySuggestionId;
 };
 
-export type DraftTimeEntryDeleteMutation = {
-    kind: "delete";
-    event: DraftTimeEntryEvent;
-};
-
-export type DraftTimeEntryCreateMutation = {
+export type TimeEntryCreateMutation = {
     kind: "create";
-    event: DraftTimeEntryEvent;
-    create: Nullable<TimeEntryCreateContract>;
+    event: CreatableEvent;
+    create: TimeEntryCreatePayload;
 };
 
-export type TimeEntryEvent = DraftTimeEntryEvent | ExistingTimeEntryEvent | SuggestionTimeEntryEvent;
-export type TimeEntryMutation =
-    | ExistingTimeEntryUpdateMutation
-    | ExistingTimeEntryDeleteMutation
-    | SuggestionTimeEntryUpdateMutation
-    | SuggestionTimeEntryDeleteMutation
-    | DraftTimeEntryDeleteMutation
-    | DraftTimeEntryCreateMutation
-    | SuggestionTimeEntryCreateMutation;
+export type TimeEntryUpdateMutation = ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation;
+export type TimeEntryDeleteMutation = ExistingTimeEntryDeleteMutation | SuggestionTimeEntryDeleteMutation;
+export type TimeEntryMutation = TimeEntryUpdateMutation | TimeEntryCreateMutation | TimeEntryDeleteMutation;
 
-export type Interaction =
+export type Gesture =
     | { kind: "idle" }
     | {
           kind: "move";
-          event: ExistingTimeEntryEvent | SuggestionTimeEntryEvent;
+          event: TimeEntryEvent;
+          from: EventPosition;
+          wasStaged: boolean;
           pointerOffsetMs?: number;
-          mutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation;
       }
     | {
           kind: "resize";
           edge: EventEdge;
-          event: ExistingTimeEntryEvent | SuggestionTimeEntryEvent;
-          mutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation;
+          event: TimeEntryEvent;
+          from: EventPosition;
+          wasStaged: boolean;
       }
     | {
           kind: "draft";
           event: DraftTimeEntryEvent;
           anchorStartMs: number;
-      }
+      };
+
+export type Task =
+    | { kind: "none" }
     | {
           kind: "create";
-          event: DraftTimeEntryEvent | SuggestionTimeEntryEvent;
-          mutation: DraftTimeEntryCreateMutation | SuggestionTimeEntryCreateMutation;
+          event: CreatableEvent;
+          payload: TimeEntryCreatePayload;
           errors?: ValidationErrors;
-          pendingMutations?: TimeEntryMutation[];
       }
     | {
           kind: "edit";
-          event: ExistingTimeEntryEvent | SuggestionTimeEntryEvent;
-          mutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation;
+          event: PositionableEvent;
+          payload: TimeEntryUpdatePayload;
           errors?: ValidationErrors;
-          pendingMutations?: TimeEntryMutation[];
       }
     | {
           kind: "conflict";
           event: TimeEntryEvent;
-          overlaps: TimeEntryEvent[];
-          mutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation | DraftTimeEntryCreateMutation | SuggestionTimeEntryCreateMutation;
       }
     | {
           kind: "delete";
-          event: TimeEntryEvent;
-          mutation: DraftTimeEntryDeleteMutation | ExistingTimeEntryDeleteMutation | SuggestionTimeEntryDeleteMutation;
+          event: PositionableEvent;
       };
 
-export type EventKind = TimeEntryEvent["kind"];
-export type MutationKind = TimeEntryMutation["kind"];
-export type InteractionKind = Interaction["kind"];
+export type ConflictTask = Extract<Task, { kind: "conflict" }>;
 
-export function canStartInteraction(currentKind: InteractionKind): boolean {
-    return currentKind !== "create" && currentKind !== "edit" && currentKind !== "conflict" && currentKind !== "delete";
-}
+export type StagedSaveChange = {
+    kind: "save";
+    event: PositionableEvent;
+    payload: TimeEntryUpdatePayload;
+    removed: boolean;
+};
+
+export type StagedCreateChange = {
+    kind: "create";
+    event: CreatableEvent;
+    payload: TimeEntryCreatePayload;
+    removed: boolean;
+};
+
+export type StagedChange = StagedSaveChange | StagedCreateChange;
+export type StagedPayload = TimeEntryUpdatePayload | TimeEntryCreatePayload;
+
+export type GestureKind = Gesture["kind"];
+export type TaskKind = Task["kind"];
+export type StagedChangeKind = StagedChange["kind"];
 
 export function isTimeEntryEvent(e: CalendarEvent): e is TimeEntryEvent {
     return e.kind === "suggestion" || e.kind === "existing" || e.kind === "draft";
 }
 
-export function isExistingUpdateMutation(
-    mutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation
-): mutation is ExistingTimeEntryUpdateMutation {
+export function getDraftEvent(change: StagedChange): DraftTimeEntryEvent | null {
+    if (change.kind !== "create") return null;
+    if (change.event.kind !== "draft") return null;
+
+    return change.event;
+}
+
+export function getPayloadPosition(payload: StagedPayload): EventPosition | null {
+    if (!payload.dateStarted || !payload.dateEnded) return null;
+
+    return { start: payload.dateStarted.getTime(), end: payload.dateEnded.getTime() };
+}
+
+export function isExistingUpdateMutation(mutation: TimeEntryUpdateMutation): mutation is ExistingTimeEntryUpdateMutation {
     return mutation.event.kind === "existing";
 }

@@ -11,17 +11,17 @@ using Samhammer.Swagger.Authentication;
 using Samhammer.Swagger.Versioning;
 using Samhammer.Web.Common.Extensions;
 using Serilog;
+using Vuetrack.Api.Features.Integrations.Github;
+using Vuetrack.Api.Features.Integrations.Github.Connection;
+using Vuetrack.Api.Features.Integrations.Jira;
+using Vuetrack.Api.Features.Integrations.Jira.Connection;
+using Vuetrack.Api.Features.Integrations.Timetracking;
+using Vuetrack.Api.Features.Integrations.Timetracking.Connection;
 using Vuetrack.Api.Infrastructure.Config;
 using Vuetrack.Api.Infrastructure.Cors;
+using Vuetrack.Api.Infrastructure.Logging;
 using Vuetrack.Api.Infrastructure.ModelBinding;
 using Vuetrack.Api.Infrastructure.Validation;
-using Vuetrack.Backends.Timetracking;
-using Vuetrack.Backends.Timetracking.Api;
-using Vuetrack.Connectors.Github;
-using Vuetrack.Connectors.Github.Activity;
-using Vuetrack.Connectors.Jira;
-using Vuetrack.Connectors.Jira.Activity;
-using Vuetrack.Logging;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console(outputTemplate: SerilogConfig.ConsoleTemplate)
@@ -82,20 +82,20 @@ try
     builder.Services.AddSwaggerVersionedApi();
 
     builder.Services.AddHttpClient();
-    builder.Services.AddHttpClient<ITimetrackingApiClient, TimetrackingApiClient>((sp, client) =>
+    builder.Services.AddHttpClient<ITimetrackingSessionFactory, TimetrackingSessionFactory>((sp, client) =>
     {
         var options = sp.GetRequiredService<IOptions<TimetrackingOptions>>().Value;
         var baseUrl = options.ApiBaseUrl.TrimEnd('/') + "/";
         client.BaseAddress = new Uri(baseUrl);
     });
-    builder.Services.AddHttpClient<IJiraApiClient, JiraApiClient>((sp, client) =>
+    builder.Services.AddHttpClient<IJiraSessionFactory, JiraSessionFactory>((sp, client) =>
     {
         var options = sp.GetRequiredService<IOptions<JiraOptions>>().Value;
         var baseUrl = options.ApiBaseUrl.TrimEnd('/') + "/";
         client.BaseAddress = new Uri(baseUrl);
         client.Timeout = TimeSpan.FromSeconds(30);
     });
-    builder.Services.AddHttpClient<IGithubApiClient, GithubApiClient>((sp, client) =>
+    builder.Services.AddHttpClient<IGithubSessionFactory, GithubSessionFactory>((sp, client) =>
     {
         var options = sp.GetRequiredService<IOptions<GithubOptions>>().Value;
         var baseUrl = options.ApiBaseUrl.TrimEnd('/') + "/";

@@ -33,8 +33,7 @@ const settingsStore = useSettingsStore();
 const { generalSettings } = storeToRefs(settingsStore);
 
 const configStore = useConfigStore();
-const connectorStore = useConnectorStore();
-const backendStore = useBackendStore();
+const integrationStore = useIntegrationStore();
 
 const theme = useTheme();
 
@@ -66,8 +65,7 @@ onBeforeMount(initializeApp);
 watch(isInitialized, (value) => {
     if (!value) return;
 
-    connectorStore.executeLoad();
-    backendStore.executeLoad();
+    integrationStore.executeLoad();
 });
 
 watch(

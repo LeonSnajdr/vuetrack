@@ -1,13 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace Vuetrack.Api.Infrastructure.Problems;
 
-/// <summary>
-/// Builds action results for RFC 9457 problem details, ensuring the mandated
-/// <c>application/problem+json</c> content type is always set. Used by both the
-/// FluentValidation action filter and the ErrorOr result mapping so every error
-/// response shares an identical shape.
-/// </summary>
 public static class ProblemResults
 {
     public static ObjectResult From(ProblemDetails problemDetails) =>
@@ -16,4 +12,24 @@ public static class ProblemResults
             StatusCode = problemDetails.Status,
             ContentTypes = { "application/problem+json" },
         };
+
+    public static ObjectResult Validation(HttpContext httpContext, ProblemDetailsFactory factory, IEnumerable<(string Field, string Error)> failures)
+    {
+        var modelState = new ModelStateDictionary();
+        foreach (var failure in failures)
+        {
+            modelState.AddModelError(failure.Field, failure.Error);
+        }
+
+        var problem = factory.CreateValidationProblemDetails(httpContext, modelState, StatusCodes.Status400BadRequest);
+
+        return From(problem);
+    }
+
+    public static ObjectResult Validation(HttpContext httpContext, IEnumerable<(string Field, string Error)> failures)
+    {
+        var factory = httpContext.RequestServices.GetRequiredService<ProblemDetailsFactory>();
+
+        return Validation(httpContext, factory, failures);
+    }
 }

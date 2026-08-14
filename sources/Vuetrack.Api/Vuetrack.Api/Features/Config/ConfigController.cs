@@ -2,6 +2,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Vuetrack.Api.Features.Config.Contracts;
 using Vuetrack.Api.Infrastructure.Config;
 
 namespace Vuetrack.Api.Features.Config;

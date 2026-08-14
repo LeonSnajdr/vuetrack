@@ -1,26 +1,15 @@
-import { success } from "@/util/ActionResult";
 import type { ValidationErrors } from "@/util/ValidationProblem";
 import {
     isExistingUpdateMutation,
-    type DraftTimeEntryCreateMutation,
-    type DraftTimeEntryDeleteMutation,
-    type ExistingTimeEntryDeleteMutation,
-    type ExistingTimeEntryEvent,
-    type ExistingTimeEntryUpdateMutation,
-    type Interaction,
-    type SuggestionTimeEntryCreateMutation,
-    type SuggestionTimeEntryDeleteMutation,
-    type SuggestionTimeEntryEvent,
-    type SuggestionTimeEntryUpdateMutation,
-    type TimeEntryEvent,
-    type TimeEntryMutation
+    type TimeEntryCreateMutation,
+    type TimeEntryDeleteMutation,
+    type TimeEntryMutation,
+    type TimeEntryUpdateMutation
 } from "@/components/tracking/calendar/types";
-import { useCalendarHelper } from "./useCalendarHelper";
-
-type ConflictMutation = ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation | DraftTimeEntryCreateMutation | SuggestionTimeEntryCreateMutation;
 
 export type ExecuteAllResult =
     | { status: "success" }
+    | { status: "cancelled" }
     | {
           status: "error";
           error?: unknown;
@@ -29,35 +18,9 @@ export type ExecuteAllResult =
           remaining: TimeEntryMutation[];
       };
 
-export function buildHandoffInteraction(failedMutation: TimeEntryMutation, remaining: TimeEntryMutation[], errors: ValidationErrors): Interaction | null {
-    if (failedMutation.kind === "update") {
-        return {
-            kind: "edit",
-            event: failedMutation.event,
-            mutation: failedMutation,
-            errors,
-            pendingMutations: remaining
-        };
-    }
-    if (failedMutation.kind === "create") {
-        return {
-            kind: "create",
-            event: failedMutation.event,
-            mutation: failedMutation,
-            errors,
-            pendingMutations: remaining
-        };
-    }
-    return null;
-}
-
 export function useEventMutation() {
-    const calendarStore = useCalendarStore();
     const timeEntryStore = useTimeEntryStore();
     const suggestionStore = useTimeEntrySuggestionStore();
-    const { getOverlappingEvents, buildDeleteMutation, restoreOriginalPosition } = useCalendarHelper();
-
-    const { draftEvents, existingEvents, interaction } = storeToRefs(calendarStore);
 
     const execute = async (mutation: TimeEntryMutation) => {
         switch (mutation.kind) {
@@ -70,38 +33,37 @@ export function useEventMutation() {
         }
     };
 
-    const executeAll = async (mutations: TimeEntryMutation[]): Promise<ExecuteAllResult> => {
+    const executeAll = async (mutations: TimeEntryMutation[], onExecuted?: (mutation: TimeEntryMutation) => void): Promise<ExecuteAllResult> => {
         for (let i = 0; i < mutations.length; i++) {
             const result = await execute(mutations[i]);
-            if (result.status !== "success") {
+
+            if (result.status === "cancelled") return { status: "cancelled" };
+
+            if (result.status === "error") {
                 return {
                     status: "error",
-                    error: result.status === "error" ? result.error : undefined,
-                    validation: result.status === "error" ? result.validation : undefined,
+                    error: result.error,
+                    validation: result.validation,
                     failedMutation: mutations[i],
                     remaining: mutations.slice(i + 1)
                 };
             }
+            onExecuted?.(mutations[i]);
         }
         return { status: "success" };
     };
 
-    const executeCreate = async (mutation: DraftTimeEntryCreateMutation | SuggestionTimeEntryCreateMutation) => {
+    const executeCreate = async (mutation: TimeEntryCreateMutation) => {
         const result = await timeEntryStore.create(mutation.create);
 
-        if (result.status === "success") {
-            if (mutation.event.kind === "draft") {
-                const idx = draftEvents.value.indexOf(mutation.event);
-                if (idx !== -1) draftEvents.value.splice(idx, 1);
-            } else {
-                await suggestionStore.accept(mutation.event.timeEntry.id);
-            }
+        if (result.status === "success" && mutation.event.kind === "suggestion") {
+            await suggestionStore.accept(mutation.event.timeEntry.id);
         }
 
         return result;
     };
 
-    const executeUpdate = async (mutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation) => {
+    const executeUpdate = async (mutation: TimeEntryUpdateMutation) => {
         if (isExistingUpdateMutation(mutation)) {
             return await timeEntryStore.update(mutation.event.timeEntry.id, mutation.update);
         } else {
@@ -109,101 +71,13 @@ export function useEventMutation() {
         }
     };
 
-    const executeDelete = async (mutation: DraftTimeEntryDeleteMutation | ExistingTimeEntryDeleteMutation | SuggestionTimeEntryDeleteMutation) => {
-        if (mutation.event.kind === "draft") {
-            const idx = draftEvents.value.indexOf(mutation.event);
-            if (idx !== -1) draftEvents.value.splice(idx, 1);
-            return success();
-        } else if (mutation.event.kind === "existing") {
+    const executeDelete = async (mutation: TimeEntryDeleteMutation) => {
+        if (mutation.event.kind === "existing") {
             return await timeEntryStore.remove(mutation.event.timeEntry.id);
         } else {
             return await suggestionStore.dismiss(mutation.event.timeEntry.id);
         }
     };
 
-    // If `event` overlaps any existing event, switch the interaction to
-    // "conflict" and return true so the caller can short-circuit.
-    const tryEnterConflict = (event: TimeEntryEvent, mut: ConflictMutation): boolean => {
-        const overlaps = getOverlappingEvents(event, existingEvents.value);
-        if (overlaps.length === 0) return false;
-        interaction.value = { kind: "conflict", event, overlaps, mutation: mut };
-        return true;
-    };
-
-    // Drives the post-drag commit shared by move/resize: enters conflict if
-    // overlapping, runs the API call, escalates validation errors to "edit",
-    // and rolls back optimistic UI on other failures. Returns true when the
-    // caller should set the interaction to idle; false when this function has
-    // already taken over the interaction state (conflict / edit handoff).
-    const commitUpdate = async (cur: {
-        event: ExistingTimeEntryEvent | SuggestionTimeEntryEvent;
-        mutation: ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation;
-    }): Promise<boolean> => {
-        if (cur.event.kind === "existing" && tryEnterConflict(cur.event, cur.mutation)) return false;
-
-        const result = await execute(cur.mutation);
-
-        if (result.status === "cancelled") return false;
-
-        if (result.status === "error" && result.validation) {
-            if (interaction.value.kind === "idle") {
-                interaction.value = {
-                    kind: "edit",
-                    event: cur.event,
-                    mutation: cur.mutation,
-                    errors: result.validation
-                };
-            } else {
-                restoreOriginalPosition(cur.mutation);
-            }
-            return false;
-        }
-
-        if (result.status !== "success") {
-            restoreOriginalPosition(cur.mutation);
-        }
-
-        return true;
-    };
-
-    const deleteIfDraft = (event: TimeEntryEvent) => {
-        if (event.kind === "draft") execute(buildDeleteMutation(event));
-    };
-
-    // Drains the pending-mutation queue. Returns true when the caller should
-    // proceed (set interaction to idle); returns false when this function has
-    // already taken over the interaction state via a handoff.
-    const drainPending = async (pendingMutations: TimeEntryMutation[]): Promise<boolean> => {
-        const result = await executeAll(pendingMutations);
-        if (result.status === "success") return true;
-
-        if (result.validation) {
-            const handoff = buildHandoffInteraction(result.failedMutation, result.remaining, result.validation);
-            if (handoff) {
-                interaction.value = handoff;
-                return false;
-            }
-        }
-
-        // Failure with no recoverable handoff (delete validation, network etc.):
-        // roll back optimistic UI changes from mutations that never ran.
-        cancelPending([result.failedMutation, ...result.remaining]);
-        return true;
-    };
-
-    // Roll back optimistic UI changes from queued conflict-resolution mutations
-    // that never ran (because of cancel or an upstream failure). Restores
-    // repositioned events and removes any draft events that were going to be
-    // created.
-    const cancelPending = (pendingMutations: TimeEntryMutation[] | undefined) => {
-        if (!pendingMutations) return;
-        for (const m of pendingMutations) {
-            restoreOriginalPosition(m);
-            if (m.kind === "create" && m.event.kind === "draft") {
-                execute(buildDeleteMutation(m.event));
-            }
-        }
-    };
-
-    return { execute, executeAll, tryEnterConflict, commitUpdate, deleteIfDraft, drainPending, cancelPending };
+    return { execute, executeAll };
 }

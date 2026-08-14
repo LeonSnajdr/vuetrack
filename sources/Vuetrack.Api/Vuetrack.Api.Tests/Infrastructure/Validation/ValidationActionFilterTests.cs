@@ -8,9 +8,10 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Vuetrack.Api.Features.Integrations.Contracts;
+using Vuetrack.Api.Features.TimeEntry.Contracts;
 using Vuetrack.Api.Features.TimeEntry.Validation;
 using Vuetrack.Api.Infrastructure.Validation;
-using Vuetrack.Backends.Abstractions.Contracts;
 using Xunit;
 
 namespace Vuetrack.Api.Tests.Infrastructure.Validation;
@@ -23,7 +24,6 @@ public class ValidationActionFilterTests
         var provider = BuildProvider();
         var filter = new ValidationActionFilter(provider);
 
-        // Empty contract fails ProjectId/ActivityId NotEmpty and DateStarted < DateEnded.
         var invalidContract = new TimeEntryCreateContract();
         var executingContext = CreateContext(provider, argument: invalidContract);
         var nextCalled = false;

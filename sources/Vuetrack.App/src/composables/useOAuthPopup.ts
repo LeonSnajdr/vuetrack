@@ -48,7 +48,6 @@ export function useOAuthPopup() {
             };
             window.addEventListener("message", activeListener);
 
-            // Resolve as cancelled if the user closes the popup without finishing.
             closedTimer = window.setInterval(() => {
                 if (activePopup?.closed) {
                     finish({ status: "cancelled" });

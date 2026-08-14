@@ -1,8 +1,11 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Vuetrack.Api.Features.Details.Contracts;
+using Vuetrack.Api.Features.Details.Services;
+using Vuetrack.Api.Features.Integrations;
 using Vuetrack.Api.Infrastructure.Authentication;
-using Vuetrack.Connectors.Abstractions;
+using Vuetrack.Api.Infrastructure.Validation;
 
 namespace Vuetrack.Api.Features.Details;
 
@@ -22,6 +25,6 @@ public class DetailsController(IDetailService detailService) : ControllerBase
         var query = new DetailQuery { TaskId = taskId };
         var result = await DetailService.GetAsync(query, userId, cancellationToken);
 
-        return Ok(result);
+        return this.ToActionResult(result);
     }
 }

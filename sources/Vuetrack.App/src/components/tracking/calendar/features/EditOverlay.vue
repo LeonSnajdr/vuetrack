@@ -5,10 +5,10 @@
         </template>
         <template #content>
             <TimeEntryFieldContainer
-                v-model="interaction.mutation.update"
-                v-model:errors="interaction.errors"
+                v-model="task.payload"
+                v-model:errors="task.errors"
                 v-model:valid="valid"
-                :disableRequired="interaction.event.kind === 'suggestion'"
+                :disableRequired="task.event.kind === 'suggestion'"
             />
         </template>
         <template #actions>
@@ -20,17 +20,17 @@
 </template>
 
 <script setup lang="ts">
-import type { Interaction } from "@/components/tracking/calendar/types";
+import type { Task } from "@/components/tracking/calendar/types";
 import { useEdit } from "@/components/tracking/calendar/composables/useEdit";
 
-const interaction = defineModel<Extract<Interaction, { kind: "edit" }>>("interaction", { required: true });
+const task = defineModel<Extract<Task, { kind: "edit" }>>("task", { required: true });
 
 const edit = useEdit();
 const calendarStore = useCalendarStore();
 const { isUpdatingEvent } = storeToRefs(calendarStore);
 const valid = ref(false);
 
-const targetSelector = computed(() => "#" + interaction.value.event.uiId);
+const targetSelector = computed(() => "#" + task.value.event.uiId);
 
 const submit = (): void => {
     if (!valid.value) return;

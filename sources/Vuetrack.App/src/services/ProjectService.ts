@@ -1,5 +1,5 @@
 import type { ActivityContract } from "@/contracts/ActivityContract";
-import type { ProjectContract, ProjectId } from "@/contracts/ProjectContract";
+import type { ProjectContract, ProjectId, ProjectLookupContract } from "@/contracts/ProjectContract";
 import axios from "@/plugins/axios";
 
 class ProjectService {
@@ -13,18 +13,13 @@ class ProjectService {
         return result.data;
     };
 
-    public findProjectByTaskId = async (taskId: string): Promise<ProjectContract | undefined> => {
-        // TODO: remove
-        return {
-            id: "2" as ProjectId,
-            name: "project-1"
-        };
-
-        const result = await axios.api.get<ProjectContract | null>("project/findByTaskId", {
-            params: { taskId: taskId }
+    public findProjectIdByTaskId = async (taskId: string, signal?: AbortSignal): Promise<ProjectId | null> => {
+        const result = await axios.api.get<ProjectLookupContract>("project/findByTaskId", {
+            params: { taskId: taskId },
+            signal: signal
         });
 
-        return result.data ?? undefined;
+        return result.data.projectId;
     };
 }
 

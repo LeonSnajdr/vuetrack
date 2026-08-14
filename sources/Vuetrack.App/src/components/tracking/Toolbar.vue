@@ -6,14 +6,28 @@
             <div class="d-flex align-center ga-2">
                 <div id="tracking-toolbar-append" class="d-inline-flex align-center ga-2" />
                 <VBtn
-                    @click="timeEntrySuggestionStore.reload()"
                     :icon="mdiLightbulbOnOutline"
                     :loading="timeEntrySuggestionStore.isGenerating || timeEntrySuggestionStore.isReloading"
                     density="comfortable"
                     variant="text"
                 >
                     <VIcon :icon="mdiLightbulbOnOutline" />
-                    <VTooltip activator="parent" location="bottom">{{ $t("suggestion.forceReload") }}</VTooltip>
+                    <VMenu activator="parent" location="bottom end">
+                        <VList density="compact">
+                            <VListItem
+                                @click="timeEntrySuggestionStore.generate()"
+                                :prependIcon="mdiLightbulbOnOutline"
+                                :subtitle="$t('suggestion.generate.hint')"
+                                :title="$t('suggestion.generate')"
+                            />
+                            <VListItem
+                                @click="timeEntrySuggestionStore.reload()"
+                                :prependIcon="mdiRefresh"
+                                :subtitle="$t('suggestion.reloadHint')"
+                                :title="$t('suggestion.reload')"
+                            />
+                        </VList>
+                    </VMenu>
                 </VBtn>
                 <VBtnToggle density="compact" variant="outlined">
                     <VBtn :to="{ name: '/tracking/calendar', query: $route.query }"> Calendar </VBtn>

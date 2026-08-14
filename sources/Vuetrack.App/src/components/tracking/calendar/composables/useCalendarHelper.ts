@@ -1,24 +1,18 @@
-import {
-    isExistingUpdateMutation,
-    type DraftTimeEntryCreateMutation,
-    type DraftTimeEntryDeleteMutation,
-    type DraftTimeEntryEvent,
-    type EventEdge,
-    type EventPosition,
-    type ExistingTimeEntryDeleteMutation,
-    type ExistingTimeEntryEvent,
-    type ExistingTimeEntryUpdateMutation,
-    type Interaction,
-    type SuggestionTimeEntryCreateMutation,
-    type SuggestionTimeEntryDeleteMutation,
-    type SuggestionTimeEntryEvent,
-    type SuggestionTimeEntryUpdateMutation,
-    type TimeEntryEvent,
-    type TimeEntryMutation
+import type {
+    CreatableEvent,
+    EventEdge,
+    EventPosition,
+    PositionableEvent,
+    SuggestionTimeEntryEvent,
+    TimeEntryCreateMutation,
+    TimeEntryCreatePayload,
+    TimeEntryDeleteMutation,
+    TimeEntryEvent,
+    TimeEntryUpdateMutation,
+    TimeEntryUpdatePayload
 } from "@/components/tracking/calendar/types";
-import type { TimeEntryContract, TimeEntryCreateContract, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
+import type { TimeEntryContract, TimeEntryUpdateContract } from "@/contracts/TimeEntryContract";
 import type { TimeEntrySuggestionContract, TimeEntrySuggestionUpdateContract } from "@/contracts/TimeEntrySuggestion";
-import type { Nullable } from "@/util/Nullable";
 import type { CalendarInterval } from "./useCalendarInterval";
 
 type RoundTimeOptions = {
@@ -26,18 +20,11 @@ type RoundTimeOptions = {
     snapPoints?: number[];
 };
 
-type UpdateEventPositionPatch = {
-    start?: number;
-    end?: number;
-};
-
 export const useCalendarHelper = () => {
     const timeEntryStore = useTimeEntryStore();
     const suggestionStore = useTimeEntrySuggestionStore();
     const settingsStore = useSettingsStore();
-    const calendarStore = useCalendarStore();
     const { calendarSettings } = storeToRefs(settingsStore);
-    const { interaction } = storeToRefs(calendarStore);
 
     const roundTime = (timeMs: number, options: RoundTimeOptions = {}): number => {
         const { down = true, snapPoints = [] } = options;
@@ -93,17 +80,17 @@ export const useCalendarHelper = () => {
         return getAllBoundaries(candidates.filter((other) => other.uiId !== subject.uiId));
     };
 
-    const getOverlappingEvents = (subject: TimeEntryEvent, candidates: TimeEntryEvent[]): TimeEntryEvent[] => {
-        return candidates.filter((other) => {
-            if (other.uiId === subject.uiId) return false;
-            return subject.start < other.end && subject.end > other.start;
-        });
+    const isRangeOverlapping = (subject: EventPosition, other: EventPosition): boolean => {
+        return subject.start < other.end && subject.end > other.start;
     };
 
-    const getOriginalPosition = (event: TimeEntryEvent, cur: Interaction): EventPosition => {
-        return cur.kind === "conflict" && cur.event.uiId === event.uiId && "originalPosition" in cur.mutation
-            ? cur.mutation.originalPosition
-            : { start: event.start, end: event.end };
+    const isOverlapping = (subject: TimeEntryEvent, other: TimeEntryEvent): boolean => {
+        if (other.uiId === subject.uiId) return false;
+        return isRangeOverlapping(subject, other);
+    };
+
+    const getOverlappingEvents = (subject: TimeEntryEvent, candidates: TimeEntryEvent[]): TimeEntryEvent[] => {
+        return candidates.filter((other) => isOverlapping(subject, other));
     };
 
     const cancelPendingUpdateForEvent = (event: TimeEntryEvent): void => {
@@ -114,152 +101,97 @@ export const useCalendarHelper = () => {
         }
     };
 
-    const buildTimeEntryCreate = (source: Nullable<TimeEntryCreateContract>): Nullable<TimeEntryCreateContract> => {
-        return withProxy({
+    const buildTimeEntryCreateFromSuggestion = (source: TimeEntrySuggestionContract): TimeEntryCreatePayload => {
+        return {
             taskId: source.taskId,
             projectId: source.projectId,
             activityId: source.activityId,
-            comment: source.comment
-        })
-            .from(source, "dateStarted", "dateEnded")
-            .build();
-    };
-
-    const buildTimeEntryCreateFromSuggestion = (source: TimeEntrySuggestionContract): Nullable<TimeEntryCreateContract> => {
-        return withProxy({
-            taskId: source.taskId,
-            projectId: source.projectId,
-            activityId: source.activityId,
-            comment: source.comment
-        })
-            .from(source, "dateStarted", "dateEnded")
-            .build();
+            comment: source.comment,
+            dateStarted: new Date(source.dateStarted),
+            dateEnded: new Date(source.dateEnded)
+        };
     };
 
     const buildTimeEntryUpdate = (source: TimeEntryContract): TimeEntryUpdateContract => {
-        return withProxy({
+        return {
             taskId: source.taskId,
             projectId: source.project.id,
             activityId: source.activity.id,
-            comment: source.comment
-        })
-            .from(source, "dateStarted", "dateEnded")
-            .build();
+            comment: source.comment,
+            dateStarted: new Date(source.dateStarted),
+            dateEnded: new Date(source.dateEnded)
+        };
     };
 
     const buildTimeEntrySuggestionUpdate = (source: TimeEntrySuggestionContract): TimeEntrySuggestionUpdateContract => {
-        return withProxy({
+        return {
             taskId: source.taskId,
             projectId: source.projectId,
             activityId: source.activityId,
-            comment: source.comment
-        })
-            .from(source, "dateStarted", "dateEnded")
-            .build();
+            comment: source.comment,
+            dateStarted: new Date(source.dateStarted),
+            dateEnded: new Date(source.dateEnded)
+        };
     };
 
-    const buildUpdateMutation = (
-        event: ExistingTimeEntryEvent | SuggestionTimeEntryEvent,
-        originalPosition: EventPosition
-    ): ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation => {
+    const buildUpdatePayload = (event: PositionableEvent): TimeEntryUpdatePayload => {
+        if (event.kind === "existing") return buildTimeEntryUpdate(event.timeEntry);
+        return buildTimeEntrySuggestionUpdate(event.timeEntry);
+    };
+
+    const buildCreatePayload = (event: SuggestionTimeEntryEvent): TimeEntryCreatePayload => {
+        return buildTimeEntryCreateFromSuggestion(event.timeEntry);
+    };
+
+    const getPersistedPosition = (event: TimeEntryEvent): EventPosition | null => {
+        if (event.kind === "draft") return null;
+
+        return { start: event.timeEntry.dateStarted.getTime(), end: event.timeEntry.dateEnded.getTime() };
+    };
+
+    const buildUpdateMutation = (event: PositionableEvent, payload: TimeEntryUpdatePayload): TimeEntryUpdateMutation => {
         if (event.kind === "existing") {
-            return { kind: "update", event, update: buildTimeEntryUpdate(event.timeEntry), originalPosition };
+            const update = payload as TimeEntryUpdateContract;
+            return { kind: "update", event, update };
         }
-        return { kind: "update", event, update: buildTimeEntrySuggestionUpdate(event.timeEntry), originalPosition };
+
+        const update = payload as TimeEntrySuggestionUpdateContract;
+        return { kind: "update", event, update };
     };
 
-    // Shared start-of-interaction prelude for move/resize/edit: filters out
-    // unsupported event kinds, cancels any pending background update, snapshots
-    // the original position, and returns a ready-to-use update mutation.
-    const prepareUpdateMutation = (event: TimeEntryEvent): ExistingTimeEntryUpdateMutation | SuggestionTimeEntryUpdateMutation | null => {
-        if (event.kind !== "existing" && event.kind !== "suggestion") return null;
-        cancelPendingUpdateForEvent(event);
-        const originalPosition = getOriginalPosition(event, interaction.value);
-        return buildUpdateMutation(event, originalPosition);
+    const buildCreateMutation = (event: CreatableEvent, create: TimeEntryCreatePayload): TimeEntryCreateMutation => {
+        return { kind: "create", event, create };
     };
 
-    const buildCreateMutation = (event: DraftTimeEntryEvent | SuggestionTimeEntryEvent): DraftTimeEntryCreateMutation | SuggestionTimeEntryCreateMutation => {
-        if (event.kind === "draft") {
-            return { kind: "create", event, create: buildTimeEntryCreate(event.createEntry) };
-        }
-        return { kind: "create", event, create: buildTimeEntryCreateFromSuggestion(event.timeEntry) };
-    };
-
-    const buildDeleteMutation = (event: TimeEntryEvent): DraftTimeEntryDeleteMutation | ExistingTimeEntryDeleteMutation | SuggestionTimeEntryDeleteMutation => {
-        if (event.kind === "draft") return { kind: "delete", event };
+    const buildDeleteMutation = (event: PositionableEvent): TimeEntryDeleteMutation => {
         if (event.kind === "existing") return { kind: "delete", event, id: event.timeEntry.id };
         return { kind: "delete", event, id: event.timeEntry.id };
     };
 
-    const withMutationPosition = (mutation: TimeEntryMutation, start: number, end: number): TimeEntryMutation => {
-        if (mutation.kind === "update") {
-            const position = { dateStarted: new Date(start), dateEnded: new Date(end) };
-
-            if (isExistingUpdateMutation(mutation)) {
-                return { ...mutation, update: { ...mutation.update, ...position } };
-            }
-            return { ...mutation, update: { ...mutation.update, ...position } };
-        }
-        if (mutation.kind === "create") {
-            return {
-                ...mutation,
-                create: { ...mutation.create, dateStarted: new Date(start), dateEnded: new Date(end) }
-            };
-        }
-        return mutation;
-    };
-
-    const applyEventPosition = (event: TimeEntryEvent, start: number, end: number): void => {
-        event.start = start;
-        event.end = end;
-    };
-
-    const restoreOriginalPosition = (mutation: TimeEntryMutation): void => {
-        if ("originalPosition" in mutation) {
-            applyEventPosition(mutation.event, mutation.originalPosition.start, mutation.originalPosition.end);
-        }
-    };
-
     const minimumEventDurationMs = 60 * 1000;
 
-    const updateEventPosition = (event: TimeEntryEvent, patch: UpdateEventPositionPatch, lock: EventEdge = "start"): void => {
-        const nextStart = patch.start ?? event.start;
-        const nextEnd = patch.end ?? event.end;
+    const clampPosition = (position: EventPosition, lock: EventEdge = "start"): EventPosition => {
+        if (position.end - position.start >= minimumEventDurationMs) return position;
+        if (lock === "end") return { start: position.end - minimumEventDurationMs, end: position.end };
 
-        let normalizedStart = nextStart;
-        let normalizedEnd = nextEnd;
-
-        if (normalizedEnd - normalizedStart < minimumEventDurationMs) {
-            if (lock === "end") {
-                normalizedStart = normalizedEnd - minimumEventDurationMs;
-            } else {
-                normalizedEnd = normalizedStart + minimumEventDurationMs;
-            }
-        }
-
-        event.start = normalizedStart;
-        event.end = normalizedEnd;
+        return { start: position.start, end: position.start + minimumEventDurationMs };
     };
 
     return {
         roundTime,
         getAllBoundaries,
         getEventBoundaries,
+        isRangeOverlapping,
+        isOverlapping,
         getOverlappingEvents,
-        getOriginalPosition,
         cancelPendingUpdateForEvent,
-        buildTimeEntryCreate,
-        buildTimeEntryCreateFromSuggestion,
-        buildTimeEntryUpdate,
-        buildTimeEntrySuggestionUpdate,
+        buildUpdatePayload,
+        buildCreatePayload,
         buildUpdateMutation,
         buildCreateMutation,
         buildDeleteMutation,
-        prepareUpdateMutation,
-        withMutationPosition,
-        applyEventPosition,
-        restoreOriginalPosition,
+        getPersistedPosition,
         minimumEventDurationMs,
-        updateEventPosition
+        clampPosition
     };
 };

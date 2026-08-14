@@ -1,5 +1,6 @@
 ﻿import type { TimeEntrySuggestionContract, TimeEntrySuggestionId, TimeEntrySuggestionUpdateContract } from "@/contracts/TimeEntrySuggestion";
 import type { ActionResult } from "@/util/ActionResult";
+import { omit } from "lodash";
 
 export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", () => {
     const { filter } = useTrackingFilter();
@@ -32,14 +33,18 @@ export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", ()
     const executeLoadWithFilters = async () => {
         const currentFilter = filter.value;
         await executeLoad(currentFilter);
-
-        const generateResult = await executeGenerate(currentFilter);
-        if (generateResult.status === "success") {
-            await executeLoad(currentFilter);
-        }
     };
 
     watch(filter, executeLoadWithFilters, { deep: true });
+
+    const generate = async (): Promise<ActionResult> => {
+        const currentFilter = filter.value;
+        const generateResult = await executeGenerate(currentFilter);
+        if (generateResult.status !== "success") return generateResult;
+
+        await executeLoad(currentFilter);
+        return success();
+    };
 
     const reload = async (): Promise<ActionResult> => {
         const reloadResult = await executeReload(filter.value);
@@ -54,7 +59,16 @@ export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", ()
 
         if (updateResult.status === "success") {
             const existing = timeEntrySuggestions.value.find((x) => x.id === id);
-            if (existing) Object.assign(existing, updateResult.data);
+
+            // Times come from the request: those are the ones the backend accepted,
+            // so nothing depends on how the response spells its dates.
+            const serverFields = omit(updateResult.data, "dateStarted", "dateEnded");
+
+            if (existing) {
+                Object.assign(existing, serverFields);
+                existing.dateStarted = new Date(updateContract.dateStarted);
+                existing.dateEnded = new Date(updateContract.dateEnded);
+            }
         }
 
         return updateResult;
@@ -91,6 +105,7 @@ export const useTimeEntrySuggestionStore = defineStore("timeEntrySuggestion", ()
         isDismissing,
         accept,
         isAccepting,
+        generate,
         isGenerating,
         reload,
         isReloading,

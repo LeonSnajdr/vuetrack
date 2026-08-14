@@ -33,12 +33,12 @@ export function useClonedMapped<TSource, TMapped>(
         }
     );
 
-    function sync(): void {
+    const sync = (): void => {
         _lastSync = true;
         isModified.value = false;
 
         cloned.value = clone(mapper(toValue(source)));
-    }
+    };
 
     if (!manual && (isRef(source) || typeof source === "function")) {
         watch(source, sync, {

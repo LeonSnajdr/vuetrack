@@ -12,6 +12,4 @@ public class ProviderOpenAiOptions
     public required string Model { get; init; }
 
     public required int MaxOutputTokens { get; init; }
-
-    public required string SystemPrompt { get; init; }
 }

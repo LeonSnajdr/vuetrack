@@ -1,6 +1,6 @@
-using Vuetrack.Connectors.Abstractions;
+using Vuetrack.Api.Features.Integrations;
+using Vuetrack.Api.Features.Integrations.Activity;
 
 namespace Vuetrack.Api.Tests.Fakes;
 
-// Minimal connector-agnostic detail for tests: carries just the facts the fake model client echoes back.
-public sealed record FakeSignalDetail(string? TaskId, string? Project, string? Comment) : IConnectorSignalDetail;
+public sealed record FakeSignalDetail(string? TaskId, string? Project, string? Comment) : IActivitySignalDetail;

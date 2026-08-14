@@ -40,6 +40,7 @@ insert_final_newline = unset
 
 [*.cs]
 csharp_style_namespace_declarations = file_scoped:warning
+dotnet_diagnostic.SA1649.severity = error
 
 [.gitbugtraq]
 indent_size = 1

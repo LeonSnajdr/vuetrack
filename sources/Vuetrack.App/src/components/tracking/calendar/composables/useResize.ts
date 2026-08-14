@@ -1,52 +1,67 @@
 import type { EventEdge, TimeEntryEvent } from "@/components/tracking/calendar/types";
 import { useCalendarHelper } from "./useCalendarHelper";
-import { useEventMutation } from "./useEventMutation";
+import { useChangeSet } from "./useChangeSet";
+import { useEventCommit } from "./useEventCommit";
 
 export function useResize() {
     const calendarStore = useCalendarStore();
-    const { interaction, events } = storeToRefs(calendarStore);
-    const mutation = useEventMutation();
-    const { roundTime, getEventBoundaries, prepareUpdateMutation, updateEventPosition, restoreOriginalPosition } = useCalendarHelper();
+    const changeSet = useChangeSet();
+    const commit = useEventCommit();
+    const { roundTime, getEventBoundaries, cancelPendingUpdateForEvent, clampPosition } = useCalendarHelper();
+
+    const { gesture, events } = storeToRefs(calendarStore);
 
     const start = (event: TimeEntryEvent, edge: EventEdge = "end") => {
-        const resizeMutation = prepareUpdateMutation(event);
-        if (!resizeMutation) return;
+        cancelPendingUpdateForEvent(event);
 
-        interaction.value = {
+        gesture.value = {
             kind: "resize",
             edge,
-            event: resizeMutation.event,
-            mutation: resizeMutation
+            event,
+            from: { start: event.start, end: event.end },
+            wasStaged: changeSet.has(event.uiId)
         };
     };
 
     const update = (mouseMs: number) => {
-        if (interaction.value.kind !== "resize") return;
+        if (gesture.value.kind !== "resize") return;
 
-        const { event, edge } = interaction.value;
+        const { event, edge } = gesture.value;
         const snapPoints = getEventBoundaries(event, events.value);
 
         if (edge === "start") {
             const mouseRounded = roundTime(mouseMs, { down: true, snapPoints });
-            updateEventPosition(event, { start: mouseRounded }, "end");
-        } else {
-            const mouseRounded = roundTime(mouseMs, { down: false, snapPoints });
-            updateEventPosition(event, { end: mouseRounded }, "start");
+            const position = clampPosition({ start: mouseRounded, end: event.end }, "end");
+            changeSet.stagePosition(event, position);
+            return;
         }
+
+        const mouseRounded = roundTime(mouseMs, { down: false, snapPoints });
+        const position = clampPosition({ start: event.start, end: mouseRounded }, "start");
+        changeSet.stagePosition(event, position);
     };
 
     const finish = async () => {
-        if (interaction.value.kind !== "resize") return;
+        if (gesture.value.kind !== "resize") return;
 
-        const cur = interaction.value;
-        interaction.value = { kind: "idle" };
-        await mutation.commitUpdate(cur);
+        const { event } = gesture.value;
+        gesture.value = { kind: "idle" };
+
+        await commit.commitGesture(event);
     };
 
     const cancel = () => {
-        if (interaction.value.kind !== "resize") return;
-        restoreOriginalPosition(interaction.value.mutation);
-        interaction.value = { kind: "idle" };
+        if (gesture.value.kind !== "resize") return;
+
+        const { event, from, wasStaged } = gesture.value;
+        gesture.value = { kind: "idle" };
+
+        if (!wasStaged) {
+            changeSet.unstage(event.uiId);
+            return;
+        }
+
+        changeSet.stagePosition(event, from);
     };
 
     return { start, update, finish, cancel };

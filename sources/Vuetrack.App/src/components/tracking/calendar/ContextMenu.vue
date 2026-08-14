@@ -1,22 +1,24 @@
 <template>
     <VMenu v-model="contextMenu.show" :target="[contextMenu.x, contextMenu.y]">
         <VList v-if="contextMenu.event" density="compact">
-            <VListItem @click="runContextAction(edit.start)" :prependIcon="mdiPencil" :title="$t('action.edit')">
-                <template #append>
-                    <VHotkey class="ml-10" keys="e" />
-                </template>
-            </VListItem>
-            <VListItem
-                v-if="contextMenu.event.kind === 'suggestion'"
-                @click="runContextAction((e) => e.kind === 'suggestion' && create.start(e))"
-                :prependIcon="mdiCheck"
-                :title="$t('action.accept')"
-            >
-                <template #append>
-                    <VHotkey class="ml-10" keys="a" />
-                </template>
-            </VListItem>
-            <VListItem @click="runContextAction(remove.start)" :prependIcon="mdiDelete" :title="$t('action.delete')">
+            <template v-if="!isConflict">
+                <VListItem @click="runContextAction(runEditAction)" :prependIcon="mdiPencil" :title="$t('action.edit')">
+                    <template #append>
+                        <VHotkey class="ml-10" keys="e" />
+                    </template>
+                </VListItem>
+                <VListItem
+                    v-if="canAccept(contextMenu.event)"
+                    @click="runContextAction(runAcceptAction)"
+                    :prependIcon="mdiCheck"
+                    :title="$t('action.accept')"
+                >
+                    <template #append>
+                        <VHotkey class="ml-10" keys="a" />
+                    </template>
+                </VListItem>
+            </template>
+            <VListItem @click="runContextAction(runDeleteAction)" :prependIcon="deleteIcon" :title="deleteTitle">
                 <template #append>
                     <VHotkey class="ml-10" keys="delete/d" />
                 </template>
@@ -31,27 +33,57 @@ import { useEdit } from "./composables/useEdit";
 import { useDelete } from "./composables/useDelete";
 import { useEventDetails } from "./composables/useEventDetails";
 import { useEventContextMenu, type ContextMenuEvent } from "./composables/useEventContextMenu";
+import { useEventPolicy } from "./composables/useEventPolicy";
+import { useStagedRemoval } from "./composables/useStagedRemoval";
 
 const calendarStore = useCalendarStore();
-const { interaction } = storeToRefs(calendarStore);
+const { gesture, task } = storeToRefs(calendarStore);
+
+const { t } = useI18n();
 
 const create = useCreate();
 const edit = useEdit();
 const remove = useDelete();
+const stagedRemoval = useStagedRemoval();
+const { isConflict, canStageRemoval, canAccept, isSaved } = useEventPolicy();
 const { setContextMenuOpen } = useEventDetails();
 const { state: contextMenu, close } = useEventContextMenu();
+
+const isRestorable = computed(() => {
+    const event = contextMenu.value.event;
+    if (!event) return false;
+    return stagedRemoval.isStaged(event);
+});
+
+const deleteIcon = computed(() => (isRestorable.value ? mdiDeleteRestore : mdiDelete));
+const deleteTitle = computed(() => (isRestorable.value ? t("action.restore") : t("action.delete")));
 
 watch(
     () => contextMenu.value.show,
     (show) => setContextMenuOpen(show)
 );
 
-watch(
-    () => interaction.value.kind !== "idle",
-    (active) => {
-        if (active) close();
+watch([() => gesture.value.kind, () => task.value.kind], () => close());
+
+const runDeleteAction = (event: ContextMenuEvent) => {
+    if (canStageRemoval(event) || stagedRemoval.isStaged(event)) {
+        stagedRemoval.toggle(event);
+        return;
     }
-);
+
+    if (!isSaved(event)) return;
+    remove.start(event);
+};
+
+const runEditAction = (event: ContextMenuEvent) => {
+    if (!isSaved(event)) return;
+    edit.start(event);
+};
+
+const runAcceptAction = (event: ContextMenuEvent) => {
+    if (!canAccept(event)) return;
+    create.start(event);
+};
 
 const runContextAction = (action: (event: ContextMenuEvent) => void) => {
     if (!contextMenu.value.event) return;

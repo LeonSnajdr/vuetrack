@@ -1,4 +1,5 @@
 import type { TimeEntryEvent } from "@/components/tracking/calendar/types";
+import { useEventPolicy } from "./useEventPolicy";
 
 type DetailsState = {
     show: boolean;
@@ -21,13 +22,16 @@ watch(
 
 export function useEventDetails() {
     const calendarStore = useCalendarStore();
-    const { interaction } = storeToRefs(calendarStore);
+    const policy = useEventPolicy();
+    const { gesture, task } = storeToRefs(calendarStore);
+
+    const isBusy = computed(() => gesture.value.kind !== "idle" || task.value.kind !== "none");
 
     const open = (nativeEvent: MouseEvent, event: TimeEntryEvent) => {
         if (state.value.pinned) return;
-        if (interaction.value.kind !== "idle") return;
+        if (isBusy.value) return;
         if (contextMenuOpen.value) return;
-        if (event.kind === "draft") return;
+        if (!policy.isSaved(event)) return;
 
         state.value.x = nativeEvent.clientX;
         state.value.y = nativeEvent.clientY;
@@ -38,7 +42,7 @@ export function useEventDetails() {
     const move = (nativeEvent: MouseEvent, event: TimeEntryEvent) => {
         if (state.value.pinned) return;
 
-        if (interaction.value.kind !== "idle" || contextMenuOpen.value) {
+        if (isBusy.value || contextMenuOpen.value) {
             close();
             return;
         }
@@ -70,5 +74,5 @@ export function useEventDetails() {
         if (open) hardClose();
     };
 
-    return { state, open, move, close, hardClose, togglePin, setContextMenuOpen };
+    return { state, isBusy, open, move, close, hardClose, togglePin, setContextMenuOpen };
 }

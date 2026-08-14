@@ -2,6 +2,7 @@ import type { TimeEntryContract, TimeEntryCreateContract, TimeEntryId, TimeEntry
 import { type ActionResult } from "@/util/ActionResult";
 import { type Nullable } from "@/util/Nullable";
 import typia from "typia";
+import { omit } from "lodash";
 
 export const useTimeEntryStore = defineStore("timeEntry", () => {
     const { filter } = useTrackingFilter();
@@ -46,7 +47,16 @@ export const useTimeEntryStore = defineStore("timeEntry", () => {
 
         if (updateResult.status === "success") {
             const existing = timeEntries.value.find((x) => x.id === id);
-            if (existing) Object.assign(existing, updateResult.data);
+
+            // Times come from the request: those are the ones the backend accepted,
+            // so nothing depends on how the response spells its dates.
+            const serverFields = omit(updateResult.data, "dateStarted", "dateEnded");
+
+            if (existing) {
+                Object.assign(existing, serverFields);
+                existing.dateStarted = new Date(updateContract.dateStarted);
+                existing.dateEnded = new Date(updateContract.dateEnded);
+            }
         }
 
         return updateResult;

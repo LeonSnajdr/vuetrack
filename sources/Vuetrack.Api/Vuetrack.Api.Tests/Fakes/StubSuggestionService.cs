@@ -1,6 +1,6 @@
 using ErrorOr;
-using Vuetrack.Api.Features.Suggestions.Core.Contracts;
-using Vuetrack.Api.Features.Suggestions.Core.Services;
+using Vuetrack.Api.Features.Suggestions.Contracts;
+using Vuetrack.Api.Features.Suggestions.Services;
 
 namespace Vuetrack.Api.Tests.Fakes;
 
@@ -22,7 +22,7 @@ public sealed class StubSuggestionService : ISuggestionService
     public Task<ErrorOr<IReadOnlyList<SuggestionContract>>> ReloadAsync(string userId, GenerateSuggestionsRequestContract request, CancellationToken cancellationToken) =>
         OnReload!.Invoke(userId, request, cancellationToken);
 
-    public Task<IReadOnlyList<SuggestionContract>> ListAsync(string userId, DateTime from, DateTime to) =>
+    public Task<ErrorOr<IReadOnlyList<SuggestionContract>>> ListAsync(string userId, DateTime from, DateTime to, CancellationToken cancellationToken) =>
         throw new NotImplementedException();
 
     public Task<ErrorOr<SuggestionContract>> UpdateAsync(string userId, string id, SuggestionUpdateContract request, CancellationToken cancellationToken) =>

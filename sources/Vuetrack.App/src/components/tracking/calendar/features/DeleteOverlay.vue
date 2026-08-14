@@ -15,13 +15,13 @@
 </template>
 
 <script setup lang="ts">
-import type { Interaction } from "@/components/tracking/calendar/types";
+import type { Task } from "@/components/tracking/calendar/types";
 import { useDelete } from "@/components/tracking/calendar/composables/useDelete";
 
-const interaction = defineModel<Extract<Interaction, { kind: "delete" }>>("interaction", { required: true });
+const task = defineModel<Extract<Task, { kind: "delete" }>>("task", { required: true });
 const remove = useDelete();
 const calendarStore = useCalendarStore();
 const { isDeletingEvent } = storeToRefs(calendarStore);
 
-const targetSelector = computed(() => "#" + interaction.value.event.uiId);
+const targetSelector = computed(() => "#" + task.value.event.uiId);
 </script>

@@ -12,36 +12,47 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Features\Suggestions\Engine\Provider\SystemPrompt.md" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="ConfigurationSubstitutor" Version="1.5.1" />
-    <PackageReference Include="FluentValidation" Version="11.11.0" />
+    <PackageReference Include="Duende.IdentityModel" Version="8.1.0" />
+    <PackageReference Include="ErrorOr" Version="2.1.1" />
+    <PackageReference Include="FluentValidation" Version="12.1.1" />
     <PackageReference Include="GitInfo" Version="3.3.5">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection.Abstractions" Version="10.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.10" />
     <PackageReference Include="OpenAI" Version="2.12.0" />
     <PackageReference Include="Samhammer.Authentication.Api" Version="10.0.0" />
     <PackageReference Include="Samhammer.Authentication.Client" Version="10.0.0" />
     <PackageReference Include="Samhammer.Configuration.Childs" Version="10.0.0" />
     <PackageReference Include="Samhammer.DependencyInjection" Version="10.0.0" />
+    <PackageReference Include="Samhammer.Logging.Logstash" Version="10.0.0" />
     <PackageReference Include="Samhammer.Mongo" Version="10.0.1" />
     <PackageReference Include="Samhammer.Options" Version="10.0.0" />
+    <PackageReference Include="Samhammer.Options.Abstractions" Version="10.0.0" />
     <PackageReference Include="Samhammer.Swagger.Authentication" Version="10.0.0" />
     <PackageReference Include="Samhammer.Swagger.Versioning" Version="10.0.0" />
     <PackageReference Include="Samhammer.Web.Common" Version="10.0.0" />
+    <PackageReference Include="Serilog" Version="4.4.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+    <PackageReference Include="Serilog.Enrichers.AssemblyName" Version="2.0.0" />
+    <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
+    <PackageReference Include="Serilog.Enrichers.ExceptionStackTraceHash" Version="1.3.0" />
+    <PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" />
+    <PackageReference Include="Serilog.Settings.Configuration" Version="10.0.1" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.406">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Vuetrack.Logging\Vuetrack.Logging.csproj" />
-    <ProjectReference Include="..\Vuetrack.Connectors.Jira\Vuetrack.Connectors.Jira.csproj" />
-    <ProjectReference Include="..\Vuetrack.Connectors.Github\Vuetrack.Connectors.Github.csproj" />
-    <ProjectReference Include="..\Vuetrack.Connectors.Abstractions\Vuetrack.Connectors.Abstractions.csproj" />
-    <ProjectReference Include="..\Vuetrack.Backends.Timetracking\Vuetrack.Backends.Timetracking.csproj" />
-    <ProjectReference Include="..\Vuetrack.Backends.Abstractions\Vuetrack.Backends.Abstractions.csproj" />
-    <ProjectReference Include="..\Vuetrack.Framework\Vuetrack.Framework.csproj" />
+    <PackageReference Include="ZiggyCreatures.FusionCache" Version="2.6.0" />
   </ItemGroup>
 
 </Project>

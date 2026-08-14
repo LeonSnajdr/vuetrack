@@ -30,7 +30,11 @@
             <TrackingCalendarCurrentTimeLine :day="day" />
         </template>
         <template #event="{ event }">
-            <TrackingCalendarEvent v-if="isTimeEntryEvent(event)" @resize="beginResizeEvent(event, $event)" :event="event" />
+            <TrackingCalendarEvent
+                v-if="isTimeEntryEvent(event)"
+                @resize="(edge, nativeEvent) => beginResizeEvent(event, edge, nativeEvent)"
+                :event="event"
+            />
         </template>
     </VCalendar>
     <TrackingCalendarContextMenu />
@@ -41,7 +45,7 @@
 <script setup lang="ts">
 import type { EventSlotScope } from "vuetify/lib/components/VCalendar/VCalendar.mjs";
 import type { CalendarDayBodySlotScope, CalendarEvent } from "vuetify/lib/components/VCalendar/types.mjs";
-import { canStartInteraction, isTimeEntryEvent, type EventEdge, type TimeEntryEvent } from "./types";
+import { isTimeEntryEvent, type EventEdge } from "./types";
 import { useMove } from "./composables/useMove";
 import { useResize } from "./composables/useResize";
 import { useDraft } from "./composables/useDraft";
@@ -49,14 +53,17 @@ import { useCreate } from "./composables/useCreate";
 import { useEdit } from "./composables/useEdit";
 import { useDelete } from "./composables/useDelete";
 import { useConflict } from "./composables/useConflict";
+import { useGestureArm } from "./composables/useGestureArm";
 import { useCalendarTimePeriod } from "./composables/useCalendarTimePeriod";
 import { useCalendarInterval } from "./composables/useCalendarInterval";
 import { useEventShortcuts } from "./composables/useEventShortcuts";
 import { useEventContextMenu } from "./composables/useEventContextMenu";
+import { useEventPolicy } from "./composables/useEventPolicy";
+import { useEventSelection } from "./composables/useEventSelection";
 
 const calendarStore = useCalendarStore();
 
-const { events, interaction, isLoadingEvents } = storeToRefs(calendarStore);
+const { events, gesture, isLoadingEvents } = storeToRefs(calendarStore);
 
 const move = useMove();
 const resize = useResize();
@@ -65,19 +72,25 @@ const create = useCreate();
 const edit = useEdit();
 const remove = useDelete();
 const conflict = useConflict();
+const { select, clearSelection } = useEventSelection();
+const { isArmed, armGesture, setAnchorTime, clearArm, promoteArm } = useGestureArm();
 const { jumpToDay } = useTrackingTimePeriod();
 const { start, end, weekdays, isReadonly, calendarType } = useCalendarTimePeriod();
 const { intervalMinutes, intervalCount, firstInterval } = useCalendarInterval();
 
 const contextMenu = useEventContextMenu();
+const policy = useEventPolicy();
 
 useEventShortcuts();
+
+watch([start, end], () => clearSelection());
 
 onBeforeUnmount(() => {
     cancelAll();
 });
 
 const cancelAll = () => {
+    clearArm();
     move.cancel();
     resize.cancel();
     draft.cancel();
@@ -96,10 +109,8 @@ const jumpToMoreDay = (_nativeEvent: Event, day: { year: number; month: number; 
 };
 
 const canAdjustEvent = (event: CalendarEvent): boolean => {
-    if (canStartInteraction(interaction.value.kind)) return true;
-    if (interaction.value.kind !== "conflict") return false;
-
-    return event.uiId === interaction.value.event.uiId;
+    if (!isTimeEntryEvent(event)) return false;
+    return policy.canStartGesture(event);
 };
 
 const isLeftClick = (nativeEvent: Event): boolean => {
@@ -110,40 +121,56 @@ const beginMoveEvent = (nativeEvent: Event, { event, timed }: EventSlotScope) =>
     if (isReadonly.value) return;
     if (!isLeftClick(nativeEvent)) return;
     if (!event || !timed) return;
+    if (!isTimeEntryEvent(event)) return;
+
+    select(event);
     if (!canAdjustEvent(event)) return;
-    move.start(event as TimeEntryEvent);
+
+    armGesture({ kind: "move", event }, nativeEvent as MouseEvent);
 };
 
 const openContextMenu = (nativeEvent: Event, { event }: EventSlotScope) => {
     contextMenu.open(nativeEvent, event);
 };
 
-const beginResizeEvent = (event: CalendarEvent, edge: EventEdge) => {
+const beginResizeEvent = (event: CalendarEvent, edge: EventEdge, nativeEvent: MouseEvent) => {
     if (isReadonly.value) return;
+    if (!isTimeEntryEvent(event)) return;
+
+    select(event);
     if (!canAdjustEvent(event)) return;
-    resize.start(event as TimeEntryEvent, edge);
+
+    armGesture({ kind: "resize", event, edge }, nativeEvent);
 };
 
 const beginGridInteraction = (nativeEvent: Event, tms: CalendarDayBodySlotScope) => {
     if (isReadonly.value) return;
     if (!isLeftClick(nativeEvent)) return;
-    if (!canStartInteraction(interaction.value.kind)) return;
 
     const mouseMs = toTime(tms);
 
-    if (interaction.value.kind === "move" && interaction.value.pointerOffsetMs === undefined) {
-        move.setPointerOffset(mouseMs);
+    if (isArmed.value) {
+        setAnchorTime(mouseMs);
         return;
     }
 
-    if (interaction.value.kind !== "idle") return;
+    if (gesture.value.kind !== "idle") return;
+    if (!policy.canOpenTask()) return;
 
+    clearSelection();
     draft.start(mouseMs);
 };
 
-const updateInteractionFromPointer = (_nativeEvent: Event, tms: CalendarDayBodySlotScope) => {
+const updateInteractionFromPointer = (nativeEvent: Event, tms: CalendarDayBodySlotScope) => {
     if (isReadonly.value) return;
+
     const mouseMs = toTime(tms);
+
+    if (isArmed.value) {
+        const promoted = promoteArm(nativeEvent as MouseEvent, mouseMs);
+        if (!promoted) return;
+    }
+
     move.update(mouseMs);
     resize.update(mouseMs);
     draft.update(mouseMs);
@@ -151,6 +178,9 @@ const updateInteractionFromPointer = (_nativeEvent: Event, tms: CalendarDayBodyS
 
 const finishInteraction = async () => {
     if (isReadonly.value) return;
+
+    clearArm();
+
     draft.finish();
     await move.finish();
     await resize.finish();
@@ -158,6 +188,9 @@ const finishInteraction = async () => {
 
 const cancelInteractionOnLeave = () => {
     if (isReadonly.value) return;
+
+    clearArm();
+
     resize.cancel();
     move.cancel();
     draft.cancel();
